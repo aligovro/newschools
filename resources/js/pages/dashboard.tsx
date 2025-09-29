@@ -34,7 +34,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 // Данные будут загружаться через хук useDashboardStats
 
-const quickActions = [
+const getQuickActions = (terminology: any) => [
     {
         title: 'Создать пользователя',
         description: 'Добавить нового пользователя в систему',
@@ -43,18 +43,32 @@ const quickActions = [
         color: 'bg-blue-500',
     },
     {
-        title: 'Создать организацию',
+        title: terminology.create_organization,
         description: 'Зарегистрировать новую организацию',
         href: '/dashboard/organizations/create',
         icon: Building2,
         color: 'bg-green-500',
     },
     {
-        title: 'Создать сайт',
-        description: 'Создать новый сайт для организации',
-        href: '/dashboard/sites/create',
-        icon: Globe,
+        title: terminology.global_settings,
+        description: terminology.global_settings_description,
+        href: '/dashboard/admin/global-settings',
+        icon: Settings,
         color: 'bg-purple-500',
+    },
+    {
+        title: 'Настройки главного сайта',
+        description: 'SEO, платежи, контакты и аналитика',
+        href: '/dashboard/admin/main-site-settings',
+        icon: Globe,
+        color: 'bg-indigo-500',
+    },
+    {
+        title: terminology.manage_organizations,
+        description: 'Просмотр и управление организациями',
+        href: '/dashboard/organizations',
+        icon: Building2,
+        color: 'bg-emerald-500',
     },
     {
         title: 'Настройки системы',
@@ -66,12 +80,13 @@ const quickActions = [
 ];
 
 export default function Dashboard() {
-    const { stats, isLoading, error, refreshStats } = useDashboardStats();
+    const { stats, terminology, isLoading, error, refreshStats } =
+        useDashboardStats();
 
     if (isLoading) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
-                <Head title="Админ-панель" />
+                <Head title={terminology.dashboard_title} />
                 <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
                     <div className="flex min-h-64 items-center justify-center">
                         <div className="text-center">
@@ -89,7 +104,7 @@ export default function Dashboard() {
     if (error) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
-                <Head title="Админ-панель" />
+                <Head title={terminology.dashboard_title} />
                 <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
                     <div className="flex min-h-64 items-center justify-center">
                         <div className="text-center">
@@ -119,7 +134,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                            Админ-панель
+                            {terminology.dashboard_title}
                         </h1>
                         <p className="mt-1 text-gray-600 dark:text-gray-400">
                             Обзор системы и управление
@@ -168,7 +183,7 @@ export default function Dashboard() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
-                                Организации
+                                {terminology.total_organizations}
                             </CardTitle>
                             <Building2 className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
@@ -234,26 +249,28 @@ export default function Dashboard() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            {quickActions.map((action, index) => (
-                                <Link key={index} href={action.href}>
-                                    <div className="flex items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
-                                        <div
-                                            className={`flex h-10 w-10 items-center justify-center rounded-lg ${action.color}`}
-                                        >
-                                            <action.icon className="h-5 w-5 text-white" />
+                            {getQuickActions(terminology).map(
+                                (action, index) => (
+                                    <Link key={index} href={action.href}>
+                                        <div className="flex items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+                                            <div
+                                                className={`flex h-10 w-10 items-center justify-center rounded-lg ${action.color}`}
+                                            >
+                                                <action.icon className="h-5 w-5 text-white" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                                    {action.title}
+                                                </p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {action.description}
+                                                </p>
+                                            </div>
+                                            <ArrowRight className="h-4 w-4 text-gray-400" />
                                         </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                                {action.title}
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                {action.description}
-                                            </p>
-                                        </div>
-                                        <ArrowRight className="h-4 w-4 text-gray-400" />
-                                    </div>
-                                </Link>
-                            ))}
+                                    </Link>
+                                ),
+                            )}
                         </CardContent>
                     </Card>
 
@@ -324,7 +341,7 @@ export default function Dashboard() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Building2 className="h-5 w-5" />
-                            Последние организации
+                            {terminology.recent_organizations}
                         </CardTitle>
                         <CardDescription>
                             Недавно зарегистрированные организации

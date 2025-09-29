@@ -28,6 +28,17 @@ class OrganizationSetting extends Model
     'notification_settings',
     'maintenance_mode',
     'maintenance_message',
+    'advanced_layout_config',
+    'seo_settings',
+    'social_media_settings',
+    'analytics_settings',
+    'security_settings',
+    'backup_settings',
+    'external_integrations',
+    'advanced_notification_settings',
+    'theme_settings',
+    'performance_settings',
+    'settings_metadata',
   ];
 
   protected $casts = [
@@ -39,6 +50,17 @@ class OrganizationSetting extends Model
     'payment_settings' => 'array',
     'notification_settings' => 'array',
     'maintenance_mode' => 'boolean',
+    'advanced_layout_config' => 'array',
+    'seo_settings' => 'array',
+    'social_media_settings' => 'array',
+    'analytics_settings' => 'array',
+    'security_settings' => 'array',
+    'backup_settings' => 'array',
+    'external_integrations' => 'array',
+    'advanced_notification_settings' => 'array',
+    'theme_settings' => 'array',
+    'performance_settings' => 'array',
+    'settings_metadata' => 'array',
   ];
 
   public function organization(): BelongsTo

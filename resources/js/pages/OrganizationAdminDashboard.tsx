@@ -1,11 +1,11 @@
-import { Button } from '@/components/common/ui/button';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from '@/components/common/ui/card';
+} from '@/components/ui/card';
 import OrganizationAdminLayout from '@/layouts/OrganizationAdminLayout';
 import { CreditCard, FileText, Menu, Settings, Users } from 'lucide-react';
 

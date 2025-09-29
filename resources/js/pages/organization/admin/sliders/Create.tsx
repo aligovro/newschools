@@ -1,9 +1,9 @@
-import { Button } from '@/components/common/ui/button';
-import { Card } from '@/components/common/ui/card';
-import { Checkbox } from '@/components/common/ui/checkbox';
-import { Input } from '@/components/common/ui/input';
-import { Label } from '@/components/common/ui/label';
-import { Select } from '@/components/common/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
 import { Head, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import React, { useState } from 'react';

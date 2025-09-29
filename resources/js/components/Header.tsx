@@ -1,11 +1,32 @@
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
-interface OrganizationTypeConfig {
-    name: string;
-    plural: string;
-    member_name: string;
-    member_plural: string;
+interface Terminology {
+    site_name: string;
+    site_description: string;
+    org_plural: string;
+    org_genitive: string;
+    support_action: string;
+}
+
+interface MainSiteSettings {
+    id: number;
+    site_name: string;
+    site_description: string;
+    site_logo: string | null;
+    site_favicon: string | null;
+    site_theme: string;
+    primary_color: string;
+    secondary_color: string;
+    dark_mode: boolean;
+    contact_email: string | null;
+    contact_phone: string | null;
+    contact_address: string | null;
+    contact_telegram: string | null;
+    contact_vk: string | null;
+    social_links: any;
+    created_at: string;
+    updated_at: string;
 }
 
 interface HeaderProps {
@@ -16,14 +37,14 @@ interface HeaderProps {
             email: string;
         };
     };
-    organizationTypes?: Record<string, OrganizationTypeConfig>;
-    currentTypeConfig?: OrganizationTypeConfig;
+    mainSiteSettings: MainSiteSettings;
+    terminology: Terminology;
 }
 
 export default function Header({
     auth,
-    organizationTypes,
-    currentTypeConfig,
+    mainSiteSettings,
+    terminology,
 }: HeaderProps) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -40,12 +61,10 @@ export default function Header({
                         </div>
                         <div className="hidden sm:block">
                             <div className="text-xl font-bold text-gray-900">
-                                {currentTypeConfig?.plural || 'Организации'}
+                                {terminology.site_name}
                             </div>
                             <div className="text-sm text-gray-500">
-                                Поддерживай{' '}
-                                {currentTypeConfig?.name?.toLowerCase() ||
-                                    'организации'}
+                                {terminology.site_description}
                             </div>
                         </div>
                     </Link>
@@ -56,7 +75,7 @@ export default function Header({
                             href="/organizations"
                             className="text-gray-700 transition-colors hover:text-blue-600"
                         >
-                            Организации
+                            {terminology.org_plural}
                         </Link>
                         <Link
                             href="/projects"
@@ -151,7 +170,7 @@ export default function Header({
                                 className="text-gray-700 transition-colors hover:text-blue-600"
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
-                                Организации
+                                {terminology.org_plural}
                             </Link>
                             <Link
                                 href="/projects"

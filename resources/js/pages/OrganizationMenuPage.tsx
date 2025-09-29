@@ -1,5 +1,5 @@
-import MenuManager from '@/components/Menu/MenuManager';
-import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
+import MenuManager from '@/components/admin/menus/Menu/MenuManager';
+import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import React from 'react';
 
@@ -52,7 +52,20 @@ const OrganizationMenuPage: React.FC<OrganizationMenuPageProps> = ({
     types,
 }) => {
     return (
-        <AuthenticatedLayout>
+        <AppLayout
+            breadcrumbs={[
+                { title: 'Dashboard', href: '/dashboard' },
+                { title: 'Организации', href: '/dashboard/organizations' },
+                {
+                    title: organization.name,
+                    href: `/dashboard/organizations/${organization.id}`,
+                },
+                {
+                    title: 'Меню',
+                    href: `/dashboard/organizations/${organization.id}/menus`,
+                },
+            ]}
+        >
             <Head title={`Меню - ${organization.name}`} />
 
             <div className="py-12">
@@ -80,7 +93,7 @@ const OrganizationMenuPage: React.FC<OrganizationMenuPageProps> = ({
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 };
 

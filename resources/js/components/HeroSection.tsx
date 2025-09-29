@@ -1,18 +1,19 @@
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
-interface OrganizationTypeConfig {
-    name: string;
-    plural: string;
-    member_name: string;
-    member_plural: string;
+interface Terminology {
+    site_name: string;
+    site_description: string;
+    org_plural: string;
+    org_genitive: string;
+    support_action: string;
 }
 
 interface HeroSectionProps {
-    currentTypeConfig?: OrganizationTypeConfig;
+    terminology: Terminology;
 }
 
-export default function HeroSection({ currentTypeConfig }: HeroSectionProps) {
+export default function HeroSection({ terminology }: HeroSectionProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRegion, setSelectedRegion] = useState('Все регионы');
 
@@ -120,9 +121,8 @@ export default function HeroSection({ currentTypeConfig }: HeroSectionProps) {
 
                         {/* Main Heading */}
                         <h1 className="mb-6 text-4xl font-bold text-gray-900 md:text-6xl">
-                            Поддерживай{' '}
-                            {currentTypeConfig?.name?.toLowerCase() ||
-                                'организации'}
+                            {terminology.support_action}{' '}
+                            {terminology.org_plural.toLowerCase()}
                             <br />
                             <span className="text-blue-600">
                                 — укрепляй будущее
@@ -132,10 +132,8 @@ export default function HeroSection({ currentTypeConfig }: HeroSectionProps) {
                         {/* Subtitle */}
                         <p className="mx-auto mb-8 max-w-2xl text-xl text-gray-600">
                             Подписывайся на{' '}
-                            {currentTypeConfig?.plural?.toLowerCase() ||
-                                'организации'}
-                            , поддерживай их финансирование, отслеживай прогресс
-                            сборов
+                            {terminology.org_plural.toLowerCase()}, поддерживай
+                            их финансирование, отслеживай прогресс сборов
                         </p>
 
                         {/* CTA Buttons */}
@@ -144,8 +142,7 @@ export default function HeroSection({ currentTypeConfig }: HeroSectionProps) {
                                 href="/organizations"
                                 className="rounded-lg bg-blue-600 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-700"
                             >
-                                {currentTypeConfig?.plural || 'Организации'}{' '}
-                                города
+                                {terminology.org_plural} города
                             </Link>
                             <Link
                                 href="/projects"

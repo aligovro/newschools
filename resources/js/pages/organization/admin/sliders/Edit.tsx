@@ -1,10 +1,10 @@
-import { Button } from '@/components/common/ui/button';
-import { Card } from '@/components/common/ui/card';
-import { Checkbox } from '@/components/common/ui/checkbox';
-import { Input } from '@/components/common/ui/input';
-import { Label } from '@/components/common/ui/label';
-import { Select } from '@/components/common/ui/select';
-import { Textarea } from '@/components/common/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Edit, GripVertical, Plus, Trash2 } from 'lucide-react';

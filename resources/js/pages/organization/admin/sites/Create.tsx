@@ -1,19 +1,19 @@
-import { Button } from '@/components/common/ui/button';
-import { Card } from '@/components/common/ui/card';
-import { Input } from '@/components/common/ui/input';
-import { Label } from '@/components/common/ui/label';
-import { Select } from '@/components/common/ui/select';
-import { Textarea } from '@/components/common/ui/textarea';
-import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft, Globe, Image, Upload } from 'lucide-react';
-import React, { useState } from 'react';
-
-interface Domain {
-    id: number;
-    domain: string;
-    custom_domain?: string;
-    status: string;
-}
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, Building2 } from 'lucide-react';
 
 interface Organization {
     id: number;
@@ -21,333 +21,327 @@ interface Organization {
     slug: string;
 }
 
-interface Props {
-    organization: Organization;
-    domains: Domain[];
-    templates: Record<string, any>;
+interface SiteTemplate {
+    id: number;
+    name: string;
+    slug: string;
+    description: string;
+    layout_config: any;
+    theme_config: any;
+    is_premium: boolean;
 }
 
-export default function SiteCreate({
-    organization,
-    domains,
-    templates,
-}: Props) {
-    const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
-    const [logoPreview, setLogoPreview] = useState<string | null>(null);
-    const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+interface Props {
+    organization: Organization;
+    templates: SiteTemplate[];
+}
 
+export default function CreateSite({ organization, templates }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        domain_id: '',
+        slug: '',
         description: '',
-        template: 'default',
-        logo: null as File | null,
-        favicon: null as File | null,
+        template: '',
     });
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Dashboard',
+            href: '/dashboard',
+        },
+        {
+            title: 'Организации',
+            href: '/dashboard/organizations',
+        },
+        {
+            title: organization.name,
+            href: `/organization/${organization.id}/admin`,
+        },
+        {
+            title: 'Сайты',
+            href: `/organization/${organization.id}/admin/sites`,
+        },
+        {
+            title: 'Создать сайт',
+            href: `/organization/${organization.id}/admin/sites/create`,
+        },
+    ];
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('organization.admin.sites.store', organization.id), {
-            forceFormData: true,
-        });
+        post(`/organization/${organization.id}/admin/sites`);
     };
 
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setData('logo', file);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setLogoPreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
+    const generateSlug = (name: string) => {
+        const slug = name
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim();
+        setData('slug', slug);
     };
-
-    const handleFaviconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setData('favicon', file);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setFaviconPreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const selectedTemplateConfig = templates[selectedTemplate] || {};
 
     return (
-        <>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Создать сайт - ${organization.name}`} />
 
             <div className="space-y-6">
+                {/* Header */}
                 <div className="flex items-center space-x-4">
-                    <Button
-                        variant="ghost"
-                        onClick={() => window.history.back()}
-                    >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Назад
-                    </Button>
+                    <Link href={`/organization/${organization.id}/admin/sites`}>
+                        <Button variant="ghost" size="sm">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Назад к сайтам
+                        </Button>
+                    </Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Создать сайт
-                        </h1>
-                        <p className="text-gray-600">
-                            Настройте новый сайт для организации
+                        <h1 className="text-3xl font-bold">Создать сайт</h1>
+                        <p className="text-muted-foreground">
+                            Создайте новый сайт для организации
                         </p>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                        {/* Основная информация */}
-                        <Card className="p-6">
-                            <h2 className="mb-4 text-lg font-semibold">
-                                Основная информация
-                            </h2>
-                            <div className="space-y-4">
-                                <div>
-                                    <Label htmlFor="name">Название сайта</Label>
-                                    <Input
-                                        id="name"
-                                        value={data.name}
-                                        onChange={(e) =>
-                                            setData('name', e.target.value)
-                                        }
-                                        placeholder="Введите название сайта"
-                                        className="mt-1"
-                                    />
-                                    {errors.name && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {errors.name}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="domain_id">Домен</Label>
-                                    <Select
-                                        value={data.domain_id}
-                                        onValueChange={(value) =>
-                                            setData('domain_id', value)
-                                        }
-                                    >
-                                        <option value="">Выберите домен</option>
-                                        {domains.map((domain) => (
-                                            <option
-                                                key={domain.id}
-                                                value={domain.id}
-                                            >
-                                                {domain.custom_domain ||
-                                                    domain.domain}
-                                            </option>
-                                        ))}
-                                    </Select>
-                                    {errors.domain_id && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {errors.domain_id}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="description">
-                                        Описание
-                                    </Label>
-                                    <Textarea
-                                        id="description"
-                                        value={data.description}
-                                        onChange={(e) =>
-                                            setData(
-                                                'description',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="Краткое описание сайта"
-                                        className="mt-1"
-                                        rows={3}
-                                    />
-                                    {errors.description && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {errors.description}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </Card>
-
-                        {/* Шаблон и дизайн */}
-                        <Card className="p-6">
-                            <h2 className="mb-4 text-lg font-semibold">
-                                Шаблон и дизайн
-                            </h2>
-                            <div className="space-y-4">
-                                <div>
-                                    <Label htmlFor="template">
-                                        Шаблон сайта
-                                    </Label>
-                                    <Select
-                                        value={data.template}
-                                        onValueChange={(value) => {
-                                            setData('template', value);
-                                            setSelectedTemplate(value);
-                                        }}
-                                    >
-                                        {Object.entries(templates).map(
-                                            ([key, config]) => (
-                                                <option key={key} value={key}>
-                                                    {config.name}
-                                                </option>
-                                            ),
-                                        )}
-                                    </Select>
-                                    {selectedTemplateConfig.description && (
-                                        <p className="mt-1 text-sm text-gray-500">
-                                            {selectedTemplateConfig.description}
-                                        </p>
-                                    )}
-                                    {errors.template && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {errors.template}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="logo">Логотип</Label>
-                                        <div className="mt-1">
-                                            <Input
-                                                id="logo"
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleLogoChange}
-                                                className="hidden"
-                                            />
-                                            <label
-                                                htmlFor="logo"
-                                                className="flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400"
-                                            >
-                                                {logoPreview ? (
-                                                    <img
-                                                        src={logoPreview}
-                                                        alt="Logo preview"
-                                                        className="h-full w-full rounded-lg object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="text-center">
-                                                        <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                                                        <p className="mt-2 text-sm text-gray-500">
-                                                            Загрузить логотип
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </label>
-                                        </div>
-                                        {errors.logo && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errors.logo}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="favicon">
-                                            Фавиконка
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    {/* Form */}
+                    <div className="lg:col-span-2">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Основная информация</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <form
+                                    onSubmit={handleSubmit}
+                                    className="space-y-6"
+                                >
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name">
+                                            Название сайта *
                                         </Label>
-                                        <div className="mt-1">
-                                            <Input
-                                                id="favicon"
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleFaviconChange}
-                                                className="hidden"
-                                            />
-                                            <label
-                                                htmlFor="favicon"
-                                                className="flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400"
-                                            >
-                                                {faviconPreview ? (
-                                                    <img
-                                                        src={faviconPreview}
-                                                        alt="Favicon preview"
-                                                        className="h-full w-full rounded-lg object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="text-center">
-                                                        <Image className="mx-auto h-8 w-8 text-gray-400" />
-                                                        <p className="mt-2 text-sm text-gray-500">
-                                                            Загрузить фавиконку
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </label>
-                                        </div>
-                                        {errors.favicon && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errors.favicon}
+                                        <Input
+                                            id="name"
+                                            value={data.name}
+                                            onChange={(e) => {
+                                                setData('name', e.target.value);
+                                                if (!data.slug) {
+                                                    generateSlug(
+                                                        e.target.value,
+                                                    );
+                                                }
+                                            }}
+                                            placeholder="Введите название сайта"
+                                            className={
+                                                errors.name
+                                                    ? 'border-red-500'
+                                                    : ''
+                                            }
+                                        />
+                                        {errors.name && (
+                                            <p className="text-sm text-red-500">
+                                                {errors.name}
                                             </p>
                                         )}
                                     </div>
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
 
-                    {/* Предварительный просмотр шаблона */}
-                    {selectedTemplateConfig && (
-                        <Card className="p-6">
-                            <h2 className="mb-4 text-lg font-semibold">
-                                Предварительный просмотр
-                            </h2>
-                            <div className="rounded-lg border bg-gray-50 p-4">
-                                <div className="flex items-center space-x-4">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200">
-                                        <Globe className="h-6 w-6 text-gray-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900">
-                                            {data.name || 'Название сайта'}
-                                        </h3>
-                                        <p className="text-sm text-gray-500">
-                                            {selectedTemplateConfig.name}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="slug">
+                                            URL-адрес (slug) *
+                                        </Label>
+                                        <Input
+                                            id="slug"
+                                            value={data.slug}
+                                            onChange={(e) =>
+                                                setData('slug', e.target.value)
+                                            }
+                                            placeholder="url-adres-saita"
+                                            className={
+                                                errors.slug
+                                                    ? 'border-red-500'
+                                                    : ''
+                                            }
+                                        />
+                                        {errors.slug && (
+                                            <p className="text-sm text-red-500">
+                                                {errors.slug}
+                                            </p>
+                                        )}
+                                        <p className="text-xs text-muted-foreground">
+                                            Только латинские буквы, цифры и
+                                            дефисы
                                         </p>
                                     </div>
-                                </div>
-                                <div className="mt-4 text-sm text-gray-600">
-                                    <p>
-                                        <strong>Цветовая схема:</strong>{' '}
-                                        {selectedTemplateConfig.default_theme
-                                            ?.primary_color || 'Не указано'}
-                                    </p>
-                                    <p>
-                                        <strong>Доступные блоки:</strong>{' '}
-                                        {selectedTemplateConfig.available_blocks?.join(
-                                            ', ',
-                                        ) || 'Не указано'}
-                                    </p>
-                                </div>
-                            </div>
-                        </Card>
-                    )}
 
-                    <div className="flex justify-end space-x-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => window.history.back()}
-                        >
-                            Отмена
-                        </Button>
-                        <Button type="submit" disabled={processing}>
-                            {processing ? 'Создание...' : 'Создать сайт'}
-                        </Button>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="description">
+                                            Описание
+                                        </Label>
+                                        <Textarea
+                                            id="description"
+                                            value={data.description}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'description',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Краткое описание сайта"
+                                            rows={3}
+                                            className={
+                                                errors.description
+                                                    ? 'border-red-500'
+                                                    : ''
+                                            }
+                                        />
+                                        {errors.description && (
+                                            <p className="text-sm text-red-500">
+                                                {errors.description}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="template">
+                                            Шаблон сайта *
+                                        </Label>
+                                        <Select
+                                            value={data.template}
+                                            onValueChange={(value) =>
+                                                setData('template', value)
+                                            }
+                                        >
+                                            <SelectTrigger
+                                                className={
+                                                    errors.template
+                                                        ? 'border-red-500'
+                                                        : ''
+                                                }
+                                            >
+                                                <SelectValue placeholder="Выберите шаблон" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {templates.map((template) => (
+                                                    <SelectItem
+                                                        key={template.id}
+                                                        value={template.slug}
+                                                    >
+                                                        <div className="flex items-center space-x-2">
+                                                            <span>
+                                                                {template.name}
+                                                            </span>
+                                                            {template.is_premium && (
+                                                                <span className="rounded bg-yellow-100 px-1 py-0.5 text-xs text-yellow-800">
+                                                                    Premium
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.template && (
+                                            <p className="text-sm text-red-500">
+                                                {errors.template}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center space-x-4">
+                                        <Button
+                                            type="submit"
+                                            disabled={processing}
+                                        >
+                                            {processing
+                                                ? 'Создание...'
+                                                : 'Создать сайт'}
+                                        </Button>
+                                        <Link
+                                            href={`/organization/${organization.id}/admin/sites`}
+                                        >
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                            >
+                                                Отмена
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
                     </div>
-                </form>
+
+                    {/* Template Preview */}
+                    <div className="space-y-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <Building2 className="mr-2 h-5 w-5" />
+                                    Выбранный шаблон
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {data.template ? (
+                                    (() => {
+                                        const selectedTemplate = templates.find(
+                                            (t) => t.slug === data.template,
+                                        );
+                                        return selectedTemplate ? (
+                                            <div className="space-y-3">
+                                                <div className="bg-muted flex aspect-video items-center justify-center rounded-lg">
+                                                    <div className="text-center">
+                                                        <Building2 className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Превью шаблона
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-medium">
+                                                        {selectedTemplate.name}
+                                                    </h3>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {
+                                                            selectedTemplate.description
+                                                        }
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : null;
+                                    })()
+                                ) : (
+                                    <div className="py-8 text-center">
+                                        <Building2 className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
+                                        <p className="text-sm text-muted-foreground">
+                                            Выберите шаблон для предварительного
+                                            просмотра
+                                        </p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Help */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm">
+                                    Помощь
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm text-muted-foreground">
+                                <p>После создания сайта вы сможете:</p>
+                                <ul className="ml-2 list-inside list-disc space-y-1">
+                                    <li>Настроить дизайн и цвета</li>
+                                    <li>Добавить виджеты и контент</li>
+                                    <li>Создать страницы</li>
+                                    <li>Настроить SEO</li>
+                                    <li>Опубликовать сайт</li>
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
             </div>
-        </>
+        </AppLayout>
     );
 }

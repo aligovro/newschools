@@ -2,15 +2,15 @@ import {
     Avatar,
     AvatarFallback,
     AvatarImage,
-} from '@/components/common/ui/avatar';
-import { Button } from '@/components/common/ui/button';
+} from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/common/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { Link } from '@inertiajs/react';
 import {
     Bell,

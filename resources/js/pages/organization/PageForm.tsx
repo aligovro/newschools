@@ -210,7 +210,7 @@ const PageForm: React.FC<PageFormProps> = ({
                                     className={`border-b-2 px-1 py-2 text-sm font-medium ${
                                         activeTab === 'content'
                                             ? 'border-primary text-primary'
-                                            : 'text-muted-foreground hover:text-foreground border-transparent hover:border-gray-300'
+                                            : 'border-transparent text-muted-foreground hover:border-gray-300 hover:text-foreground'
                                     }`}
                                 >
                                     <FileText className="mr-2 inline h-4 w-4" />
@@ -221,7 +221,7 @@ const PageForm: React.FC<PageFormProps> = ({
                                     className={`border-b-2 px-1 py-2 text-sm font-medium ${
                                         activeTab === 'seo'
                                             ? 'border-primary text-primary'
-                                            : 'text-muted-foreground hover:text-foreground border-transparent hover:border-gray-300'
+                                            : 'border-transparent text-muted-foreground hover:border-gray-300 hover:text-foreground'
                                     }`}
                                 >
                                     <Settings className="mr-2 inline h-4 w-4" />
@@ -232,7 +232,7 @@ const PageForm: React.FC<PageFormProps> = ({
                                     className={`border-b-2 px-1 py-2 text-sm font-medium ${
                                         activeTab === 'settings'
                                             ? 'border-primary text-primary'
-                                            : 'text-muted-foreground hover:text-foreground border-transparent hover:border-gray-300'
+                                            : 'border-transparent text-muted-foreground hover:border-gray-300 hover:text-foreground'
                                     }`}
                                 >
                                     <Settings className="mr-2 inline h-4 w-4" />
@@ -622,16 +622,16 @@ const PageForm: React.FC<PageFormProps> = ({
                                                 <Select
                                                     value={
                                                         data.parent_id?.toString() ||
-                                                        ''
+                                                        'none'
                                                     }
                                                     onValueChange={(value) =>
                                                         setData(
                                                             'parent_id',
-                                                            value
-                                                                ? parseInt(
+                                                            value === 'none'
+                                                                ? null
+                                                                : parseInt(
                                                                       value,
-                                                                  )
-                                                                : null,
+                                                                  ),
                                                         )
                                                     }
                                                 >
@@ -645,7 +645,7 @@ const PageForm: React.FC<PageFormProps> = ({
                                                         <SelectValue placeholder="Выберите родительскую страницу" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="">
+                                                        <SelectItem value="none">
                                                             Без родительской
                                                             страницы
                                                         </SelectItem>
@@ -790,7 +790,7 @@ const PageForm: React.FC<PageFormProps> = ({
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div>
-                                    <h4 className="text-muted-foreground mb-2 text-sm font-medium">
+                                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">
                                         Создано
                                     </h4>
                                     <p className="text-sm">
@@ -802,7 +802,7 @@ const PageForm: React.FC<PageFormProps> = ({
                                     </p>
                                 </div>
                                 <div>
-                                    <h4 className="text-muted-foreground mb-2 text-sm font-medium">
+                                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">
                                         Обновлено
                                     </h4>
                                     <p className="text-sm">
@@ -815,7 +815,7 @@ const PageForm: React.FC<PageFormProps> = ({
                                 </div>
                                 {isEdit && (
                                     <div>
-                                        <h4 className="text-muted-foreground mb-2 text-sm font-medium">
+                                        <h4 className="mb-2 text-sm font-medium text-muted-foreground">
                                             URL
                                         </h4>
                                         <Link
@@ -834,9 +834,9 @@ const PageForm: React.FC<PageFormProps> = ({
                             <CardHeader>
                                 <CardTitle>Советы</CardTitle>
                             </CardHeader>
-                            <CardContent className="text-muted-foreground space-y-3 text-sm">
+                            <CardContent className="space-y-3 text-sm text-muted-foreground">
                                 <div>
-                                    <h4 className="text-foreground font-medium">
+                                    <h4 className="font-medium text-foreground">
                                         SEO заголовок
                                     </h4>
                                     <p>
@@ -845,13 +845,13 @@ const PageForm: React.FC<PageFormProps> = ({
                                     </p>
                                 </div>
                                 <div>
-                                    <h4 className="text-foreground font-medium">
+                                    <h4 className="font-medium text-foreground">
                                         SEO описание
                                     </h4>
                                     <p>Оптимальная длина 150-160 символов.</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-foreground font-medium">
+                                    <h4 className="font-medium text-foreground">
                                         URL (slug)
                                     </h4>
                                     <p>
