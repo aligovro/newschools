@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    * {
+        @apply border-gray-200;
+    }
+
+    body {
+        @apply bg-white text-gray-900;
+    }
+
+    /* Sidebar CSS variables */
+    :root {
+        --sidebar-width: 15rem;
+        --sidebar-width-icon: 3rem;
+    }
+}
+
+/* Import custom colors after Tailwind */
+@import '_colors';
+
+/* Custom styles */
+@import 'custom';
+
+/* Sidebar styles */
+@import 'components/sidebar.scss';
+
+/* Sites components */
+@import 'components/sites/image-uploader.scss';
+@import 'components/sites/seo-settings.scss';
+@import 'components/sites/theme-customizer.scss';
+
+/* Menu components */
+@import 'components/menu.scss';
+
+/* Sites pages */
+@import 'pages/sites/create-site.scss';
+
+/* Home page components */
+@import 'components/home.css';

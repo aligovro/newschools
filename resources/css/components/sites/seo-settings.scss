@@ -1,0 +1,163 @@
+.seo-settings {
+    &__form {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    &__header {
+        text-align: center;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid get-color(border-primary);
+    }
+
+    &__title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: get-color(text-primary);
+        margin: 0 0 0.5rem 0;
+    }
+
+    &__subtitle {
+        font-size: 1rem;
+        color: get-color(text-secondary);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    &__section {
+        background-color: get-color(background-secondary);
+        border: 1px solid get-color(border-primary);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    &__section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: get-color(text-primary);
+        margin: 0 0 1.5rem 0;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid get-color(border-secondary);
+    }
+
+    &__field {
+        margin-bottom: 1.5rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    &__label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: get-color(text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    &__char-count {
+        font-size: 0.75rem;
+        color: get-color(text-secondary);
+        font-weight: 400;
+    }
+
+    &__input,
+    &__textarea,
+    &__select {
+        @include input-base;
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+    }
+
+    &__textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+        line-height: 1.5;
+    }
+
+    &__select {
+        cursor: pointer;
+    }
+
+    &__error {
+        font-size: 0.75rem;
+        color: get-color(error-500);
+        margin: 0.25rem 0 0 0;
+        font-weight: 500;
+    }
+
+    &__hint {
+        font-size: 0.75rem;
+        color: get-color(text-secondary);
+        margin: 0.25rem 0 0 0;
+        line-height: 1.4;
+    }
+
+    &__actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        padding-top: 1.5rem;
+        border-top: 1px solid get-color(border-primary);
+    }
+
+    &__button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        border: 1px solid transparent;
+        min-width: 120px;
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        &--primary {
+            @include button-primary;
+        }
+
+        &--secondary {
+            @include button-secondary;
+        }
+    }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+    .seo-settings {
+        &__title {
+            font-size: 1.5rem;
+        }
+
+        &__section {
+            padding: 1rem;
+        }
+
+        &__actions {
+            flex-direction: column;
+
+            .seo-settings__button {
+                width: 100%;
+            }
+        }
+    }
+}
+
+// Темная тема автоматически обрабатывается через CSS переменные в _colors.scss

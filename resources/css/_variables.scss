@@ -1,0 +1,55 @@
+// Общие SCSS переменные и миксины
+// Этот файл содержит все переменные и миксины для использования в компонентах
+
+// Цвета - используем обычные hex значения для SCSS
+$primary-color: #3b82f6;
+$secondary-color: #10b981;
+$accent-color: #22c55e;
+$warning-color: #f59e0b;
+$error-color: #ef4444;
+
+// Размеры
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+
+$border-radius: 0.5rem;
+$border-radius-lg: 0.75rem;
+
+// Переходы
+$transition-fast: 0.15s ease-in-out;
+$transition-normal: 0.3s ease-in-out;
+$transition-slow: 0.5s ease-in-out;
+
+// Миксины
+@mixin button-reset {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    cursor: pointer;
+    outline: none;
+}
+
+@mixin center-flex {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin hover-lift {
+    transition: transform $transition-normal;
+
+    &:hover {
+        transform: translateY(-2px);
+    }
+}
+
+@mixin text-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

@@ -1,0 +1,505 @@
+// ========================================
+// ЕДИНАЯ ЦВЕТОВАЯ СИСТЕМА
+// ========================================
+
+// Импортируем основные цвета из _variables.scss
+@import '_variables';
+
+// Функция для генерации цветовых тонов
+@function generate-color-tones($base-color) {
+    // Генерируем тона от 50 до 950 на основе базового цвета
+    $tones: (
+        50: lighten($base-color, 45%),
+        100: lighten($base-color, 40%),
+        200: lighten($base-color, 30%),
+        300: lighten($base-color, 20%),
+        400: lighten($base-color, 10%),
+        500: $base-color,
+        600: darken($base-color, 10%),
+        700: darken($base-color, 20%),
+        800: darken($base-color, 30%),
+        900: darken($base-color, 40%),
+        950: darken($base-color, 45%),
+    );
+    @return $tones;
+}
+
+// Генерируем цветовые палитры из основных цветов
+$primary-tones: generate-color-tones($primary-color);
+$secondary-tones: generate-color-tones($secondary-color);
+$accent-tones: generate-color-tones($accent-color);
+$warning-tones: generate-color-tones($warning-color);
+$error-tones: generate-color-tones($error-color);
+
+// Основные цвета
+:root {
+    // Primary colors (основные цвета) - генерируются из $primary-color
+    --color-primary-50: #{map-get($primary-tones, 50)};
+    --color-primary-100: #{map-get($primary-tones, 100)};
+    --color-primary-200: #{map-get($primary-tones, 200)};
+    --color-primary-300: #{map-get($primary-tones, 300)};
+    --color-primary-400: #{map-get($primary-tones, 400)};
+    --color-primary-500: #{map-get($primary-tones, 500)};
+    --color-primary-600: #{map-get($primary-tones, 600)};
+    --color-primary-700: #{map-get($primary-tones, 700)};
+    --color-primary-800: #{map-get($primary-tones, 800)};
+    --color-primary-900: #{map-get($primary-tones, 900)};
+    --color-primary-950: #{map-get($primary-tones, 950)};
+
+    // Secondary colors (дополнительные цвета) - генерируются из $secondary-color
+    --color-secondary-50: #{map-get($secondary-tones, 50)};
+    --color-secondary-100: #{map-get($secondary-tones, 100)};
+    --color-secondary-200: #{map-get($secondary-tones, 200)};
+    --color-secondary-300: #{map-get($secondary-tones, 300)};
+    --color-secondary-400: #{map-get($secondary-tones, 400)};
+    --color-secondary-500: #{map-get($secondary-tones, 500)};
+    --color-secondary-600: #{map-get($secondary-tones, 600)};
+    --color-secondary-700: #{map-get($secondary-tones, 700)};
+    --color-secondary-800: #{map-get($secondary-tones, 800)};
+    --color-secondary-900: #{map-get($secondary-tones, 900)};
+    --color-secondary-950: #{map-get($secondary-tones, 950)};
+
+    // Success colors - генерируются из $accent-color
+    --color-success-50: #{map-get($accent-tones, 50)};
+    --color-success-100: #{map-get($accent-tones, 100)};
+    --color-success-200: #{map-get($accent-tones, 200)};
+    --color-success-300: #{map-get($accent-tones, 300)};
+    --color-success-400: #{map-get($accent-tones, 400)};
+    --color-success-500: #{map-get($accent-tones, 500)};
+    --color-success-600: #{map-get($accent-tones, 600)};
+    --color-success-700: #{map-get($accent-tones, 700)};
+    --color-success-800: #{map-get($accent-tones, 800)};
+    --color-success-900: #{map-get($accent-tones, 900)};
+    --color-success-950: #{map-get($accent-tones, 950)};
+
+    // Warning colors - генерируются из $warning-color
+    --color-warning-50: #{map-get($warning-tones, 50)};
+    --color-warning-100: #{map-get($warning-tones, 100)};
+    --color-warning-200: #{map-get($warning-tones, 200)};
+    --color-warning-300: #{map-get($warning-tones, 300)};
+    --color-warning-400: #{map-get($warning-tones, 400)};
+    --color-warning-500: #{map-get($warning-tones, 500)};
+    --color-warning-600: #{map-get($warning-tones, 600)};
+    --color-warning-700: #{map-get($warning-tones, 700)};
+    --color-warning-800: #{map-get($warning-tones, 800)};
+    --color-warning-900: #{map-get($warning-tones, 900)};
+    --color-warning-950: #{map-get($warning-tones, 950)};
+
+    // Error/Danger colors - генерируются из $error-color
+    --color-error-50: #{map-get($error-tones, 50)};
+    --color-error-100: #{map-get($error-tones, 100)};
+    --color-error-200: #{map-get($error-tones, 200)};
+    --color-error-300: #{map-get($error-tones, 300)};
+    --color-error-400: #{map-get($error-tones, 400)};
+    --color-error-500: #{map-get($error-tones, 500)};
+    --color-error-600: #{map-get($error-tones, 600)};
+    --color-error-700: #{map-get($error-tones, 700)};
+    --color-error-800: #{map-get($error-tones, 800)};
+    --color-error-900: #{map-get($error-tones, 900)};
+    --color-error-950: #{map-get($error-tones, 950)};
+
+    // Neutral colors (серые тона)
+    --color-neutral-50: #f9fafb;
+    --color-neutral-100: #f3f4f6;
+    --color-neutral-200: #e5e7eb;
+    --color-neutral-300: #d1d5db;
+    --color-neutral-400: #9ca3af;
+    --color-neutral-500: #6b7280;
+    --color-neutral-600: #4b5563;
+    --color-neutral-700: #374151;
+    --color-neutral-800: #1f2937;
+    --color-neutral-900: #111827;
+    --color-neutral-950: #030712;
+
+    // Семантические цвета (для удобства использования)
+    --color-background: #ffffff;
+    --color-background-secondary: #f9fafb;
+    --color-background-tertiary: #f3f4f6;
+    --color-surface: #ffffff;
+    --color-surface-secondary: #f9fafb;
+
+    --color-text-primary: #111827;
+    --color-text-secondary: #6b7280;
+    --color-text-tertiary: #9ca3af;
+    --color-text-inverse: #ffffff;
+
+    --color-border-primary: #e5e7eb;
+    --color-border-secondary: #d1d5db;
+    --color-border-focus: #3b82f6;
+
+    --color-shadow: rgba(0, 0, 0, 0.1);
+    --color-shadow-lg: rgba(0, 0, 0, 0.25);
+
+    // Цвета для состояний
+    --color-info: var(--color-primary-500);
+    --color-success: var(--color-success-500);
+    --color-warning: var(--color-warning-500);
+    --color-danger: var(--color-error-500);
+
+    // Цвета для кнопок
+    --color-button-primary: var(--color-primary-500);
+    --color-button-primary-hover: var(--color-primary-600);
+    --color-button-secondary: var(--color-neutral-100);
+    --color-button-secondary-hover: var(--color-neutral-200);
+    --color-button-danger: var(--color-error-500);
+    --color-button-danger-hover: var(--color-error-600);
+
+    // Цвета для форм
+    --color-input-background: #ffffff;
+    --color-input-border: var(--color-border-primary);
+    --color-input-border-focus: var(--color-border-focus);
+    --color-input-border-error: var(--color-error-500);
+    --color-input-text: var(--color-text-primary);
+    --color-input-placeholder: var(--color-text-tertiary);
+
+    // Цвета для уведомлений
+    --color-notification-success-bg: var(--color-success-50);
+    --color-notification-success-border: var(--color-success-200);
+    --color-notification-success-text: var(--color-success-800);
+
+    --color-notification-error-bg: var(--color-error-50);
+    --color-notification-error-border: var(--color-error-200);
+    --color-notification-error-text: var(--color-error-800);
+
+    --color-notification-warning-bg: var(--color-warning-50);
+    --color-notification-warning-border: var(--color-warning-200);
+    --color-notification-warning-text: var(--color-warning-800);
+
+    --color-notification-info-bg: var(--color-primary-50);
+    --color-notification-info-border: var(--color-primary-200);
+    --color-notification-info-text: var(--color-primary-800);
+}
+
+// Темная тема (поддержка и медиа-запросов, и классов)
+@media (prefers-color-scheme: dark) {
+    :root {
+        // Семантические цвета для темной темы
+        --color-background: #0f172a;
+        --color-background-secondary: #1e293b;
+        --color-background-tertiary: #334155;
+        --color-surface: #1e293b;
+        --color-surface-secondary: #334155;
+
+        --color-text-primary: #f8fafc;
+        --color-text-secondary: #cbd5e1;
+        --color-text-tertiary: #94a3b8;
+        --color-text-inverse: #0f172a;
+
+        --color-border-primary: #334155;
+        --color-border-secondary: #475569;
+        --color-border-focus: #60a5fa;
+
+        --color-shadow: rgba(0, 0, 0, 0.3);
+        --color-shadow-lg: rgba(0, 0, 0, 0.5);
+
+        // Button colors для темной темы
+        --color-button-primary: #3b82f6;
+        --color-button-primary-hover: #2563eb;
+        --color-button-secondary: #64748b;
+        --color-button-secondary-hover: #475569;
+        --color-button-success: #10b981;
+        --color-button-success-hover: #059669;
+        --color-button-warning: #f59e0b;
+        --color-button-warning-hover: #d97706;
+        --color-button-danger: #ef4444;
+        --color-button-danger-hover: #dc2626;
+
+        // Input colors для темной темы
+        --color-input-background: #1e293b;
+        --color-input-border: #334155;
+        --color-input-border-focus: #60a5fa;
+        --color-input-text: #f8fafc;
+        --color-input-placeholder: #94a3b8;
+        --color-input-border-error: #ef4444;
+
+        // Notification colors для темной темы
+        --color-notification-success-bg: rgba(16, 185, 129, 0.1);
+        --color-notification-success-border: #10b981;
+        --color-notification-success-text: #6ee7b7;
+
+        --color-notification-error-bg: rgba(239, 68, 68, 0.1);
+        --color-notification-error-border: #ef4444;
+        --color-notification-error-text: #fca5a5;
+
+        --color-notification-warning-bg: rgba(245, 158, 11, 0.1);
+        --color-notification-warning-border: #f59e0b;
+        --color-notification-warning-text: #fcd34d;
+
+        --color-notification-info-bg: rgba(59, 130, 246, 0.1);
+        --color-notification-info-border: #3b82f6;
+        --color-notification-info-text: #93c5fd;
+    }
+}
+
+// Поддержка класса .dark для принудительной темной темы
+.dark {
+    // Семантические цвета для темной темы
+    --color-background: #0f172a;
+    --color-background-secondary: #1e293b;
+    --color-background-tertiary: #334155;
+    --color-surface: #1e293b;
+    --color-surface-secondary: #334155;
+
+    --color-text-primary: #f8fafc;
+    --color-text-secondary: #cbd5e1;
+    --color-text-tertiary: #94a3b8;
+    --color-text-inverse: #0f172a;
+
+    --color-border-primary: #334155;
+    --color-border-secondary: #475569;
+    --color-border-focus: #60a5fa;
+
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --color-shadow-lg: rgba(0, 0, 0, 0.5);
+
+    // Цвета для кнопок в темной теме
+    --color-button-primary: var(--color-primary-600);
+    --color-button-primary-hover: var(--color-primary-500);
+    --color-button-secondary: var(--color-neutral-800);
+    --color-button-secondary-hover: var(--color-neutral-700);
+    --color-button-danger: var(--color-error-600);
+    --color-button-danger-hover: var(--color-error-500);
+
+    // Цвета для форм в темной теме
+    --color-input-background: var(--color-neutral-800);
+    --color-input-border: var(--color-border-primary);
+    --color-input-border-focus: var(--color-border-focus);
+    --color-input-border-error: var(--color-error-400);
+    --color-input-text: var(--color-text-primary);
+    --color-input-placeholder: var(--color-text-tertiary);
+
+    // Цвета для уведомлений в темной теме
+    --color-notification-success-bg: rgba(34, 197, 94, 0.1);
+    --color-notification-success-border: var(--color-success-600);
+    --color-notification-success-text: var(--color-success-300);
+
+    --color-notification-error-bg: rgba(239, 68, 68, 0.1);
+    --color-notification-error-border: var(--color-error-600);
+    --color-notification-error-text: var(--color-error-300);
+
+    --color-notification-warning-bg: rgba(245, 158, 11, 0.1);
+    --color-notification-warning-border: var(--color-warning-600);
+    --color-notification-warning-text: var(--color-warning-300);
+
+    --color-notification-info-bg: rgba(59, 130, 246, 0.1);
+    --color-notification-info-border: var(--color-primary-600);
+    --color-notification-info-text: var(--color-primary-300);
+}
+
+// SCSS переменные для удобства использования в SCSS файлах
+$colors: (
+    // Primary
+    primary-50: var(--color-primary-50),
+    primary-100: var(--color-primary-100),
+    primary-200: var(--color-primary-200),
+    primary-300: var(--color-primary-300),
+    primary-400: var(--color-primary-400),
+    primary-500: var(--color-primary-500),
+    primary-600: var(--color-primary-600),
+    primary-700: var(--color-primary-700),
+    primary-800: var(--color-primary-800),
+    primary-900: var(--color-primary-900),
+    primary-950: var(--color-primary-950),
+    // Secondary
+    secondary-50: var(--color-secondary-50),
+    secondary-100: var(--color-secondary-100),
+    secondary-200: var(--color-secondary-200),
+    secondary-300: var(--color-secondary-300),
+    secondary-400: var(--color-secondary-400),
+    secondary-500: var(--color-secondary-500),
+    secondary-600: var(--color-secondary-600),
+    secondary-700: var(--color-secondary-700),
+    secondary-800: var(--color-secondary-800),
+    secondary-900: var(--color-secondary-900),
+    secondary-950: var(--color-secondary-950),
+    // Success
+    success-50: var(--color-success-50),
+    success-100: var(--color-success-100),
+    success-200: var(--color-success-200),
+    success-300: var(--color-success-300),
+    success-400: var(--color-success-400),
+    success-500: var(--color-success-500),
+    success-600: var(--color-success-600),
+    success-700: var(--color-success-700),
+    success-800: var(--color-success-800),
+    success-900: var(--color-success-900),
+    success-950: var(--color-success-950),
+    // Warning
+    warning-50: var(--color-warning-50),
+    warning-100: var(--color-warning-100),
+    warning-200: var(--color-warning-200),
+    warning-300: var(--color-warning-300),
+    warning-400: var(--color-warning-400),
+    warning-500: var(--color-warning-500),
+    warning-600: var(--color-warning-600),
+    warning-700: var(--color-warning-700),
+    warning-800: var(--color-warning-800),
+    warning-900: var(--color-warning-900),
+    warning-950: var(--color-warning-950),
+    // Error
+    error-50: var(--color-error-50),
+    error-100: var(--color-error-100),
+    error-200: var(--color-error-200),
+    error-300: var(--color-error-300),
+    error-400: var(--color-error-400),
+    error-500: var(--color-error-500),
+    error-600: var(--color-error-600),
+    error-700: var(--color-error-700),
+    error-800: var(--color-error-800),
+    error-900: var(--color-error-900),
+    error-950: var(--color-error-950),
+    // Neutral
+    neutral-50: var(--color-neutral-50),
+    neutral-100: var(--color-neutral-100),
+    neutral-200: var(--color-neutral-200),
+    neutral-300: var(--color-neutral-300),
+    neutral-400: var(--color-neutral-400),
+    neutral-500: var(--color-neutral-500),
+    neutral-600: var(--color-neutral-600),
+    neutral-700: var(--color-neutral-700),
+    neutral-800: var(--color-neutral-800),
+    neutral-900: var(--color-neutral-900),
+    neutral-950: var(--color-neutral-950),
+    // Semantic colors
+    background: var(--color-background),
+    background-secondary: var(--color-background-secondary),
+    background-tertiary: var(--color-background-tertiary),
+    surface: var(--color-surface),
+    surface-secondary: var(--color-surface-secondary),
+    text-primary: var(--color-text-primary),
+    text-secondary: var(--color-text-secondary),
+    text-tertiary: var(--color-text-tertiary),
+    text-inverse: var(--color-text-inverse),
+    border-primary: var(--color-border-primary),
+    border-secondary: var(--color-border-secondary),
+    border-focus: var(--color-border-focus),
+    shadow: var(--color-shadow),
+    shadow-lg: var(--color-shadow-lg),
+    info: var(--color-info),
+    success: var(--color-success),
+    warning: var(--color-warning),
+    danger: var(--color-danger),
+    button-primary: var(--color-button-primary),
+    button-primary-hover: var(--color-button-primary-hover),
+    button-secondary: var(--color-button-secondary),
+    button-secondary-hover: var(--color-button-secondary-hover),
+    button-danger: var(--color-button-danger),
+    button-danger-hover: var(--color-button-danger-hover),
+    input-background: var(--color-input-background),
+    input-border: var(--color-input-border),
+    input-border-focus: var(--color-input-border-focus),
+    input-border-error: var(--color-input-border-error),
+    input-text: var(--color-input-text),
+    input-placeholder: var(--color-input-placeholder)
+);
+
+// Функция для получения цвета (переименована, чтобы избежать конфликтов с Tailwind)
+@function get-color($name) {
+    @return map-get($colors, $name);
+}
+
+// Миксины для быстрого использования
+@mixin button-primary {
+    background-color: get-color(button-primary);
+    color: get-color(text-inverse);
+    border: 1px solid get-color(button-primary);
+
+    &:hover:not(:disabled) {
+        background-color: get-color(button-primary-hover);
+        border-color: get-color(button-primary-hover);
+    }
+
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+@mixin button-secondary {
+    background-color: get-color(button-secondary);
+    color: get-color(text-primary);
+    border: 1px solid get-color(border-secondary);
+
+    &:hover:not(:disabled) {
+        background-color: get-color(button-secondary-hover);
+        border-color: get-color(neutral-400);
+    }
+
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px get-color(shadow);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+@mixin button-danger {
+    background-color: get-color(button-danger);
+    color: get-color(text-inverse);
+    border: 1px solid get-color(button-danger);
+
+    &:hover:not(:disabled) {
+        background-color: get-color(button-danger-hover);
+        border-color: get-color(button-danger-hover);
+    }
+
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+@mixin input-base {
+    background-color: get-color(input-background);
+    border: 1px solid get-color(input-border);
+    color: get-color(input-text);
+    transition: all 0.2s ease-in-out;
+
+    &:focus {
+        outline: none;
+        border-color: get-color(input-border-focus);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    &::placeholder {
+        color: get-color(input-placeholder);
+    }
+
+    &--error {
+        border-color: get-color(input-border-error);
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+}
+
+@mixin notification-base($type: info) {
+    @if $type == success {
+        background-color: get-color(notification-success-bg);
+        border-color: get-color(notification-success-border);
+        color: get-color(notification-success-text);
+    } @else if $type == error {
+        background-color: get-color(notification-error-bg);
+        border-color: get-color(notification-error-border);
+        color: get-color(notification-error-text);
+    } @else if $type == warning {
+        background-color: get-color(notification-warning-bg);
+        border-color: get-color(notification-warning-border);
+        color: get-color(notification-warning-text);
+    } @else {
+        background-color: get-color(notification-info-bg);
+        border-color: get-color(notification-info-border);
+        color: get-color(notification-info-text);
+    }
+}

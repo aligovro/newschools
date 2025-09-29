@@ -1,0 +1,81 @@
+// SCSS модуль для React компонента Button
+
+.button {
+    @include button-reset;
+    background: linear-gradient(45deg, $primary-color, $secondary-color);
+    color: white;
+    padding: $spacing-sm $spacing-lg;
+    border-radius: $border-radius;
+    font-weight: 500;
+    transition: all $transition-normal;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-sm;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    &--secondary {
+        background: linear-gradient(45deg, $accent-color, $primary-color);
+    }
+
+    &--warning {
+        background: linear-gradient(45deg, $warning-color, #f97316);
+    }
+
+    &--error {
+        background: linear-gradient(45deg, $error-color, #dc2626);
+    }
+
+    &--outline {
+        background: transparent;
+        border: 2px solid $primary-color;
+        color: $primary-color;
+
+        &:hover {
+            background: $primary-color;
+            color: white;
+        }
+    }
+
+    &--ghost {
+        background: transparent;
+        color: $primary-color;
+
+        &:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+    }
+
+    &--sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    &--lg {
+        padding: 1rem 2rem;
+        font-size: 1.125rem;
+    }
+
+    &--full {
+        width: 100%;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+
+        &:hover {
+            transform: none;
+            box-shadow: none;
+        }
+    }
+}
