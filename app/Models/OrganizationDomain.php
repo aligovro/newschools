@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class OrganizationDomain extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'organization_id',
+        'domain',
+        'custom_domain',
+        'subdomain',
+        'is_primary',
+        'is_ssl_enabled',
+        'status',
+        'verified_at',
+        'expires_at',
+        'ssl_config',
+        'dns_records',
+    ];
+
+    protected $casts = [
+        'is_primary' => 'boolean',
+        'is_ssl_enabled' => 'boolean',
+        'ssl_config' => 'array',
+        'dns_records' => 'array',
+        'verified_at' => 'datetime',
+        'expires_at' => 'datetime',
+    ];
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function scopePrimary($query)
+    {
+        return $query->where('is_primary', true);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+}

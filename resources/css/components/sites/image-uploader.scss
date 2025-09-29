@@ -1,0 +1,242 @@
+.image-uploader {
+    &__dropzone {
+        border: 2px dashed get-color(border-secondary);
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        background-color: get-color(background-secondary);
+
+        &:hover {
+            border-color: get-color(primary-500);
+            background-color: get-color(primary-50);
+        }
+
+        &--active {
+            border-color: get-color(primary-500);
+            background-color: get-color(primary-50);
+            transform: scale(1.02);
+        }
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    &__placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    &__icon {
+        color: get-color(text-tertiary);
+        transition: color 0.2s ease-in-out;
+
+        .image-uploader__dropzone:hover & {
+            color: get-color(primary-500);
+        }
+    }
+
+    &__text {
+        font-size: 1rem;
+        color: get-color(text-primary);
+        margin: 0;
+
+        &--link {
+            color: get-color(primary-500);
+            font-weight: 500;
+        }
+    }
+
+    &__hint {
+        font-size: 0.875rem;
+        color: get-color(text-secondary);
+        margin: 0;
+    }
+
+    // Modal styles
+    &__modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: get-color(shadow-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 1rem;
+    }
+
+    &__modal-content {
+        background-color: get-color(surface);
+        border-radius: 12px;
+        box-shadow: 0 25px 50px -12px get-color(shadow-lg);
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.5rem;
+        border-bottom: 1px solid get-color(border-primary);
+    }
+
+    &__modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: get-color(text-primary);
+        margin: 0;
+    }
+
+    &__modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: get-color(text-secondary);
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+        transition: all 0.2s ease-in-out;
+
+        &:hover {
+            color: get-color(text-primary);
+            background-color: get-color(background-secondary);
+        }
+    }
+
+    &__crop-container {
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+        background-color: get-color(background-secondary);
+    }
+
+    &__crop-image {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px get-color(shadow);
+    }
+
+    &__controls {
+        padding: 1.5rem;
+        border-top: 1px solid get-color(border-primary);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    &__control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    &__control-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: get-color(text-primary);
+    }
+
+    &__control-slider {
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: get-color(border-secondary);
+        outline: none;
+        -webkit-appearance: none;
+
+        &::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: get-color(primary-500);
+            cursor: pointer;
+            box-shadow: 0 2px 4px get-color(shadow);
+        }
+
+        &::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: get-color(primary-500);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px get-color(shadow);
+        }
+    }
+
+    &__modal-actions {
+        padding: 1.5rem;
+        border-top: 1px solid get-color(border-primary);
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    &__button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        border: 1px solid transparent;
+
+        &--primary {
+            @include button-primary;
+        }
+
+        &--secondary {
+            @include button-secondary;
+        }
+    }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+    .image-uploader {
+        &__modal-content {
+            max-width: 95vw;
+            max-height: 95vh;
+        }
+
+        &__crop-container {
+            padding: 0.5rem;
+        }
+
+        &__crop-image {
+            max-height: 300px;
+        }
+
+        &__controls {
+            padding: 1rem;
+        }
+
+        &__modal-actions {
+            padding: 1rem;
+            flex-direction: column;
+
+            .image-uploader__button {
+                width: 100%;
+            }
+        }
+    }
+}
+
+// Темная тема автоматически обрабатывается через CSS переменные в _colors.scss

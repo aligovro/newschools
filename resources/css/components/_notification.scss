@@ -1,0 +1,70 @@
+// Компонент: Уведомления
+
+.notification {
+    position: fixed;
+    top: $spacing-lg;
+    right: $spacing-lg;
+    background: var(--color-background-primary);
+    border-radius: $border-radius;
+    padding: $spacing-md;
+    box-shadow: 0 10px 25px var(--color-shadow);
+    border-left: 4px solid $primary-color;
+    min-width: 300px;
+    z-index: 1001;
+    transform: translateX(100%);
+    transition: transform $transition-normal;
+
+    &--show {
+        transform: translateX(0);
+    }
+
+    &--success {
+        border-left-color: $accent-color;
+    }
+
+    &--warning {
+        border-left-color: $warning-color;
+    }
+
+    &--error {
+        border-left-color: $error-color;
+    }
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: $spacing-sm;
+    }
+
+    &__title {
+        font-weight: 600;
+        color: var(--color-text-primary);
+        font-size: 0.875rem;
+    }
+
+    &__close {
+        @include button-reset;
+        color: var(--color-text-secondary);
+        font-size: 1.25rem;
+        line-height: 1;
+        padding: 2px;
+
+        &:hover {
+            color: var(--color-text-primary);
+        }
+    }
+
+    &__message {
+        color: var(--color-text-secondary);
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+
+    &__actions {
+        margin-top: $spacing-sm;
+        display: flex;
+        gap: $spacing-sm;
+        justify-content: flex-end;
+    }
+}

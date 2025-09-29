@@ -1,0 +1,410 @@
+.create-site {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+
+    &__header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid get-color(border-primary);
+    }
+
+    &__title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: get-color(text-primary);
+        margin: 0 0 1rem 0;
+    }
+
+    &__subtitle {
+        font-size: 1.125rem;
+        color: get-color(text-secondary);
+        margin: 0;
+    }
+
+    &__progress {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+        padding: 1.5rem;
+        background-color: get-color(background-secondary);
+        border-radius: 12px;
+        border: 1px solid get-color(border-primary);
+    }
+
+    &__progress-step {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        position: relative;
+
+        &:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3rem;
+            height: 2px;
+            background-color: get-color(border-secondary);
+            z-index: 1;
+        }
+
+        &:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            right: -1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 2px;
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
+            z-index: 2;
+        }
+
+        &.completed:not(:last-child)::before {
+            width: 3rem;
+        }
+    }
+
+    &__progress-number {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background-color: #e5e7eb;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+
+        &--active {
+            background-color: get-color(primary-500);
+            color: get-color(text-white);
+        }
+
+        &--completed {
+            background-color: get-color(success-500);
+            color: get-color(text-white);
+        }
+    }
+
+    &__progress-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__progress-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: get-color(text-primary);
+        margin: 0 0 0.25rem 0;
+    }
+
+    &__progress-description {
+        font-size: 0.75rem;
+        color: get-color(text-secondary);
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    &__form {
+        background-color: get-color(background-primary);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px get-color(shadow);
+        overflow: hidden;
+    }
+
+    &__step-content {
+        padding: 2rem;
+    }
+
+    &__step-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid get-color(border-primary);
+    }
+
+    &__step-title {
+        font-size: 1.875rem;
+        font-weight: 600;
+        color: get-color(text-primary);
+        margin: 0 0 0.5rem 0;
+    }
+
+    &__step-description {
+        font-size: 1rem;
+        color: get-color(text-secondary);
+        margin: 0;
+    }
+
+    &__form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    &__field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        &--full {
+            grid-column: 1 / -1;
+        }
+    }
+
+    &__label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: get-color(text-primary);
+    }
+
+    &__input,
+    &__textarea {
+        @include input-base;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+    }
+
+    &__textarea {
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
+        line-height: 1.5;
+    }
+
+    &__error {
+        font-size: 0.75rem;
+        color: get-color(error-500);
+        font-weight: 500;
+    }
+
+    &__hint {
+        font-size: 0.75rem;
+        color: get-color(text-secondary);
+        line-height: 1.4;
+    }
+
+    // Media section
+    &__media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    &__media-section {
+        background-color: get-color(background-secondary);
+        border: 1px solid get-color(border-primary);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    &__media-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: get-color(text-primary);
+        margin: 0 0 1rem 0;
+    }
+
+    &__uploader {
+        margin-bottom: 1rem;
+    }
+
+    &__preview {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: get-color(background-primary);
+        border: 1px solid get-color(border-primary);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    &__preview-image {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 4px;
+
+        &--small {
+            max-height: 64px;
+        }
+    }
+
+    // Summary section
+    &__summary {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    &__summary-section {
+        background-color: get-color(background-secondary);
+        border: 1px solid get-color(border-primary);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    &__summary-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: get-color(text-primary);
+        margin: 0 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid get-color(border-secondary);
+    }
+
+    &__summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid get-color(border-primary);
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    &__summary-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: get-color(text-primary);
+    }
+
+    &__summary-value {
+        font-size: 0.875rem;
+        color: get-color(text-secondary);
+        text-align: right;
+        max-width: 60%;
+        word-break: break-word;
+    }
+
+    // Actions
+    &__actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        padding: 2rem;
+        border-top: 1px solid get-color(border-primary);
+        background-color: get-color(background-secondary);
+    }
+
+    &__button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        border: 1px solid transparent;
+        min-width: 120px;
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        &--primary {
+            @include button-primary;
+        }
+
+        &--secondary {
+            @include button-secondary;
+        }
+
+        &--danger {
+            background-color: get-color(error-500);
+            color: get-color(text-white);
+            border-color: get-color(error-500);
+
+            &:hover:not(:disabled) {
+                background-color: get-color(error-600);
+                border-color: get-color(error-600);
+            }
+
+            &:focus {
+                outline: none;
+                box-shadow: 0 0 0 3px get-color(error-50);
+            }
+        }
+    }
+}
+
+// Responsive design
+@media (max-width: 1024px) {
+    .create-site {
+        &__progress {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        &__progress-step {
+            &:not(:last-child)::after,
+            &:not(:last-child)::before {
+                display: none;
+            }
+        }
+
+        &__form-grid,
+        &__media-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .create-site {
+        padding: 1rem;
+
+        &__title {
+            font-size: 2rem;
+        }
+
+        &__progress {
+            padding: 1rem;
+        }
+
+        &__progress-step {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        &__progress-info {
+            text-align: center;
+        }
+
+        &__step-content {
+            padding: 1rem;
+        }
+
+        &__step-title {
+            font-size: 1.5rem;
+        }
+
+        &__actions {
+            flex-direction: column;
+            padding: 1rem;
+
+            .create-site__button {
+                width: 100%;
+                order: 1;
+            }
+
+            .create-site__button--danger {
+                order: 2;
+            }
+        }
+    }
+}
+
+// Темная тема автоматически обрабатывается через CSS переменные в _colors.scss
