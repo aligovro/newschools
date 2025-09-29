@@ -1,46 +1,19 @@
-import { Badge } from '@/components/common/ui/badge';
-import { Button } from '@/components/common/ui/button';
-import { Card } from '@/components/common/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import {
-    Archive,
+    Building2,
     Edit,
     Eye,
-    EyeOff,
     Globe,
-    Layout,
-    MoreHorizontal,
     Plus,
     Settings,
     Trash2,
-    Wrench,
 } from 'lucide-react';
 import { useState } from 'react';
-
-interface Site {
-    id: number;
-    name: string;
-    slug: string;
-    description?: string;
-    template: string;
-    status: 'draft' | 'published' | 'archived';
-    is_public: boolean;
-    is_maintenance_mode: boolean;
-    logo?: string;
-    logo_url?: string;
-    created_at: string;
-    updated_at: string;
-    domain: {
-        id: number;
-        domain: string;
-        custom_domain?: string;
-    };
-    pages: Array<{
-        id: number;
-        title: string;
-        status: string;
-    }>;
-}
 
 interface Organization {
     id: number;
@@ -48,139 +21,124 @@ interface Organization {
     slug: string;
 }
 
-interface Props {
-    organization: Organization;
-    sites: Site[];
-    templates: Record<string, any>;
+interface Site {
+    id: number;
+    name: string;
+    slug: string;
+    description: string;
+    template: string;
+    status: 'draft' | 'published' | 'archived';
+    is_public: boolean;
+    is_maintenance_mode: boolean;
+    created_at: string;
+    updated_at: string;
+    url?: string;
+    pages_count?: number;
 }
 
-export default function SitesIndex({ organization, sites, templates }: Props) {
-    const [showActions, setShowActions] = useState<number | null>(null);
-
-    const handleDelete = (site: Site) => {
-        if (confirm(`Вы уверены, что хотите удалить сайт "${site.name}"?`)) {
-            router.delete(
-                route('organization.admin.sites.destroy', [
-                    organization.id,
-                    site.id,
-                ]),
-            );
-        }
+interface Props {
+    organization: Organization;
+    sites: {
+        data: Site[];
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
     };
+}
 
-    const handlePublish = (site: Site) => {
-        router.patch(
-            route('organization.admin.sites.publish', [
-                organization.id,
-                site.id,
-            ]),
-        );
-    };
+export default function OrganizationSitesIndex({ organization, sites }: Props) {
+    const [selectedSites, setSelectedSites] = useState<number[]>([]);
 
-    const handleUnpublish = (site: Site) => {
-        router.patch(
-            route('organization.admin.sites.unpublish', [
-                organization.id,
-                site.id,
-            ]),
-        );
-    };
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Dashboard',
+            href: '/dashboard',
+        },
+        {
+            title: 'Организации',
+            href: '/dashboard/organizations',
+        },
+        {
+            title: organization.name,
+            href: `/organization/${organization.id}/admin`,
+        },
+        {
+            title: 'Сайты',
+            href: `/organization/${organization.id}/admin/sites`,
+        },
+    ];
 
-    const handleArchive = (site: Site) => {
-        router.patch(
-            route('organization.admin.sites.archive', [
-                organization.id,
-                site.id,
-            ]),
-        );
-    };
-
-    const handleMaintenanceMode = (site: Site) => {
-        if (site.is_maintenance_mode) {
-            router.patch(
-                route('organization.admin.sites.disable-maintenance', [
-                    organization.id,
-                    site.id,
-                ]),
-            );
-        } else {
-            const message = prompt(
-                'Введите сообщение для режима обслуживания (необязательно):',
-            );
-            router.patch(
-                route('organization.admin.sites.enable-maintenance', [
-                    organization.id,
-                    site.id,
-                ]),
-                { message },
-            );
-        }
-    };
-
-    const getStatusBadge = (site: Site) => {
-        if (site.is_maintenance_mode) {
-            return (
-                <Badge variant="destructive" className="bg-orange-500">
-                    Обслуживание
-                </Badge>
-            );
-        }
-
-        switch (site.status) {
+    const getStatusBadge = (status: string) => {
+        switch (status) {
             case 'published':
-                return (
-                    <Badge variant="default" className="bg-green-500">
-                        Опубликован
-                    </Badge>
-                );
+                return <Badge variant="default">Опубликован</Badge>;
             case 'draft':
-                return (
-                    <Badge variant="secondary" className="bg-gray-500">
-                        Черновик
-                    </Badge>
-                );
+                return <Badge variant="secondary">Черновик</Badge>;
             case 'archived':
-                return (
-                    <Badge
-                        variant="outline"
-                        className="bg-gray-100 text-gray-600"
-                    >
-                        Архивирован
-                    </Badge>
-                );
+                return <Badge variant="destructive">Архив</Badge>;
             default:
-                return null;
+                return <Badge variant="outline">{status}</Badge>;
         }
     };
 
-    const getTemplateName = (template: string) => {
-        return templates[template]?.name || template;
+    const getTemplateBadge = (template: string) => {
+        const templates: Record<string, string> = {
+            default: 'По умолчанию',
+            modern: 'Современный',
+            classic: 'Классический',
+            minimal: 'Минималистичный',
+        };
+        return (
+            <Badge variant="outline">{templates[template] || template}</Badge>
+        );
     };
 
-    const getSiteUrl = (site: Site) => {
-        const domain = site.domain.custom_domain || site.domain.domain;
-        return `http://${domain}`;
+    const handleDelete = (siteId: number) => {
+        if (
+            confirm(
+                'Вы уверены, что хотите удалить этот сайт? Это действие нельзя отменить.',
+            )
+        ) {
+            router.delete(
+                `/organization/${organization.id}/admin/sites/${siteId}`,
+            );
+        }
+    };
+
+    const handlePublish = (siteId: number) => {
+        router.patch(
+            `/organization/${organization.id}/admin/sites/${siteId}/publish`,
+        );
+    };
+
+    const handleUnpublish = (siteId: number) => {
+        router.patch(
+            `/organization/${organization.id}/admin/sites/${siteId}/unpublish`,
+        );
+    };
+
+    const handleArchive = (siteId: number) => {
+        router.patch(
+            `/organization/${organization.id}/admin/sites/${siteId}/archive`,
+        );
     };
 
     return (
-        <>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Сайты - ${organization.name}`} />
 
             <div className="space-y-6">
+                {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Сайты
-                        </h1>
-                        <p className="text-gray-600">
+                        <h1 className="text-3xl font-bold">Сайты</h1>
+                        <p className="text-muted-foreground">
                             Управление сайтами организации
                         </p>
                     </div>
                     <Link
-                        href={route(
-                            'organization.admin.sites.create',
-                            organization.id,
-                        )}
+                        href={`/organization/${organization.id}/admin/sites/create`}
                     >
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />
@@ -189,268 +147,233 @@ export default function SitesIndex({ organization, sites, templates }: Props) {
                     </Link>
                 </div>
 
-                {sites.length === 0 ? (
-                    <Card className="p-8 text-center">
-                        <Globe className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-4 text-lg font-medium text-gray-900">
-                            Нет сайтов
-                        </h3>
-                        <p className="mt-2 text-gray-500">
-                            Создайте первый сайт для вашей организации
-                        </p>
-                        <Link
-                            href={route(
-                                'organization.admin.sites.create',
-                                organization.id,
-                            )}
-                        >
-                            <Button className="mt-4">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Создать сайт
-                            </Button>
-                        </Link>
+                {/* Stats */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                Всего сайтов
+                            </CardTitle>
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {sites.total}
+                            </div>
+                        </CardContent>
                     </Card>
-                ) : (
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {sites.map((site) => (
-                            <Card key={site.id} className="overflow-hidden">
-                                <div className="relative">
-                                    {site.logo_url && (
-                                        <div className="h-48 bg-gray-100">
-                                            <img
-                                                src={site.logo_url}
-                                                alt={site.name}
-                                                className="h-full w-full object-cover"
-                                            />
-                                        </div>
-                                    )}
-                                    {!site.logo_url && (
-                                        <div className="flex h-48 items-center justify-center bg-gray-100">
-                                            <Globe className="h-12 w-12 text-gray-400" />
-                                        </div>
-                                    )}
 
-                                    <div className="absolute right-2 top-2">
-                                        <div className="relative">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 rounded-full bg-white/80 p-0 hover:bg-white"
-                                                onClick={() =>
-                                                    setShowActions(
-                                                        showActions === site.id
-                                                            ? null
-                                                            : site.id,
-                                                    )
-                                                }
-                                            >
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                Опубликовано
+                            </CardTitle>
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {
+                                    sites.data.filter(
+                                        (site) => site.status === 'published',
+                                    ).length
+                                }
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                                            {showActions === site.id && (
-                                                <div className="absolute right-0 top-10 z-10 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
-                                                    <Link
-                                                        href={route(
-                                                            'organization.admin.sites.edit',
-                                                            [
-                                                                organization.id,
-                                                                site.id,
-                                                            ],
-                                                        )}
-                                                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                    >
-                                                        <Edit className="mr-3 h-4 w-4" />
-                                                        Редактировать
-                                                    </Link>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                Черновики
+                            </CardTitle>
+                            <Edit className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {
+                                    sites.data.filter(
+                                        (site) => site.status === 'draft',
+                                    ).length
+                                }
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                                                    <Link
-                                                        href={route(
-                                                            'organization.admin.sites.builder',
-                                                            [
-                                                                organization.id,
-                                                                site.id,
-                                                            ],
-                                                        )}
-                                                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                    >
-                                                        <Layout className="mr-3 h-4 w-4" />
-                                                        Конструктор
-                                                    </Link>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                В архиве
+                            </CardTitle>
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {
+                                    sites.data.filter(
+                                        (site) => site.status === 'archived',
+                                    ).length
+                                }
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                                                    <a
-                                                        href={getSiteUrl(site)}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                    >
-                                                        <Eye className="mr-3 h-4 w-4" />
-                                                        Просмотр
-                                                    </a>
-
-                                                    {site.status ===
-                                                    'published' ? (
-                                                        <button
-                                                            onClick={() =>
-                                                                handleUnpublish(
-                                                                    site,
-                                                                )
-                                                            }
-                                                            className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                                                        >
-                                                            <EyeOff className="mr-3 h-4 w-4" />
-                                                            Снять с публикации
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() =>
-                                                                handlePublish(
-                                                                    site,
-                                                                )
-                                                            }
-                                                            className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                                                        >
-                                                            <Eye className="mr-3 h-4 w-4" />
-                                                            Опубликовать
-                                                        </button>
+                {/* Sites List */}
+                <div className="grid gap-4">
+                    {sites.data.map((site) => (
+                        <Card key={site.id}>
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="flex-1">
+                                            <div className="mb-2 flex items-center space-x-2">
+                                                <h3 className="text-lg font-semibold">
+                                                    {site.name}
+                                                </h3>
+                                                {getStatusBadge(site.status)}
+                                                {getTemplateBadge(
+                                                    site.template,
+                                                )}
+                                                {site.is_maintenance_mode && (
+                                                    <Badge variant="destructive">
+                                                        Тех. работы
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <p className="mb-2 text-muted-foreground">
+                                                {site.description}
+                                            </p>
+                                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                                                <span>
+                                                    Создан:{' '}
+                                                    {new Date(
+                                                        site.created_at,
+                                                    ).toLocaleDateString(
+                                                        'ru-RU',
                                                     )}
-
-                                                    <button
-                                                        onClick={() =>
-                                                            handleMaintenanceMode(
-                                                                site,
-                                                            )
-                                                        }
-                                                        className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                                </span>
+                                                <span>
+                                                    Обновлен:{' '}
+                                                    {new Date(
+                                                        site.updated_at,
+                                                    ).toLocaleDateString(
+                                                        'ru-RU',
+                                                    )}
+                                                </span>
+                                                {site.pages_count && (
+                                                    <span>
+                                                        Страниц:{' '}
+                                                        {site.pages_count}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {site.url && (
+                                                <div className="mt-2">
+                                                    <Link
+                                                        href={site.url}
+                                                        target="_blank"
+                                                        className="flex items-center text-sm text-blue-600 hover:underline"
                                                     >
-                                                        <Wrench className="mr-3 h-4 w-4" />
-                                                        {site.is_maintenance_mode
-                                                            ? 'Отключить обслуживание'
-                                                            : 'Режим обслуживания'}
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() =>
-                                                            handleArchive(site)
-                                                        }
-                                                        className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                                                    >
-                                                        <Archive className="mr-3 h-4 w-4" />
-                                                        Архивировать
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() =>
-                                                            handleDelete(site)
-                                                        }
-                                                        className="flex w-full items-center px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
-                                                    >
-                                                        <Trash2 className="mr-3 h-4 w-4" />
-                                                        Удалить
-                                                    </button>
+                                                        <Globe className="mr-1 h-3 w-3" />
+                                                        {site.url}
+                                                    </Link>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="p-6">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <h3 className="text-lg font-semibold text-gray-900">
-                                                {site.name}
-                                            </h3>
-                                            <p className="mt-1 text-sm text-gray-500">
-                                                {site.description ||
-                                                    'Без описания'}
-                                            </p>
-                                        </div>
-                                        {getStatusBadge(site)}
-                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Link
+                                            href={`/organization/${organization.id}/admin/sites/${site.id}/builder`}
+                                        >
+                                            <Button variant="outline" size="sm">
+                                                <Edit className="mr-1 h-4 w-4" />
+                                                Редактировать
+                                            </Button>
+                                        </Link>
 
-                                    <div className="mt-4 space-y-2">
-                                        <div className="flex items-center text-sm text-gray-500">
-                                            <Globe className="mr-2 h-4 w-4" />
-                                            <span>
-                                                {site.domain.custom_domain ||
-                                                    site.domain.domain}
-                                            </span>
-                                        </div>
+                                        <Link
+                                            href={`/organization/${organization.id}/admin/sites/${site.id}/edit`}
+                                        >
+                                            <Button variant="ghost" size="sm">
+                                                <Settings className="h-4 w-4" />
+                                            </Button>
+                                        </Link>
 
-                                        <div className="flex items-center text-sm text-gray-500">
-                                            <Settings className="mr-2 h-4 w-4" />
-                                            <span>
-                                                {getTemplateName(site.template)}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center text-sm text-gray-500">
-                                            <span className="mr-2">📄</span>
-                                            <span>
-                                                {site.pages.length} страниц
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <span className="text-xs text-gray-400">
-                                            Обновлен{' '}
-                                            {new Date(
-                                                site.updated_at,
-                                            ).toLocaleDateString()}
-                                        </span>
-
-                                        <div className="flex space-x-2">
-                                            <Link
-                                                href={route(
-                                                    'organization.admin.sites.edit',
-                                                    [organization.id, site.id],
-                                                )}
-                                            >
+                                        <div className="flex items-center space-x-1">
+                                            {site.status === 'published' ? (
                                                 <Button
-                                                    variant="outline"
+                                                    variant="ghost"
                                                     size="sm"
+                                                    onClick={() =>
+                                                        handleUnpublish(site.id)
+                                                    }
                                                 >
-                                                    <Edit className="mr-2 h-4 w-4" />
-                                                    Редактировать
+                                                    Снять с публикации
                                                 </Button>
-                                            </Link>
-
-                                            <Link
-                                                href={route(
-                                                    'organization.admin.sites.builder',
-                                                    [organization.id, site.id],
-                                                )}
-                                            >
+                                            ) : site.status === 'draft' ? (
                                                 <Button
-                                                    variant="outline"
+                                                    variant="ghost"
                                                     size="sm"
+                                                    onClick={() =>
+                                                        handlePublish(site.id)
+                                                    }
                                                 >
-                                                    <Layout className="mr-2 h-4 w-4" />
-                                                    Конструктор
+                                                    Опубликовать
                                                 </Button>
-                                            </Link>
-
-                                            <a
-                                                href={getSiteUrl(site)}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
+                                            ) : (
                                                 <Button
-                                                    variant="outline"
+                                                    variant="ghost"
                                                     size="sm"
+                                                    onClick={() =>
+                                                        handleArchive(site.id)
+                                                    }
                                                 >
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    Просмотр
+                                                    Архивировать
                                                 </Button>
-                                            </a>
+                                            )}
+
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                    handleDelete(site.id)
+                                                }
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
-                            </Card>
-                        ))}
-                    </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                {/* Empty State */}
+                {sites.data.length === 0 && (
+                    <Card>
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                            <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
+                            <h3 className="mb-2 text-lg font-semibold">
+                                Сайты не найдены
+                            </h3>
+                            <p className="mb-4 text-center text-muted-foreground">
+                                У этой организации пока нет сайтов. Создайте
+                                первый сайт, чтобы начать.
+                            </p>
+                            <Link
+                                href={`/organization/${organization.id}/admin/sites/create`}
+                            >
+                                <Button>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Создать первый сайт
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
                 )}
             </div>
-        </>
+        </AppLayout>
     );
 }

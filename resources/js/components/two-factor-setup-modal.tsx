@@ -19,12 +19,12 @@ import { Form } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { Check, Copy, Loader2, ScanLine } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import AlertError from './alert-error';
+import AlertError from './ui/alert-error';
 
 function GridScanIcon() {
     return (
-        <div className="mb-3 rounded-full border border-border bg-card p-0.5 shadow-sm">
-            <div className="relative overflow-hidden rounded-full border border-border bg-muted p-2.5">
+        <div className="bg-card mb-3 rounded-full border border-border p-0.5 shadow-sm">
+            <div className="bg-muted relative overflow-hidden rounded-full border border-border p-2.5">
                 <div className="absolute inset-0 grid grid-cols-5 opacity-50">
                     {Array.from({ length: 5 }, (_, i) => (
                         <div
@@ -93,7 +93,7 @@ function TwoFactorSetupStep({
 
                     <div className="relative flex w-full items-center justify-center">
                         <div className="absolute inset-0 top-1/2 h-px w-full bg-border" />
-                        <span className="relative bg-card px-2 py-1">
+                        <span className="bg-card relative px-2 py-1">
                             or, enter the code manually
                         </span>
                     </div>
@@ -101,7 +101,7 @@ function TwoFactorSetupStep({
                     <div className="flex w-full space-x-2">
                         <div className="flex w-full items-stretch overflow-hidden rounded-xl border border-border">
                             {!manualSetupKey ? (
-                                <div className="flex h-full w-full items-center justify-center bg-muted p-3">
+                                <div className="bg-muted flex h-full w-full items-center justify-center p-3">
                                     <Loader2 className="size-4 animate-spin" />
                                 </div>
                             ) : (
@@ -114,7 +114,7 @@ function TwoFactorSetupStep({
                                     />
                                     <button
                                         onClick={() => copy(manualSetupKey)}
-                                        className="border-l border-border px-3 hover:bg-muted"
+                                        className="hover:bg-muted border-l border-border px-3"
                                     >
                                         <IconComponent className="w-4" />
                                     </button>

@@ -12,21 +12,22 @@ interface Organization {
     donations_collected: number;
 }
 
-interface OrganizationTypeConfig {
-    name: string;
-    plural: string;
-    member_name: string;
-    member_plural: string;
+interface Terminology {
+    site_name: string;
+    site_description: string;
+    org_plural: string;
+    org_genitive: string;
+    support_action: string;
 }
 
 interface OrganizationsSectionProps {
     organizations: Organization[];
-    currentTypeConfig?: OrganizationTypeConfig;
+    terminology: Terminology;
 }
 
 export default function OrganizationsSection({
     organizations,
-    currentTypeConfig,
+    terminology,
 }: OrganizationsSectionProps) {
     return (
         <section className="bg-gray-50 py-16">
@@ -34,13 +35,11 @@ export default function OrganizationsSection({
                 {/* Section Header */}
                 <div className="mb-12 text-center">
                     <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
-                        {currentTypeConfig?.plural || 'Организации'} города
+                        {terminology.org_plural} города
                     </h2>
                     <p className="mx-auto max-w-2xl text-xl text-gray-600">
-                        Выберите{' '}
-                        {currentTypeConfig?.name?.toLowerCase() ||
-                            'организацию'}
-                        , которую хотите поддержать
+                        Выберите {terminology.org_plural.toLowerCase()}, которую
+                        хотите поддержать
                     </p>
                 </div>
 
@@ -67,9 +66,7 @@ export default function OrganizationsSection({
                         href="/organizations"
                         className="inline-flex items-center font-semibold text-blue-600 hover:text-blue-700"
                     >
-                        Все{' '}
-                        {currentTypeConfig?.plural?.toLowerCase() ||
-                            'организации'}
+                        Все {terminology.org_plural.toLowerCase()}
                         <svg
                             className="ml-2 h-4 w-4"
                             fill="none"

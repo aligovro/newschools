@@ -8,6 +8,12 @@ export type RouteDefinition<T extends string> = {
     method: T;
 };
 
+export type RouteDefinitionWithMethods<T extends string[]> = {
+    url: string;
+    method: T[0];
+    methods: T;
+};
+
 export type RouteFormDefinition<T extends string> = {
     action: string;
     method: T;
@@ -29,4 +35,9 @@ export function queryParams(options?: RouteQueryOptions): string {
 
     const queryString = params.toString();
     return queryString ? `?${queryString}` : '';
+}
+
+export function applyUrlDefaults(url: string): string {
+    // Применяем базовые настройки URL если нужно
+    return url;
 }

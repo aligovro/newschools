@@ -1,6 +1,6 @@
-import ImageUploader from '@/components/sites/ImageUploader';
-import SeoSettings from '@/components/sites/SeoSettings';
-import ThemeCustomizer from '@/components/sites/ThemeCustomizer';
+import ImageUploader from '@/components/admin/settings/sites/ImageUploader';
+import SeoSettings from '@/components/admin/settings/sites/SeoSettings';
+import ThemeCustomizer from '@/components/admin/settings/sites/ThemeCustomizer';
 import { useApp } from '@/hooks/useApp';
 import { useSites } from '@/hooks/useSites';
 import { cn } from '@/lib/helpers';

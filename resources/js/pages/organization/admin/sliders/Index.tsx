@@ -1,6 +1,6 @@
-import { Badge } from '@/components/common/ui/badge';
-import { Button } from '@/components/common/ui/button';
-import { Card } from '@/components/common/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
 import {

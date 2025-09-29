@@ -1,8 +1,12 @@
 import { SiteBuilder } from '@/components/site-builder/SiteBuilder';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft, Eye, Save } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowLeft, Eye, Globe, Save, Settings, Share } from 'lucide-react';
+import { useState } from 'react';
 
 interface Organization {
     id: number;
@@ -10,201 +14,371 @@ interface Organization {
     slug: string;
 }
 
-interface Domain {
-    id: number;
-    domain: string;
-    custom_domain?: string;
-}
-
-interface Site {
+interface SiteWidget {
     id: number;
     name: string;
+    config: any;
+    settings: any;
+    sort_order: number;
+    is_active: boolean;
+    is_visible: boolean;
+    widget: {
+        id: number;
+        name: string;
+        slug: string;
+        category: string;
+        icon: string;
+        fields_config: any;
+        settings_config: any;
+    };
+    position: {
+        id: number;
+        name: string;
+        slug: string;
+        description: string;
+    };
+}
+
+interface SitePage {
+    id: number;
+    title: string;
     slug: string;
-    description?: string;
-    template: string;
-    layout_config: any;
-    theme_config: any;
-    content_blocks: any;
-    navigation_config: any;
-    seo_config: any;
-    custom_settings: any;
-    logo?: string;
-    favicon?: string;
-    status: 'draft' | 'published' | 'archived';
-    is_public: boolean;
-    is_maintenance_mode: boolean;
-    maintenance_message?: string;
-    domain: Domain;
+    content: string;
+    is_published: boolean;
     created_at: string;
     updated_at: string;
 }
 
-interface Props {
-    organization: Organization;
-    site: Site;
-    domains: Domain[];
-    siteTemplates: Record<string, any>;
-    contentBlocks: Record<string, any>;
+interface OrganizationSite {
+    id: number;
+    name: string;
+    slug: string;
+    description: string;
+    template: string;
+    status: 'draft' | 'published' | 'archived';
+    is_public: boolean;
+    is_maintenance_mode: boolean;
+    layout_config: any;
+    theme_config: any;
+    content_blocks: any[];
+    navigation_config: any;
+    seo_config: any;
+    created_at: string;
+    updated_at: string;
+    url?: string;
+    widgets: SiteWidget[];
+    pages: SitePage[];
 }
 
-export default function EditWithBuilder({
-    organization,
-    site,
-    domains,
-    siteTemplates,
-    contentBlocks,
-}: Props) {
-    const [isPreviewMode, setIsPreviewMode] = useState(false);
-    const [builderContent, setBuilderContent] = useState(
-        site.content_blocks || {},
-    );
+interface Props {
+    organization: Organization;
+    site: OrganizationSite;
+}
 
-    const { data, setData, put, processing, errors } = useForm({
-        name: site.name,
-        domain_id: site.domain.id,
-        slug: site.slug,
-        description: site.description || '',
-        template: site.template,
-        layout_config: site.layout_config || {},
-        theme_config: site.theme_config || {},
-        content_blocks: site.content_blocks || {},
-        navigation_config: site.navigation_config || {},
-        seo_config: site.seo_config || {},
-        custom_settings: site.custom_settings || {},
-        is_public: site.is_public,
-        is_maintenance_mode: site.is_maintenance_mode,
-        maintenance_message: site.maintenance_message || '',
-    });
+export default function EditWithBuilder({ organization, site }: Props) {
+    const [activeTab, setActiveTab] = useState<
+        'builder' | 'preview' | 'settings'
+    >('builder');
+    const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => {
-        setData('content_blocks', builderContent);
-    }, [builderContent, setData]);
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Dashboard',
+            href: '/dashboard',
+        },
+        {
+            title: 'Организации',
+            href: '/dashboard/organizations',
+        },
+        {
+            title: organization.name,
+            href: `/organization/${organization.id}/admin`,
+        },
+        {
+            title: 'Сайты',
+            href: `/organization/${organization.id}/admin/sites`,
+        },
+        {
+            title: site.name,
+            href: `/organization/${organization.id}/admin/sites/${site.id}/builder`,
+        },
+    ];
 
-    const handleSave = (content: any) => {
-        setBuilderContent(content);
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'published':
+                return <Badge variant="default">Опубликован</Badge>;
+            case 'draft':
+                return <Badge variant="secondary">Черновик</Badge>;
+            case 'archived':
+                return <Badge variant="destructive">Архив</Badge>;
+            default:
+                return <Badge variant="outline">{status}</Badge>;
+        }
+    };
+
+    const handleSave = async (content: any) => {
+        setIsSaving(true);
+        try {
+            // Здесь будет логика сохранения через API
+            console.log('Saving content:', content);
+            // await saveSiteContent(site.id, content);
+        } catch (error) {
+            console.error('Error saving:', error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handlePreview = () => {
-        setIsPreviewMode(!isPreviewMode);
+        setActiveTab('preview');
+        // Здесь будет логика предварительного просмотра
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        put(
-            route('organization.admin.sites.update', [
-                organization.id,
-                site.id,
-            ]),
-        );
+    const handleAddWidget = async (widgetData: any) => {
+        try {
+            // Здесь будет логика добавления виджета через API
+            console.log('Adding widget:', widgetData);
+            // await addWidgetToSite(site.id, widgetData);
+        } catch (error) {
+            console.error('Error adding widget:', error);
+        }
     };
 
-    if (isPreviewMode) {
-        return (
-            <>
-                <Head title={`Предпросмотр - ${site.name}`} />
-                <div className="flex h-screen flex-col">
-                    <div className="border-b border-gray-200 bg-white px-6 py-4">
-                        <div className="flex items-center justify-between">
-                            <h1 className="text-xl font-semibold">
-                                Предпросмотр сайта
-                            </h1>
-                            <Button variant="outline" onClick={handlePreview}>
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Вернуться к редактированию
-                            </Button>
-                        </div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto">
-                        {/* Здесь будет отображение предпросмотра сайта */}
-                        <div className="mx-auto max-w-4xl p-6">
-                            <div className="rounded-lg bg-white p-8 shadow-lg">
-                                <h1 className="mb-4 text-3xl font-bold">
-                                    {site.name}
-                                </h1>
-                                <p className="mb-6 text-gray-600">
-                                    {site.description}
-                                </p>
-
-                                {/* Отображение блоков контента */}
-                                {builderContent.blocks?.map(
-                                    (block: any, index: number) => (
-                                        <div key={index} className="mb-6">
-                                            <div className="rounded-lg bg-gray-100 p-4">
-                                                <h3 className="mb-2 font-semibold">
-                                                    Блок: {block.type}
-                                                </h3>
-                                                <pre className="text-sm text-gray-600">
-                                                    {JSON.stringify(
-                                                        block.content,
-                                                        null,
-                                                        2,
-                                                    )}
-                                                </pre>
-                                            </div>
-                                        </div>
-                                    ),
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </>
-        );
-    }
+    const tabs = [
+        {
+            id: 'builder',
+            label: 'Конструктор',
+            icon: Settings,
+        },
+        {
+            id: 'preview',
+            label: 'Предпросмотр',
+            icon: Eye,
+        },
+        {
+            id: 'settings',
+            label: 'Настройки',
+            icon: Globe,
+        },
+    ];
 
     return (
-        <>
-            <Head title={`Редактирование - ${site.name}`} />
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={`Конструктор - ${site.name}`} />
 
             <div className="flex h-screen flex-col">
                 {/* Header */}
-                <div className="border-b border-gray-200 bg-white px-6 py-4">
+                <div className="border-b bg-white px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                            <Button
-                                variant="ghost"
-                                onClick={() => window.history.back()}
+                            <Link
+                                href={`/organization/${organization.id}/admin/sites`}
                             >
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Назад
-                            </Button>
+                                <Button variant="ghost" size="sm">
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
+                                    Назад к сайтам
+                                </Button>
+                            </Link>
                             <div>
                                 <h1 className="text-xl font-semibold">
-                                    Редактирование сайта
-                                </h1>
-                                <p className="text-sm text-gray-600">
                                     {site.name}
-                                </p>
+                                </h1>
+                                <div className="mt-1 flex items-center space-x-2">
+                                    {getStatusBadge(site.status)}
+                                    {site.is_maintenance_mode && (
+                                        <Badge variant="destructive">
+                                            Тех. работы
+                                        </Badge>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
                         <div className="flex items-center space-x-2">
-                            <Button variant="outline" onClick={handlePreview}>
+                            <Button variant="outline" size="sm">
                                 <Eye className="mr-2 h-4 w-4" />
                                 Предпросмотр
                             </Button>
-
+                            <Button variant="outline" size="sm">
+                                <Share className="mr-2 h-4 w-4" />
+                                Поделиться
+                            </Button>
                             <Button
-                                onClick={handleSubmit}
-                                disabled={processing}
+                                size="sm"
+                                disabled={isSaving}
+                                onClick={() => handleSave({})}
                             >
                                 <Save className="mr-2 h-4 w-4" />
-                                {processing ? 'Сохранение...' : 'Сохранить'}
+                                {isSaving ? 'Сохранение...' : 'Сохранить'}
                             </Button>
                         </div>
                     </div>
+
+                    {/* Tabs */}
+                    <div className="mt-4 flex items-center space-x-6">
+                        {tabs.map((tab) => {
+                            const Icon = tab.icon;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as any)}
+                                    className={`flex items-center space-x-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                                        activeTab === tab.id
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    <Icon className="h-4 w-4" />
+                                    <span>{tab.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                {/* Main Content */}
+                {/* Content */}
                 <div className="flex-1 overflow-hidden">
-                    <SiteBuilder
-                        initialContent={builderContent}
-                        onSave={handleSave}
-                        onPreview={handlePreview}
-                        className="h-full"
-                    />
+                    {activeTab === 'builder' && (
+                        <SiteBuilder
+                            initialContent={{
+                                blocks: site.content_blocks || [],
+                                layout: site.layout_config || {},
+                                theme: site.theme_config || {},
+                            }}
+                            onSave={handleSave}
+                            onPreview={handlePreview}
+                            template={site.template}
+                            onAddWidget={handleAddWidget}
+                            widgets={site.widgets || []}
+                        />
+                    )}
+
+                    {activeTab === 'preview' && (
+                        <div className="bg-muted flex h-full items-center justify-center">
+                            <div className="text-center">
+                                <Eye className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+                                <h3 className="mb-2 text-lg font-semibold">
+                                    Предварительный просмотр
+                                </h3>
+                                <p className="mb-4 text-muted-foreground">
+                                    Здесь будет отображаться предварительный
+                                    просмотр сайта
+                                </p>
+                                {site.url && (
+                                    <Button asChild>
+                                        <a
+                                            href={site.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <Globe className="mr-2 h-4 w-4" />
+                                            Открыть сайт
+                                        </a>
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'settings' && (
+                        <div className="p-6">
+                            <div className="mx-auto max-w-4xl space-y-6">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>
+                                            Основные настройки
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            <div>
+                                                <label className="text-sm font-medium">
+                                                    Название сайта
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={site.name}
+                                                    className="mt-1 w-full rounded-md border px-3 py-2"
+                                                    readOnly
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium">
+                                                    URL-адрес
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={site.slug}
+                                                    className="mt-1 w-full rounded-md border px-3 py-2"
+                                                    readOnly
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium">
+                                                Описание
+                                            </label>
+                                            <textarea
+                                                value={site.description}
+                                                className="mt-1 w-full rounded-md border px-3 py-2"
+                                                rows={3}
+                                                readOnly
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>SEO настройки</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div>
+                                            <label className="text-sm font-medium">
+                                                Meta заголовок
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={
+                                                    site.seo_config?.title || ''
+                                                }
+                                                className="mt-1 w-full rounded-md border px-3 py-2"
+                                                readOnly
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium">
+                                                Meta описание
+                                            </label>
+                                            <textarea
+                                                value={
+                                                    site.seo_config
+                                                        ?.description || ''
+                                                }
+                                                className="mt-1 w-full rounded-md border px-3 py-2"
+                                                rows={3}
+                                                readOnly
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <div className="flex justify-end">
+                                    <Link
+                                        href={`/organization/${organization.id}/admin/sites/${site.id}/edit`}
+                                    >
+                                        <Button>
+                                            <Settings className="mr-2 h-4 w-4" />
+                                            Редактировать настройки
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
-        </>
+        </AppLayout>
     );
 }

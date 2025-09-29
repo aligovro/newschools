@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, Eye, Layout, Save, Settings, Upload } from 'lucide-react';
 import React, { useState } from 'react';
+import { WidgetPanel } from '../widget-system/WidgetPanel';
 import { ContentBlocksPanel } from './ContentBlocksPanel';
 import { DragDropProvider } from './DragDropProvider';
 import { PageBuilder } from './PageBuilder';
@@ -12,6 +13,8 @@ interface SiteBuilderProps {
     onSave?: (content: Record<string, unknown>) => void;
     onPreview?: () => void;
     className?: string;
+    template?: any;
+    onAddWidget?: (widget: any, position: string) => void;
 }
 
 export const SiteBuilder: React.FC<SiteBuilderProps> = ({
@@ -19,6 +22,8 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     onSave,
     onPreview,
     className,
+    template,
+    onAddWidget,
 }) => {
     const [activeTab, setActiveTab] = useState('builder');
     const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -121,7 +126,14 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                     {activeTab === 'builder' && (
                         <>
                             {/* Sidebar */}
-                            <ContentBlocksPanel />
+                            {template ? (
+                                <WidgetPanel
+                                    template={template}
+                                    onAddWidget={onAddWidget || (() => {})}
+                                />
+                            ) : (
+                                <ContentBlocksPanel />
+                            )}
 
                             {/* Main Builder Area */}
                             <div className="flex flex-1 flex-col">
@@ -129,6 +141,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                                     initialBlocks={initialContent?.blocks || []}
                                     onSave={handleSave}
                                     onPreview={handlePreview}
+                                    template={template}
                                 />
                             </div>
                         </>

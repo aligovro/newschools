@@ -29,6 +29,17 @@ export const useDashboardStats = () => {
     const { props } = usePage<{
         auth?: { user?: { id: number } };
         stats?: DashboardStats;
+        terminology?: {
+            dashboard_title: string;
+            total_organizations: string;
+            total_members: string;
+            recent_organizations: string;
+            recent_members: string;
+            create_organization: string;
+            manage_organizations: string;
+            global_settings: string;
+            global_settings_description: string;
+        };
     }>();
 
     // Получаем статистику из props (передается с сервера)
@@ -45,8 +56,23 @@ export const useDashboardStats = () => {
         recentOrganizations: [],
     };
 
+    // Получаем терминологию из props
+    const terminology = props.terminology || {
+        dashboard_title: 'Админ-панель',
+        total_organizations: 'Всего организаций',
+        total_members: 'Всего участников',
+        recent_organizations: 'Последние организации',
+        recent_members: 'Последние участники',
+        create_organization: 'Создать организацию',
+        manage_organizations: 'Управление организациями',
+        global_settings: 'Глобальные настройки',
+        global_settings_description:
+            'Управление терминологией и настройками системы',
+    };
+
     return {
         stats,
+        terminology,
         isLoading: false, // Данные уже загружены на сервере
         error: null,
         refreshStats: () => {

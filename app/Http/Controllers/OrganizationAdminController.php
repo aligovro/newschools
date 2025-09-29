@@ -16,7 +16,7 @@ class OrganizationAdminController extends Controller
   /**
    * Главная страница админки организации
    */
-  public function dashboard(Organization $organization)
+  public function index(Organization $organization)
   {
     // Получаем статистику организации
     $stats = [
@@ -33,7 +33,7 @@ class OrganizationAdminController extends Controller
         ->sum('amount'),
     ];
 
-    return Inertia::render('OrganizationAdminDashboard', [
+    return Inertia::render('organization/admin/OrganizationAdminDashboard', [
       'organization' => $organization,
       'stats' => $stats,
     ]);
