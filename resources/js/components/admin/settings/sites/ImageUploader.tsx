@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import ReactCrop, {
     centerCrop,
@@ -7,6 +7,7 @@ import ReactCrop, {
     PixelCrop,
 } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { widgetImageService } from '../../../../services/WidgetImageService';
 
 interface ImageUploaderProps {
     onImageUpload: (file: File, croppedImage?: string) => void;
@@ -15,6 +16,10 @@ interface ImageUploaderProps {
     acceptedTypes?: string[];
     aspectRatio?: number;
     className?: string;
+    widgetSlug?: string;
+    imageType?: 'background' | 'avatar' | 'gallery';
+    slideId?: string;
+    enableServerUpload?: boolean;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -24,6 +29,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     acceptedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     aspectRatio,
     className = '',
+    widgetSlug,
+    imageType = 'background',
+    slideId,
+    enableServerUpload = false,
 }) => {
     const [imgSrc, setImgSrc] = useState<string>('');
     const [crop, setCrop] = useState<Crop>();
@@ -31,11 +40,52 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     const [scale, setScale] = useState(1);
     const [rotate, setRotate] = useState(0);
     const [showCropModal, setShowCropModal] = useState(false);
+    const [hasCroppedImage, setHasCroppedImage] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
+    // Предотвращаем скроллинг body когда модальное окно открыто
+    useEffect(() => {
+        if (showCropModal) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        // Очищаем стили при размонтировании компонента
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showCropModal]);
+
+    // Обработка клавиши Escape для закрытия модального окна
+    useEffect(() => {
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && showCropModal) {
+                handleCancelCrop();
+            }
+        };
+
+        if (showCropModal) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showCropModal]);
 
     const onDrop = useCallback(
-        (acceptedFiles: File[]) => {
+        async (acceptedFiles: File[]) => {
             const file = acceptedFiles[0];
             if (file) {
+                // Валидируем файл
+                const validation = widgetImageService.validateImageFile(file);
+                if (!validation.valid) {
+                    alert(validation.errors.join('\n'));
+                    return;
+                }
+
                 if (file.size > maxSize) {
                     alert(
                         `Размер файла не должен превышать ${maxSize / (1024 * 1024)}MB`,
@@ -43,20 +93,71 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     return;
                 }
 
-                onImageUpload(file);
+                // Сбрасываем состояние при загрузке нового файла
+                setHasCroppedImage(false);
+                setScale(1);
+                setRotate(0);
+                setCrop(undefined);
+                setCompletedCrop(undefined);
+                setUploadError(null);
 
-                // Если нужно обрезание, показываем модальное окно
-                if (aspectRatio) {
-                    const reader = new FileReader();
-                    reader.addEventListener('load', () => {
-                        setImgSrc(reader.result?.toString() || '');
-                        setShowCropModal(true);
-                    });
-                    reader.readAsDataURL(file);
+                // Если включена серверная загрузка
+                if (enableServerUpload && widgetSlug) {
+                    setIsUploading(true);
+                    try {
+                        const result = await widgetImageService.uploadImage(
+                            file,
+                            widgetSlug,
+                            imageType,
+                            slideId,
+                        );
+
+                        if (result.success && result.data) {
+                            // Используем URL с сервера
+                            onImageUpload(file, result.data.url);
+
+                            // Если нужно обрезание, показываем модальное окно
+                            if (aspectRatio) {
+                                setImgSrc(result.data.url);
+                                setShowCropModal(true);
+                            }
+                        } else {
+                            setUploadError(
+                                result.message ||
+                                    'Ошибка при загрузке изображения',
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Error uploading image:', error);
+                        setUploadError('Ошибка при загрузке изображения');
+                    } finally {
+                        setIsUploading(false);
+                    }
+                } else {
+                    // Локальная обработка - используем только файл, без blob URL
+                    onImageUpload(file);
+
+                    // Если нужно обрезание, показываем модальное окно
+                    if (aspectRatio) {
+                        const reader = new FileReader();
+                        reader.addEventListener('load', () => {
+                            setImgSrc(reader.result?.toString() || '');
+                            setShowCropModal(true);
+                        });
+                        reader.readAsDataURL(file);
+                    }
                 }
             }
         },
-        [maxSize, aspectRatio, onImageUpload],
+        [
+            maxSize,
+            aspectRatio,
+            onImageUpload,
+            enableServerUpload,
+            widgetSlug,
+            imageType,
+            slideId,
+        ],
     );
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -150,18 +251,74 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             const blob = await getCroppedImg(image, canvas, completedCrop);
 
             if (blob) {
-                const croppedImageUrl = URL.createObjectURL(blob);
-                onImageCrop(croppedImageUrl);
-                setShowCropModal(false);
+                // Если включена серверная загрузка, загружаем обрезанное изображение на сервер
+                if (enableServerUpload && widgetSlug) {
+                    setIsUploading(true);
+                    try {
+                        // Создаем File из Blob
+                        const file = new File([blob], 'cropped-image.jpg', {
+                            type: 'image/jpeg',
+                        });
+
+                        const result = await widgetImageService.uploadImage(
+                            file,
+                            widgetSlug,
+                            imageType,
+                            slideId,
+                        );
+
+                        if (result.success && result.data) {
+                            // Используем URL с сервера
+                            onImageCrop(result.data.url);
+                            setHasCroppedImage(true);
+                            setShowCropModal(false);
+                        } else {
+                            setUploadError(
+                                result.message ||
+                                    'Ошибка при загрузке обрезанного изображения',
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Error uploading cropped image:', error);
+                        setUploadError(
+                            'Ошибка при загрузке обрезанного изображения',
+                        );
+                    } finally {
+                        setIsUploading(false);
+                    }
+                } else {
+                    // Локальная обработка - используем data URL вместо blob URL
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        onImageCrop(reader.result as string);
+                        setHasCroppedImage(true);
+                        setShowCropModal(false);
+                    };
+                    reader.readAsDataURL(blob);
+                }
             }
         };
-    }, [completedCrop, imgSrc, onImageCrop]);
+    }, [
+        completedCrop,
+        imgSrc,
+        onImageCrop,
+        enableServerUpload,
+        widgetSlug,
+        imageType,
+        slideId,
+    ]);
 
     const handleCancelCrop = () => {
         setShowCropModal(false);
-        setImgSrc('');
+        // Не очищаем imgSrc, чтобы можно было повторно редактировать
         setCrop(undefined);
         setCompletedCrop(undefined);
+    };
+
+    const handleEditImage = () => {
+        if (imgSrc) {
+            setShowCropModal(true);
+        }
     };
 
     return (
@@ -174,7 +331,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             >
                 <input {...getInputProps()} />
                 <div className="image-uploader__content">
-                    {isDragActive ? (
+                    {isUploading ? (
+                        <div className="image-uploader__uploading">
+                            <div className="image-uploader__spinner">
+                                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                            </div>
+                            <p className="image-uploader__text">
+                                Загрузка изображения...
+                            </p>
+                        </div>
+                    ) : isDragActive ? (
                         <p className="image-uploader__text">
                             Отпустите файл здесь...
                         </p>
@@ -218,9 +384,35 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 </div>
             </div>
 
+            {/* Отображение ошибок */}
+            {uploadError && (
+                <div className="image-uploader__error">
+                    <p className="text-sm text-red-600">{uploadError}</p>
+                </div>
+            )}
+
+            {/* Кнопка редактирования после обрезки */}
+            {hasCroppedImage && !showCropModal && (
+                <div className="image-uploader__edit-section">
+                    <button
+                        type="button"
+                        className="image-uploader__edit-button"
+                        onClick={handleEditImage}
+                    >
+                        ✏️ Редактировать изображение
+                    </button>
+                </div>
+            )}
+
             {showCropModal && (
-                <div className="image-uploader__modal">
-                    <div className="image-uploader__modal-content">
+                <div
+                    className="image-uploader__modal"
+                    onClick={handleCancelCrop}
+                >
+                    <div
+                        className="image-uploader__modal-content"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="image-uploader__modal-header">
                             <h3 className="image-uploader__modal-title">
                                 Обрезка изображения
@@ -248,6 +440,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                                     src={imgSrc}
                                     onLoad={onImageLoad}
                                     className="image-uploader__crop-image"
+                                    style={{
+                                        transform: `scale(${scale}) rotate(${rotate}deg)`,
+                                        transformOrigin: 'center',
+                                    }}
                                 />
                             </ReactCrop>
                         </div>

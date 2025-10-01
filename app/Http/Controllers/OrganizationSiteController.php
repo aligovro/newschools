@@ -47,16 +47,20 @@ class OrganizationSiteController extends Controller
   {
     $request->validate([
       'name' => 'required|string|max:255',
-      'slug' => 'required|string|max:255|unique:organization_sites,slug',
+      'slug' => 'nullable|string|max:255|unique:organization_sites,slug',
       'description' => 'nullable|string|max:1000',
       'template' => 'required|string|exists:site_templates,slug',
     ]);
 
     $template = \App\Models\SiteTemplate::where('slug', $request->template)->first();
 
+    // Получаем или создаем домен по умолчанию для организации
+    $domain = $this->getOrCreateDefaultDomain($organization);
+
     $site = $organization->sites()->create([
+      'domain_id' => $domain->id,
       'name' => $request->name,
-      'slug' => $request->slug,
+      'slug' => $request->slug, // Если пустой, трейт HasSlug автоматически сгенерирует
       'description' => $request->description,
       'template' => $request->template,
       'layout_config' => $template->layout_config ?? [],
@@ -75,6 +79,9 @@ class OrganizationSiteController extends Controller
 
     // Создаем автоматические страницы
     $this->createAutoPages($site);
+
+    // Создаем дефолтные виджеты
+    $this->createDefaultWidgets($site);
 
     return redirect()
       ->route('organization.admin.sites.builder', [
@@ -353,5 +360,134 @@ class OrganizationSiteController extends Controller
     foreach ($autoPages as $pageData) {
       $site->pages()->create($pageData);
     }
+  }
+
+  /**
+   * Создание дефолтных виджетов для сайта
+   */
+  private function createDefaultWidgets(OrganizationSite $site)
+  {
+    $template = \App\Models\SiteTemplate::where('slug', $site->template)->first();
+    if (!$template) {
+      return;
+    }
+
+    $positions = \App\Models\WidgetPosition::where('template_id', $template->id)->get();
+    $defaultWidgets = [];
+
+    foreach ($positions as $position) {
+      $widget = $this->getDefaultWidgetForPosition($position->slug);
+      if ($widget) {
+        $defaultWidgets[] = [
+          'id' => time() . rand(1000, 9999),
+          'widget_id' => $widget->id,
+          'name' => $widget->name,
+          'slug' => $widget->slug,
+          'position_name' => $position->name,
+          'position_slug' => $position->slug,
+          'order' => 1,
+          'config' => $this->getDefaultConfigForWidget($widget->slug),
+          'settings' => [],
+          'is_active' => true,
+          'is_visible' => true,
+          'created_at' => now()->toISOString(),
+        ];
+      }
+    }
+
+    $site->update(['widgets_config' => $defaultWidgets]);
+  }
+
+  /**
+   * Получить дефолтный виджет для позиции
+   */
+  private function getDefaultWidgetForPosition(string $positionSlug): ?\App\Models\Widget
+  {
+    $defaultWidgets = [
+      'header' => 'header-menu',
+      'hero' => 'hero-slider',
+      'footer' => 'footer-contacts',
+    ];
+
+    $widgetSlug = $defaultWidgets[$positionSlug] ?? null;
+    return $widgetSlug ? \App\Models\Widget::where('slug', $widgetSlug)->first() : null;
+  }
+
+  /**
+   * Получить дефолтную конфигурацию для виджета
+   */
+  private function getDefaultConfigForWidget(string $widgetSlug): array
+  {
+    $defaultConfigs = [
+      'header-menu' => [
+        'logo' => '',
+        'menu_items' => [
+          ['title' => 'Главная', 'url' => '/'],
+          ['title' => 'О нас', 'url' => '/about'],
+          ['title' => 'Контакты', 'url' => '/contacts'],
+        ],
+      ],
+      'hero-slider' => [
+        'type' => 'slider',
+        'slides' => [
+          [
+            'title' => 'Добро пожаловать',
+            'description' => 'Мы рады приветствовать вас на нашем сайте',
+            'button_text' => 'Узнать больше',
+            'button_url' => '/about',
+            'background_image' => '',
+          ],
+          [
+            'title' => 'Наши услуги',
+            'description' => 'Мы предлагаем широкий спектр качественных услуг',
+            'button_text' => 'Смотреть услуги',
+            'button_url' => '/services',
+            'background_image' => '',
+          ],
+          [
+            'title' => 'Свяжитесь с нами',
+            'description' => 'Мы всегда готовы ответить на ваши вопросы',
+            'button_text' => 'Связаться',
+            'button_url' => '/contacts',
+            'background_image' => '',
+          ],
+        ],
+        'autoplay' => true,
+        'autoplay_delay' => 5000,
+      ],
+      'footer-contacts' => [
+        'phone' => '+7 (XXX) XXX-XX-XX',
+        'email' => 'info@example.com',
+        'address' => 'Ваш адрес',
+        'social_links' => [
+          ['platform' => 'facebook', 'url' => '#'],
+          ['platform' => 'instagram', 'url' => '#'],
+          ['platform' => 'telegram', 'url' => '#'],
+        ],
+      ],
+    ];
+
+    return $defaultConfigs[$widgetSlug] ?? [];
+  }
+
+  /**
+   * Получить или создать домен по умолчанию для организации
+   */
+  private function getOrCreateDefaultDomain(Organization $organization): \App\Models\OrganizationDomain
+  {
+    // Ищем существующий основной домен
+    $domain = $organization->domains()->where('is_primary', true)->first();
+
+    if ($domain) {
+      return $domain;
+    }
+
+    // Создаем домен по умолчанию
+    return $organization->domains()->create([
+      'domain' => $organization->slug . '.' . config('app.domain', 'localhost'),
+      'is_primary' => true,
+      'is_ssl_enabled' => false,
+      'status' => 'active',
+    ]);
   }
 }

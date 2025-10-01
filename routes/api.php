@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PaymentWebhookController;
+use App\Http\Controllers\Api\SlugController;
+use App\Http\Controllers\Api\WidgetController;
+use App\Http\Controllers\Api\WidgetImageController;
+use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\OrganizationMenuController;
 use App\Http\Controllers\OrganizationMenuItemController;
 
@@ -107,4 +111,46 @@ Route::prefix('organizations/{organization}/menus')->group(function () {
     Route::patch('/{item}/toggle', [OrganizationMenuItemController::class, 'toggle']);
     Route::put('/order', [OrganizationMenuItemController::class, 'updateOrder']);
   });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Slug Generation Routes
+|--------------------------------------------------------------------------
+*/
+
+// Маршруты для генерации slug'ов
+Route::prefix('slug')->group(function () {
+  Route::post('/generate', [SlugController::class, 'generate']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Widget Routes
+|--------------------------------------------------------------------------
+*/
+
+// Маршруты для управления виджетами
+Route::prefix('widgets')->group(function () {
+  Route::get('/', [WidgetController::class, 'index']);
+  Route::get('/categories', [WidgetController::class, 'categories']);
+  Route::get('/positions', [WidgetController::class, 'positions']);
+  Route::get('/positions/{positionId}/widgets', [WidgetController::class, 'forPosition']);
+  Route::get('/template/{templateId}', [WidgetController::class, 'forTemplate']);
+  Route::get('/{id}', [WidgetController::class, 'show']);
+  Route::get('/{id}/config', [WidgetController::class, 'config']);
+  Route::post('/{id}/preview', [WidgetController::class, 'preview']);
+
+  // Маршруты для загрузки изображений виджетов
+  Route::prefix('images')->middleware(['web', 'auth'])->group(function () {
+    Route::post('/upload', [WidgetImageController::class, 'upload']);
+    Route::delete('/delete', [WidgetImageController::class, 'delete']);
+  });
+});
+
+// API для сохранения конфигурации сайта
+Route::prefix('sites')->middleware('auth:sanctum')->group(function () {
+  Route::post('/{id}/save-config', [SiteController::class, 'saveConfig']);
+  Route::get('/{id}/config', [SiteController::class, 'getConfig']);
+  Route::get('/{id}/preview', [SiteController::class, 'preview']);
 });

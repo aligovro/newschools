@@ -1,6 +1,6 @@
+import SlugGenerator from '@/components/SlugGenerator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -26,8 +26,8 @@ interface SiteTemplate {
     name: string;
     slug: string;
     description: string;
-    layout_config: any;
-    theme_config: any;
+    layout_config: LayoutConfig;
+    theme_config: ThemeConfig;
     is_premium: boolean;
 }
 
@@ -55,31 +55,29 @@ export default function CreateSite({ organization, templates }: Props) {
         },
         {
             title: organization.name,
-            href: `/organization/${organization.id}/admin`,
+            href: `/dashboard/organization/${organization.id}/admin`,
         },
         {
             title: 'Сайты',
-            href: `/organization/${organization.id}/admin/sites`,
+            href: `/dashboard/organization/${organization.id}/admin/sites`,
         },
         {
             title: 'Создать сайт',
-            href: `/organization/${organization.id}/admin/sites/create`,
+            href: `/dashboard/organization/${organization.id}/admin/sites/create`,
         },
     ];
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(`/organization/${organization.id}/admin/sites`);
+        post(`/dashboard/organization/${organization.id}/admin/sites`);
     };
 
-    const generateSlug = (name: string) => {
-        const slug = name
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
-            .trim();
+    const handleSlugChange = (slug: string) => {
         setData('slug', slug);
+    };
+
+    const handleNameChange = (name: string) => {
+        setData('name', name);
     };
 
     return (
@@ -89,7 +87,9 @@ export default function CreateSite({ organization, templates }: Props) {
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center space-x-4">
-                    <Link href={`/organization/${organization.id}/admin/sites`}>
+                    <Link
+                        href={`/dashboard/organization/${organization.id}/admin/sites`}
+                    >
                         <Button variant="ghost" size="sm">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Назад к сайтам
@@ -116,60 +116,24 @@ export default function CreateSite({ organization, templates }: Props) {
                                     className="space-y-6"
                                 >
                                     <div className="space-y-2">
-                                        <Label htmlFor="name">
-                                            Название сайта *
-                                        </Label>
-                                        <Input
-                                            id="name"
-                                            value={data.name}
-                                            onChange={(e) => {
-                                                setData('name', e.target.value);
-                                                if (!data.slug) {
-                                                    generateSlug(
-                                                        e.target.value,
-                                                    );
-                                                }
-                                            }}
+                                        <SlugGenerator
+                                            value={data.slug}
+                                            onChange={handleSlugChange}
+                                            onNameChange={handleNameChange}
                                             placeholder="Введите название сайта"
-                                            className={
-                                                errors.name
-                                                    ? 'border-red-500'
-                                                    : ''
-                                            }
+                                            table="organization_sites"
+                                            column="slug"
                                         />
                                         {errors.name && (
                                             <p className="text-sm text-red-500">
                                                 {errors.name}
                                             </p>
                                         )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="slug">
-                                            URL-адрес (slug) *
-                                        </Label>
-                                        <Input
-                                            id="slug"
-                                            value={data.slug}
-                                            onChange={(e) =>
-                                                setData('slug', e.target.value)
-                                            }
-                                            placeholder="url-adres-saita"
-                                            className={
-                                                errors.slug
-                                                    ? 'border-red-500'
-                                                    : ''
-                                            }
-                                        />
                                         {errors.slug && (
                                             <p className="text-sm text-red-500">
                                                 {errors.slug}
                                             </p>
                                         )}
-                                        <p className="text-xs text-muted-foreground">
-                                            Только латинские буквы, цифры и
-                                            дефисы
-                                        </p>
                                     </div>
 
                                     <div className="space-y-2">
@@ -249,14 +213,18 @@ export default function CreateSite({ organization, templates }: Props) {
                                     <div className="flex items-center space-x-4">
                                         <Button
                                             type="submit"
-                                            disabled={processing}
+                                            disabled={
+                                                processing ||
+                                                !data.name ||
+                                                !data.template
+                                            }
                                         >
                                             {processing
                                                 ? 'Создание...'
                                                 : 'Создать сайт'}
                                         </Button>
                                         <Link
-                                            href={`/organization/${organization.id}/admin/sites`}
+                                            href={`/dashboard/organization/${organization.id}/admin/sites`}
                                         >
                                             <Button
                                                 type="button"

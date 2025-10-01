@@ -60,6 +60,32 @@
         margin: 0;
     }
 
+    &__edit-section {
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    &__edit-button {
+        padding: 0.5rem 1rem;
+        background-color: get-color(primary-500);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+
+        &:hover {
+            background-color: get-color(primary-600);
+            transform: translateY(-1px);
+        }
+
+        &:active {
+            transform: translateY(0);
+        }
+    }
+
     // Modal styles
     &__modal {
         position: fixed;
@@ -73,6 +99,7 @@
         justify-content: center;
         z-index: 1000;
         padding: 1rem;
+        overflow-y: auto;
     }
 
     &__modal-content {
@@ -81,9 +108,11 @@
         box-shadow: 0 25px 50px -12px get-color(shadow-lg);
         max-width: 90vw;
         max-height: 90vh;
+        width: 100%;
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        margin: auto;
     }
 
     &__modal-header {
@@ -122,13 +151,19 @@
         display: flex;
         justify-content: center;
         background-color: get-color(background-secondary);
+        overflow: auto;
+        max-height: 60vh;
+        min-height: 300px;
     }
 
     &__crop-image {
         max-width: 100%;
-        max-height: 400px;
+        max-height: 500px;
+        width: auto;
+        height: auto;
         border-radius: 8px;
         box-shadow: 0 4px 6px -1px get-color(shadow);
+        object-fit: contain;
     }
 
     &__controls {

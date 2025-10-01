@@ -23,7 +23,6 @@ class Widget extends Model
     'css_classes',
     'js_script',
     'is_active',
-    'is_premium',
     'sort_order',
   ];
 
@@ -31,7 +30,6 @@ class Widget extends Model
     'fields_config' => 'array',
     'settings_config' => 'array',
     'is_active' => 'boolean',
-    'is_premium' => 'boolean',
   ];
 
   // Связи
@@ -46,15 +44,6 @@ class Widget extends Model
     return $query->where('is_active', true);
   }
 
-  public function scopeFree($query)
-  {
-    return $query->where('is_premium', false);
-  }
-
-  public function scopePremium($query)
-  {
-    return $query->where('is_premium', true);
-  }
 
   public function scopeByCategory($query, $category)
   {

@@ -432,7 +432,7 @@ export default function SiteManagementPage({
 
                                     <div className="flex items-center space-x-2">
                                         <Link
-                                            href={`/organization/${site.organization.id}/admin/sites/${site.id}/builder`}
+                                            href={`/dashboard/organization/${site.organization.id}/admin/sites/${site.id}/builder`}
                                         >
                                             <Button variant="outline" size="sm">
                                                 <Edit className="mr-1 h-4 w-4" />
@@ -441,7 +441,7 @@ export default function SiteManagementPage({
                                         </Link>
 
                                         <Link
-                                            href={`/organization/${site.organization.id}/admin`}
+                                            href={`/dashboard/organization/${site.organization.id}/admin`}
                                         >
                                             <Button variant="ghost" size="sm">
                                                 <Settings className="h-4 w-4" />

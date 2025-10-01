@@ -25,6 +25,9 @@ export default {
 
                 // Наши кастомные цвета из _colors.scss
                 primary: {
+                    DEFAULT: 'var(--color-primary-500)',
+                    foreground: 'var(--color-text-inverse)',
+                    hover: 'var(--color-primary-600)',
                     50: 'var(--color-primary-50)',
                     100: 'var(--color-primary-100)',
                     200: 'var(--color-primary-200)',
@@ -38,6 +41,8 @@ export default {
                     950: 'var(--color-primary-950)',
                 },
                 secondary: {
+                    DEFAULT: 'var(--color-secondary-500)',
+                    foreground: 'var(--color-text-inverse)',
                     50: 'var(--color-secondary-50)',
                     100: 'var(--color-secondary-100)',
                     200: 'var(--color-secondary-200)',
@@ -89,6 +94,17 @@ export default {
                     900: 'var(--color-error-900)',
                     950: 'var(--color-error-950)',
                 },
+                // Дополнительные цвета для UI компонентов
+                destructive: {
+                    DEFAULT: 'var(--color-error-500)',
+                    foreground: 'var(--color-text-inverse)',
+                },
+                accent: {
+                    DEFAULT: 'var(--color-neutral-100)',
+                    foreground: 'var(--color-text-primary)',
+                },
+                input: 'var(--color-border-primary)',
+                ring: 'var(--color-border-focus)',
             },
         },
     },

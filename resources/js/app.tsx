@@ -4,6 +4,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
+import { Toaster } from 'sonner';
 import { store } from './store';
 
 // Инициализируем тему при загрузке приложения
@@ -56,6 +57,7 @@ createInertiaApp({
         root.render(
             <Provider store={store}>
                 <App {...props} />
+                <Toaster position="top-right" richColors />
             </Provider>,
         );
     },
