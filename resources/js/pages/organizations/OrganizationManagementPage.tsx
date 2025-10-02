@@ -325,7 +325,7 @@ export default function OrganizationManagementPage({
                                                 </Button>
                                             </Link>
                                             <Link
-                                                href={`/organization/${organization.id}/admin`}
+                                                href={`/dashboard/organization/${organization.id}/admin`}
                                             >
                                                 <Button
                                                     variant="ghost"

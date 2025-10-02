@@ -39,12 +39,12 @@ export default function SubscribeSection() {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            console.log(
+            /* console.log(
                 'Searching for:',
                 searchQuery,
                 'in region:',
                 selectedRegion,
-            );
+            ); */
         }
     };
 

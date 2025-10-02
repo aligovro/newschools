@@ -32,12 +32,12 @@ export default function HeroSection({ terminology }: HeroSectionProps) {
         e.preventDefault();
         if (searchQuery.trim()) {
             // Здесь будет логика поиска
-            console.log(
+            /* console.log(
                 'Searching for:',
                 searchQuery,
                 'in region:',
                 selectedRegion,
-            );
+            ); */
         }
     };
 

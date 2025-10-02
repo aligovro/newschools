@@ -61,11 +61,11 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
         },
         {
             title: organization.name,
-            href: `/organization/${organization.id}/admin`,
+            href: `/dashboard/organization/${organization.id}/admin`,
         },
         {
             title: 'Сайты',
-            href: `/organization/${organization.id}/admin/sites`,
+            href: `/dashboard/organization/${organization.id}/admin/sites`,
         },
     ];
 
@@ -101,26 +101,26 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
             )
         ) {
             router.delete(
-                `/organization/${organization.id}/admin/sites/${siteId}`,
+                `/dashboard/organization/${organization.id}/admin/sites/${siteId}`,
             );
         }
     };
 
     const handlePublish = (siteId: number) => {
         router.patch(
-            `/organization/${organization.id}/admin/sites/${siteId}/publish`,
+            `/dashboard/organization/${organization.id}/admin/sites/${siteId}/publish`,
         );
     };
 
     const handleUnpublish = (siteId: number) => {
         router.patch(
-            `/organization/${organization.id}/admin/sites/${siteId}/unpublish`,
+            `/dashboard/organization/${organization.id}/admin/sites/${siteId}/unpublish`,
         );
     };
 
     const handleArchive = (siteId: number) => {
         router.patch(
-            `/organization/${organization.id}/admin/sites/${siteId}/archive`,
+            `/dashboard/organization/${organization.id}/admin/sites/${siteId}/archive`,
         );
     };
 
@@ -138,7 +138,7 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
                         </p>
                     </div>
                     <Link
-                        href={`/organization/${organization.id}/admin/sites/create`}
+                        href={`/dashboard/organization/${organization.id}/admin/sites/create`}
                     >
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />
@@ -284,7 +284,7 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
 
                                     <div className="flex items-center space-x-2">
                                         <Link
-                                            href={`/organization/${organization.id}/admin/sites/${site.id}/builder`}
+                                            href={`/dashboard/organization/${organization.id}/admin/sites/${site.id}/builder`}
                                         >
                                             <Button variant="outline" size="sm">
                                                 <Edit className="mr-1 h-4 w-4" />
@@ -293,7 +293,7 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
                                         </Link>
 
                                         <Link
-                                            href={`/organization/${organization.id}/admin/sites/${site.id}/edit`}
+                                            href={`/dashboard/organization/${organization.id}/admin/sites/${site.id}/edit`}
                                         >
                                             <Button variant="ghost" size="sm">
                                                 <Settings className="h-4 w-4" />
@@ -363,7 +363,7 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
                                 первый сайт, чтобы начать.
                             </p>
                             <Link
-                                href={`/organization/${organization.id}/admin/sites/create`}
+                                href={`/dashboard/organization/${organization.id}/admin/sites/create`}
                             >
                                 <Button>
                                     <Plus className="mr-2 h-4 w-4" />

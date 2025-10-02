@@ -121,7 +121,7 @@ export default function OrganizationShowPage({ organization }: Props) {
                                 </Button>
                             </Link>
                             <Link
-                                href={`/organization/${organization.id}/admin`}
+                                href={`/dashboard/organization/${organization.id}/admin`}
                             >
                                 <Button variant="outline" size="sm">
                                     <Settings className="h-4 w-4" />

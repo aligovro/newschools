@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+// Import widget styles
+@import './form-widget.scss';
+@import './form-styling-additional.scss';
+@import './hero-widget.scss';
+@import './menu-widget.scss';
+
 @layer base {
     * {
         @apply border-gray-200;

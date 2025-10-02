@@ -1,12 +1,14 @@
+import { SettingsContent } from '@/components/site-builder/layout';
 import { SiteBuilder } from '@/components/site-builder/SiteBuilder';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSiteSettings } from '@/hooks';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Eye, Globe, Save, Settings, Share } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import * as yup from 'yup';
 
 interface Organization {
     id: number;
@@ -76,10 +78,127 @@ interface Props {
 }
 
 export default function EditWithBuilder({ organization, site }: Props) {
+    const getInitialTab = (): 'settings' | 'builder' | 'preview' => {
+        if (typeof window === 'undefined') return 'settings';
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab === 'settings' || tab === 'builder' || tab === 'preview') {
+            return tab;
+        }
+        return 'settings';
+    };
+
     const [activeTab, setActiveTab] = useState<
         'builder' | 'preview' | 'settings'
-    >('builder');
+    >(getInitialTab());
+
+    const updateUrlTab = (tab: 'settings' | 'builder' | 'preview') => {
+        if (typeof window === 'undefined') return;
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url.toString());
+    };
+
+    const handleTabClick = (tab: 'settings' | 'builder' | 'preview') => {
+        setActiveTab(tab);
+        updateUrlTab(tab);
+    };
+
+    useEffect(() => {
+        const onPopState = () => {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get('tab');
+            if (tab === 'settings' || tab === 'builder' || tab === 'preview') {
+                setActiveTab(tab);
+            }
+        };
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, []);
     const [isSaving, setIsSaving] = useState(false);
+    const [widgets, setWidgets] = useState<any[]>([]);
+    const [validationErrors, setValidationErrors] = useState<{
+        [key: string]: string[];
+    }>({});
+
+    // Схема валидации для виджетов - проверяем только критичные поля
+    const widgetSchema = yup
+        .object()
+        .shape({
+            id: yup.number().required(),
+            name: yup.string().required(),
+            slug: yup.string().required(),
+            config: yup.object().default({}),
+            settings: yup.object().default({}),
+            position_name: yup.string().required(),
+            order: yup.number().required(),
+            is_active: yup.boolean().default(true),
+            is_visible: yup.boolean().default(true),
+        })
+        .test('widget-validation', function (value) {
+            const errors: string[] = [];
+
+            // Проверяем только если виджет реально добавлен (не пустой)
+            if (value && value.id) {
+                if (!value.name || value.name.trim() === '') {
+                    errors.push(`Виджет ${value.id}: Название обязательно`);
+                }
+                if (!value.slug || value.slug.trim() === '') {
+                    errors.push(`Виджет ${value.id}: Slug обязателен`);
+                }
+                if (!value.position_name || value.position_name.trim() === '') {
+                    errors.push(`Виджет ${value.id}: Позиция обязательна`);
+                }
+                if (
+                    value.order === undefined ||
+                    value.order === null ||
+                    value.order < 0
+                ) {
+                    errors.push(`Виджет ${value.id}: Порядок обязателен`);
+                }
+            }
+
+            if (errors.length > 0) {
+                return this.createError({ message: errors.join('; ') });
+            }
+
+            return true;
+        });
+
+    const widgetsSchema = yup.array().of(widgetSchema);
+
+    // Функция для проверки наличия ошибок в вкладке
+    const hasErrorsInTab = (tab: string) => {
+        return validationErrors[tab] && validationErrors[tab].length > 0;
+    };
+
+    // Настройки сайта с хуком
+    const { siteSettings, updateSetting } = useSiteSettings({
+        initialSettings: {
+            title: site.name || '',
+            description: site.description || '',
+            seoTitle: site.seo_config?.title || '',
+            seoDescription: site.seo_config?.description || '',
+            seoKeywords: site.seo_config?.keywords || '',
+        },
+    });
+
+    const handleSiteSettingChange = (key: string, value: string) => {
+        updateSetting(key as keyof typeof siteSettings, value);
+    };
+
+    const handleSaveSettings = async () => {
+        try {
+            setIsSaving(true);
+            // Здесь будет логика сохранения настроек
+            console.log('Saving settings:', siteSettings);
+            // TODO: Добавить API вызов для сохранения настроек
+        } catch (error) {
+            console.error('Error saving settings:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -92,15 +211,15 @@ export default function EditWithBuilder({ organization, site }: Props) {
         },
         {
             title: organization.name,
-            href: `/organization/${organization.id}/admin`,
+            href: `/dashboard/organization/${organization.id}/admin`,
         },
         {
             title: 'Сайты',
-            href: `/organization/${organization.id}/admin/sites`,
+            href: `/dashboard/organization/${organization.id}/admin/sites`,
         },
         {
             title: site.name,
-            href: `/organization/${organization.id}/admin/sites/${site.id}/builder`,
+            href: `/dashboard/organization/${organization.id}/admin/sites/${site.id}/builder`,
         },
     ];
 
@@ -117,22 +236,114 @@ export default function EditWithBuilder({ organization, site }: Props) {
         }
     };
 
-    const handleSave = async (content: any) => {
+    const handleSave = async () => {
         setIsSaving(true);
         try {
-            // Здесь будет логика сохранения через API
+            // Проверяем, что site.id существует
+            if (!site?.id) {
+                throw new Error('Site ID is not defined');
+            }
+
+            // Валидируем виджеты только если они есть
+            if (widgets.length > 0) {
+                try {
+                    await widgetsSchema.validate(widgets, {
+                        abortEarly: false,
+                    });
+                    // Очищаем ошибки если валидация прошла успешно
+                    setValidationErrors({});
+                } catch (validationError) {
+                    if (validationError instanceof yup.ValidationError) {
+                        const errors: string[] = [];
+
+                        validationError.inner.forEach((error) => {
+                            if (error.message) {
+                                // Разбиваем сообщения по точкам с запятой для получения отдельных ошибок
+                                const errorMessages = error.message.split('; ');
+                                errors.push(...errorMessages);
+                            }
+                        });
+
+                        console.error('Validation errors:', errors);
+                        setValidationErrors({ builder: errors });
+                        setIsSaving(false);
+                        return;
+                    }
+                }
+            } else {
+                // Если виджетов нет, очищаем ошибки
+                setValidationErrors({});
+            }
+
+            // Сохраняем конфигурацию виджетов
+            const content = {
+                widgets: widgets,
+            };
+
+            console.log('Site ID:', site.id);
             console.log('Saving content:', content);
-            // await saveSiteContent(site.id, content);
+
+            // Используем Inertia.js для отправки данных
+            router.post(
+                `/sites/${site.id}/save-config`,
+                {
+                    widgets: content.widgets || [],
+                },
+                {
+                    onSuccess: () => {
+                        console.log('Site configuration saved successfully');
+                        setValidationErrors({});
+                        // Можно добавить toast уведомление вместо alert
+                    },
+                    onError: (errors) => {
+                        console.error('Error saving:', errors);
+                        alert(
+                            'Ошибка при сохранении: ' + JSON.stringify(errors),
+                        );
+                    },
+                    onFinish: () => {
+                        setIsSaving(false);
+                    },
+                },
+            );
         } catch (error) {
             console.error('Error saving:', error);
+            alert('Ошибка при сохранении конфигурации');
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handlePreview = () => {
-        setActiveTab('preview');
-        // Здесь будет логика предварительного просмотра
+    const handlePreview = async () => {
+        try {
+            // Получаем URL для предпросмотра
+            const response = await fetch(`/api/sites/${site.id}/preview`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN':
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute('content') || '',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get preview URL');
+            }
+
+            const result = await response.json();
+            console.log('Preview URL:', result.data.preview_url);
+
+            // Открываем предпросмотр в новой вкладке
+            window.open(result.data.preview_url, '_blank');
+        } catch (error) {
+            console.error('Error getting preview:', error);
+            alert('Ошибка при получении предпросмотра');
+        }
+    };
+
+    const handleWidgetsChange = (newWidgets: any[]) => {
+        setWidgets(newWidgets);
     };
 
     const handleAddWidget = async (widgetData: any) => {
@@ -147,19 +358,19 @@ export default function EditWithBuilder({ organization, site }: Props) {
 
     const tabs = [
         {
+            id: 'settings',
+            label: 'Настройки',
+            icon: Settings,
+        },
+        {
             id: 'builder',
             label: 'Конструктор',
-            icon: Settings,
+            icon: Globe,
         },
         {
             id: 'preview',
             label: 'Предпросмотр',
             icon: Eye,
-        },
-        {
-            id: 'settings',
-            label: 'Настройки',
-            icon: Globe,
         },
     ];
 
@@ -173,7 +384,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <Link
-                                href={`/organization/${organization.id}/admin/sites`}
+                                href={`/dashboard/organization/${organization.id}/admin/sites`}
                             >
                                 <Button variant="ghost" size="sm">
                                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -222,15 +433,24 @@ export default function EditWithBuilder({ organization, site }: Props) {
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
+                                    onClick={() =>
+                                        handleTabClick(tab.id as any)
+                                    }
                                     className={`flex items-center space-x-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                                         activeTab === tab.id
                                             ? 'bg-primary text-primary-foreground'
                                             : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                                    } ${
+                                        hasErrorsInTab(tab.id)
+                                            ? 'border-2 border-red-500'
+                                            : ''
                                     }`}
                                 >
                                     <Icon className="h-4 w-4" />
                                     <span>{tab.label}</span>
+                                    {hasErrorsInTab(tab.id) && (
+                                        <span className="ml-1 h-2 w-2 rounded-full bg-red-500"></span>
+                                    )}
                                 </button>
                             );
                         })}
@@ -241,16 +461,12 @@ export default function EditWithBuilder({ organization, site }: Props) {
                 <div className="flex-1 overflow-hidden">
                     {activeTab === 'builder' && (
                         <SiteBuilder
-                            initialContent={{
-                                blocks: site.content_blocks || [],
-                                layout: site.layout_config || {},
-                                theme: site.theme_config || {},
-                            }}
-                            onSave={handleSave}
-                            onPreview={handlePreview}
+                            siteId={site.id}
                             template={site.template}
-                            onAddWidget={handleAddWidget}
-                            widgets={site.widgets || []}
+                            initialLayoutConfig={site.layout_config || {}}
+                            initialWidgets={site.widgets_config || []}
+                            onWidgetsChange={handleWidgetsChange}
+                            validationErrors={validationErrors['builder'] || []}
                         />
                     )}
 
@@ -282,100 +498,13 @@ export default function EditWithBuilder({ organization, site }: Props) {
                     )}
 
                     {activeTab === 'settings' && (
-                        <div className="p-6">
-                            <div className="mx-auto max-w-4xl space-y-6">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>
-                                            Основные настройки
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                            <div>
-                                                <label className="text-sm font-medium">
-                                                    Название сайта
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={site.name}
-                                                    className="mt-1 w-full rounded-md border px-3 py-2"
-                                                    readOnly
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-sm font-medium">
-                                                    URL-адрес
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={site.slug}
-                                                    className="mt-1 w-full rounded-md border px-3 py-2"
-                                                    readOnly
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-medium">
-                                                Описание
-                                            </label>
-                                            <textarea
-                                                value={site.description}
-                                                className="mt-1 w-full rounded-md border px-3 py-2"
-                                                rows={3}
-                                                readOnly
-                                            />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>SEO настройки</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div>
-                                            <label className="text-sm font-medium">
-                                                Meta заголовок
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={
-                                                    site.seo_config?.title || ''
-                                                }
-                                                className="mt-1 w-full rounded-md border px-3 py-2"
-                                                readOnly
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-medium">
-                                                Meta описание
-                                            </label>
-                                            <textarea
-                                                value={
-                                                    site.seo_config
-                                                        ?.description || ''
-                                                }
-                                                className="mt-1 w-full rounded-md border px-3 py-2"
-                                                rows={3}
-                                                readOnly
-                                            />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                <div className="flex justify-end">
-                                    <Link
-                                        href={`/organization/${organization.id}/admin/sites/${site.id}/edit`}
-                                    >
-                                        <Button>
-                                            <Settings className="mr-2 h-4 w-4" />
-                                            Редактировать настройки
-                                        </Button>
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
+                        <SettingsContent
+                            siteSettings={siteSettings}
+                            site={site}
+                            isSaving={isSaving}
+                            onSettingChange={handleSiteSettingChange}
+                            onSaveSettings={handleSaveSettings}
+                        />
                     )}
                 </div>
             </div>

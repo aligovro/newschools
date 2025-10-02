@@ -1,8 +1,7 @@
-import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { useDrag } from 'react-dnd';
 
 interface Widget {
     id: number;
@@ -12,33 +11,58 @@ interface Widget {
     icon?: string;
     category: string;
     component_name?: string;
-    is_premium: boolean;
-}
-
-interface WidgetPosition {
-    id: number;
-    name: string;
-    slug: string;
-    description: string;
-    area: string;
-    order: number;
-    allowed_widgets: string[];
-    is_required: boolean;
 }
 
 interface WidgetPanelProps {
-    template: any;
-    onAddWidget: (widget: Widget, position: string) => void;
+    template: LayoutConfig;
     className?: string;
 }
 
+// Компонент для draggable виджета
+const DraggableWidget: React.FC<{
+    widget: Widget;
+}> = ({ widget }) => {
+    const [{ isDragging }, drag] = useDrag({
+        type: 'widget',
+        item: { widget },
+        collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
+
+    return (
+        <div
+            ref={drag}
+            className={`cursor-grab transition-opacity hover:shadow-md ${
+                isDragging ? 'opacity-50' : 'opacity-100'
+            }`}
+        >
+            <Card className="h-full">
+                <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <CardTitle className="text-sm font-medium text-gray-900">
+                                {widget.name}
+                            </CardTitle>
+                            <p className="mt-1 text-xs text-gray-500">
+                                {widget.description}
+                            </p>
+                        </div>
+                        {widget.icon && (
+                            <span className="text-lg">{widget.icon}</span>
+                        )}
+                    </div>
+                </CardHeader>
+            </Card>
+        </div>
+    );
+};
+
 export const WidgetPanel: React.FC<WidgetPanelProps> = ({
     template,
-    onAddWidget,
     className,
 }) => {
     const [widgets, setWidgets] = useState<Widget[]>([]);
-    const [positions, setPositions] = useState<WidgetPosition[]>([]);
     const [categories, setCategories] = useState<string[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -51,19 +75,18 @@ export const WidgetPanel: React.FC<WidgetPanelProps> = ({
     const loadWidgets = async () => {
         try {
             setLoading(true);
-            const response = await fetch(
-                `/api/widgets/template/${template.id}`,
-            );
+            const response = await fetch('/api/widgets');
             const data = await response.json();
 
-            setWidgets(data.widgets || []);
-            setPositions(data.positions || []);
+            if (data.success) {
+                setWidgets(data.data || []);
 
-            // Получаем уникальные категории
-            const uniqueCategories = [
-                ...new Set(data.widgets?.map((w: Widget) => w.category) || []),
-            ];
-            setCategories(['all', ...uniqueCategories]);
+                // Получаем уникальные категории
+                const categories =
+                    data.data?.map((w: Widget) => w.category) || [];
+                const uniqueCategories = [...new Set(categories)] as string[];
+                setCategories(['all', ...uniqueCategories]);
+            }
         } catch (error) {
             console.error('Error loading widgets:', error);
         } finally {
@@ -121,7 +144,7 @@ export const WidgetPanel: React.FC<WidgetPanelProps> = ({
 
     return (
         <div
-            className={`flex w-80 flex-col border-r border-gray-200 bg-white ${className}`}
+            className={`flex h-full w-full flex-col overflow-hidden bg-white ${className}`}
         >
             <div className="border-b border-gray-200 p-4">
                 <h3 className="mb-3 text-lg font-semibold text-gray-900">
@@ -141,103 +164,72 @@ export const WidgetPanel: React.FC<WidgetPanelProps> = ({
                 </div>
 
                 {/* Категории */}
-                <Tabs
-                    value={selectedCategory}
-                    onValueChange={setSelectedCategory}
-                >
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="all">Все</TabsTrigger>
-                        <TabsTrigger value="free">Бесплатные</TabsTrigger>
-                    </TabsList>
-                </Tabs>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => setSelectedCategory('all')}
+                        className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                            selectedCategory === 'all'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                    >
+                        Все
+                    </button>
+                    {categories
+                        .filter((cat) => cat !== 'all')
+                        .map((category) => (
+                            <button
+                                key={category}
+                                onClick={() => setSelectedCategory(category)}
+                                className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                                    selectedCategory === category
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                                {getCategoryName(category)}
+                            </button>
+                        ))}
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
-                {/* Категории виджетов */}
-                {categories
-                    .filter((cat) => cat !== 'all')
-                    .map((category) => (
-                        <div key={category} className="mb-6">
-                            <div className="mb-3 flex items-center space-x-2">
-                                <span className="text-lg">
-                                    {getCategoryIcon(category)}
-                                </span>
-                                <h4 className="font-medium text-gray-900">
-                                    {getCategoryName(category)}
-                                </h4>
-                            </div>
+                <div className="pb-20">
+                    {/* Категории виджетов */}
+                    {categories
+                        .filter((cat) => cat !== 'all')
+                        .map((category) => (
+                            <div key={category} className="mb-6">
+                                <div className="mb-3 flex items-center space-x-2">
+                                    <span className="text-lg">
+                                        {getCategoryIcon(category)}
+                                    </span>
+                                    <h4 className="font-medium text-gray-900">
+                                        {getCategoryName(category)}
+                                    </h4>
+                                </div>
 
-                            <div className="space-y-2">
-                                {filteredWidgets
-                                    .filter(
-                                        (widget) =>
-                                            widget.category === category,
-                                    )
-                                    .map((widget) => (
-                                        <Card
-                                            key={widget.id}
-                                            className="cursor-pointer transition-shadow hover:shadow-md"
-                                            onClick={() =>
-                                                onAddWidget(widget, 'content')
-                                            }
-                                        >
-                                            <CardHeader className="pb-2">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <CardTitle className="text-sm font-medium text-gray-900">
-                                                            {widget.name}
-                                                        </CardTitle>
-                                                        <p className="mt-1 text-xs text-gray-500">
-                                                            {widget.description}
-                                                        </p>
-                                                    </div>
-                                                    {widget.is_premium && (
-                                                        <Badge
-                                                            variant="secondary"
-                                                            className="text-xs"
-                                                        >
-                                                            Pro
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                            </CardHeader>
-                                        </Card>
-                                    ))}
+                                <div className="space-y-2">
+                                    {filteredWidgets
+                                        .filter(
+                                            (widget) =>
+                                                widget.category === category,
+                                        )
+                                        .map((widget) => (
+                                            <DraggableWidget
+                                                key={widget.id}
+                                                widget={widget}
+                                            />
+                                        ))}
+                                </div>
                             </div>
+                        ))}
+
+                    {filteredWidgets.length === 0 && (
+                        <div className="py-8 text-center">
+                            <p className="text-gray-500">Виджеты не найдены</p>
                         </div>
-                    ))}
-
-                {filteredWidgets.length === 0 && (
-                    <div className="py-8 text-center">
-                        <p className="text-gray-500">Виджеты не найдены</p>
-                    </div>
-                )}
-            </div>
-
-            {/* Позиции */}
-            <div className="border-t border-gray-200 p-4">
-                <h4 className="mb-3 font-medium text-gray-900">Позиции</h4>
-                <div className="space-y-2">
-                    {positions.map((position) => (
-                        <div
-                            key={position.id}
-                            className="flex items-center justify-between rounded-lg bg-gray-50 p-2"
-                        >
-                            <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {position.name}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                    {position.area}
-                                </p>
-                            </div>
-                            {position.is_required && (
-                                <Badge variant="outline" className="text-xs">
-                                    Обязательная
-                                </Badge>
-                            )}
-                        </div>
-                    ))}
+                    )}
                 </div>
             </div>
         </div>

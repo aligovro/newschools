@@ -385,10 +385,10 @@ class OrganizationHomepageController extends Controller
   private function getHomepageStats(Organization $organization): array
   {
     return [
-      'totalVisitors' => $organization->statistics()->sum('visitors'),
+      'totalVisitors' => $organization->statistics()->sum('unique_visitors'),
       'monthlyVisitors' => $organization->statistics()
         ->whereMonth('created_at', now()->month)
-        ->sum('visitors'),
+        ->sum('unique_visitors'),
       'totalDonations' => $organization->donations()->where('status', 'completed')->sum('amount'),
       'activeProjects' => $organization->projects()->where('status', 'active')->count(),
       'totalMembers' => $organization->members()->count(),

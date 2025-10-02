@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Traits\HasSlug;
 
 class Organization extends Model
 {
-  use HasFactory, SoftDeletes;
+  use HasFactory, SoftDeletes, HasSlug;
 
   protected $table = 'organizations';
 
@@ -300,12 +301,6 @@ class Organization extends Model
   protected static function boot()
   {
     parent::boot();
-
-    static::creating(function ($organization) {
-      if (empty($organization->slug)) {
-        $organization->slug = Str::slug($organization->name);
-      }
-    });
 
     static::created(function ($organization) {
       // Создаем настройки по умолчанию

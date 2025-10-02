@@ -27,6 +27,9 @@ Route::get('/tailwind-test', function () {
   return Inertia::render('TailwindTestPage');
 })->name('tailwind-test');
 
+// Публичный маршрут для превью сайта
+Route::get('/sites/{slug}/preview', [App\Http\Controllers\SitePreviewController::class, 'preview'])->name('sites.preview');
+
 Route::middleware(['auth', 'verified'])->group(function () {
   // Dashboard
   Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -51,8 +54,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/organizations/{organization}/create-site', [OrganizationCreationController::class, 'createSite'])->name('organizations.create-site');
     Route::post('/organizations/{organization}/sites', [OrganizationCreationController::class, 'storeSite'])->name('organizations.store-site');
 
-    // Organization admin dashboard
-    Route::get('/organization/{organization}/admin', [OrganizationAdminController::class, 'index'])->name('organization.admin');
 
     // API routes for organization creation
     Route::post('/api/check-slug', [OrganizationCreationController::class, 'checkSlug'])->name('api.check-slug');
@@ -259,6 +260,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
     Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
+    // Site widgets management
+    Route::post('/sites/{site}/widgets', [App\Http\Controllers\Api\SiteController::class, 'addWidget'])->name('sites.add-widget');
+    Route::put('/sites/{site}/widgets/{widgetId}', [App\Http\Controllers\Api\SiteController::class, 'updateWidget'])->name('sites.update-widget');
+    Route::delete('/sites/{site}/widgets/{widgetId}', [App\Http\Controllers\Api\SiteController::class, 'deleteWidget'])->name('sites.delete-widget');
+    Route::post('/sites/{site}/widgets/{widgetId}/move', [App\Http\Controllers\Api\SiteController::class, 'moveWidget'])->name('sites.move-widget');
+    Route::get('/sites/{site}/config', [App\Http\Controllers\Api\SiteController::class, 'getConfig'])->name('sites.get-config');
+
     // Statistics
     Route::get('/statistics', function () {
       return Inertia::render('statistics/StatisticsPage');
@@ -269,7 +277,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
       return Inertia::render('settings/SettingsPage', [
         'globalSettings' => app(\App\Services\GlobalSettingsService::class)->getSettings(),
         'mainSiteSettings' => app(\App\Services\MainSiteSettingsService::class)->getSettings(),
-        'userSettings' => auth()->user(),
+        'userSettings' => \Illuminate\Support\Facades\Auth::user(),
       ]);
     })->name('settings.index');
   });
@@ -277,6 +285,47 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
+
+// Site configuration routes - модульная система
+Route::prefix('api/sites/{id}')->middleware('auth')->group(function () {
+  // Основные настройки сайта
+  Route::post('/settings/basic', [App\Http\Controllers\Api\SiteController::class, 'saveBasicSettings'])
+    ->name('sites.save-basic-settings');
+  Route::post('/settings/design', [App\Http\Controllers\Api\SiteController::class, 'saveDesignSettings'])
+    ->name('sites.save-design-settings');
+  Route::post('/settings/seo', [App\Http\Controllers\Api\SiteController::class, 'saveSeoSettings'])
+    ->name('sites.save-seo-settings');
+
+  // Интеграции: Telegram
+  Route::post('/settings/telegram', [App\Http\Controllers\Api\SiteController::class, 'saveTelegramSettings'])
+    ->name('sites.save-telegram-settings');
+
+  // Платежи сайта
+  Route::post('/settings/payments', [App\Http\Controllers\Api\SiteController::class, 'savePaymentSettings'])
+    ->name('sites.save-payment-settings');
+
+  // Макет сайта
+  Route::post('/settings/layout', [App\Http\Controllers\Api\SiteController::class, 'saveLayoutSettings'])
+    ->name('sites.save-layout-settings');
+
+  // Виджеты
+  Route::post('/widgets', [App\Http\Controllers\Api\SiteController::class, 'addWidget'])
+    ->name('sites.add-widget');
+  Route::put('/widgets/{widgetId}', [App\Http\Controllers\Api\SiteController::class, 'updateWidget'])
+    ->name('sites.update-widget');
+  Route::delete('/widgets/{widgetId}', [App\Http\Controllers\Api\SiteController::class, 'deleteWidget'])
+    ->name('sites.delete-widget');
+  Route::post('/widgets/{widgetId}/move', [App\Http\Controllers\Api\SiteController::class, 'moveWidget'])
+    ->name('sites.move-widget');
+
+  // Конфигурация
+  Route::get('/config', [App\Http\Controllers\Api\SiteController::class, 'getConfig'])
+    ->name('sites.get-config');
+
+  // Превью
+  Route::get('/preview', [App\Http\Controllers\Api\SiteController::class, 'preview'])
+    ->name('sites.preview');
+});
 
 // Public site routes (catch-all for organization domains) - должен быть в самом конце
 Route::get('/{path?}', [App\Http\Controllers\PublicSiteController::class, 'show'])

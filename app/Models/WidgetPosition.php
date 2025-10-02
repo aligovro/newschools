@@ -55,7 +55,7 @@ class WidgetPosition extends Model
 
   public function scopeOrdered($query)
   {
-    return $query->orderBy('area')->orderBy('order');
+    return $query->orderBy('order');
   }
 
   public function scopeRequired($query)

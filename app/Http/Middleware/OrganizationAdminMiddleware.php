@@ -35,7 +35,7 @@ class OrganizationAdminMiddleware
       ->exists();
 
     // Также проверяем, является ли пользователь супер-администратором
-    $isSuperAdmin = $user->hasRole('super_admin') || $user->hasRole('admin');
+    $isSuperAdmin = $user->hasRole('super_admin');
 
     if (!$isAdmin && !$isSuperAdmin) {
       abort(403, 'У вас нет прав для доступа к админ-панели этой организации');

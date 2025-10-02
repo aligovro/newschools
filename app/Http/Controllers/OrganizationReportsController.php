@@ -606,7 +606,7 @@ class OrganizationReportsController extends Controller
   {
     $totalVisitors = $organization->statistics()
       ->whereBetween('created_at', [$startDate, $endDate])
-      ->sum('visitors');
+      ->sum('unique_visitors');
 
     $donations = $organization->donations()
       ->where('status', 'completed')
