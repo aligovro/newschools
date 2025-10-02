@@ -1,0 +1,33 @@
+// Hero Widget Styles
+.hero-widget-editor {
+    &__tabs {
+        display: flex;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 20px;
+    }
+
+    &__tab {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-weight: 500;
+        color: #6b7280;
+        transition: all 0.2s;
+
+        &:hover {
+            color: #374151;
+            background-color: #f9fafb;
+        }
+
+        &.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+    }
+
+    &__content {
+        min-height: 400px;
+    }
+}

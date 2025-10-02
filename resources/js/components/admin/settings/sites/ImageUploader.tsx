@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import ReactCrop, {
     centerCrop,
@@ -8,6 +8,8 @@ import ReactCrop, {
 } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { widgetImageService } from '../../../../services/WidgetImageService';
+// Debug flag for verbose logging
+const DEBUG_CROP = false;
 
 interface ImageUploaderProps {
     onImageUpload: (file: File, croppedImage?: string) => void;
@@ -20,6 +22,7 @@ interface ImageUploaderProps {
     imageType?: 'background' | 'avatar' | 'gallery';
     slideId?: string;
     enableServerUpload?: boolean;
+    existingImageUrl?: string;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -33,16 +36,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     imageType = 'background',
     slideId,
     enableServerUpload = false,
+    existingImageUrl,
 }) => {
     const [imgSrc, setImgSrc] = useState<string>('');
+    const [originalSrc, setOriginalSrc] = useState<string>('');
     const [crop, setCrop] = useState<Crop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const [scale, setScale] = useState(1);
     const [rotate, setRotate] = useState(0);
+    const [lockAspect, setLockAspect] = useState<boolean>(!!aspectRatio);
     const [showCropModal, setShowCropModal] = useState(false);
     const [hasCroppedImage, setHasCroppedImage] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string>('');
+    const imgRef = useRef<HTMLImageElement | null>(null);
 
     // Предотвращаем скроллинг body когда модальное окно открыто
     useEffect(() => {
@@ -75,6 +83,20 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         };
     }, [showCropModal]);
 
+    // Если пришел уже сохраненный URL изображения, показываем кнопку редактирования
+    useEffect(() => {
+        if (existingImageUrl) {
+            setImgSrc(existingImageUrl);
+            setHasCroppedImage(true);
+            setPreviewUrl(existingImageUrl);
+            if (DEBUG_CROP) {
+                console.groupCollapsed('[Uploader] existingImageUrl');
+                console.log('url:', existingImageUrl);
+                console.groupEnd();
+            }
+        }
+    }, [existingImageUrl]);
+
     const onDrop = useCallback(
         async (acceptedFiles: File[]) => {
             const file = acceptedFiles[0];
@@ -100,38 +122,76 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 setCrop(undefined);
                 setCompletedCrop(undefined);
                 setUploadError(null);
+                if (DEBUG_CROP) {
+                    console.groupCollapsed('[Uploader] onDrop');
+                    console.log('file:', {
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                    });
+                    console.log(
+                        'enableServerUpload:',
+                        enableServerUpload,
+                        'widgetSlug:',
+                        widgetSlug,
+                        'imageType:',
+                        imageType,
+                        'slideId:',
+                        slideId,
+                    );
+                    console.groupEnd();
+                }
 
                 // Если включена серверная загрузка
                 if (enableServerUpload && widgetSlug) {
-                    setIsUploading(true);
-                    try {
-                        const result = await widgetImageService.uploadImage(
-                            file,
-                            widgetSlug,
-                            imageType,
-                            slideId,
-                        );
-
-                        if (result.success && result.data) {
-                            // Используем URL с сервера
-                            onImageUpload(file, result.data.url);
-
-                            // Если нужно обрезание, показываем модальное окно
-                            if (aspectRatio) {
-                                setImgSrc(result.data.url);
-                                setShowCropModal(true);
-                            }
-                        } else {
-                            setUploadError(
-                                result.message ||
-                                    'Ошибка при загрузке изображения',
+                    if (aspectRatio) {
+                        // Не грузим оригинал, сначала открываем кроп модалку и после кропа грузим сжатый файл
+                        const reader = new FileReader();
+                        reader.addEventListener('load', () => {
+                            const src = reader.result?.toString() || '';
+                            setImgSrc(src);
+                            setOriginalSrc(src);
+                            setShowCropModal(true);
+                            if (DEBUG_CROP)
+                                console.log(
+                                    '[Uploader] reader loaded (server upload, aspect)',
+                                );
+                        });
+                        reader.readAsDataURL(file);
+                    } else {
+                        setIsUploading(true);
+                        try {
+                            const result = await widgetImageService.uploadImage(
+                                file,
+                                widgetSlug,
+                                imageType,
+                                slideId,
                             );
+
+                            if (result.success && result.data) {
+                                // Используем URL с сервера
+                                onImageUpload(file, result.data.url);
+                                setOriginalSrc(result.data.url);
+                                setPreviewUrl(result.data.url);
+                                if (DEBUG_CROP) {
+                                    console.groupCollapsed(
+                                        '[Uploader] upload original success',
+                                    );
+                                    console.log('response:', result.data);
+                                    console.groupEnd();
+                                }
+                            } else {
+                                setUploadError(
+                                    result.message ||
+                                        'Ошибка при загрузке изображения',
+                                );
+                            }
+                        } catch (error) {
+                            console.error('Error uploading image:', error);
+                            setUploadError('Ошибка при загрузке изображения');
+                        } finally {
+                            setIsUploading(false);
                         }
-                    } catch (error) {
-                        console.error('Error uploading image:', error);
-                        setUploadError('Ошибка при загрузке изображения');
-                    } finally {
-                        setIsUploading(false);
                     }
                 } else {
                     // Локальная обработка - используем только файл, без blob URL
@@ -141,8 +201,25 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     if (aspectRatio) {
                         const reader = new FileReader();
                         reader.addEventListener('load', () => {
-                            setImgSrc(reader.result?.toString() || '');
+                            const src = reader.result?.toString() || '';
+                            setImgSrc(src);
+                            setOriginalSrc(src);
                             setShowCropModal(true);
+                            if (DEBUG_CROP)
+                                console.log(
+                                    '[Uploader] reader loaded (local, aspect)',
+                                );
+                        });
+                        reader.readAsDataURL(file);
+                    } else {
+                        // Показать предпросмотр выбранного файла
+                        const reader = new FileReader();
+                        reader.addEventListener('load', () => {
+                            setPreviewUrl(reader.result?.toString() || '');
+                            if (DEBUG_CROP)
+                                console.log(
+                                    '[Uploader] preview set (local, no-aspect)',
+                                );
                         });
                         reader.readAsDataURL(file);
                     }
@@ -174,9 +251,25 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     const onImageLoad = useCallback(
         (e: React.SyntheticEvent<HTMLImageElement>) => {
-            if (aspectRatio) {
-                const { width, height } = e.currentTarget;
-                const crop = centerCrop(
+            const { width, height } = e.currentTarget;
+            imgRef.current = e.currentTarget as HTMLImageElement;
+            if (DEBUG_CROP) {
+                console.groupCollapsed('[Uploader] onImageLoad');
+                console.log('displayed:', { width, height });
+                console.log('natural:', {
+                    width: (e.currentTarget as HTMLImageElement).naturalWidth,
+                    height: (e.currentTarget as HTMLImageElement).naturalHeight,
+                });
+                console.log(
+                    'aspectRatio:',
+                    aspectRatio,
+                    'lockAspect:',
+                    lockAspect,
+                );
+                console.groupEnd();
+            }
+            if (lockAspect && aspectRatio) {
+                const initial = centerCrop(
                     makeAspectCrop(
                         {
                             unit: '%',
@@ -189,52 +282,93 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     width,
                     height,
                 );
-                setCrop(crop);
+                setCrop(initial);
+            } else {
+                // Свободная рамка: стартовый прямоугольник 80% без фикс. пропорций
+                setCrop({ unit: '%', x: 10, y: 10, width: 80, height: 80 });
             }
         },
-        [aspectRatio],
+        [aspectRatio, lockAspect],
     );
 
     const getCroppedImg = (
         image: HTMLImageElement,
-        canvas: HTMLCanvasElement,
         crop: PixelCrop,
+        rotateDeg: number,
+        scaleVal: number,
     ): Promise<Blob | null> => {
+        const sourceEl = imgRef.current || image;
+        // Масштаб между натуральными и отображаемыми пикселями
+        const displayWidth = (sourceEl as HTMLImageElement).width;
+        const displayHeight = (sourceEl as HTMLImageElement).height;
+        const scaleX =
+            (sourceEl as HTMLImageElement).naturalWidth / displayWidth;
+        const scaleY =
+            (sourceEl as HTMLImageElement).naturalHeight / displayHeight;
+
+        // Переводим рамку в натуральные пиксели исходника
+        const cropXNat = crop.x * scaleX;
+        const cropYNat = crop.y * scaleY;
+        const cropWNat = crop.width * scaleX;
+        const cropHNat = crop.height * scaleY;
+
+        const outWidth = Math.max(1, Math.floor(cropWNat));
+        const outHeight = Math.max(1, Math.floor(cropHNat));
+
+        const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        if (!ctx) {
-            throw new Error('No 2d context');
-        }
-
-        const scaleX = image.naturalWidth / image.width;
-        const scaleY = image.naturalHeight / image.height;
-
-        const pixelRatio = window.devicePixelRatio;
-
-        canvas.width = crop.width * pixelRatio * scaleX;
-        canvas.height = crop.height * pixelRatio * scaleY;
-
-        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        if (!ctx) throw new Error('No 2d context');
+        canvas.width = outWidth;
+        canvas.height = outHeight;
         ctx.imageSmoothingQuality = 'high';
 
-        ctx.drawImage(
-            image,
-            crop.x * scaleX,
-            crop.y * scaleY,
-            crop.width * scaleX,
-            crop.height * scaleY,
-            0,
-            0,
-            crop.width * scaleX,
-            crop.height * scaleY,
-        );
+        const radians = (rotateDeg * Math.PI) / 180;
+        const effScale = scaleVal;
+
+        // Рисуем так, чтобы центр рамки совпал с центром выходного канваса
+        const cropCenterX = cropXNat + cropWNat / 2;
+        const cropCenterY = cropYNat + cropHNat / 2;
+
+        ctx.save();
+        ctx.translate(outWidth / 2, outHeight / 2);
+        ctx.rotate(radians);
+        ctx.scale(effScale, effScale);
+        ctx.translate(-cropCenterX, -cropCenterY);
+        ctx.drawImage(image, 0, 0);
+        ctx.restore();
+
+        if (DEBUG_CROP) {
+            console.groupCollapsed('[Uploader] getCroppedImg');
+            console.log('natural:', {
+                w: (sourceEl as HTMLImageElement).naturalWidth,
+                h: (sourceEl as HTMLImageElement).naturalHeight,
+            });
+            console.log('displayed:', { w: displayWidth, h: displayHeight });
+            console.log('scaleX/scaleY:', { scaleX, scaleY });
+            console.log('incoming crop (px):', crop);
+            console.log('computed nat crop:', {
+                cropXNat,
+                cropYNat,
+                cropWNat,
+                cropHNat,
+            });
+            console.log('rotate/scale:', { rotateDeg, scaleVal });
+            console.log('out:', { outWidth, outHeight });
+            console.groupEnd();
+        }
 
         return new Promise((resolve) => {
             canvas.toBlob(
                 (blob) => {
+                    if (DEBUG_CROP)
+                        console.log(
+                            '[Uploader] toBlob:',
+                            blob ? { size: blob.size, type: blob.type } : null,
+                        );
                     resolve(blob);
                 },
                 'image/jpeg',
-                0.95,
+                0.92,
             );
         });
     };
@@ -247,8 +381,33 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         image.src = imgSrc;
 
         image.onload = async () => {
-            const canvas = document.createElement('canvas');
-            const blob = await getCroppedImg(image, canvas, completedCrop);
+            // Вычисляем актуальный пиксельный crop: используем completedCrop, иначе переводим percent -> px
+            let effectiveCrop: PixelCrop | undefined = completedCrop;
+            if (!effectiveCrop && crop && imgRef.current) {
+                const el = imgRef.current;
+                const px = Math.round((crop.x / 100) * el.width);
+                const py = Math.round((crop.y / 100) * el.height);
+                const pw = Math.round((crop.width / 100) * el.width);
+                const ph = Math.round((crop.height / 100) * el.height);
+                effectiveCrop = {
+                    unit: 'px',
+                    x: px,
+                    y: py,
+                    width: pw,
+                    height: ph,
+                } as PixelCrop;
+            }
+
+            if (DEBUG_CROP) {
+                console.log('[Uploader] effectiveCrop (px):', effectiveCrop);
+            }
+
+            const blob = await getCroppedImg(
+                image,
+                effectiveCrop || completedCrop!,
+                rotate,
+                scale,
+            );
 
             if (blob) {
                 // Если включена серверная загрузка, загружаем обрезанное изображение на сервер
@@ -260,6 +419,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                             type: 'image/jpeg',
                         });
 
+                        if (DEBUG_CROP) {
+                            console.groupCollapsed(
+                                '[Uploader] upload cropped start',
+                            );
+                            console.log('file size/type:', {
+                                size: file.size,
+                                type: file.type,
+                            });
+                            console.log('widgetSlug/imageType/slideId:', {
+                                widgetSlug,
+                                imageType,
+                                slideId,
+                            });
+                            console.groupEnd();
+                        }
                         const result = await widgetImageService.uploadImage(
                             file,
                             widgetSlug,
@@ -272,11 +446,24 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                             onImageCrop(result.data.url);
                             setHasCroppedImage(true);
                             setShowCropModal(false);
+                            setPreviewUrl(result.data.url);
+                            if (DEBUG_CROP) {
+                                console.groupCollapsed(
+                                    '[Uploader] upload cropped success',
+                                );
+                                console.log('response:', result.data);
+                                console.groupEnd();
+                            }
                         } else {
                             setUploadError(
                                 result.message ||
                                     'Ошибка при загрузке обрезанного изображения',
                             );
+                            if (DEBUG_CROP)
+                                console.error(
+                                    '[Uploader] upload cropped failed:',
+                                    result,
+                                );
                         }
                     } catch (error) {
                         console.error('Error uploading cropped image:', error);
@@ -293,6 +480,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                         onImageCrop(reader.result as string);
                         setHasCroppedImage(true);
                         setShowCropModal(false);
+                        setPreviewUrl(reader.result as string);
+                        if (DEBUG_CROP)
+                            console.log('[Uploader] local cropped preview set');
                     };
                     reader.readAsDataURL(blob);
                 }
@@ -306,6 +496,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         widgetSlug,
         imageType,
         slideId,
+        rotate,
+        scale,
+        crop,
     ]);
 
     const handleCancelCrop = () => {
@@ -392,17 +585,20 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             )}
 
             {/* Кнопка редактирования после обрезки */}
-            {hasCroppedImage && !showCropModal && (
-                <div className="image-uploader__edit-section">
-                    <button
-                        type="button"
-                        className="image-uploader__edit-button"
-                        onClick={handleEditImage}
-                    >
-                        ✏️ Редактировать изображение
-                    </button>
-                </div>
-            )}
+            {(hasCroppedImage ||
+                (!!existingImageUrl && existingImageUrl.length > 0)) &&
+                !showCropModal &&
+                !uploadError && (
+                    <div className="image-uploader__edit-section">
+                        <button
+                            type="button"
+                            className="image-uploader__edit-button"
+                            onClick={handleEditImage}
+                        >
+                            ✏️ Редактировать изображение
+                        </button>
+                    </div>
+                )}
 
             {showCropModal && (
                 <div
@@ -429,15 +625,27 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                         <div className="image-uploader__crop-container">
                             <ReactCrop
                                 crop={crop}
-                                onChange={(_, percentCrop) =>
-                                    setCrop(percentCrop)
-                                }
-                                onComplete={(c) => setCompletedCrop(c)}
-                                aspect={aspectRatio}
+                                onChange={(_, percentCrop) => {
+                                    if (DEBUG_CROP)
+                                        console.log(
+                                            '[Uploader] crop onChange (percent):',
+                                            percentCrop,
+                                        );
+                                    setCrop(percentCrop);
+                                }}
+                                onComplete={(c) => {
+                                    if (DEBUG_CROP)
+                                        console.log(
+                                            '[Uploader] crop onComplete (pixel):',
+                                            c,
+                                        );
+                                    setCompletedCrop(c);
+                                }}
+                                aspect={lockAspect ? aspectRatio : undefined}
                             >
                                 <img
                                     alt="Crop me"
-                                    src={imgSrc}
+                                    src={originalSrc || imgSrc}
                                     onLoad={onImageLoad}
                                     className="image-uploader__crop-image"
                                     style={{
@@ -448,26 +656,40 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                             </ReactCrop>
                         </div>
 
-                        <div className="image-uploader__controls">
+                        {/* Переключатель свободной рамки */}
+                        <div className="ml-3 mt-4 flex items-center gap-3">
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={!lockAspect}
+                                    onChange={(e) =>
+                                        setLockAspect(!e.target.checked)
+                                    }
+                                />
+                                Свободная рамка
+                            </label>
+                        </div>
+
+                        {/* Управления масштабом/поворотом */}
+                        <div className="image-uploader__controls mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="image-uploader__control-group">
-                                <label className="image-uploader__control-label">
-                                    Масштаб: {scale}%
+                                <label className="image-uploader__control-label text-sm">
+                                    Масштаб: {scale.toFixed(2)}x
                                 </label>
                                 <input
                                     type="range"
-                                    min="1"
+                                    min="0.5"
                                     max="3"
-                                    step="0.1"
+                                    step="0.05"
                                     value={scale}
                                     onChange={(e) =>
                                         setScale(Number(e.target.value))
                                     }
-                                    className="image-uploader__control-slider"
+                                    className="image-uploader__control-slider w-full"
                                 />
                             </div>
-
                             <div className="image-uploader__control-group">
-                                <label className="image-uploader__control-label">
+                                <label className="image-uploader__control-label text-sm">
                                     Поворот: {rotate}°
                                 </label>
                                 <input
@@ -479,7 +701,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                                     onChange={(e) =>
                                         setRotate(Number(e.target.value))
                                     }
-                                    className="image-uploader__control-slider"
+                                    className="image-uploader__control-slider w-full"
                                 />
                             </div>
                         </div>

@@ -120,6 +120,109 @@ class SiteController extends Controller
         }
     }
 
+    // Layout настройки (позиция сайдбара и др.)
+    public function saveLayoutSettings(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'sidebar_position' => 'nullable|in:left,right',
+        ]);
+
+        try {
+            $site = $this->getSite($id);
+
+            $layout = $site->layout_config ?? [];
+            $layout = array_merge($layout, $request->only(['sidebar_position']));
+
+            $site->update(['layout_config' => $layout]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Настройки макета сохранены',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Telegram настройки сайта
+    public function saveTelegramSettings(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'enabled' => 'nullable|boolean',
+            'bot_token' => 'nullable|string|max:255',
+            'chat_id' => 'nullable|string|max:255',
+            'notifications' => 'nullable|array',
+        ]);
+
+        try {
+            $site = $this->getSite($id);
+
+            $custom = $site->custom_settings ?? [];
+            $custom['telegram'] = array_merge($custom['telegram'] ?? [], $request->only([
+                'enabled',
+                'bot_token',
+                'chat_id',
+                'notifications',
+            ]));
+
+            $site->update(['custom_settings' => $custom]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Настройки Telegram сохранены',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Платежные настройки сайта
+    public function savePaymentSettings(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'gateway' => 'nullable|string|in:sbp,yookassa,tinkoff',
+            'credentials' => 'nullable|array',
+            'options' => 'nullable|array',
+            'donation_min_amount' => 'nullable|integer|min:0',
+            'donation_max_amount' => 'nullable|integer|min:0',
+            'currency' => 'nullable|string|size:3',
+            'test_mode' => 'nullable|boolean',
+        ]);
+
+        try {
+            $site = $this->getSite($id);
+
+            $custom = $site->custom_settings ?? [];
+            $custom['payments'] = array_merge($custom['payments'] ?? [], $request->only([
+                'gateway',
+                'credentials',
+                'options',
+                'donation_min_amount',
+                'donation_max_amount',
+                'currency',
+                'test_mode',
+            ]));
+
+            $site->update(['custom_settings' => $custom]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Платежные настройки сохранены',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     // Добавление виджета
     public function addWidget(Request $request, $site): JsonResponse
     {
@@ -477,22 +580,29 @@ class SiteController extends Controller
             throw new \Exception('Пользователь не авторизован');
         }
 
-        // Проверяем, является ли пользователь супер-админом
-        // Используем методы из трейта HasRoles (Spatie Permission)
-        $isSuperAdmin = method_exists($user, 'hasRole') ? $user->hasRole('super_admin') : false;
+        // Пользователь с ролью super_admin — доступ ко всем сайтам
+        $isSuperAdmin = false;
+        $hasRoleCallable = [$user, 'hasRole'];
+        if (is_callable($hasRoleCallable)) {
+            try {
+                $isSuperAdmin = (bool) call_user_func($hasRoleCallable, 'super_admin');
+            } catch (\Throwable $e) {
+                $isSuperAdmin = false;
+            }
+        }
 
         if ($isSuperAdmin) {
-            // Супер-админ может работать с любыми сайтами
             return OrganizationSite::findOrFail($id);
         }
 
-        // Обычные пользователи могут работать только с сайтами своей организации
-        if (!$user->organization_id) {
-            throw new \Exception('Пользователь не привязан к организации');
+        // Если пользователь привязан к организации — ограничиваем доступ этой организацией
+        if (!empty($user->organization_id)) {
+            return OrganizationSite::where('id', $id)
+                ->where('organization_id', $user->organization_id)
+                ->firstOrFail();
         }
 
-        return OrganizationSite::where('id', $id)
-            ->where('organization_id', $user->organization_id)
-            ->firstOrFail();
+        // Иначе — запрещаем доступ
+        throw new \Exception('Пользователь не привязан к организации');
     }
 }

@@ -31,11 +31,11 @@ const ExampleForm: React.FC = () => {
     const onSubmit = async (data: DonationFormData) => {
         try {
             // Здесь будет логика отправки формы
-            console.log('Form data:', data);
+            /*  console.log('Form data:', data);
             console.log('Selected date:', selectedDate);
             console.log('Card number:', cardNumber);
             console.log('Expiry date:', expiryDate);
-            console.log('Phone number:', phoneNumber);
+            console.log('Phone number:', phoneNumber); */
 
             showNotification({
                 type: 'success',

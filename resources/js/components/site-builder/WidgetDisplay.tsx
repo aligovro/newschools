@@ -32,6 +32,7 @@ interface WidgetDisplayProps {
     isEditable?: boolean;
     autoExpandSettings?: boolean;
     className?: string;
+    suppressRender?: boolean;
 }
 
 export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
@@ -43,6 +44,7 @@ export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
     isEditable = true,
     autoExpandSettings = false,
     className,
+    suppressRender = false,
 }) => {
     const handleEdit = () => {
         if (onEdit) {
@@ -66,16 +68,19 @@ export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
         <div className={`group relative ${className}`}>
             {/* Виджет */}
             <div className="widget-content">
-                <WidgetRenderer
-                    widget={widget}
-                    isEditable={isEditable}
-                    autoExpandSettings={autoExpandSettings}
-                    onSave={
-                        onSave
-                            ? (config) => onSave(widget.id, config)
-                            : undefined
-                    }
-                />
+                {suppressRender ? (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
+                        Настройки виджета открыты. Предварительный просмотр
+                        скрыт.
+                    </div>
+                ) : (
+                    <WidgetRenderer
+                        widget={widget}
+                        isEditable={false}
+                        autoExpandSettings={false}
+                        previewMode={true}
+                    />
+                )}
             </div>
 
             {/* Панель управления (только в режиме редактирования) */}

@@ -15,12 +15,16 @@ interface TextWidgetProps {
     };
     isEditable?: boolean;
     autoExpandSettings?: boolean;
+    onSave?: (config: Record<string, unknown>) => Promise<void>;
+    widgetId?: string;
 }
 
 export const TextWidget: React.FC<TextWidgetProps> = ({
     config = {},
     isEditable = false,
     autoExpandSettings = false,
+    onSave,
+    widgetId,
 }) => {
     const [isSettingsExpanded, setIsSettingsExpanded] =
         useState(autoExpandSettings);
@@ -50,8 +54,12 @@ export const TextWidget: React.FC<TextWidgetProps> = ({
         setSaveStatus('saving');
 
         try {
-            // Здесь будет API вызов для сохранения
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            if (onSave && widgetId) {
+                await onSave(localConfig as Record<string, unknown>);
+            } else {
+                // Fallback to fake delay to keep UX consistent if onSave not provided
+                await new Promise((resolve) => setTimeout(resolve, 300));
+            }
 
             setSaveStatus('saved');
             setTimeout(() => setSaveStatus('idle'), 2000);

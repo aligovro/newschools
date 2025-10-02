@@ -14,7 +14,7 @@ use App\Http\Controllers\OrganizationMenuItemController;
 
 // Получение текущего пользователя для API
 Route::get('/user', function (Request $request) {
-  return $request->user();
+    return $request->user();
 })->middleware('auth:sanctum');
 
 /*
@@ -25,64 +25,64 @@ Route::get('/user', function (Request $request) {
 
 // Платежи
 Route::prefix('payments')->group(function () {
-  // Создание платежа
-  Route::post('/', [PaymentController::class, 'create']);
+    // Создание платежа
+    Route::post('/', [PaymentController::class, 'create']);
 
-  // Получение доступных методов платежа
-  Route::get('/methods', [PaymentController::class, 'methods']);
+    // Получение доступных методов платежа
+    Route::get('/methods', [PaymentController::class, 'methods']);
 
-  // Получение статистики платежей
-  Route::get('/statistics', [PaymentController::class, 'statistics']);
+    // Получение статистики платежей
+    Route::get('/statistics', [PaymentController::class, 'statistics']);
 
-  // Получение списка транзакций
-  Route::get('/transactions', [PaymentController::class, 'transactions']);
+    // Получение списка транзакций
+    Route::get('/transactions', [PaymentController::class, 'transactions']);
 
-  // Получение статуса платежа
-  Route::get('/status/{transactionId}', [PaymentController::class, 'status']);
+    // Получение статуса платежа
+    Route::get('/status/{transactionId}', [PaymentController::class, 'status']);
 
-  // Отмена платежа
-  Route::post('/{transactionId}/cancel', [PaymentController::class, 'cancel']);
+    // Отмена платежа
+    Route::post('/{transactionId}/cancel', [PaymentController::class, 'cancel']);
 
-  // Возврат платежа
-  Route::post('/{transactionId}/refund', [PaymentController::class, 'refund']);
+    // Возврат платежа
+    Route::post('/{transactionId}/refund', [PaymentController::class, 'refund']);
 
-  // Получение детальной информации о транзакции
-  Route::get('/{transactionId}', [PaymentController::class, 'show']);
+    // Получение детальной информации о транзакции
+    Route::get('/{transactionId}', [PaymentController::class, 'show']);
 });
 
 // Webhook'и платежных систем
 Route::prefix('payments/webhook')->group(function () {
-  // Webhook с привязкой к транзакции
-  Route::post('/{gatewaySlug}/{transactionId}', [PaymentWebhookController::class, 'handle']);
+    // Webhook с привязкой к транзакции
+    Route::post('/{gatewaySlug}/{transactionId}', [PaymentWebhookController::class, 'handle']);
 
-  // Общий webhook без привязки к транзакции
-  Route::post('/{gatewaySlug}', [PaymentWebhookController::class, 'handleGeneral']);
+    // Общий webhook без привязки к транзакции
+    Route::post('/{gatewaySlug}', [PaymentWebhookController::class, 'handleGeneral']);
 
-  // Логи webhook'ов для отладки
-  Route::get('/{gatewaySlug}/logs', [PaymentWebhookController::class, 'logs']);
+    // Логи webhook'ов для отладки
+    Route::get('/{gatewaySlug}/logs', [PaymentWebhookController::class, 'logs']);
 
-  // Тестовый endpoint для проверки webhook'ов
-  Route::post('/{gatewaySlug}/test', [PaymentWebhookController::class, 'test']);
+    // Тестовый endpoint для проверки webhook'ов
+    Route::post('/{gatewaySlug}/test', [PaymentWebhookController::class, 'test']);
 });
 // Дополнительные маршруты для интеграций
 Route::prefix('integrations')->group(function () {
-  // SBP
-  Route::prefix('sbp')->group(function () {
-    Route::post('/webhook', [PaymentWebhookController::class, 'handleGeneral'])
-      ->defaults('gatewaySlug', 'sbp');
-  });
+    // SBP
+    Route::prefix('sbp')->group(function () {
+        Route::post('/webhook', [PaymentWebhookController::class, 'handleGeneral'])
+            ->defaults('gatewaySlug', 'sbp');
+    });
 
-  // ЮKassa (Сбербанк)
-  Route::prefix('yookassa')->group(function () {
-    Route::post('/webhook', [PaymentWebhookController::class, 'handleGeneral'])
-      ->defaults('gatewaySlug', 'yookassa');
-  });
+    // ЮKassa (Сбербанк)
+    Route::prefix('yookassa')->group(function () {
+        Route::post('/webhook', [PaymentWebhookController::class, 'handleGeneral'])
+            ->defaults('gatewaySlug', 'yookassa');
+    });
 
-  // Тинькофф
-  Route::prefix('tinkoff')->group(function () {
-    Route::post('/webhook', [PaymentWebhookController::class, 'handleGeneral'])
-      ->defaults('gatewaySlug', 'tinkoff');
-  });
+    // Тинькофф
+    Route::prefix('tinkoff')->group(function () {
+        Route::post('/webhook', [PaymentWebhookController::class, 'handleGeneral'])
+            ->defaults('gatewaySlug', 'tinkoff');
+    });
 });
 
 /*
@@ -93,24 +93,24 @@ Route::prefix('integrations')->group(function () {
 
 // Маршруты для меню организаций
 Route::prefix('organizations/{organization}/menus')->group(function () {
-  Route::get('/', [OrganizationMenuController::class, 'index']);
-  Route::post('/', [OrganizationMenuController::class, 'store']);
-  Route::get('/{location}', [OrganizationMenuController::class, 'getByLocation']);
-  Route::get('/menu/{menu}', [OrganizationMenuController::class, 'show']);
-  Route::put('/menu/{menu}', [OrganizationMenuController::class, 'update']);
-  Route::delete('/menu/{menu}', [OrganizationMenuController::class, 'destroy']);
-  Route::patch('/menu/{menu}/toggle', [OrganizationMenuController::class, 'toggle']);
+    Route::get('/', [OrganizationMenuController::class, 'index']);
+    Route::post('/', [OrganizationMenuController::class, 'store']);
+    Route::get('/{location}', [OrganizationMenuController::class, 'getByLocation']);
+    Route::get('/menu/{menu}', [OrganizationMenuController::class, 'show']);
+    Route::put('/menu/{menu}', [OrganizationMenuController::class, 'update']);
+    Route::delete('/menu/{menu}', [OrganizationMenuController::class, 'destroy']);
+    Route::patch('/menu/{menu}/toggle', [OrganizationMenuController::class, 'toggle']);
 
-  // Маршруты для элементов меню
-  Route::prefix('menu/{menu}/items')->group(function () {
-    Route::get('/', [OrganizationMenuItemController::class, 'index']);
-    Route::post('/', [OrganizationMenuItemController::class, 'store']);
-    Route::get('/{item}', [OrganizationMenuItemController::class, 'show']);
-    Route::put('/{item}', [OrganizationMenuItemController::class, 'update']);
-    Route::delete('/{item}', [OrganizationMenuItemController::class, 'destroy']);
-    Route::patch('/{item}/toggle', [OrganizationMenuItemController::class, 'toggle']);
-    Route::put('/order', [OrganizationMenuItemController::class, 'updateOrder']);
-  });
+    // Маршруты для элементов меню
+    Route::prefix('menu/{menu}/items')->group(function () {
+        Route::get('/', [OrganizationMenuItemController::class, 'index']);
+        Route::post('/', [OrganizationMenuItemController::class, 'store']);
+        Route::get('/{item}', [OrganizationMenuItemController::class, 'show']);
+        Route::put('/{item}', [OrganizationMenuItemController::class, 'update']);
+        Route::delete('/{item}', [OrganizationMenuItemController::class, 'destroy']);
+        Route::patch('/{item}/toggle', [OrganizationMenuItemController::class, 'toggle']);
+        Route::put('/order', [OrganizationMenuItemController::class, 'updateOrder']);
+    });
 });
 
 /*
@@ -121,7 +121,7 @@ Route::prefix('organizations/{organization}/menus')->group(function () {
 
 // Маршруты для генерации slug'ов
 Route::prefix('slug')->group(function () {
-  Route::post('/generate', [SlugController::class, 'generate']);
+    Route::post('/generate', [SlugController::class, 'generate']);
 });
 
 /*
@@ -132,25 +132,57 @@ Route::prefix('slug')->group(function () {
 
 // Маршруты для управления виджетами
 Route::prefix('widgets')->group(function () {
-  Route::get('/', [WidgetController::class, 'index']);
-  Route::get('/categories', [WidgetController::class, 'categories']);
-  Route::get('/positions', [WidgetController::class, 'positions']);
-  Route::get('/positions/{positionId}/widgets', [WidgetController::class, 'forPosition']);
-  Route::get('/template/{templateId}', [WidgetController::class, 'forTemplate']);
-  Route::get('/{id}', [WidgetController::class, 'show']);
-  Route::get('/{id}/config', [WidgetController::class, 'config']);
-  Route::post('/{id}/preview', [WidgetController::class, 'preview']);
+    Route::get('/', [WidgetController::class, 'index']);
+    Route::get('/categories', [WidgetController::class, 'categories']);
+    Route::get('/positions', [WidgetController::class, 'positions']);
+    Route::get('/positions/{positionId}/widgets', [WidgetController::class, 'forPosition']);
+    Route::get('/template/{templateId}', [WidgetController::class, 'forTemplate']);
+    Route::get('/{id}', [WidgetController::class, 'show']);
+    Route::get('/{id}/config', [WidgetController::class, 'config']);
+    Route::post('/{id}/preview', [WidgetController::class, 'preview']);
 
-  // Маршруты для загрузки изображений виджетов
-  Route::prefix('images')->middleware(['web', 'auth'])->group(function () {
-    Route::post('/upload', [WidgetImageController::class, 'upload']);
-    Route::delete('/delete', [WidgetImageController::class, 'delete']);
-  });
+    // Маршруты для загрузки изображений виджетов
+    Route::prefix('images')->middleware(['web', 'auth'])->group(function () {
+        Route::post('/upload', [WidgetImageController::class, 'upload']);
+        Route::delete('/delete', [WidgetImageController::class, 'delete']);
+    });
 });
 
 // API для сохранения конфигурации сайта
 Route::prefix('sites')->middleware('auth:sanctum')->group(function () {
-  Route::post('/{id}/save-config', [SiteController::class, 'saveConfig']);
-  Route::get('/{id}/config', [SiteController::class, 'getConfig']);
-  Route::get('/{id}/preview', [SiteController::class, 'preview']);
+    Route::post('/{id}/save-config', [SiteController::class, 'saveConfig']);
+    Route::get('/{id}/config', [SiteController::class, 'getConfig']);
+    Route::get('/{id}/preview', [SiteController::class, 'preview']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Form Widget Routes
+|--------------------------------------------------------------------------
+*/
+
+// Маршруты для управления виджетами форм
+Route::prefix('sites/{siteId}/forms')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [App\Http\Controllers\Api\FormWidgetController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\Api\FormWidgetController::class, 'store']);
+    Route::get('/{widgetId}', [App\Http\Controllers\Api\FormWidgetController::class, 'show']);
+    Route::put('/{widgetId}', [App\Http\Controllers\Api\FormWidgetController::class, 'update']);
+    Route::delete('/{widgetId}', [App\Http\Controllers\Api\FormWidgetController::class, 'destroy']);
+
+    // Маршруты для экшенов
+    Route::post('/{widgetId}/actions', [App\Http\Controllers\Api\FormWidgetController::class, 'createAction']);
+    Route::get('/actions/available', [App\Http\Controllers\Api\FormWidgetController::class, 'getAvailableActions']);
+
+    // Маршруты для отправок форм
+    Route::prefix('{widgetId}/submissions')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\FormSubmissionController::class, 'index']);
+        Route::post('/', [App\Http\Controllers\Api\FormSubmissionController::class, 'submit']);
+        Route::get('/{submissionId}', [App\Http\Controllers\Api\FormSubmissionController::class, 'show']);
+        Route::delete('/{submissionId}', [App\Http\Controllers\Api\FormSubmissionController::class, 'destroy']);
+    });
+});
+
+// Публичные маршруты для отправки форм (без аутентификации)
+Route::prefix('sites/{siteId}/forms/{widgetId}')->group(function () {
+    Route::post('/submit', [App\Http\Controllers\Api\FormSubmissionController::class, 'submit']);
 });

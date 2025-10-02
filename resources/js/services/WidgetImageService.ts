@@ -46,7 +46,9 @@ class WidgetImageService {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': this.getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
+                credentials: 'same-origin',
                 body: formData,
             });
 

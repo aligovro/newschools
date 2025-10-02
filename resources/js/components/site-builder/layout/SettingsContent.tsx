@@ -1,7 +1,9 @@
 import React from 'react';
 import { BasicSettings } from '../settings/BasicSettings';
 import { DesignSettings } from '../settings/DesignSettings';
+import PaymentSettings from '../settings/payments/PaymentSettings';
 import { SeoSettings } from '../settings/SeoSettings';
+import TelegramSettings from '../settings/telegram/TelegramSettings';
 
 interface SettingsContentProps {
     site: {
@@ -11,6 +13,9 @@ interface SettingsContentProps {
         description?: string;
         theme_config?: Record<string, unknown>;
         seo_config?: Record<string, unknown>;
+        theme_config?: Record<string, unknown>;
+        seo_config?: Record<string, unknown>;
+        custom_settings?: Record<string, unknown>;
     };
 }
 
@@ -51,6 +56,51 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                                 ?.seo_description,
                             seo_keywords: (site.seo_config as any)
                                 ?.seo_keywords,
+                        }}
+                    />
+
+                    <TelegramSettings
+                        siteId={site.id}
+                        initialSettings={{
+                            enabled:
+                                (site.custom_settings as any)?.telegram
+                                    ?.enabled ?? false,
+                            bot_token:
+                                (site.custom_settings as any)?.telegram
+                                    ?.bot_token ?? '',
+                            chat_id:
+                                (site.custom_settings as any)?.telegram
+                                    ?.chat_id ?? '',
+                            notifications:
+                                (site.custom_settings as any)?.telegram
+                                    ?.notifications ?? {},
+                        }}
+                    />
+
+                    <PaymentSettings
+                        siteId={site.id}
+                        initialSettings={{
+                            gateway:
+                                (site.custom_settings as any)?.payments
+                                    ?.gateway ?? 'yookassa',
+                            credentials:
+                                (site.custom_settings as any)?.payments
+                                    ?.credentials ?? {},
+                            options:
+                                (site.custom_settings as any)?.payments
+                                    ?.options ?? {},
+                            donation_min_amount:
+                                (site.custom_settings as any)?.payments
+                                    ?.donation_min_amount ?? 100,
+                            donation_max_amount:
+                                (site.custom_settings as any)?.payments
+                                    ?.donation_max_amount ?? 0,
+                            currency:
+                                (site.custom_settings as any)?.payments
+                                    ?.currency ?? 'RUB',
+                            test_mode:
+                                (site.custom_settings as any)?.payments
+                                    ?.test_mode ?? true,
                         }}
                     />
                 </div>

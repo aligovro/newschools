@@ -7,7 +7,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Eye, Globe, Save, Settings, Share } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as yup from 'yup';
 
 interface Organization {
@@ -78,13 +78,43 @@ interface Props {
 }
 
 export default function EditWithBuilder({ organization, site }: Props) {
-    console.log('EditWithBuilder - organization:', organization);
-    console.log('EditWithBuilder - site:', site);
-    console.log('EditWithBuilder - site.id:', site?.id);
+    const getInitialTab = (): 'settings' | 'builder' | 'preview' => {
+        if (typeof window === 'undefined') return 'settings';
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab === 'settings' || tab === 'builder' || tab === 'preview') {
+            return tab;
+        }
+        return 'settings';
+    };
 
     const [activeTab, setActiveTab] = useState<
         'builder' | 'preview' | 'settings'
-    >('builder');
+    >(getInitialTab());
+
+    const updateUrlTab = (tab: 'settings' | 'builder' | 'preview') => {
+        if (typeof window === 'undefined') return;
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url.toString());
+    };
+
+    const handleTabClick = (tab: 'settings' | 'builder' | 'preview') => {
+        setActiveTab(tab);
+        updateUrlTab(tab);
+    };
+
+    useEffect(() => {
+        const onPopState = () => {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get('tab');
+            if (tab === 'settings' || tab === 'builder' || tab === 'preview') {
+                setActiveTab(tab);
+            }
+        };
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, []);
     const [isSaving, setIsSaving] = useState(false);
     const [widgets, setWidgets] = useState<any[]>([]);
     const [validationErrors, setValidationErrors] = useState<{
@@ -328,19 +358,19 @@ export default function EditWithBuilder({ organization, site }: Props) {
 
     const tabs = [
         {
+            id: 'settings',
+            label: 'Настройки',
+            icon: Settings,
+        },
+        {
             id: 'builder',
             label: 'Конструктор',
-            icon: Settings,
+            icon: Globe,
         },
         {
             id: 'preview',
             label: 'Предпросмотр',
             icon: Eye,
-        },
-        {
-            id: 'settings',
-            label: 'Настройки',
-            icon: Globe,
         },
     ];
 
@@ -403,7 +433,9 @@ export default function EditWithBuilder({ organization, site }: Props) {
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
+                                    onClick={() =>
+                                        handleTabClick(tab.id as any)
+                                    }
                                     className={`flex items-center space-x-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                                         activeTab === tab.id
                                             ? 'bg-primary text-primary-foreground'
@@ -431,6 +463,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
                         <SiteBuilder
                             siteId={site.id}
                             template={site.template}
+                            initialLayoutConfig={site.layout_config || {}}
                             initialWidgets={site.widgets_config || []}
                             onWidgetsChange={handleWidgetsChange}
                             validationErrors={validationErrors['builder'] || []}

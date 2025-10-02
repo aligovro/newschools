@@ -6,7 +6,6 @@ import { useDrop } from 'react-dnd';
 import { WidgetPanel } from '../widget-system/WidgetPanel';
 import { ContentBlocksPanel } from './ContentBlocksPanel';
 import { DragDropProvider } from './DragDropProvider';
-import { PositionsPanel } from './PositionsPanel';
 import { WidgetDisplay } from './WidgetDisplay';
 import { WidgetEditModal } from './WidgetEditModal';
 import { WidgetSelectModal } from './WidgetSelectModal';
@@ -42,6 +41,9 @@ interface SiteBuilderProps {
     className?: string;
     template: Record<string, unknown>;
     siteId: number;
+    initialLayoutConfig?:
+        | { sidebar_position?: 'left' | 'right' }
+        | Record<string, unknown>;
     initialWidgets?: WidgetData[];
     onWidgetsChange?: (widgets: WidgetData[]) => void;
     validationErrors?: string[];
@@ -65,6 +67,10 @@ const PositionDropZone: React.FC<{
     isPreviewMode: boolean;
     newlyAddedWidgetId?: string | null;
     validationErrors: string[];
+    onAddWidgetToPosition: (positionSlug: string) => void;
+    onMoveSidebarLeft?: () => void;
+    onMoveSidebarRight?: () => void;
+    sidebarPosition?: 'left' | 'right';
 }> = ({
     position,
     widgets,
@@ -76,6 +82,10 @@ const PositionDropZone: React.FC<{
     isPreviewMode,
     newlyAddedWidgetId,
     validationErrors,
+    onAddWidgetToPosition,
+    onMoveSidebarLeft,
+    onMoveSidebarRight,
+    sidebarPosition,
 }) => {
     const [{ isOver, canDrop }, drop] = useDrop({
         accept: 'widget',
@@ -110,14 +120,63 @@ const PositionDropZone: React.FC<{
                     : 'border-gray-300 bg-gray-50'
             }`}
         >
-            <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                    {position.name}
-                </h3>
-                <span className="text-sm text-gray-500">
-                    {positionWidgets.length} виджетов
-                </span>
-            </div>
+            {position.area === 'sidebar' ? (
+                <div className="mb-2 grid grid-cols-2 gap-2">
+                    {sidebarPosition === 'right' ? (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                onMoveSidebarLeft && onMoveSidebarLeft()
+                            }
+                            title="Переместить сайдбар влево"
+                            className="w-full"
+                        >
+                            Влево ←
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                onMoveSidebarRight && onMoveSidebarRight()
+                            }
+                            title="Переместить сайдбар вправо"
+                            className="w-full"
+                        >
+                            → Вправо
+                        </Button>
+                    )}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onAddWidgetToPosition(position.slug)}
+                        title="Добавить виджет в эту позицию"
+                        className="w-full"
+                    >
+                        + Добавить виджет
+                    </Button>
+                </div>
+            ) : (
+                <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                        {position.name}
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-500">
+                            {positionWidgets.length} виджетов
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onAddWidgetToPosition(position.slug)}
+                            title="Добавить виджет в эту позицию"
+                        >
+                            + Добавить виджет
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             <div className="min-h-[100px] space-y-4">
                 {positionWidgets.map((widget) => {
@@ -162,6 +221,17 @@ const PositionDropZone: React.FC<{
                     </div>
                 )}
             </div>
+
+            {position.area === 'sidebar' && (
+                <div className="mt-3 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                        {position.name}
+                    </h3>
+                    <span className="text-sm text-gray-500">
+                        {positionWidgets.length} виджетов
+                    </span>
+                </div>
+            )}
         </div>
     );
 };
@@ -170,6 +240,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     className,
     template,
     siteId,
+    initialLayoutConfig = {},
     initialWidgets = [],
     onWidgetsChange,
     validationErrors = [],
@@ -193,6 +264,54 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     const [newlyAddedWidgetId, setNewlyAddedWidgetId] = useState<string | null>(
         null,
     );
+
+    const initialSidebar = (() => {
+        const cfg = initialLayoutConfig as {
+            sidebar_position?: 'left' | 'right';
+        };
+        return cfg && cfg.sidebar_position === 'left' ? 'left' : 'right';
+    })();
+    const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>(
+        initialSidebar,
+    );
+
+    const saveLayout = useCallback(
+        async (updates: { sidebar_position?: 'left' | 'right' }) => {
+            try {
+                const res = await fetch(
+                    `/api/sites/${siteId}/settings/layout`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN':
+                                document
+                                    .querySelector('meta[name="csrf-token"]')
+                                    ?.getAttribute('content') || '',
+                        },
+                        body: JSON.stringify(updates),
+                    },
+                );
+                const data = await res.json();
+                if (!data.success) {
+                    console.error('Layout save error:', data.message);
+                }
+            } catch (error) {
+                console.error('Error saving layout:', error);
+            }
+        },
+        [siteId],
+    );
+
+    const moveSidebarLeft = useCallback(() => {
+        setSidebarPosition('left');
+        saveLayout({ sidebar_position: 'left' });
+    }, [saveLayout]);
+
+    const moveSidebarRight = useCallback(() => {
+        setSidebarPosition('right');
+        saveLayout({ sidebar_position: 'right' });
+    }, [saveLayout]);
 
     // Уведомляем родительский компонент об изменении виджетов
     useEffect(() => {
@@ -260,11 +379,8 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                 // После успешного добавления виджета, автоматически открываем его настройки
                 if (newWidget) {
                     setNewlyAddedWidgetId(newWidget.id);
-                    // Для hero виджета не открываем модальное окно, настройки встроенные
-                    if (widget.slug !== 'hero-slider') {
-                        setEditingWidget(newWidget);
-                        setIsEditModalOpen(true);
-                    }
+                    setEditingWidget(newWidget);
+                    setIsEditModalOpen(true);
                 }
             } catch (error) {
                 console.error('Error adding widget:', error);
@@ -285,11 +401,8 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                 // После успешного добавления виджета, автоматически открываем его настройки
                 if (newWidget) {
                     setNewlyAddedWidgetId(newWidget.id);
-                    // Для hero виджета не открываем модальное окно, настройки встроенные
-                    if (widgetData.slug !== 'hero-slider') {
-                        setEditingWidget(newWidget);
-                        setIsEditModalOpen(true);
-                    }
+                    setEditingWidget(newWidget);
+                    setIsEditModalOpen(true);
                 }
             } catch (error) {
                 console.error('Error adding widget:', error);
@@ -392,13 +505,19 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
 
                 {/* Main Content */}
                 <div className="flex flex-1 overflow-hidden">
-                    {/* Left Sidebar - Positions Panel */}
-                    <div className="h-full flex-shrink-0">
-                        <PositionsPanel
-                            positions={positions}
-                            onAddWidgetToPosition={handleAddWidgetToPosition}
-                        />
-                    </div>
+                    {/* Left Sidebar - Widgets Panel */}
+                    {isRightPanelOpen && (
+                        <div className="h-full w-80 flex-shrink-0 border-r border-gray-200 bg-white">
+                            {template ? (
+                                <WidgetPanel
+                                    template={template}
+                                    className="h-full"
+                                />
+                            ) : (
+                                <ContentBlocksPanel className="h-full" />
+                            )}
+                        </div>
+                    )}
 
                     {/* Main Builder Area */}
                     <div className="flex flex-1 flex-col overflow-hidden">
@@ -414,45 +533,276 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                         ) : (
                             <div className="h-full overflow-y-auto p-6">
                                 <div className="space-y-6 pb-20">
-                                    {positions.map((position) => (
-                                        <PositionDropZone
-                                            key={position.id}
-                                            position={position}
-                                            widgets={widgets}
-                                            onDropWidget={handleDropWidget}
-                                            onEditWidget={handleEditWidget}
-                                            onDeleteWidget={handleDeleteWidget}
-                                            onToggleWidgetVisibility={
-                                                handleToggleWidgetVisibility
-                                            }
-                                            onSaveWidget={
-                                                handleSaveWidgetConfig
-                                            }
-                                            isPreviewMode={isPreviewMode}
-                                            newlyAddedWidgetId={
-                                                newlyAddedWidgetId
-                                            }
-                                            validationErrors={validationErrors}
-                                        />
-                                    ))}
+                                    {positions
+                                        .filter((p) => p.area === 'header')
+                                        .map((position) => (
+                                            <PositionDropZone
+                                                key={position.id}
+                                                position={position}
+                                                widgets={widgets}
+                                                onDropWidget={handleDropWidget}
+                                                onEditWidget={handleEditWidget}
+                                                onDeleteWidget={
+                                                    handleDeleteWidget
+                                                }
+                                                onToggleWidgetVisibility={
+                                                    handleToggleWidgetVisibility
+                                                }
+                                                onSaveWidget={
+                                                    handleSaveWidgetConfig
+                                                }
+                                                isPreviewMode={isPreviewMode}
+                                                newlyAddedWidgetId={
+                                                    newlyAddedWidgetId
+                                                }
+                                                validationErrors={
+                                                    validationErrors
+                                                }
+                                                onAddWidgetToPosition={
+                                                    handleAddWidgetToPosition
+                                                }
+                                            />
+                                        ))}
+
+                                    {/* Hero section (explicit) */}
+                                    {positions
+                                        .filter(
+                                            (p) =>
+                                                p.slug === 'hero' ||
+                                                p.area === 'hero',
+                                        )
+                                        .map((position) => (
+                                            <PositionDropZone
+                                                key={position.id}
+                                                position={position}
+                                                widgets={widgets}
+                                                onDropWidget={handleDropWidget}
+                                                onEditWidget={handleEditWidget}
+                                                onDeleteWidget={
+                                                    handleDeleteWidget
+                                                }
+                                                onToggleWidgetVisibility={
+                                                    handleToggleWidgetVisibility
+                                                }
+                                                onSaveWidget={
+                                                    handleSaveWidgetConfig
+                                                }
+                                                isPreviewMode={isPreviewMode}
+                                                newlyAddedWidgetId={
+                                                    newlyAddedWidgetId
+                                                }
+                                                validationErrors={
+                                                    validationErrors
+                                                }
+                                                onAddWidgetToPosition={
+                                                    handleAddWidgetToPosition
+                                                }
+                                            />
+                                        ))}
+
+                                    <div className="flex flex-col gap-6 lg:flex-row">
+                                        {sidebarPosition === 'left' &&
+                                            positions.some(
+                                                (p) => p.area === 'sidebar',
+                                            ) && (
+                                                <div className="w-full space-y-6 lg:w-96">
+                                                    {positions
+                                                        .filter(
+                                                            (p) =>
+                                                                p.area ===
+                                                                'sidebar',
+                                                        )
+                                                        .map((position) => (
+                                                            <PositionDropZone
+                                                                key={
+                                                                    position.id
+                                                                }
+                                                                position={
+                                                                    position
+                                                                }
+                                                                widgets={
+                                                                    widgets
+                                                                }
+                                                                onDropWidget={
+                                                                    handleDropWidget
+                                                                }
+                                                                onEditWidget={
+                                                                    handleEditWidget
+                                                                }
+                                                                onDeleteWidget={
+                                                                    handleDeleteWidget
+                                                                }
+                                                                onToggleWidgetVisibility={
+                                                                    handleToggleWidgetVisibility
+                                                                }
+                                                                onSaveWidget={
+                                                                    handleSaveWidgetConfig
+                                                                }
+                                                                isPreviewMode={
+                                                                    isPreviewMode
+                                                                }
+                                                                newlyAddedWidgetId={
+                                                                    newlyAddedWidgetId
+                                                                }
+                                                                validationErrors={
+                                                                    validationErrors
+                                                                }
+                                                                onAddWidgetToPosition={
+                                                                    handleAddWidgetToPosition
+                                                                }
+                                                                onMoveSidebarLeft={
+                                                                    moveSidebarLeft
+                                                                }
+                                                                onMoveSidebarRight={
+                                                                    moveSidebarRight
+                                                                }
+                                                                sidebarPosition={
+                                                                    sidebarPosition
+                                                                }
+                                                            />
+                                                        ))}
+                                                </div>
+                                            )}
+
+                                        <div className="flex-1 space-y-6">
+                                            {positions
+                                                .filter(
+                                                    (p) => p.area === 'content',
+                                                )
+                                                .map((position) => (
+                                                    <PositionDropZone
+                                                        key={position.id}
+                                                        position={position}
+                                                        widgets={widgets}
+                                                        onDropWidget={
+                                                            handleDropWidget
+                                                        }
+                                                        onEditWidget={
+                                                            handleEditWidget
+                                                        }
+                                                        onDeleteWidget={
+                                                            handleDeleteWidget
+                                                        }
+                                                        onToggleWidgetVisibility={
+                                                            handleToggleWidgetVisibility
+                                                        }
+                                                        onSaveWidget={
+                                                            handleSaveWidgetConfig
+                                                        }
+                                                        isPreviewMode={
+                                                            isPreviewMode
+                                                        }
+                                                        newlyAddedWidgetId={
+                                                            newlyAddedWidgetId
+                                                        }
+                                                        validationErrors={
+                                                            validationErrors
+                                                        }
+                                                        onAddWidgetToPosition={
+                                                            handleAddWidgetToPosition
+                                                        }
+                                                    />
+                                                ))}
+                                        </div>
+
+                                        {sidebarPosition === 'right' &&
+                                            positions.some(
+                                                (p) => p.area === 'sidebar',
+                                            ) && (
+                                                <div className="w-full space-y-6 lg:w-96">
+                                                    {positions
+                                                        .filter(
+                                                            (p) =>
+                                                                p.area ===
+                                                                'sidebar',
+                                                        )
+                                                        .map((position) => (
+                                                            <PositionDropZone
+                                                                key={
+                                                                    position.id
+                                                                }
+                                                                position={
+                                                                    position
+                                                                }
+                                                                widgets={
+                                                                    widgets
+                                                                }
+                                                                onDropWidget={
+                                                                    handleDropWidget
+                                                                }
+                                                                onEditWidget={
+                                                                    handleEditWidget
+                                                                }
+                                                                onDeleteWidget={
+                                                                    handleDeleteWidget
+                                                                }
+                                                                onToggleWidgetVisibility={
+                                                                    handleToggleWidgetVisibility
+                                                                }
+                                                                onSaveWidget={
+                                                                    handleSaveWidgetConfig
+                                                                }
+                                                                isPreviewMode={
+                                                                    isPreviewMode
+                                                                }
+                                                                newlyAddedWidgetId={
+                                                                    newlyAddedWidgetId
+                                                                }
+                                                                validationErrors={
+                                                                    validationErrors
+                                                                }
+                                                                onAddWidgetToPosition={
+                                                                    handleAddWidgetToPosition
+                                                                }
+                                                                onMoveSidebarRight={
+                                                                    moveSidebarRight
+                                                                }
+                                                                onMoveSidebarLeft={
+                                                                    moveSidebarLeft
+                                                                }
+                                                                sidebarPosition={
+                                                                    sidebarPosition
+                                                                }
+                                                            />
+                                                        ))}
+                                                </div>
+                                            )}
+                                    </div>
+
+                                    {positions
+                                        .filter((p) => p.area === 'footer')
+                                        .map((position) => (
+                                            <PositionDropZone
+                                                key={position.id}
+                                                position={position}
+                                                widgets={widgets}
+                                                onDropWidget={handleDropWidget}
+                                                onEditWidget={handleEditWidget}
+                                                onDeleteWidget={
+                                                    handleDeleteWidget
+                                                }
+                                                onToggleWidgetVisibility={
+                                                    handleToggleWidgetVisibility
+                                                }
+                                                onSaveWidget={
+                                                    handleSaveWidgetConfig
+                                                }
+                                                isPreviewMode={isPreviewMode}
+                                                newlyAddedWidgetId={
+                                                    newlyAddedWidgetId
+                                                }
+                                                validationErrors={
+                                                    validationErrors
+                                                }
+                                                onAddWidgetToPosition={
+                                                    handleAddWidgetToPosition
+                                                }
+                                            />
+                                        ))}
                                 </div>
                             </div>
                         )}
                     </div>
-
-                    {/* Right Sidebar - Widgets Panel */}
-                    {isRightPanelOpen && (
-                        <div className="h-full w-80 flex-shrink-0 border-l border-gray-200 bg-white">
-                            {template ? (
-                                <WidgetPanel
-                                    template={template}
-                                    className="h-full"
-                                />
-                            ) : (
-                                <ContentBlocksPanel className="h-full" />
-                            )}
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -465,6 +815,52 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                     setEditingWidget(null);
                 }}
                 onSave={handleSaveWidget}
+                onSaveConfig={async (id, cfg) =>
+                    handleSaveWidgetConfig(id, cfg)
+                }
+                siteId={siteId}
+                positions={positions.map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    slug: p.slug,
+                }))}
+                onMove={async (widgetId, positionSlug) => {
+                    // Найдём текущий виджет для вычисления нового order
+                    const widgetsInTarget = widgets
+                        .filter((w) => w.position_slug === positionSlug)
+                        .sort((a, b) => a.order - b.order);
+                    const newOrder = widgetsInTarget.length + 1;
+                    await fetch(
+                        `/dashboard/sites/${siteId}/widgets/${widgetId}/move`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN':
+                                    document
+                                        .querySelector(
+                                            'meta[name="csrf-token"]',
+                                        )
+                                        ?.getAttribute('content') || '',
+                            },
+                            body: JSON.stringify({
+                                position_slug: positionSlug,
+                                order: newOrder,
+                            }),
+                        },
+                    );
+                    // Обновим локально
+                    const idx = widgets.findIndex((w) => w.id === widgetId);
+                    if (idx !== -1) {
+                        const copy: WidgetData[] = [...widgets];
+                        copy[idx] = {
+                            ...copy[idx],
+                            position_slug: positionSlug,
+                            order: newOrder,
+                        } as WidgetData;
+                        onWidgetsChange?.(copy);
+                    }
+                }}
             />
 
             {/* Widget Select Modal */}
