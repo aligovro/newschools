@@ -2,6 +2,9 @@
 // ЕДИНАЯ ЦВЕТОВАЯ СИСТЕМА
 // ========================================
 
+// @use должен быть первым!
+@use 'sass:color';
+
 // Импортируем основные цвета из _variables.scss
 @import '_variables';
 
@@ -9,17 +12,17 @@
 @function generate-color-tones($base-color) {
     // Генерируем тона от 50 до 950 на основе базового цвета
     $tones: (
-        50: lighten($base-color, 45%),
-        100: lighten($base-color, 40%),
-        200: lighten($base-color, 30%),
-        300: lighten($base-color, 20%),
-        400: lighten($base-color, 10%),
+        50: color.scale($base-color, $lightness: 90%),
+        100: color.scale($base-color, $lightness: 80%),
+        200: color.scale($base-color, $lightness: 60%),
+        300: color.scale($base-color, $lightness: 40%),
+        400: color.scale($base-color, $lightness: 20%),
         500: $base-color,
-        600: darken($base-color, 10%),
-        700: darken($base-color, 20%),
-        800: darken($base-color, 30%),
-        900: darken($base-color, 40%),
-        950: darken($base-color, 45%),
+        600: color.scale($base-color, $lightness: -20%),
+        700: color.scale($base-color, $lightness: -40%),
+        800: color.scale($base-color, $lightness: -60%),
+        900: color.scale($base-color, $lightness: -80%),
+        950: color.scale($base-color, $lightness: -90%),
     );
     @return $tones;
 }

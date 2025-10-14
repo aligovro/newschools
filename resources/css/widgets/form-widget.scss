@@ -1,0 +1,375 @@
+.form-widget-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    &__tabs {
+        display: flex;
+        gap: 4px;
+        padding: 16px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    &__tab {
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        &.active {
+            background: white;
+            color: #3b82f6;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+    }
+
+    &__content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    &__field {
+        margin-bottom: 16px;
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        input[type='text'],
+        input[type='number'],
+        textarea,
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+
+            &:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+    }
+
+    &__help-text {
+        margin-top: 6px;
+        font-size: 12px;
+        color: #6b7280;
+    }
+}
+
+.form-styling-editor {
+    &__section {
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #e5e7eb;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        h4 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+    }
+
+    &__field {
+        margin-bottom: 16px;
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        input[type='text'],
+        input[type='number'],
+        textarea,
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+
+            &:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+        }
+
+        select {
+            cursor: pointer;
+            background: white;
+        }
+    }
+
+    &__help-text {
+        margin-top: 6px;
+        font-size: 12px;
+        color: #6b7280;
+        line-height: 1.5;
+    }
+
+    h3 {
+        margin: 0 0 24px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+}
+
+.form-field-editor {
+    &__section {
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #e5e7eb;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        h5 {
+            margin: 0 0 16px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+    }
+
+    &__field {
+        margin-bottom: 16px;
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        input[type='text'],
+        input[type='number'],
+        input[type='checkbox'],
+        textarea,
+        select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+
+            &:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+        }
+
+        input[type='text'],
+        input[type='number'],
+        textarea,
+        select {
+            width: 100%;
+        }
+
+        input[type='checkbox'] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+    }
+
+    &__validation-hint {
+        margin-top: 8px;
+        padding: 12px;
+        background: #f9fafb;
+        border-radius: 6px;
+        font-size: 12px;
+        color: #6b7280;
+
+        p {
+            margin: 0 0 8px 0;
+            font-weight: 500;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 20px;
+
+            li {
+                margin-bottom: 4px;
+
+                code {
+                    padding: 2px 6px;
+                    background: #e5e7eb;
+                    border-radius: 3px;
+                    font-family: 'Monaco', 'Courier New', monospace;
+                    font-size: 11px;
+                }
+            }
+        }
+    }
+
+    &__quick-rules {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        button {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+                background: #f9fafb;
+                border-color: #3b82f6;
+                color: #3b82f6;
+            }
+        }
+    }
+
+    &__options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    &__option {
+        display: flex;
+        gap: 8px;
+        padding: 12px;
+        background: #f9fafb;
+        border-radius: 6px;
+
+        &-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+
+            input[type='text'] {
+                width: 100%;
+            }
+
+            label {
+                display: flex;
+                align-items: center;
+                font-size: 13px;
+                margin: 0;
+
+                input[type='checkbox'] {
+                    margin-right: 6px;
+                }
+            }
+        }
+
+        &-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            button {
+                padding: 4px 8px;
+                background: white;
+                border: 1px solid #d1d5db;
+                border-radius: 4px;
+                font-size: 14px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+
+                &:hover:not(:disabled) {
+                    background: #f3f4f6;
+                    border-color: #9ca3af;
+                }
+
+                &:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+            }
+        }
+    }
+
+    &__add-option-btn {
+        padding: 8px 16px;
+        background: white;
+        border: 1px dashed #d1d5db;
+        border-radius: 6px;
+        color: #3b82f6;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: #f9fafb;
+            border-color: #3b82f6;
+        }
+    }
+}
+
+.form-preview {
+    &__header {
+        margin-bottom: 24px;
+
+        h3 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        p {
+            margin: 0;
+            font-size: 14px;
+            color: #6b7280;
+        }
+    }
+
+    &__content {
+        padding: 20px;
+        background: #f9fafb;
+        border-radius: 8px;
+    }
+}

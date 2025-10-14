@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { DatePickerField } from './DatePickerField';
 import { FormWidget } from './types';
 
 interface FormPreviewProps {
@@ -6,6 +7,8 @@ interface FormPreviewProps {
 }
 
 export const FormPreview: React.FC<FormPreviewProps> = ({ widget }) => {
+    const [previewData, setPreviewData] = useState<Record<string, string>>({});
+
     const renderField = (field: any) => {
         const fieldStyle = {
             width: field.styling?.width || '100%',
@@ -62,12 +65,37 @@ export const FormPreview: React.FC<FormPreviewProps> = ({ widget }) => {
                     </div>
                 );
 
+            case 'date':
+                return (
+                    <div key={field.name} style={{ marginBottom: '16px' }}>
+                        <label style={labelStyle}>
+                            {field.label}
+                            {requiredMark}
+                        </label>
+                        <DatePickerField
+                            name={field.name}
+                            value={previewData[field.name] || ''}
+                            onChange={(value) =>
+                                setPreviewData((prev) => ({
+                                    ...prev,
+                                    [field.name]: value,
+                                }))
+                            }
+                            placeholder={field.placeholder}
+                            required={field.is_required}
+                            style={fieldStyle}
+                        />
+                        {field.help_text && (
+                            <div style={helpTextStyle}>{field.help_text}</div>
+                        )}
+                    </div>
+                );
+
             case 'text':
             case 'email':
             case 'phone':
             case 'number':
             case 'url':
-            case 'date':
                 return (
                     <div key={field.name} style={{ marginBottom: '16px' }}>
                         <label style={labelStyle}>

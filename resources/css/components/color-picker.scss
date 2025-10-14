@@ -1,0 +1,249 @@
+.color-picker {
+    display: block;
+    position: relative;
+
+    &__label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        font-size: 14px;
+        color: #374151;
+    }
+
+    &__wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__swatch {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        position: relative;
+
+        &::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 8px;
+            padding: 2px;
+            background:
+                linear-gradient(
+                    45deg,
+                    #e5e7eb 25%,
+                    transparent 25%,
+                    transparent 75%,
+                    #e5e7eb 75%
+                ),
+                linear-gradient(
+                    45deg,
+                    #e5e7eb 25%,
+                    transparent 25%,
+                    transparent 75%,
+                    #e5e7eb 75%
+                );
+            background-size: 10px 10px;
+            background-position:
+                0 0,
+                5px 5px;
+            z-index: -1;
+        }
+
+        &:hover {
+            border-color: #3b82f6;
+            transform: scale(1.05);
+        }
+
+        &:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+    }
+
+    &__input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: 'Monaco', 'Courier New', monospace;
+        transition: all 0.2s ease;
+
+        &:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+    }
+
+    &__popover {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        z-index: 1000;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        padding: 16px;
+        animation: fadeInDown 0.2s ease;
+        min-width: 220px;
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    }
+
+    &__presets {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    &__preset {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 2px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        position: relative;
+
+        &::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 6px;
+            padding: 2px;
+            background:
+                linear-gradient(
+                    45deg,
+                    #f3f4f6 25%,
+                    transparent 25%,
+                    transparent 75%,
+                    #f3f4f6 75%
+                ),
+                linear-gradient(
+                    45deg,
+                    #f3f4f6 25%,
+                    transparent 25%,
+                    transparent 75%,
+                    #f3f4f6 75%
+                );
+            background-size: 8px 8px;
+            background-position:
+                0 0,
+                4px 4px;
+            z-index: -1;
+        }
+
+        &:hover {
+            transform: scale(1.15);
+            border-color: #3b82f6;
+        }
+
+        &:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+    }
+}
+
+// Стили для react-colorful
+.react-colorful {
+    width: 100% !important;
+    height: 180px !important;
+
+    &__saturation {
+        border-radius: 8px 8px 0 0;
+        border-bottom: none;
+    }
+
+    &__hue,
+    &__alpha {
+        height: 12px;
+        border-radius: 6px;
+        margin-top: 12px;
+    }
+
+    &__pointer {
+        width: 20px;
+        height: 20px;
+        border-width: 3px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+}
+
+// Адаптивность
+@media (max-width: 640px) {
+    .color-picker__popover {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: calc(100vw - 32px);
+        max-width: 300px;
+
+        &::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: -1;
+        }
+    }
+
+    .color-picker__presets {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+// Темная тема
+@media (prefers-color-scheme: dark) {
+    .color-picker {
+        &__label {
+            color: #f9fafb;
+        }
+
+        &__swatch {
+            border-color: #4b5563;
+        }
+
+        &__input {
+            background: #374151;
+            border-color: #4b5563;
+            color: #f9fafb;
+
+            &:focus {
+                border-color: #3b82f6;
+                background: #374151;
+            }
+        }
+
+        &__popover {
+            background: #1f2937;
+        }
+
+        &__presets {
+            border-top-color: #4b5563;
+        }
+
+        &__preset {
+            border-color: #4b5563;
+        }
+    }
+}

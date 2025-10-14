@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { FormValidationService } from '../../../services/FormValidationService';
+import { DatePickerField } from './DatePickerField';
 import { FormValidationErrors } from './FormValidationErrors';
 import { FormField, FormWidget } from './types';
 
@@ -171,12 +172,38 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ widget }) => {
                     </div>
                 );
 
+            case 'date':
+                return (
+                    <div key={field.name} style={{ marginBottom: '16px' }}>
+                        <label style={labelStyle}>
+                            {field.label}
+                            {requiredMark}
+                        </label>
+                        <DatePickerField
+                            name={field.name}
+                            value={getFieldValue(field.name)}
+                            onChange={(value) =>
+                                handleInputChange(field.name, value)
+                            }
+                            placeholder={field.placeholder}
+                            required={field.is_required}
+                            style={fieldStyle}
+                        />
+                        {field.help_text && (
+                            <div style={helpTextStyle}>{field.help_text}</div>
+                        )}
+                        <FormValidationErrors
+                            errors={validationErrors}
+                            fieldName={field.name}
+                        />
+                    </div>
+                );
+
             case 'text':
             case 'email':
             case 'phone':
             case 'number':
             case 'url':
-            case 'date':
                 return (
                     <div key={field.name} style={{ marginBottom: '16px' }}>
                         <label style={labelStyle}>

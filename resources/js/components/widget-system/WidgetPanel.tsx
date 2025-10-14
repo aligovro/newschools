@@ -1,4 +1,5 @@
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { getCategoryIcon, getCategoryName } from '@/config/widgetCategories';
 import { Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useDrag } from 'react-dnd';
@@ -32,7 +33,7 @@ const DraggableWidget: React.FC<{
 
     return (
         <div
-            ref={drag}
+            ref={drag as any}
             className={`cursor-grab transition-opacity hover:shadow-md ${
                 isDragging ? 'opacity-50' : 'opacity-100'
             }`}
@@ -102,28 +103,6 @@ export const WidgetPanel: React.FC<WidgetPanelProps> = ({
             widget.description.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesCategory && matchesSearch;
     });
-
-    const getCategoryIcon = (category: string) => {
-        const icons: Record<string, string> = {
-            layout: '🎨',
-            content: '📝',
-            media: '🖼️',
-            forms: '📋',
-            navigation: '🧭',
-        };
-        return icons[category] || '🔧';
-    };
-
-    const getCategoryName = (category: string) => {
-        const names: Record<string, string> = {
-            layout: 'Макет',
-            content: 'Контент',
-            media: 'Медиа',
-            forms: 'Формы',
-            navigation: 'Навигация',
-        };
-        return names[category] || category;
-    };
 
     if (loading) {
         return (
@@ -198,32 +177,39 @@ export const WidgetPanel: React.FC<WidgetPanelProps> = ({
                     {/* Категории виджетов */}
                     {categories
                         .filter((cat) => cat !== 'all')
-                        .map((category) => (
-                            <div key={category} className="mb-6">
-                                <div className="mb-3 flex items-center space-x-2">
-                                    <span className="text-lg">
-                                        {getCategoryIcon(category)}
-                                    </span>
-                                    <h4 className="font-medium text-gray-900">
-                                        {getCategoryName(category)}
-                                    </h4>
-                                </div>
+                        .map((category) => {
+                            // Фильтруем виджеты для этой категории
+                            const categoryWidgets = filteredWidgets.filter(
+                                (widget) => widget.category === category,
+                            );
 
-                                <div className="space-y-2">
-                                    {filteredWidgets
-                                        .filter(
-                                            (widget) =>
-                                                widget.category === category,
-                                        )
-                                        .map((widget) => (
+                            // Скрываем категорию если в ней нет виджетов
+                            if (categoryWidgets.length === 0) {
+                                return null;
+                            }
+
+                            return (
+                                <div key={category} className="mb-6">
+                                    <div className="mb-3 flex items-center space-x-2">
+                                        <span className="text-lg">
+                                            {getCategoryIcon(category)}
+                                        </span>
+                                        <h4 className="font-medium text-gray-900">
+                                            {getCategoryName(category)}
+                                        </h4>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        {categoryWidgets.map((widget) => (
                                             <DraggableWidget
                                                 key={widget.id}
                                                 widget={widget}
                                             />
                                         ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
 
                     {filteredWidgets.length === 0 && (
                         <div className="py-8 text-center">
