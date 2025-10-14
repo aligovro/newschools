@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ColorPicker } from '../../ui/ColorPicker';
 import { FormField, FormFieldOption } from './types';
 
 interface FormFieldEditorProps {
@@ -12,8 +13,13 @@ export const FormFieldEditor: React.FC<FormFieldEditorProps> = ({
 }) => {
     const [localField, setLocalField] = useState<FormField>(field);
 
+    // Синхронизируем localField с prop field при его изменении
+    useEffect(() => {
+        setLocalField(field);
+    }, [field]);
+
     const handleFieldChange = useCallback(
-        (key: keyof FormField, value: any) => {
+        (key: keyof FormField, value: unknown) => {
             const updatedField = { ...localField, [key]: value };
             setLocalField(updatedField);
             onUpdateField(updatedField);
@@ -22,7 +28,7 @@ export const FormFieldEditor: React.FC<FormFieldEditorProps> = ({
     );
 
     const handleOptionChange = useCallback(
-        (index: number, key: keyof FormFieldOption, value: any) => {
+        (index: number, key: keyof FormFieldOption, value: unknown) => {
             const updatedOptions = [...(localField.options || [])];
             updatedOptions[index] = { ...updatedOptions[index], [key]: value };
             handleFieldChange('options', updatedOptions);
@@ -518,31 +524,29 @@ export const FormFieldEditor: React.FC<FormFieldEditorProps> = ({
                     </div>
 
                     <div className="form-field-editor__field">
-                        <label>Цвет фона</label>
-                        <input
-                            type="color"
+                        <ColorPicker
+                            label="Цвет фона"
                             value={
                                 localField.styling?.background_color ||
                                 '#ffffff'
                             }
-                            onChange={(e) =>
+                            onChange={(color) =>
                                 handleFieldChange('styling', {
                                     ...localField.styling,
-                                    background_color: e.target.value,
+                                    background_color: color,
                                 })
                             }
                         />
                     </div>
 
                     <div className="form-field-editor__field">
-                        <label>Цвет текста</label>
-                        <input
-                            type="color"
+                        <ColorPicker
+                            label="Цвет текста"
                             value={localField.styling?.text_color || '#000000'}
-                            onChange={(e) =>
+                            onChange={(color) =>
                                 handleFieldChange('styling', {
                                     ...localField.styling,
-                                    text_color: e.target.value,
+                                    text_color: color,
                                 })
                             }
                         />

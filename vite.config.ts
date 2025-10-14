@@ -16,6 +16,16 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    css: {
+        preprocessorOptions: {
+            scss: {
+                // Подавляем legacy warnings для @import
+                // Это рекомендованный подход для проектов с Tailwind CSS
+                quietDeps: true,
+                silenceDeprecations: ['import', 'global-builtin'],
+            },
+        },
+    },
     esbuild: {
         jsx: 'automatic',
     },

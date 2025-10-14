@@ -21,6 +21,15 @@ export default [
             'react/react-in-jsx-scope': 'off',
             'react/prop-types': 'off',
             'react/no-unescaped-entities': 'off',
+            // TypeScript rules
+            '@typescript-eslint/no-explicit-any': 'warn', // Изменено с 'error' на 'warn'
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                },
+            ],
         },
         settings: {
             react: {
@@ -38,7 +47,13 @@ export default [
         },
     },
     {
-        ignores: ['vendor', 'node_modules', 'public', 'bootstrap/ssr', 'tailwind.config.js'],
+        ignores: [
+            'vendor',
+            'node_modules',
+            'public',
+            'bootstrap/ssr',
+            'tailwind.config.js',
+        ],
     },
     prettier, // Turn off all rules that might conflict with Prettier
 ];

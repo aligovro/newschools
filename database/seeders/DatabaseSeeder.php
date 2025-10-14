@@ -32,6 +32,8 @@ class DatabaseSeeder extends Seeder
       OrganizationSeeder::class,
       OrganizationPagesSeeder::class,
       OrganizationMenuSeeder::class,
+      WidgetPositionsSeeder::class, // 5 позиций для виджетов
+      AllWidgetsSeeder::class, // Все виджеты в одном месте
     ]);
   }
 }

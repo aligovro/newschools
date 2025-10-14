@@ -7,6 +7,9 @@
 @import './form-styling-additional.scss';
 @import './hero-widget.scss';
 @import './menu-widget.scss';
+@import './widgets/date-picker.scss';
+@import './widgets/form-widget.scss';
+@import './widgets/region-rating.scss';
 
 @layer base {
     * {
@@ -37,6 +40,7 @@
 @import 'components/sites/image-uploader.scss';
 @import 'components/sites/seo-settings.scss';
 @import 'components/sites/theme-customizer.scss';
+@import 'components/color-picker.scss';
 
 /* Menu components */
 @import 'components/menu.scss';

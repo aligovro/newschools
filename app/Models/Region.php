@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Region extends Model
 {
@@ -31,17 +31,15 @@ class Region extends Model
     protected $casts = [
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'population' => 'integer',
+        'area' => 'integer',
         'is_active' => 'boolean',
     ];
 
+    // Связи
     public function federalDistrict(): BelongsTo
     {
         return $this->belongsTo(FederalDistrict::class);
-    }
-
-    public function organizations(): HasMany
-    {
-        return $this->hasMany(Organization::class);
     }
 
     public function cities(): HasMany
@@ -54,6 +52,61 @@ class Region extends Model
         return $this->hasMany(Settlement::class);
     }
 
+    public function organizations(): HasMany
+    {
+        return $this->hasMany(Organization::class);
+    }
+
+    public function donations(): HasMany
+    {
+        return $this->hasMany(Donation::class);
+    }
+
+    /**
+     * Получить пожертвования для конкретной организации
+     */
+    public function donationsForOrganization($organizationId)
+    {
+        return $this->donations()
+            ->where('organization_id', $organizationId)
+            ->where('status', 'completed');
+    }
+
+    /**
+     * Получить статистику пожертвований для региона
+     */
+    public function getDonationStats($organizationId)
+    {
+        $donations = $this->donationsForOrganization($organizationId);
+
+        return [
+            'total_amount' => $donations->sum('amount'),
+            'donation_count' => $donations->count(),
+            'average_amount' => $donations->avg('amount'),
+            'last_donation' => $donations->latest()->first(),
+        ];
+    }
+
+    /**
+     * Получить изменения за период
+     */
+    public function getChangesForPeriod($organizationId, $days = 30)
+    {
+        $donations = $this->donationsForOrganization($organizationId);
+
+        $recentDonations = $donations->where('created_at', '>=', now()->subDays($days));
+        $previousDonations = $donations->whereBetween('created_at', [
+            now()->subDays($days * 2),
+            now()->subDays($days)
+        ]);
+
+        return [
+            'change_amount' => $recentDonations->sum('amount') - $previousDonations->sum('amount'),
+            'change_count' => $recentDonations->count() - $previousDonations->count(),
+        ];
+    }
+
+    // Скоупы
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

@@ -3,6 +3,7 @@ import { FormActionsManager } from './form/FormActionsManager';
 import { FormBuilder } from './form/FormBuilder';
 import { FormPreview } from './form/FormPreview';
 import { FormRenderer } from './form/FormRenderer';
+import { FormStylingEditor } from './form/FormStylingEditor';
 import { FormSubmissionsManager } from './form/FormSubmissionsManager';
 import { FormWidget as FormWidgetType } from './form/types';
 
@@ -10,14 +11,12 @@ interface FormWidgetProps {
     widget: FormWidgetType;
     isEditable?: boolean;
     onConfigChange?: (config: Partial<FormWidgetType>) => void;
-    onSave?: (config: Partial<FormWidgetType>) => void;
 }
 
 export const FormWidget: React.FC<FormWidgetProps> = ({
     widget,
     isEditable = false,
     onConfigChange,
-    onSave,
 }) => {
     const [activeTab, setActiveTab] = useState<
         | 'builder'
@@ -31,6 +30,9 @@ export const FormWidget: React.FC<FormWidgetProps> = ({
         {},
     );
 
+    // Объединяем widget с pendingConfig для отображения изменений в реальном времени
+    const currentWidget = { ...widget, ...pendingConfig };
+
     const handleConfigChange = useCallback(
         (config: Partial<FormWidgetType>) => {
             setPendingConfig((prev) => ({ ...prev, ...config }));
@@ -38,11 +40,6 @@ export const FormWidget: React.FC<FormWidgetProps> = ({
         },
         [onConfigChange],
     );
-
-    const handleSave = useCallback(() => {
-        onSave?.(pendingConfig);
-        setPendingConfig({});
-    }, [pendingConfig, onSave]);
 
     if (isEditable) {
         return (
@@ -89,12 +86,14 @@ export const FormWidget: React.FC<FormWidgetProps> = ({
                 <div className="form-widget-editor__content">
                     {activeTab === 'builder' && (
                         <FormBuilder
-                            widget={widget}
+                            widget={currentWidget}
                             onConfigChange={handleConfigChange}
                         />
                     )}
 
-                    {activeTab === 'preview' && <FormPreview widget={widget} />}
+                    {activeTab === 'preview' && (
+                        <FormPreview widget={currentWidget} />
+                    )}
 
                     {activeTab === 'settings' && (
                         <div className="form-widget-editor__settings">
@@ -104,32 +103,15 @@ export const FormWidget: React.FC<FormWidgetProps> = ({
                     )}
 
                     {activeTab === 'styling' && (
-                        <div>
-                            <h3>Настройки стилизации</h3>
-                            <div className="form-widget-editor__field">
-                                <label>CSS класс для обертки</label>
-                                <input
-                                    type="text"
-                                    value={widget.css_class || ''}
-                                    onChange={(e) =>
-                                        handleConfigChange({
-                                            css_class: e.target.value,
-                                        })
-                                    }
-                                    placeholder="my-custom-form-class"
-                                />
-                                <p className="form-widget-editor__help-text">
-                                    Добавьте CSS класс для кастомной стилизации
-                                    формы. Вы сможете использовать этот класс в
-                                    своих CSS файлах.
-                                </p>
-                            </div>
-                        </div>
+                        <FormStylingEditor
+                            widget={currentWidget}
+                            onStylingChange={handleConfigChange}
+                        />
                     )}
 
                     {activeTab === 'actions' && (
                         <FormActionsManager
-                            actions={widget.actions || []}
+                            actions={currentWidget.actions || []}
                             onActionsChange={(actions) =>
                                 handleConfigChange({ actions })
                             }
@@ -138,19 +120,10 @@ export const FormWidget: React.FC<FormWidgetProps> = ({
 
                     {activeTab === 'submissions' && (
                         <FormSubmissionsManager
-                            widgetId={widget.id || 0}
-                            siteId={widget.site_id || 0}
+                            widgetId={currentWidget.id || 0}
+                            siteId={currentWidget.site_id || 0}
                         />
                     )}
-                </div>
-
-                <div className="form-widget-editor__footer">
-                    <button
-                        className="form-widget-editor__save-btn"
-                        onClick={handleSave}
-                    >
-                        Сохранить
-                    </button>
                 </div>
             </div>
         );

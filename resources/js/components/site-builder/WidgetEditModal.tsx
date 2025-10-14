@@ -16,10 +16,15 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { DonationWidget } from '@/components/widgets/DonationWidget';
+import { DonationsListWidget } from '@/components/widgets/DonationsListWidget';
 import { FormWidget } from '@/components/widgets/FormWidget';
 import { HeroWidget } from '@/components/widgets/HeroWidgetRefactored';
 import { MenuWidget } from '@/components/widgets/MenuWidget';
-import React, { useEffect, useState } from 'react';
+import { RegionRatingWidget } from '@/components/widgets/RegionRatingWidget';
+import { TextWidget } from '@/components/widgets/TextWidget';
+import { getOrganizationId, isCustomWidget } from '@/utils/widgetHelpers';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 type WidgetConfig = Record<string, unknown>;
 
@@ -73,6 +78,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         null,
     );
 
+    // Синхронизация формы с виджетом
     useEffect(() => {
         if (widget) {
             setFormData({
@@ -87,12 +93,15 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         }
     }, [widget]);
 
-    const handleSave = async () => {
+    // Мемоизированная функция сохранения
+    const handleSave = useCallback(async () => {
         if (!widget) return;
+
         try {
             if (onSaveConfig && pendingConfig) {
                 await onSaveConfig(widget.id, pendingConfig);
             }
+
             const minimalUpdates = {
                 id: widget.id,
                 name: formData.name,
@@ -100,19 +109,258 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 is_active: formData.is_active,
                 is_visible: formData.is_visible,
             } as unknown as WidgetData;
+
             onSave(minimalUpdates);
             onClose();
-        } catch {
-            // ignore
+        } catch (error) {
+            console.error('Error saving widget:', error);
         }
-    };
+    }, [widget, pendingConfig, formData, onSaveConfig, onSave, onClose]);
 
-    const handleInputChange = (field: string, value: unknown) => {
+    // Мемоизированная функция изменения полей
+    const handleInputChange = useCallback((field: string, value: unknown) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
         }));
-    };
+    }, []);
+
+    // Мемоизированная функция сохранения конфига
+    const handleConfigUpdate = useCallback(
+        async (cfg: WidgetConfig) => {
+            setPendingConfig(cfg);
+            if (onSaveConfig && widget) {
+                await onSaveConfig(widget.id, cfg);
+            }
+        },
+        [onSaveConfig, widget],
+    );
+
+    // Мемоизируем ID организации
+    const organizationId = useMemo(
+        () => getOrganizationId(widget?.config),
+        [widget?.config],
+    );
+
+    // Рендерер для кастомных виджетов
+    const renderCustomWidget = useMemo(() => {
+        if (!widget) return null;
+
+        switch (widget.slug) {
+            case 'text':
+                return (
+                    <TextWidget
+                        config={widget.config}
+                        isEditable
+                        autoExpandSettings
+                        onSave={handleConfigUpdate}
+                        widgetId={widget.id}
+                    />
+                );
+
+            case 'hero':
+                return (
+                    <HeroWidget
+                        config={widget.config}
+                        isEditable
+                        autoExpandSettings
+                        onSave={undefined}
+                        widgetId={widget.id}
+                        onConfigChange={setPendingConfig}
+                    />
+                );
+
+            case 'menu':
+                return (
+                    <MenuWidget
+                        config={widget.config}
+                        isEditable
+                        onConfigChange={setPendingConfig}
+                    />
+                );
+
+            case 'form': {
+                const formWidget = {
+                    id: parseInt(widget.id),
+                    site_id: siteId,
+                    name: widget.name,
+                    slug: widget.slug as 'form',
+                    description: widget.config.description as string,
+                    settings: (widget.config.settings || {}) as any,
+                    styling: (widget.config.styling || {}) as any,
+                    fields: (widget.config.fields || []) as any,
+                    actions: (widget.config.actions || []) as any,
+                    css_class: widget.config.css_class as string,
+                    is_active: widget.is_active,
+                    sort_order: widget.order,
+                    created_at: widget.created_at,
+                    updated_at: widget.updated_at,
+                };
+
+                return (
+                    <FormWidget
+                        widget={formWidget}
+                        isEditable
+                        onConfigChange={(config) =>
+                            setPendingConfig((prev) => ({ ...prev, ...config }))
+                        }
+                    />
+                );
+            }
+
+            case 'donation':
+                return (
+                    <DonationWidget
+                        config={widget.config || {}}
+                        isEditable
+                        autoExpandSettings
+                        onSave={handleConfigUpdate}
+                        widgetId={widget.id}
+                        organizationId={organizationId}
+                    />
+                );
+
+            case 'region_rating':
+                return (
+                    <RegionRatingWidget
+                        config={widget.config || {}}
+                        isEditable
+                        autoExpandSettings
+                        onSave={handleConfigUpdate}
+                        widgetId={widget.id}
+                        organizationId={organizationId}
+                        onConfigChange={setPendingConfig}
+                    />
+                );
+
+            case 'donations_list':
+                return (
+                    <DonationsListWidget
+                        config={widget.config || {}}
+                        isEditable
+                        autoExpandSettings
+                        onSave={handleConfigUpdate}
+                        widgetId={widget.id}
+                        organizationId={organizationId}
+                        onConfigChange={setPendingConfig}
+                    />
+                );
+
+            default:
+                return null;
+        }
+    }, [widget, siteId, organizationId, handleConfigUpdate]);
+
+    // Стандартные поля для остальных виджетов
+    const renderStandardFields = useMemo(
+        () => (
+            <>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="name">Название</Label>
+                        <Input
+                            id="name"
+                            value={formData.name}
+                            onChange={(e) =>
+                                handleInputChange('name', e.target.value)
+                            }
+                            placeholder="Введите название виджета"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="slug">Slug</Label>
+                        <Input
+                            id="slug"
+                            value={formData.slug}
+                            onChange={(e) =>
+                                handleInputChange('slug', e.target.value)
+                            }
+                            placeholder="widget-slug"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            id="is_active"
+                            checked={formData.is_active}
+                            onChange={(e) =>
+                                handleInputChange('is_active', e.target.checked)
+                            }
+                            className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="is_active">Активен</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            id="is_visible"
+                            checked={formData.is_visible}
+                            onChange={(e) =>
+                                handleInputChange(
+                                    'is_visible',
+                                    e.target.checked,
+                                )
+                            }
+                            className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="is_visible">Видимый</Label>
+                    </div>
+                </div>
+
+                <div>
+                    <Label htmlFor="config">Конфигурация (JSON)</Label>
+                    <Textarea
+                        id="config"
+                        value={JSON.stringify(formData.config, null, 2)}
+                        onChange={(e) => {
+                            try {
+                                const parsed = JSON.parse(e.target.value);
+                                handleInputChange('config', parsed);
+                                setPendingConfig(parsed as WidgetConfig);
+                            } catch {
+                                // Игнорируем ошибки парсинга во время ввода
+                            }
+                        }}
+                        placeholder="{}"
+                        rows={4}
+                        className="font-mono text-sm"
+                    />
+                </div>
+
+                <div>
+                    <Label htmlFor="settings">Настройки (JSON)</Label>
+                    <Textarea
+                        id="settings"
+                        value={JSON.stringify(formData.settings, null, 2)}
+                        onChange={(e) => {
+                            try {
+                                const parsed = JSON.parse(e.target.value);
+                                handleInputChange(
+                                    'settings',
+                                    parsed as WidgetConfig,
+                                );
+                            } catch {
+                                // Игнорируем ошибки парсинга во время ввода
+                            }
+                        }}
+                        placeholder="{}"
+                        rows={4}
+                        className="font-mono text-sm"
+                    />
+                </div>
+            </>
+        ),
+        [formData, handleInputChange],
+    );
+
+    // Проверяем, есть ли виджет с кастомным редактором
+    const hasCustomEditor = useMemo(
+        () => widget && isCustomWidget(widget.slug),
+        [widget],
+    );
 
     if (!widget) return null;
 
@@ -127,6 +375,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 </DialogHeader>
 
                 <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
+                    {/* Выбор позиции */}
                     {positions.length > 0 && (
                         <div>
                             <Label htmlFor="position">Позиция</Label>
@@ -152,183 +401,10 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                         </div>
                     )}
 
-                    {(widget.slug === 'hero' ||
-                        widget.slug === 'hero-slider') && (
-                        <HeroWidget
-                            config={widget.config}
-                            isEditable
-                            autoExpandSettings
-                            onSave={undefined}
-                            widgetId={widget.id}
-                            onConfigChange={(cfg) => setPendingConfig(cfg)}
-                        />
-                    )}
-
-                    {(widget.slug === 'menu' ||
-                        widget.slug === 'header-menu') && (
-                        <MenuWidget
-                            config={widget.config}
-                            isEditable
-                            onConfigChange={(cfg) => setPendingConfig(cfg)}
-                        />
-                    )}
-
-                    {widget.slug === 'form' && (
-                        <FormWidget
-                            widget={{
-                                id: parseInt(widget.id),
-                                site_id: siteId,
-                                name: widget.name,
-                                slug: widget.slug,
-                                config: widget.config,
-                                settings: widget.settings,
-                                fields: (widget.config.fields as any[]) || [],
-                                actions: (widget.config.actions as any[]) || [],
-                                styling: widget.config.styling || {},
-                                is_active: widget.is_active,
-                                is_visible: widget.is_visible,
-                                created_at: widget.created_at,
-                                updated_at: widget.updated_at,
-                            }}
-                            isEditable
-                            onConfigChange={(cfg) => setPendingConfig(cfg)}
-                            onSave={undefined}
-                        />
-                    )}
-
-                    {!(
-                        widget.slug === 'menu' ||
-                        widget.slug === 'header-menu' ||
-                        widget.slug === 'hero' ||
-                        widget.slug === 'hero-slider' ||
-                        widget.slug === 'form'
-                    ) && (
-                        <>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label htmlFor="name">Название</Label>
-                                    <Input
-                                        id="name"
-                                        value={formData.name}
-                                        onChange={(e) =>
-                                            handleInputChange(
-                                                'name',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="Введите название виджета"
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="slug">Slug</Label>
-                                    <Input
-                                        id="slug"
-                                        value={formData.slug}
-                                        onChange={(e) =>
-                                            handleInputChange(
-                                                'slug',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="widget-slug"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        id="is_active"
-                                        checked={formData.is_active}
-                                        onChange={(e) =>
-                                            handleInputChange(
-                                                'is_active',
-                                                e.target.checked,
-                                            )
-                                        }
-                                        className="rounded border-gray-300"
-                                    />
-                                    <Label htmlFor="is_active">Активен</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        id="is_visible"
-                                        checked={formData.is_visible}
-                                        onChange={(e) =>
-                                            handleInputChange(
-                                                'is_visible',
-                                                e.target.checked,
-                                            )
-                                        }
-                                        className="rounded border-gray-300"
-                                    />
-                                    <Label htmlFor="is_visible">Видимый</Label>
-                                </div>
-                            </div>
-
-                            <div>
-                                <Label htmlFor="config">
-                                    Конфигурация (JSON)
-                                </Label>
-                                <Textarea
-                                    id="config"
-                                    value={JSON.stringify(
-                                        formData.config,
-                                        null,
-                                        2,
-                                    )}
-                                    onChange={(e) => {
-                                        try {
-                                            const parsed = JSON.parse(
-                                                e.target.value,
-                                            );
-                                            handleInputChange('config', parsed);
-                                            setPendingConfig(
-                                                parsed as WidgetConfig,
-                                            );
-                                        } catch {
-                                            // ignore
-                                        }
-                                    }}
-                                    placeholder="{}"
-                                    rows={4}
-                                    className="font-mono text-sm"
-                                />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="settings">
-                                    Настройки (JSON)
-                                </Label>
-                                <Textarea
-                                    id="settings"
-                                    value={JSON.stringify(
-                                        formData.settings,
-                                        null,
-                                        2,
-                                    )}
-                                    onChange={(e) => {
-                                        try {
-                                            const parsed = JSON.parse(
-                                                e.target.value,
-                                            );
-                                            handleInputChange(
-                                                'settings',
-                                                parsed as WidgetConfig,
-                                            );
-                                        } catch {
-                                            // ignore
-                                        }
-                                    }}
-                                    placeholder="{}"
-                                    rows={4}
-                                    className="font-mono text-sm"
-                                />
-                            </div>
-                        </>
-                    )}
+                    {/* Кастомный редактор или стандартные поля */}
+                    {hasCustomEditor
+                        ? renderCustomWidget
+                        : renderStandardFields}
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">
