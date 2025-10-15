@@ -8,6 +8,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
+import { adminApi } from '@/lib/api/index';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
@@ -189,20 +190,15 @@ export default function SettingsPage({
         {
             title: 'Очистить кеш',
             description: 'Очистить кеш всех настроек',
-            action: () => {
-                fetch('/dashboard/admin/global-settings/clear-cache', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN':
-                            document
-                                .querySelector('meta[name="csrf-token"]')
-                                ?.getAttribute('content') || '',
-                    },
-                }).then(() => {
+            action: async () => {
+                try {
+                    await adminApi.clearCache();
                     alert('Кеш настроек очищен!');
                     window.location.reload();
-                });
+                } catch (error) {
+                    console.error('Error clearing cache:', error);
+                    alert('Ошибка при очистке кеша');
+                }
             },
         },
         {
@@ -218,24 +214,19 @@ export default function SettingsPage({
         {
             title: 'Сброс к умолчанию',
             description: 'Вернуть все настройки к значениям по умолчанию',
-            action: () => {
+            action: async () => {
                 if (
                     confirm(
                         'Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?',
                     )
                 ) {
-                    fetch('/dashboard/admin/global-settings/reset', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN':
-                                document
-                                    .querySelector('meta[name="csrf-token"]')
-                                    ?.getAttribute('content') || '',
-                        },
-                    }).then(() => {
+                    try {
+                        await adminApi.resetSettings();
                         window.location.reload();
-                    });
+                    } catch (error) {
+                        console.error('Error resetting settings:', error);
+                        alert('Ошибка при сбросе настроек');
+                    }
                 }
             },
         },

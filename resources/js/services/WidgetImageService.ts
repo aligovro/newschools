@@ -1,3 +1,5 @@
+import { widgetImagesApi } from '@/lib/api/index';
+
 interface ImageUploadResponse {
     success: boolean;
     data?: {
@@ -22,7 +24,7 @@ interface ImageDeleteResponse {
 }
 
 class WidgetImageService {
-    private baseUrl = '/api/widgets/images';
+    private baseUrl = '/widgets/images';
 
     /**
      * Загрузить изображение для виджета
@@ -42,29 +44,12 @@ class WidgetImageService {
         }
 
         try {
-            const response = await fetch(`${this.baseUrl}/upload`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': this.getCsrfToken(),
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-                body: formData,
-            });
+            const data: ImageUploadResponse = await widgetImagesApi.uploadImage(
+                this.baseUrl,
+                formData,
+            );
 
-            // Проверяем, является ли ответ JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                console.error('Non-JSON response:', text);
-                throw new Error(
-                    `Сервер вернул неожиданный ответ: ${response.status} ${response.statusText}`,
-                );
-            }
-
-            const data = await response.json();
-
-            if (!response.ok) {
+            if (!data.success) {
                 throw new Error(
                     data.message || 'Ошибка при загрузке изображения',
                 );
@@ -91,21 +76,12 @@ class WidgetImageService {
         widgetSlug: string,
     ): Promise<ImageDeleteResponse> {
         try {
-            const response = await fetch(`${this.baseUrl}/delete`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.getCsrfToken(),
-                },
-                body: JSON.stringify({
-                    image_path: imagePath,
-                    widget_slug: widgetSlug,
-                }),
-            });
+            const data: ImageDeleteResponse = await widgetImagesApi.deleteImage(
+                this.baseUrl,
+                imagePath,
+            );
 
-            const data = await response.json();
-
-            if (!response.ok) {
+            if (!data.success) {
                 throw new Error(
                     data.message || 'Ошибка при удалении изображения',
                 );

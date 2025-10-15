@@ -154,7 +154,43 @@ class OrganizationSiteController extends Controller
      */
     public function editWithBuilder(Organization $organization, OrganizationSite $site)
     {
-        $site->load(['pages', 'widgets.widget', 'widgets.position']);
+        $site->load(['pages']);
+
+        // Загружаем виджеты с нормализованными данными
+        $site->load([
+            'widgets.configs',
+            'widgets.heroSlides',
+            'widgets.formFields',
+            'widgets.menuItems',
+            'widgets.galleryImages',
+            'widgets.donationSettings',
+            'widgets.regionRatingSettings',
+            'widgets.donationsListSettings',
+            'widgets.referralLeaderboardSettings',
+            'widgets.imageSettings',
+            'widgets.widget',
+            'widgets.position'
+        ]);
+
+        // Debug: Log the widgets data
+        \Log::info('Site widgets loaded with normalized data:', [
+            'site_id' => $site->id,
+            'widgets_count' => $site->widgets->count(),
+            'widgets' => $site->widgets->map(function ($widget) {
+                return [
+                    'id' => $widget->id,
+                    'name' => $widget->name,
+                    'slug' => $widget->widget->slug ?? 'unknown',
+                    'position_name' => $widget->position_name,
+                    'position_slug' => $widget->position->slug ?? 'unknown',
+                    'is_active' => $widget->is_active,
+                    'is_visible' => $widget->is_visible,
+                    'configs_count' => $widget->configs->count(),
+                    'hero_slides_count' => $widget->heroSlides->count(),
+                    'form_fields_count' => $widget->formFields->count(),
+                ];
+            })->toArray()
+        ]);
 
         return Inertia::render('organization/admin/sites/EditWithBuilder', [
             'organization' => $organization,
@@ -395,7 +431,46 @@ class OrganizationSiteController extends Controller
             }
         }
 
-        $site->update(['widgets_config' => $defaultWidgets]);
+        // Создаем дефолтные виджеты в нормализованных таблицах
+        $this->createDefaultWidgetsInTables($site, $defaultWidgets);
+    }
+
+    /**
+     * Создать дефолтные виджеты в нормализованных таблицах
+     */
+    private function createDefaultWidgetsInTables(OrganizationSite $site, array $defaultWidgets): void
+    {
+        $widgetDataService = app(\App\Services\WidgetDataService::class);
+
+        foreach ($defaultWidgets as $widgetData) {
+            // Находим widget и position
+            $widget = \App\Models\Widget::where('slug', $widgetData['slug'])->first();
+            $position = \App\Models\WidgetPosition::where('slug', $widgetData['position_slug'])->first();
+
+            if (!$widget || !$position) {
+                continue;
+            }
+
+            // Создаем SiteWidget
+            $siteWidget = \App\Models\SiteWidget::create([
+                'site_id' => $site->id,
+                'widget_id' => $widget->id,
+                'position_id' => $position->id,
+                'name' => $widgetData['name'],
+                'position_name' => $widgetData['position_name'],
+                'position_slug' => $widgetData['position_slug'],
+                'widget_slug' => $widgetData['slug'],
+                'config' => $widgetData['config'] ?? [],
+                'settings' => $widgetData['settings'] ?? [],
+                'order' => $widgetData['order'] ?? 0,
+                'sort_order' => $widgetData['order'] ?? 0,
+                'is_active' => $widgetData['is_active'] ?? true,
+                'is_visible' => $widgetData['is_visible'] ?? true,
+            ]);
+
+            // Мигрируем данные в нормализованные таблицы
+            $widgetDataService->migrateWidgetData($siteWidget);
+        }
     }
 
     /**

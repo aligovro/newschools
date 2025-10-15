@@ -55,13 +55,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/organizations/{organization}/sites', [OrganizationCreationController::class, 'storeSite'])->name('organizations.store-site');
 
 
-    // API routes for organization creation
-    Route::post('/api/check-slug', [OrganizationCreationController::class, 'checkSlug'])->name('api.check-slug');
-    Route::get('/api/regions', [OrganizationCreationController::class, 'getRegions'])->name('api.regions');
-    Route::get('/api/cities-by-region', [OrganizationCreationController::class, 'getCitiesByRegion'])->name('api.cities-by-region');
-    Route::get('/api/settlements-by-city', [OrganizationCreationController::class, 'getSettlementsByCity'])->name('api.settlements-by-city');
-    Route::post('/api/upload-logo', [OrganizationCreationController::class, 'uploadLogo'])->name('api.upload-logo');
-    Route::post('/api/upload-images', [OrganizationCreationController::class, 'uploadImages'])->name('api.upload-images');
 
     // Image upload routes
     Route::post('/api/upload/organization-logo', [App\Http\Controllers\ImageUploadController::class, 'uploadOrganizationLogo'])->name('api.upload.organization-logo');

@@ -1,8 +1,10 @@
 import { SiteBuilder } from '@/components/site-builder/SiteBuilder';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSiteSettings } from '@/hooks';
+import { sitesApi } from '@/lib/api/index';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, Eye, Layout, Settings, Upload, X } from 'lucide-react';
 import React, { useState } from 'react';
@@ -20,29 +22,33 @@ interface Site {
     slug: string;
     status: string;
     template: string;
-    layout_config?: any;
+    description?: string;
+    seo_title?: string;
+    seo_description?: string;
+    seo_keywords?: string;
+    layout_config?: Record<string, unknown>;
     custom_css?: string;
     custom_js?: string;
-    pages?: any[];
-    menus?: any[];
-    media?: any[];
-    sliders?: any[];
+    pages?: unknown[];
+    menus?: unknown[];
+    media?: unknown[];
+    sliders?: unknown[];
 }
 
 interface SiteConstructorProps {
     organization: Organization;
     site: Site;
-    templates: any[];
-    widgets: any[];
-    colorSchemes: any[];
+    templates: unknown[];
+    widgets: unknown[];
+    colorSchemes: unknown[];
 }
 
 const SiteConstructor: React.FC<SiteConstructorProps> = ({
     organization,
     site,
-    templates,
-    widgets,
-    colorSchemes,
+    templates: _templates,
+    widgets: _widgets,
+    colorSchemes: _colorSchemes,
 }) => {
     // Отладочная информация
     console.log('SiteConstructor - site:', site);
@@ -63,17 +69,14 @@ const SiteConstructor: React.FC<SiteConstructorProps> = ({
         },
     });
 
-    const handleSave = (content: Record<string, unknown>) => {
+    const _handleSave = (content: Record<string, unknown>) => {
         setIsSaving(true);
         setSiteContent(content);
 
         router.put(
-            route('organizations.sites.builder.save', {
-                organization: organization.id,
-                site: site.id,
-            }),
+            `/organizations/${organization.id}/sites/${site.id}/builder/save`,
             {
-                layout_config: content,
+                layout_config: JSON.stringify(content),
                 title: site.name,
                 custom_css: site.custom_css || '',
                 custom_js: site.custom_js || '',
@@ -94,10 +97,7 @@ const SiteConstructor: React.FC<SiteConstructorProps> = ({
     const handlePublish = () => {
         setIsPublishing(true);
         router.post(
-            route('organizations.sites.builder.publish', {
-                organization: organization.id,
-                site: site.id,
-            }),
+            `/organizations/${organization.id}/sites/${site.id}/builder/publish`,
             {},
             {
                 onSuccess: () => {
@@ -114,10 +114,7 @@ const SiteConstructor: React.FC<SiteConstructorProps> = ({
 
     const handleUnpublish = () => {
         router.post(
-            route('organizations.sites.builder.unpublish', {
-                organization: organization.id,
-                site: site.id,
-            }),
+            `/organizations/${organization.id}/sites/${site.id}/builder/unpublish`,
             {},
             {
                 onSuccess: () => {
@@ -133,26 +130,13 @@ const SiteConstructor: React.FC<SiteConstructorProps> = ({
     const handlePreview = async () => {
         try {
             // Сначала сохраняем текущую конфигурацию виджетов
-            const response = await fetch(`/api/sites/${site.id}/save-config`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN':
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    widgets: siteContent.widgets || [],
-                }),
+            const response = await sitesApi.saveSiteConfig(site.id, {
+                widgets: (siteContent.widgets as unknown[]) || [],
             });
 
-            if (response.ok) {
+            if (response.success) {
                 // Затем открываем предпросмотр
-                window.open(
-                    route('sites.preview', { slug: site.slug }),
-                    '_blank',
-                );
+                window.open(`/sites/${site.slug}/preview`, '_blank');
             } else {
                 console.error(
                     'Ошибка при сохранении конфигурации для предпросмотра',
@@ -165,7 +149,7 @@ const SiteConstructor: React.FC<SiteConstructorProps> = ({
         }
     };
 
-    const handleAddWidget = (widget: any, position: string) => {
+    const _handleAddWidget = (widget: unknown, position: string) => {
         // Логика добавления виджета
         console.log('Adding widget:', widget, 'to position:', position);
     };
@@ -178,10 +162,7 @@ const SiteConstructor: React.FC<SiteConstructorProps> = ({
         try {
             setIsSaving(true);
             const response = await fetch(
-                route('organizations.sites.builder.save', {
-                    organization: organization.id,
-                    site: site.id,
-                }),
+                `/organizations/${organization.id}/sites/${site.id}/builder/save`,
                 {
                     method: 'PUT',
                     headers: {
@@ -237,10 +218,7 @@ const SiteConstructor: React.FC<SiteConstructorProps> = ({
                                     size="sm"
                                     onClick={() =>
                                         router.visit(
-                                            route(
-                                                'organizations.sites.index',
-                                                organization.id,
-                                            ),
+                                            `/organizations/${organization.id}/sites`,
                                         )
                                     }
                                 >
@@ -337,11 +315,9 @@ const SiteConstructor: React.FC<SiteConstructorProps> = ({
 
                         {activeTab === 'builder' && (
                             <SiteBuilder
-                                initialContent={siteContent}
-                                onSave={handleSave}
-                                onPreview={handlePreview}
-                                template={site.template}
-                                onAddWidget={handleAddWidget}
+                                template={{ id: site.template }}
+                                siteId={site.id}
+                                initialLayoutConfig={siteContent}
                                 className="h-full"
                             />
                         )}

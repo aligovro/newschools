@@ -383,7 +383,9 @@ export const WidgetEditor: React.FC<WidgetEditorProps> = ({
                                     <Checkbox
                                         id="is-active"
                                         checked={isActive}
-                                        onCheckedChange={setIsActive}
+                                        onCheckedChange={(checked) =>
+                                            setIsActive(!!checked)
+                                        }
                                     />
                                     <Label htmlFor="is-active">Активен</Label>
                                 </div>
@@ -392,7 +394,9 @@ export const WidgetEditor: React.FC<WidgetEditorProps> = ({
                                     <Checkbox
                                         id="is-visible"
                                         checked={isVisible}
-                                        onCheckedChange={setIsVisible}
+                                        onCheckedChange={(checked) =>
+                                            setIsVisible(!!checked)
+                                        }
                                     />
                                     <Label htmlFor="is-visible">Видим</Label>
                                 </div>

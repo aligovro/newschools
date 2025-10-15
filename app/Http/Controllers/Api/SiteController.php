@@ -258,31 +258,47 @@ class SiteController extends Controller
                 $request->widget_slug
             );
 
-            // Получаем текущие виджеты
-            $widgets = $site->widgets_config ?? [];
+            // Создаем новый виджет в нормализованных таблицах
+            $order = \App\Models\SiteWidget::where('site_id', $site->id)
+                ->where('position_slug', $position->slug)
+                ->count() + 1;
 
-            // Создаем новый виджет
-            $newWidget = [
-                'id' => time() . rand(1000, 9999), // Временный ID
+            $siteWidget = \App\Models\SiteWidget::create([
+                'site_id' => $site->id,
                 'widget_id' => $widget->id,
+                'position_id' => $position->id,
                 'name' => $widget->name,
-                'slug' => $widget->slug,
                 'position_name' => $position->name,
                 'position_slug' => $position->slug,
-                'order' => count(array_filter($widgets, fn($w) => $w['position_slug'] === $position->slug)) + 1,
+                'widget_slug' => $widget->slug,
                 'config' => $processedConfig,
                 'settings' => $request->settings ?? [],
+                'order' => $order,
+                'sort_order' => $order,
                 'is_active' => true,
                 'is_visible' => true,
-                'created_at' => now()->toISOString(),
-            ];
+            ]);
 
-            $widgets[] = $newWidget;
-            $site->update(['widgets_config' => $widgets]);
+            // Мигрируем данные в нормализованные таблицы
+            $widgetDataService = app(\App\Services\WidgetDataService::class);
+            $widgetDataService->migrateWidgetData($siteWidget);
 
             return response()->json([
                 'success' => true,
-                'widget' => $newWidget,
+                'widget' => [
+                    'id' => $siteWidget->id,
+                    'widget_id' => $siteWidget->widget_id,
+                    'name' => $siteWidget->name,
+                    'slug' => $siteWidget->widget_slug,
+                    'position_name' => $siteWidget->position_name,
+                    'position_slug' => $siteWidget->position_slug,
+                    'order' => $siteWidget->order,
+                    'config' => $siteWidget->config,
+                    'settings' => $siteWidget->settings,
+                    'is_active' => $siteWidget->is_active,
+                    'is_visible' => $siteWidget->is_visible,
+                    'created_at' => $siteWidget->created_at->toISOString(),
+                ],
                 'message' => 'Виджет успешно добавлен',
             ]);
         } catch (\Exception $e) {
@@ -312,24 +328,26 @@ class SiteController extends Controller
 
         try {
             $site = $this->getSite($site);
-            $widgets = $site->widgets_config ?? [];
 
-            $widgetIndex = array_search($widgetId, array_column($widgets, 'id'));
-            if ($widgetIndex === false) {
+            // Находим виджет в нормализованных таблицах
+            $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
+                ->where('id', $widgetId)
+                ->first();
+
+            if (!$siteWidget) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Виджет не найден',
                 ], 404);
             }
 
-            $widget = $widgets[$widgetIndex];
-            $oldConfig = $widget['config'] ?? [];
+            $oldConfig = $siteWidget->config ?? [];
 
             // Валидируем конфигурацию виджета
             if ($request->has('config')) {
                 $validationErrors = $this->widgetService->validateWidgetConfig(
                     $request->config,
-                    $widget['slug']
+                    $siteWidget->widget_slug
                 );
 
                 if (!empty($validationErrors)) {
@@ -343,16 +361,16 @@ class SiteController extends Controller
                 // Обрабатываем изображения в конфигурации
                 $processedConfig = $this->widgetService->processWidgetImages(
                     $request->config,
-                    $widget['slug']
+                    $siteWidget->widget_slug
                 );
 
                 // Очищаем старые изображения
-                $this->widgetService->cleanupOldImages($oldConfig, $processedConfig, $widget['slug']);
+                $this->widgetService->cleanupOldImages($oldConfig, $processedConfig, $siteWidget->widget_slug);
 
                 $request->merge(['config' => $processedConfig]);
             }
 
-            // Обновляем виджет
+            // Обновляем виджет в нормализованных таблицах
             $updateData = [];
             if ($request->has('config')) {
                 $updateData['config'] = $request->config;
@@ -367,14 +385,28 @@ class SiteController extends Controller
                 $updateData['is_visible'] = $request->is_visible;
             }
 
-            $widgets[$widgetIndex] = array_merge($widgets[$widgetIndex], $updateData);
-            $widgets[$widgetIndex]['updated_at'] = now()->toISOString();
+            $siteWidget->update($updateData);
 
-            $site->update(['widgets_config' => $widgets]);
+            // Мигрируем данные в нормализованные таблицы
+            $widgetDataService = app(\App\Services\WidgetDataService::class);
+            $widgetDataService->migrateWidgetData($siteWidget);
 
             return response()->json([
                 'success' => true,
-                'widget' => $widgets[$widgetIndex],
+                'widget' => [
+                    'id' => $siteWidget->id,
+                    'widget_id' => $siteWidget->widget_id,
+                    'name' => $siteWidget->name,
+                    'slug' => $siteWidget->widget_slug,
+                    'position_name' => $siteWidget->position_name,
+                    'position_slug' => $siteWidget->position_slug,
+                    'order' => $siteWidget->order,
+                    'config' => $siteWidget->config,
+                    'settings' => $siteWidget->settings,
+                    'is_active' => $siteWidget->is_active,
+                    'is_visible' => $siteWidget->is_visible,
+                    'updated_at' => $siteWidget->updated_at->toISOString(),
+                ],
                 'message' => 'Виджет успешно обновлен',
             ]);
         } catch (\Exception $e) {
@@ -397,10 +429,15 @@ class SiteController extends Controller
     {
         try {
             $site = $this->getSite($site);
-            $widgets = $site->widgets_config ?? [];
 
-            $widgets = array_filter($widgets, fn($w) => $w['id'] != $widgetId);
-            $site->update(['widgets_config' => array_values($widgets)]);
+            // Находим и удаляем виджет из нормализованных таблиц
+            $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
+                ->where('id', $widgetId)
+                ->first();
+
+            if ($siteWidget) {
+                $siteWidget->delete();
+            }
 
             return back();
         } catch (\Exception $e) {
@@ -418,24 +455,41 @@ class SiteController extends Controller
 
         try {
             $site = $this->getSite($site);
-            $widgets = $site->widgets_config ?? [];
 
-            $widgetIndex = array_search($widgetId, array_column($widgets, 'id'));
-            if ($widgetIndex === false) {
+            // Находим виджет в нормализованных таблицах
+            $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
+                ->where('id', $widgetId)
+                ->first();
+
+            if (!$siteWidget) {
                 return back()->withErrors(['error' => 'Виджет не найден']);
             }
 
             $position = WidgetPosition::where('slug', $request->position_slug)->firstOrFail();
 
             // Обновляем позицию и порядок
-            $widgets[$widgetIndex]['position_slug'] = $position->slug;
-            $widgets[$widgetIndex]['position_name'] = $position->name;
-            $widgets[$widgetIndex]['order'] = $request->order;
-            $widgets[$widgetIndex]['updated_at'] = now()->toISOString();
+            $siteWidget->update([
+                'position_slug' => $position->slug,
+                'position_name' => $position->name,
+                'position_id' => $position->id,
+                'order' => $request->order,
+                'sort_order' => $request->order,
+            ]);
 
-            $site->update(['widgets_config' => $widgets]);
-
-            return back()->with('widget', $widgets[$widgetIndex]);
+            return back()->with('widget', [
+                'id' => $siteWidget->id,
+                'widget_id' => $siteWidget->widget_id,
+                'name' => $siteWidget->name,
+                'slug' => $siteWidget->widget_slug,
+                'position_name' => $siteWidget->position_name,
+                'position_slug' => $siteWidget->position_slug,
+                'order' => $siteWidget->order,
+                'config' => $siteWidget->config,
+                'settings' => $siteWidget->settings,
+                'is_active' => $siteWidget->is_active,
+                'is_visible' => $siteWidget->is_visible,
+                'updated_at' => $siteWidget->updated_at->toISOString(),
+            ]);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Ошибка при перемещении виджета: ' . $e->getMessage()]);
         }
@@ -466,7 +520,11 @@ class SiteController extends Controller
         try {
             $site = $this->getSite($site);
 
-            return back()->with('data', $site->widgets_config ?? []);
+            // Используем WidgetDataService для получения нормализованных данных
+            $widgetDataService = app(\App\Services\WidgetDataService::class);
+            $widgets = $widgetDataService->getSiteWidgetsWithData($site->id);
+
+            return back()->with('data', $widgets);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Ошибка при получении конфигурации: ' . $e->getMessage()]);
         }
@@ -500,7 +558,30 @@ class SiteController extends Controller
             }
         }
 
-        $site->update(['widgets_config' => $defaultWidgets]);
+        // Создаем дефолтные виджеты в нормализованных таблицах
+        $widgetDataService = app(\App\Services\WidgetDataService::class);
+
+        foreach ($defaultWidgets as $widgetData) {
+            // Создаем SiteWidget
+            $siteWidget = \App\Models\SiteWidget::create([
+                'site_id' => $site->id,
+                'widget_id' => $widgetData['widget_id'],
+                'position_id' => \App\Models\WidgetPosition::where('slug', $widgetData['position_slug'])->first()->id,
+                'name' => $widgetData['name'],
+                'position_name' => $widgetData['position_name'],
+                'position_slug' => $widgetData['position_slug'],
+                'widget_slug' => $widgetData['slug'],
+                'config' => $widgetData['config'],
+                'settings' => $widgetData['settings'],
+                'order' => $widgetData['order'],
+                'sort_order' => $widgetData['order'],
+                'is_active' => $widgetData['is_active'],
+                'is_visible' => $widgetData['is_visible'],
+            ]);
+
+            // Мигрируем данные в нормализованные таблицы
+            $widgetDataService->migrateWidgetData($siteWidget);
+        }
     }
 
     // Получение дефолтного виджета для позиции

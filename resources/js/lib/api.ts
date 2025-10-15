@@ -61,30 +61,85 @@ export const apiClient = {
     get: <T = unknown>(
         url: string,
         config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.get(url, config),
+    ): Promise<AxiosResponse<T>> => api.get<T>(url, config),
 
     post: <T = unknown>(
         url: string,
         data?: unknown,
         config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.post(url, data, config),
+    ): Promise<AxiosResponse<T>> => api.post<T>(url, data, config),
 
     put: <T = unknown>(
         url: string,
         data?: unknown,
         config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.put(url, data, config),
+    ): Promise<AxiosResponse<T>> => api.put<T>(url, data, config),
 
     patch: <T = unknown>(
         url: string,
         data?: unknown,
         config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.patch(url, data, config),
+    ): Promise<AxiosResponse<T>> => api.patch<T>(url, data, config),
 
     delete: <T = unknown>(
         url: string,
         config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.delete(url, config),
-};
+    ): Promise<AxiosResponse<T>> => api.delete<T>(url, config),
 
-export default api;
+    // Специальные методы для работы с файлами
+    uploadFile: <T = unknown>(
+        url: string,
+        file: File,
+        fieldName: string = 'file',
+    ): Promise<AxiosResponse<T>> => {
+        const formData = new FormData();
+        formData.append(fieldName, file);
+
+        return api.post<T>(url, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+
+    uploadMultipleFiles: <T = unknown>(
+        url: string,
+        files: File[],
+        fieldName: string = 'files',
+    ): Promise<AxiosResponse<T>> => {
+        const formData = new FormData();
+        files.forEach((file, index) => {
+            formData.append(`${fieldName}[${index}]`, file);
+        });
+
+        return api.post<T>(url, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+
+    // Методы для работы с пагинацией
+    getPaginated: <T = unknown>(
+        url: string,
+        params: {
+            page?: number;
+            per_page?: number;
+            search?: string;
+            [key: string]: unknown;
+        } = {},
+    ): Promise<AxiosResponse<T>> => {
+        const searchParams = new URLSearchParams();
+
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                searchParams.append(key, String(value));
+            }
+        });
+
+        const queryString = searchParams.toString();
+        const fullUrl = queryString ? `${url}?${queryString}` : url;
+
+        return api.get<T>(fullUrl);
+    },
+};

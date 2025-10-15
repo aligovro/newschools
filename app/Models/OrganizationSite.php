@@ -25,7 +25,6 @@ class OrganizationSite extends Model
     'template',
     'layout_config',
     'theme_config',
-    'widgets_config',
     'content_blocks',
     'navigation_config',
     'seo_config',
@@ -43,7 +42,6 @@ class OrganizationSite extends Model
   protected $casts = [
     'layout_config' => 'array',
     'theme_config' => 'array',
-    'widgets_config' => 'array',
     'content_blocks' => 'array',
     'navigation_config' => 'array',
     'seo_config' => 'array',

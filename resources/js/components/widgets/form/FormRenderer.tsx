@@ -1,3 +1,4 @@
+import { formsApi } from '@/lib/api/index';
 import React, { useCallback, useState } from 'react';
 import { FormValidationService } from '../../../services/FormValidationService';
 import { DatePickerField } from './DatePickerField';
@@ -75,19 +76,11 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ widget }) => {
             );
 
             try {
-                const response = await fetch(
-                    `/api/sites/${widget.site_id}/forms/${widget.id}/submit`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                        body: JSON.stringify(sanitizedData),
-                    },
+                const result = await formsApi.submitForm(
+                    widget.site_id,
+                    widget.id,
+                    sanitizedData,
                 );
-
-                const result = await response.json();
 
                 if (result.success) {
                     setSubmitStatus('success');

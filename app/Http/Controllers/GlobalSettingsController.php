@@ -15,7 +15,7 @@ class GlobalSettingsController extends Controller
     public function __construct(GlobalSettingsService $settingsService)
     {
         $this->middleware('auth');
-        $this->middleware('can:manage', [GlobalSettings::class]); // Политика для супер-админов
+        $this->middleware('can:manage,' . GlobalSettings::class); // Политика для супер-админов
         $this->settingsService = $settingsService;
     }
 
@@ -49,9 +49,34 @@ class GlobalSettingsController extends Controller
             'member_singular' => 'required|string|max:50',
             'member_plural' => 'required|string|max:50',
             'member_genitive' => 'required|string|max:50',
-            'action_join' => 'required|string|max:50',
-            'action_leave' => 'required|string|max:50',
-            'action_support' => 'required|string|max:50',
+            'org_singular_nominative' => 'nullable|string|max:255',
+            'org_singular_genitive' => 'nullable|string|max:255',
+            'org_singular_dative' => 'nullable|string|max:255',
+            'org_singular_accusative' => 'nullable|string|max:255',
+            'org_singular_instrumental' => 'nullable|string|max:255',
+            'org_singular_prepositional' => 'nullable|string|max:255',
+            'org_plural_nominative' => 'nullable|string|max:255',
+            'org_plural_genitive' => 'nullable|string|max:255',
+            'org_plural_dative' => 'nullable|string|max:255',
+            'org_plural_accusative' => 'nullable|string|max:255',
+            'org_plural_instrumental' => 'nullable|string|max:255',
+            'org_plural_prepositional' => 'nullable|string|max:255',
+            'member_singular_nominative' => 'nullable|string|max:255',
+            'member_singular_genitive' => 'nullable|string|max:255',
+            'member_singular_dative' => 'nullable|string|max:255',
+            'member_singular_accusative' => 'nullable|string|max:255',
+            'member_singular_instrumental' => 'nullable|string|max:255',
+            'member_singular_prepositional' => 'nullable|string|max:255',
+            'member_plural_nominative' => 'nullable|string|max:255',
+            'member_plural_genitive' => 'nullable|string|max:255',
+            'member_plural_dative' => 'nullable|string|max:255',
+            'member_plural_accusative' => 'nullable|string|max:255',
+            'member_plural_instrumental' => 'nullable|string|max:255',
+            'member_plural_prepositional' => 'nullable|string|max:255',
+            'action_join' => 'nullable|string|max:255',
+            'action_leave' => 'nullable|string|max:255',
+            'action_support' => 'nullable|string|max:255',
+
         ]);
 
         if ($validator->fails()) {
@@ -294,7 +319,8 @@ class GlobalSettingsController extends Controller
      */
     public function clearCache()
     {
-        $this->globalSettings->clearCache();
+        $this->settingsService->clearCache();
+        $this->settingsService->clearTerminologyCache();
 
         return response()->json([
             'success' => true,

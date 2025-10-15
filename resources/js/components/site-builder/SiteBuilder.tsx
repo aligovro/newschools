@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useWidgets } from '@/hooks/useWidgets';
+import { sitesApi, widgetsSystemApi } from '@/lib/api/index';
 import { PanelRight } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDrop } from 'react-dnd';
@@ -9,6 +10,23 @@ import { DragDropProvider } from './DragDropProvider';
 import { WidgetDisplay } from './WidgetDisplay';
 import { WidgetEditModal } from './WidgetEditModal';
 import { WidgetSelectModal } from './WidgetSelectModal';
+// import type { WidgetPosition } from '@/lib/api/widgets-system';
+
+interface WidgetPosition {
+    id: number;
+    template_id: number;
+    name: string;
+    slug: string;
+    description: string;
+    area: string;
+    order: number;
+    allowed_widgets: string[];
+    layout_config: Record<string, unknown>;
+    is_required: boolean;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
 
 interface WidgetData {
     id: string;
@@ -24,17 +42,130 @@ interface WidgetData {
     position_slug: string;
     created_at: string;
     updated_at?: string;
-}
-
-interface WidgetPosition {
-    id: number;
-    name: string;
-    slug: string;
-    description: string;
-    area: string;
-    order: number;
-    allowed_widgets: string[];
-    is_required: boolean;
+    // Нормализованные данные
+    configs?: Array<{
+        config_key: string;
+        config_value: string;
+        config_type: string;
+    }>;
+    hero_slides?: Array<{
+        id: number;
+        title: string;
+        subtitle?: string;
+        description?: string;
+        button_text?: string;
+        button_link?: string;
+        button_link_type: string;
+        button_open_in_new_tab: boolean;
+        background_image?: string;
+        overlay_color?: string;
+        overlay_opacity?: number;
+        overlay_gradient?: string;
+        overlay_gradient_intensity?: number;
+        overlay_style?: string;
+        sort_order: number;
+        is_active: boolean;
+    }>;
+    form_fields?: Array<{
+        id: number;
+        field_name: string;
+        field_type: string;
+        field_label?: string;
+        field_placeholder?: string;
+        field_help_text?: string;
+        field_required: boolean;
+        field_options?: any;
+        field_validation?: any;
+        field_styling?: any;
+        field_order: number;
+        is_active: boolean;
+    }>;
+    menu_items?: Array<{
+        id: number;
+        item_id: string;
+        title: string;
+        url: string;
+        type: string;
+        open_in_new_tab: boolean;
+        sort_order: number;
+        is_active: boolean;
+    }>;
+    gallery_images?: Array<{
+        id: number;
+        image_url: string;
+        alt_text?: string;
+        title?: string;
+        description?: string;
+        sort_order: number;
+        is_active: boolean;
+    }>;
+    donation_settings?: {
+        id: number;
+        title?: string;
+        description?: string;
+        min_amount?: number;
+        max_amount?: number;
+        suggested_amounts?: number[];
+        currency: string;
+        show_amount_input: boolean;
+        show_anonymous_option: boolean;
+        button_text: string;
+        success_message?: string;
+        payment_methods?: any;
+    };
+    region_rating_settings?: {
+        id: number;
+        items_per_page: number;
+        title?: string;
+        description?: string;
+        sort_by: string;
+        sort_direction: string;
+        show_rating: boolean;
+        show_donations_count: boolean;
+        show_progress_bar: boolean;
+        display_options?: any;
+    };
+    donations_list_settings?: {
+        id: number;
+        items_per_page: number;
+        title?: string;
+        description?: string;
+        sort_by: string;
+        sort_direction: string;
+        show_amount: boolean;
+        show_donor_name: boolean;
+        show_date: boolean;
+        show_message: boolean;
+        show_anonymous: boolean;
+        display_options?: any;
+    };
+    referral_leaderboard_settings?: {
+        id: number;
+        items_per_page: number;
+        title?: string;
+        description?: string;
+        sort_by: string;
+        sort_direction: string;
+        show_rank: boolean;
+        show_referrals_count: boolean;
+        show_total_donations: boolean;
+        show_avatar: boolean;
+        display_options?: any;
+    };
+    image_settings?: {
+        id: number;
+        image_url: string;
+        alt_text?: string;
+        title?: string;
+        description?: string;
+        link_url?: string;
+        link_type: string;
+        open_in_new_tab: boolean;
+        alignment: string;
+        width?: string;
+        height?: string;
+        styling?: any;
+    };
 }
 
 interface SiteBuilderProps {
@@ -45,7 +176,7 @@ interface SiteBuilderProps {
         | { sidebar_position?: 'left' | 'right' }
         | Record<string, unknown>;
     initialWidgets?: WidgetData[];
-    onWidgetsChange?: (widgets: WidgetData[]) => void;
+    onWidgetsChange?: (widgets: WidgetData[], isLoading: boolean) => void;
     validationErrors?: string[];
 }
 
@@ -53,10 +184,7 @@ interface SiteBuilderProps {
 const PositionDropZone: React.FC<{
     position: WidgetPosition;
     widgets: WidgetData[];
-    onDropWidget: (
-        widget: { widget: WidgetConfig },
-        positionSlug: string,
-    ) => void;
+    onDropWidget: (widget: { widget: any }, positionSlug: string) => void;
     onEditWidget: (widget: WidgetData) => void;
     onDeleteWidget: (widget: WidgetData) => void;
     onToggleWidgetVisibility: (widget: WidgetData) => void;
@@ -89,7 +217,7 @@ const PositionDropZone: React.FC<{
 }) => {
     const [{ isOver, canDrop }, drop] = useDrop({
         accept: 'widget',
-        drop: (item: { widget: WidgetConfig }) => {
+        drop: (item: { widget: any }) => {
             onDropWidget(item, position.slug);
         },
         collect: (monitor) => ({
@@ -193,6 +321,7 @@ const PositionDropZone: React.FC<{
                                 isEditable={!isPreviewMode}
                                 autoExpandSettings={shouldExpand}
                                 className="mb-4"
+                                useOutputRenderer={isPreviewMode}
                             />
                             {widgetErrors.length > 0 && (
                                 <div className="rounded border border-red-200 bg-red-50 p-2">
@@ -245,10 +374,8 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     onWidgetsChange,
     validationErrors = [],
 }) => {
-    const { widgets, addWidget, updateWidget, deleteWidget } = useWidgets(
-        siteId,
-        initialWidgets,
-    );
+    const { widgets, addWidget, updateWidget, deleteWidget, isLoading } =
+        useWidgets(siteId, initialWidgets);
 
     const [positions, setPositions] = useState<WidgetPosition[]>([]);
     const [loading, setLoading] = useState(true);
@@ -256,6 +383,14 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     const [isPreviewMode] = useState(false);
     const [editingWidget, setEditingWidget] = useState<WidgetData | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    // Логирование изменений состояния модального окна
+    useEffect(() => {
+        console.log('Modal state changed:', {
+            isEditModalOpen,
+            editingWidget: editingWidget?.id,
+        });
+    }, [isEditModalOpen, editingWidget]);
     const [isWidgetSelectModalOpen, setIsWidgetSelectModalOpen] =
         useState(false);
     const [selectedPosition, setSelectedPosition] = useState<string | null>(
@@ -278,24 +413,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     const saveLayout = useCallback(
         async (updates: { sidebar_position?: 'left' | 'right' }) => {
             try {
-                const res = await fetch(
-                    `/api/sites/${siteId}/settings/layout`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN':
-                                document
-                                    .querySelector('meta[name="csrf-token"]')
-                                    ?.getAttribute('content') || '',
-                        },
-                        body: JSON.stringify(updates),
-                    },
-                );
-                const data = await res.json();
-                if (!data.success) {
-                    console.error('Layout save error:', data.message);
-                }
+                await sitesApi.saveLayoutSettings(siteId, updates);
             } catch (error) {
                 console.error('Error saving layout:', error);
             }
@@ -316,9 +434,9 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     // Уведомляем родительский компонент об изменении виджетов
     useEffect(() => {
         if (onWidgetsChange) {
-            onWidgetsChange(widgets);
+            onWidgetsChange(widgets, isLoading);
         }
-    }, [widgets, onWidgetsChange]);
+    }, [widgets, isLoading, onWidgetsChange]);
 
     // Сбрасываем флаг нового виджета через 3 секунды
     useEffect(() => {
@@ -336,11 +454,9 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     const loadPositions = useCallback(async () => {
         try {
             setLoading(true);
-            const templateId = template?.id || 1;
-            const positionsResponse = await fetch(
-                `/api/widgets/positions?template_id=${templateId}`,
-            );
-            const positionsData = await positionsResponse.json();
+            const templateId = (template as any)?.id || 1;
+            const positionsData =
+                await widgetsSystemApi.getWidgetPositions(templateId);
 
             if (positionsData.success) {
                 setPositions(positionsData.data || []);
@@ -390,19 +506,29 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     );
 
     const handleDropWidget = useCallback(
-        async (item: { widget: WidgetConfig }, positionSlug: string) => {
+        async (item: { widget: any }, positionSlug: string) => {
             const widgetData = item.widget || item;
 
             try {
+                console.log(
+                    'Dropping widget:',
+                    widgetData.slug,
+                    'to position:',
+                    positionSlug,
+                );
                 const newWidget = await addWidget(
                     widgetData.slug,
                     positionSlug,
                 );
+                console.log('New widget added:', newWidget);
                 // После успешного добавления виджета, автоматически открываем его настройки
                 if (newWidget) {
+                    console.log('Opening edit modal for widget:', newWidget.id);
                     setNewlyAddedWidgetId(newWidget.id);
                     setEditingWidget(newWidget);
                     setIsEditModalOpen(true);
+                } else {
+                    console.log('No widget returned from addWidget');
                 }
             } catch (error) {
                 console.error('Error adding widget:', error);
@@ -830,25 +956,10 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                         .filter((w) => w.position_slug === positionSlug)
                         .sort((a, b) => a.order - b.order);
                     const newOrder = widgetsInTarget.length + 1;
-                    await fetch(
-                        `/dashboard/sites/${siteId}/widgets/${widgetId}/move`,
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN':
-                                    document
-                                        .querySelector(
-                                            'meta[name="csrf-token"]',
-                                        )
-                                        ?.getAttribute('content') || '',
-                            },
-                            body: JSON.stringify({
-                                position_slug: positionSlug,
-                                order: newOrder,
-                            }),
-                        },
-                    );
+                    await sitesApi.moveWidget(siteId, parseInt(widgetId), {
+                        position_slug: positionSlug,
+                        order: newOrder,
+                    });
                     // Обновим локально
                     const idx = widgets.findIndex((w) => w.id === widgetId);
                     if (idx !== -1) {
@@ -858,7 +969,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                             position_slug: positionSlug,
                             order: newOrder,
                         } as WidgetData;
-                        onWidgetsChange?.(copy);
+                        onWidgetsChange?.(copy, isLoading);
                     }
                 }}
             />
