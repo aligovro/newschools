@@ -42,6 +42,25 @@ class PaymentController extends Controller
         'is_anonymous' => 'nullable|boolean',
       ]);
 
+      // Пробуем захватить реферера из httpOnly cookie, если есть
+      $referrerId = null;
+      try {
+        $cookieRef = $request->cookie('ref_user_id');
+        if ($cookieRef) {
+          $referrerId = (int) preg_replace('/\D/', '', (string) $cookieRef);
+          if ($referrerId <= 0) {
+            $referrerId = null;
+          }
+        }
+      } catch (\Throwable $_) {
+      }
+
+      if ($referrerId) {
+        $validated['payment_details'] = array_merge($request->input('payment_details', []), [
+          'referrer_user_id' => $referrerId,
+        ]);
+      }
+
       $result = $this->paymentService->createPayment($validated);
 
       if ($result['success']) {

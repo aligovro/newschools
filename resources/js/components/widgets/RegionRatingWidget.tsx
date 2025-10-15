@@ -9,8 +9,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { widgetsApi } from '@/lib/api/index';
 import { cn } from '@/lib/utils';
-import axios from 'axios';
 import {
     ChevronDown,
     ChevronUp,
@@ -19,7 +19,7 @@ import {
     TrendingUp,
     Users,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface RegionData {
     id: number;
@@ -127,10 +127,13 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
     }, [autoExpandSettings, isEditable]);
 
     // Функция для обновления конфигурации
+    const hasUserEditedRef = useRef(false);
+
     const updateConfig = (updates: Partial<RegionRatingWidgetConfig>) => {
         const newConfig = { ...localConfig, ...updates };
         setLocalConfig(newConfig);
         onConfigChange?.(newConfig);
+        hasUserEditedRef.current = true;
     };
 
     const loadRegionsData = React.useCallback(async () => {
@@ -138,20 +141,15 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
         setError(null);
 
         try {
-            const response = await axios.get(
-                `/api/organizations/${organizationId}/region-rating`,
-                {
-                    params: {
-                        page: currentPage,
-                        per_page: localConfig.items_per_page || 10,
-                        search: searchQuery,
-                        sort_by: sortBy,
-                        sort_order: sortOrder,
-                    },
-                },
-            );
+            const response = await widgetsApi.getRegionRating(organizationId, {
+                page: currentPage,
+                per_page: localConfig.items_per_page || 10,
+                search: searchQuery,
+                sort_by: sortBy,
+                sort_order: sortOrder,
+            });
 
-            setRegions(response.data.data || []);
+            setRegions(response.data || []);
         } catch (err: unknown) {
             console.error('Error loading regions data:', err);
             setError('Ошибка загрузки данных регионов');
@@ -176,7 +174,7 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
 
     // Автоматическое сохранение конфигурации при изменении (с debounce)
     useEffect(() => {
-        if (!onSave || !isEditable) return;
+        if (!onSave || !isEditable || !hasUserEditedRef.current) return;
 
         const timer = setTimeout(() => {
             onSave(localConfig as Record<string, unknown>);

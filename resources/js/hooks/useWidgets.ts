@@ -1,3 +1,4 @@
+import { sitesApi } from '@/lib/api/index';
 import { router } from '@inertiajs/react';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -62,41 +63,27 @@ export const useWidgets = (
             setLastAddedWidget(null);
 
             try {
-                const response = await fetch(
-                    `/dashboard/sites/${siteId}/widgets`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN':
-                                document
-                                    .querySelector('meta[name="csrf-token"]')
-                                    ?.getAttribute('content') || '',
-                        },
-                        body: JSON.stringify({
-                            widget_slug: widgetSlug,
-                            position_slug: positionSlug,
-                            config,
-                        }),
-                    },
-                );
+                const data = await sitesApi.addWidget(siteId, {
+                    widget_slug: widgetSlug,
+                    position_slug: positionSlug,
+                    config,
+                });
 
-                const data = await response.json();
+                console.log('AddWidget response:', data);
 
                 if (data.success && data.widget) {
                     console.log('Виджет добавлен');
+                    const newWidget = data.widget as WidgetData;
                     setWidgets((prev) => {
                         // Проверяем, нет ли уже такого виджета
-                        const exists = prev.some(
-                            (w) => w.id === data.widget.id,
-                        );
+                        const exists = prev.some((w) => w.id === newWidget.id);
                         if (exists) {
                             return prev;
                         }
-                        return [...prev, data.widget];
+                        return [...prev, newWidget];
                     });
-                    setLastAddedWidget(data.widget);
-                    return data.widget;
+                    setLastAddedWidget(newWidget);
+                    return newWidget;
                 } else {
                     setErrors([
                         data.message || 'Ошибка при добавлении виджета',
@@ -120,28 +107,30 @@ export const useWidgets = (
             setErrors([]);
 
             try {
-                const response = await fetch(
-                    `/dashboard/sites/${siteId}/widgets/${widgetId}`,
-                    {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN':
-                                document
-                                    .querySelector('meta[name="csrf-token"]')
-                                    ?.getAttribute('content') || '',
-                        },
-                        body: JSON.stringify(updates),
-                    },
+                const data = await sitesApi.updateWidget(
+                    siteId,
+                    parseInt(widgetId),
+                    updates,
                 );
 
-                const data = await response.json();
-
-                if (data.success && data.widget) {
+                if (data.success) {
                     console.log('Виджет обновлен');
-                    setWidgets((prev) =>
-                        prev.map((w) => (w.id === widgetId ? data.widget : w)),
-                    );
+                    // Если есть обновленный виджет в ответе, используем его, иначе обновляем локально
+                    if (data.widget) {
+                        const updatedWidget = data.widget as WidgetData;
+                        setWidgets((prev) =>
+                            prev.map((w) =>
+                                w.id === widgetId ? updatedWidget : w,
+                            ),
+                        );
+                    } else {
+                        // Обновляем локально только измененные поля
+                        setWidgets((prev) =>
+                            prev.map((w) =>
+                                w.id === widgetId ? { ...w, ...updates } : w,
+                            ),
+                        );
+                    }
                 } else {
                     setErrors([
                         data.message || 'Ошибка при обновлении виджета',

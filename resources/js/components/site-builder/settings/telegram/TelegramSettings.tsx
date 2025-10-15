@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { sitesApi } from '@/lib/api/index';
 import { Loader2, Save } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 
@@ -50,18 +51,7 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({
         setIsLoading(true);
         setErrors([]);
         try {
-            const res = await fetch(`/api/sites/${siteId}/settings/telegram`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN':
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute('content') || '',
-                },
-                body: JSON.stringify(settings),
-            });
-            const data = await res.json();
+            const data = await sitesApi.saveTelegramSettings(siteId, settings);
             if (!data.success) {
                 setErrors([
                     data.message || 'Ошибка при сохранении настроек Telegram',

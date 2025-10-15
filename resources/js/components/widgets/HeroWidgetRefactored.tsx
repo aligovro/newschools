@@ -307,7 +307,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
 
                                     {activeTab === 'slides' && (
                                         <div className="space-y-4">
-                                            {type === 'slider' && (
+                                            {type === 'slider' ? (
                                                 <div className="mb-4 flex items-center justify-between">
                                                     <h3 className="text-lg font-semibold">
                                                         Слайды (
@@ -320,9 +320,19 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                                                         Добавить слайд
                                                     </Button>
                                                 </div>
+                                            ) : (
+                                                <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                                                    <p className="text-sm text-blue-700">
+                                                        💡 Чтобы добавить
+                                                        несколько слайдов,
+                                                        сначала переключите тип
+                                                        на "Слайдер" в
+                                                        настройках.
+                                                    </p>
+                                                </div>
                                             )}
 
-                                            <div className="space-y-4">
+                                            <div className="max-h-[400px] space-y-4 overflow-y-auto">
                                                 {currentSlides.map(
                                                     (slide, index) => (
                                                         <HeroSlideEditor

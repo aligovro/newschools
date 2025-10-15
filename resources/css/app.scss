@@ -11,6 +11,14 @@
 @import './widgets/form-widget.scss';
 @import './widgets/region-rating.scss';
 
+// Import UI components
+@import './components/ui/universal-select.scss';
+@import './components/ui/image-uploader/multi-image-uploader.scss';
+@import './components/ui/image-uploader/logo-uploader.scss';
+
+// Import pages
+@import './pages/organizations/create-organization.scss';
+
 @layer base {
     * {
         @apply border-gray-200;

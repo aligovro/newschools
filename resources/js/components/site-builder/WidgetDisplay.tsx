@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { WidgetRenderer } from '@/components/widgets';
+import { WidgetOutputRenderer, WidgetRenderer } from '@/components/widgets';
 import { Edit, Eye, EyeOff, Trash2 } from 'lucide-react';
 import React from 'react';
 
@@ -33,6 +33,7 @@ interface WidgetDisplayProps {
     autoExpandSettings?: boolean;
     className?: string;
     suppressRender?: boolean;
+    useOutputRenderer?: boolean; // New prop to use optimized output renderer
 }
 
 export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
@@ -40,11 +41,12 @@ export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
     onEdit,
     onDelete,
     onToggleVisibility,
-    onSave,
+    onSave: _onSave,
     isEditable = true,
-    autoExpandSettings = false,
+    autoExpandSettings: _autoExpandSettings,
     className,
     suppressRender = false,
+    useOutputRenderer = false,
 }) => {
     const handleEdit = () => {
         if (onEdit) {
@@ -73,6 +75,8 @@ export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
                         Настройки виджета открыты. Предварительный просмотр
                         скрыт.
                     </div>
+                ) : useOutputRenderer ? (
+                    <WidgetOutputRenderer widget={widget} />
                 ) : (
                     <WidgetRenderer
                         widget={widget}

@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import axios from 'axios';
+import { widgetsSystemApi } from '@/lib/api/index';
 import {
     AlertCircle,
     CheckCircle2,
@@ -168,28 +168,27 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
         try {
             // Загружаем данные виджета (включая терминологию)
-            const widgetResponse = await axios.get(
-                `/api/organizations/${organizationId}/donation-widget/data`,
-                {
-                    params: { fundraiser_id: localConfig.fundraiser_id },
-                },
+            const widgetData = await widgetsSystemApi.getDonationWidgetData(
+                organizationId,
+                { fundraiser_id: localConfig.fundraiser_id },
             );
 
             // Устанавливаем терминологию
-            if (widgetResponse.data.terminology) {
-                setTerminology(widgetResponse.data.terminology);
+            if (widgetData.terminology) {
+                setTerminology(widgetData.terminology);
             }
 
             // Устанавливаем fundraiser если есть
-            if (widgetResponse.data.fundraiser) {
-                setFundraiser(widgetResponse.data.fundraiser);
+            if (widgetData.fundraiser) {
+                setFundraiser(widgetData.fundraiser);
             }
 
             // Загружаем методы оплаты
-            const methodsResponse = await axios.get(
-                `/api/organizations/${organizationId}/donation-widget/payment-methods`,
-            );
-            setPaymentMethods(methodsResponse.data.data || []);
+            const paymentMethods =
+                await widgetsSystemApi.getDonationWidgetPaymentMethods(
+                    organizationId,
+                );
+            setPaymentMethods(paymentMethods || []);
         } catch (err: any) {
             console.error('Error loading widget data:', err);
             setError('Ошибка загрузки данных виджета');
@@ -263,30 +262,30 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         setIsProcessing(true);
 
         try {
-            const response = await axios.post(
-                `/api/organizations/${organizationId}/donation-widget/donate`,
+            const response = await widgetsSystemApi.submitDonation(
+                organizationId,
                 {
                     amount,
                     currency: localConfig.currency || 'RUB',
                     payment_method_slug: selectedPaymentMethod,
-                    fundraiser_id: localConfig.fundraiser_id || null,
-                    project_id: localConfig.project_id || null,
-                    donor_name: isAnonymous ? null : donorName,
-                    donor_email: donorEmail || null,
-                    donor_phone: donorPhone || null,
-                    donor_message: donorMessage || null,
+                    fundraiser_id: localConfig.fundraiser_id || undefined,
+                    project_id: localConfig.project_id || undefined,
+                    donor_name: isAnonymous ? undefined : donorName,
+                    donor_email: donorEmail || undefined,
+                    donor_phone: donorPhone || undefined,
+                    donor_message: donorMessage || undefined,
                     is_anonymous: isAnonymous,
                     is_recurring: isRecurring,
-                    recurring_period: isRecurring ? recurringPeriod : null,
+                    recurring_period: isRecurring ? recurringPeriod : undefined,
                     send_receipt: localConfig.send_receipt !== false,
                     success_url: window.location.href,
                     failure_url: window.location.href,
                 },
             );
 
-            if (response.data.success && response.data.data.payment_url) {
+            if (response.success && response.payment_url) {
                 // Перенаправление на страницу оплаты
-                window.location.href = response.data.data.payment_url;
+                window.location.href = response.payment_url;
             } else {
                 setSuccess('Пожертвование успешно создано!');
                 // Сброс формы

@@ -1,3 +1,4 @@
+import { formsApi } from '@/lib/api/index';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FormSubmission } from './types';
 
@@ -31,33 +32,20 @@ export const FormSubmissionsManager: React.FC<FormSubmissionsManagerProps> = ({
     const loadSubmissions = useCallback(async () => {
         try {
             setLoading(true);
-            const params = new URLSearchParams({
-                page: pagination.currentPage.toString(),
-                per_page: pagination.perPage.toString(),
-                ...(filters.status !== 'all' && { status: filters.status }),
-                ...(filters.dateFrom && { date_from: filters.dateFrom }),
-                ...(filters.dateTo && { date_to: filters.dateTo }),
-                ...(filters.search && { search: filters.search }),
-            });
-
-            const response = await fetch(
-                `/api/sites/${siteId}/forms/${widgetId}/submissions?${params}`,
+            const response = await formsApi.getFormSubmissions(
+                siteId,
+                widgetId,
                 {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
+                    page: pagination.currentPage,
+                    per_page: pagination.perPage,
+                    search: filters.search,
                 },
             );
 
-            if (!response.ok) {
-                throw new Error('Ошибка загрузки отправок');
-            }
-
-            const data = await response.json();
-            setSubmissions(data.data || []);
+            setSubmissions(response.data || []);
             setPagination((prev) => ({
                 ...prev,
-                totalPages: data.last_page || 1,
+                totalPages: response.last_page || 1,
             }));
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Произошла ошибка');
@@ -78,19 +66,11 @@ export const FormSubmissionsManager: React.FC<FormSubmissionsManagerProps> = ({
             }
 
             try {
-                const response = await fetch(
-                    `/api/sites/${siteId}/forms/${widgetId}/submissions/${submissionId}`,
-                    {
-                        method: 'DELETE',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                    },
+                await formsApi.deleteFormSubmission(
+                    siteId,
+                    widgetId,
+                    submissionId,
                 );
-
-                if (!response.ok) {
-                    throw new Error('Ошибка удаления отправки');
-                }
 
                 setSubmissions((prev) =>
                     prev.filter((s) => s.id !== submissionId),

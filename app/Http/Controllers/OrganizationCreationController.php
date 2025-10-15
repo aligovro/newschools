@@ -32,13 +32,18 @@ class OrganizationCreationController extends Controller
      */
     public function create()
     {
-        // Получаем справочные данные через сервис настроек
+        // Получаем только минимальные справочные данные
         $referenceData = [
             'organizationTypes' => $this->settingsService->getOrganizationTypes(),
-            'regions' => \App\Models\Region::select('id', 'name', 'code')->orderBy('name')->get(),
-            'cities' => \App\Models\City::select('id', 'name', 'region_id')->orderBy('name')->get(),
-            'settlements' => \App\Models\Settlement::select('id', 'name', 'city_id')->orderBy('name')->get(),
-            'availableUsers' => User::select('id', 'name', 'email')->where('is_active', true)->get(),
+            // Загружаем только первые 20 регионов для начального отображения
+            'regions' => \App\Models\Region::select('id', 'name', 'code')
+                ->orderBy('name')
+                ->limit(20)
+                ->get(),
+            'availableUsers' => User::select('id', 'name', 'email')
+                ->where('is_active', true)
+                ->limit(20)
+                ->get(),
         ];
 
         return Inertia::render('organizations/CreateOrganization', [
@@ -74,7 +79,7 @@ class OrganizationCreationController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
 
             // Медиа
-            'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'logo' => 'nullable|file|mimes:jpeg,png,jpg,webp,svg|max:5120', // 5MB для поддержки SVG
             'images' => 'nullable|array|max:10',
             'images.*' => 'file|image|mimes:jpeg,png,jpg,webp|max:2048',
 
@@ -311,7 +316,7 @@ class OrganizationCreationController extends Controller
     public function getCitiesByRegion(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'region_id' => 'required|exists:regions,id',
+            'region_id' => 'nullable|exists:regions,id',
         ]);
 
         if ($validator->fails()) {
@@ -319,6 +324,11 @@ class OrganizationCreationController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
+        }
+
+        // Если region_id не передан, возвращаем пустой массив
+        if (!$request->region_id) {
+            return response()->json([]);
         }
 
         $cities = Cache::remember("cities_region_{$request->region_id}", 3600, function () use ($request) {
@@ -337,7 +347,7 @@ class OrganizationCreationController extends Controller
     public function getSettlementsByCity(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'city_id' => 'required|exists:cities,id',
+            'city_id' => 'nullable|exists:cities,id',
         ]);
 
         if ($validator->fails()) {
@@ -345,6 +355,11 @@ class OrganizationCreationController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
+        }
+
+        // Если city_id не передан, возвращаем пустой массив
+        if (!$request->city_id) {
+            return response()->json([]);
         }
 
         $settlements = Cache::remember("settlements_city_{$request->city_id}", 3600, function () use ($request) {
@@ -363,7 +378,7 @@ class OrganizationCreationController extends Controller
     public function uploadLogo(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'logo' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048', // 2MB
+            'logo' => 'required|mimes:jpeg,png,jpg,webp,svg|max:5120', // 5MB для поддержки SVG
         ]);
 
         if ($validator->fails()) {
@@ -425,5 +440,47 @@ class OrganizationCreationController extends Controller
                 'message' => 'Ошибка загрузки изображений: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Получить пользователей с поиском и пагинацией
+     */
+    public function getUsers(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'search' => 'nullable|string|max:255',
+            'per_page' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $search = $request->get('search', '');
+        $perPage = $request->get('per_page', 20);
+
+        $query = User::select('id', 'name', 'email')
+            ->where('is_active', true)
+            ->orderBy('name');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $users->items(),
+            'current_page' => $users->currentPage(),
+            'last_page' => $users->lastPage(),
+            'per_page' => $users->perPage(),
+            'total' => $users->total(),
+        ]);
     }
 }

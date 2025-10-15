@@ -32,47 +32,84 @@ class GlobalSettingsService
     {
         $settings = $this->getSettings();
 
+        // Безопасные фолбэки на случай пустых полей
+        $f = function ($value, $default) {
+            return $value !== null && $value !== '' ? $value : $default;
+        };
+
+        $orgSingular = $f($settings->org_singular_nominative ?? $settings->organization_singular ?? null, 'Организация');
+        $orgPlural = $f($settings->org_plural_nominative ?? $settings->organization_plural ?? null, 'Организации');
+        $orgGenitive = $f($settings->org_plural_genitive ?? $settings->organization_genitive ?? null, 'организаций');
+        $orgAccusative = $f($settings->org_singular_accusative ?? null, $orgSingular);
+        $orgInstrumentalPlural = $f($settings->org_plural_instrumental ?? null, $orgPlural);
+
+        $memberSingular = $f($settings->member_singular_nominative ?? $settings->member_singular ?? null, 'участник');
+        $memberPlural = $f($settings->member_plural_nominative ?? $settings->member_plural ?? null, 'участники');
+        $memberGenitive = $f($settings->member_plural_genitive ?? $settings->member_genitive ?? null, 'участников');
+
         return [
             'organization' => [
                 // Единственное число
-                'singular_nominative' => $settings->org_singular_nominative,
-                'singular_genitive' => $settings->org_singular_genitive,
-                'singular_dative' => $settings->org_singular_dative,
-                'singular_accusative' => $settings->org_singular_accusative,
-                'singular_instrumental' => $settings->org_singular_instrumental,
-                'singular_prepositional' => $settings->org_singular_prepositional,
+                'singular_nominative' => $orgSingular,
+                'singular_genitive' => $f($settings->org_singular_genitive ?? null, $orgGenitive),
+                'singular_dative' => $f($settings->org_singular_dative ?? null, $orgSingular),
+                'singular_accusative' => $orgAccusative,
+                'singular_instrumental' => $f($settings->org_singular_instrumental ?? null, $orgSingular),
+                'singular_prepositional' => $f($settings->org_singular_prepositional ?? null, $orgSingular),
 
                 // Множественное число
-                'plural_nominative' => $settings->org_plural_nominative,
-                'plural_genitive' => $settings->org_plural_genitive,
-                'plural_dative' => $settings->org_plural_dative,
-                'plural_accusative' => $settings->org_plural_accusative,
-                'plural_instrumental' => $settings->org_plural_instrumental,
-                'plural_prepositional' => $settings->org_plural_prepositional,
+                'plural_nominative' => $orgPlural,
+                'plural_genitive' => $orgGenitive,
+                'plural_dative' => $f($settings->org_plural_dative ?? null, $orgPlural),
+                'plural_accusative' => $f($settings->org_plural_accusative ?? null, $orgPlural),
+                'plural_instrumental' => $orgInstrumentalPlural,
+                'plural_prepositional' => $f($settings->org_plural_prepositional ?? null, $orgPlural),
             ],
             'member' => [
                 // Единственное число
-                'singular_nominative' => $settings->member_singular_nominative,
-                'singular_genitive' => $settings->member_singular_genitive,
-                'singular_dative' => $settings->member_singular_dative,
-                'singular_accusative' => $settings->member_singular_accusative,
-                'singular_instrumental' => $settings->member_singular_instrumental,
-                'singular_prepositional' => $settings->member_singular_prepositional,
+                'singular_nominative' => $memberSingular,
+                'singular_genitive' => $f($settings->member_singular_genitive ?? null, $memberGenitive),
+                'singular_dative' => $f($settings->member_singular_dative ?? null, $memberSingular),
+                'singular_accusative' => $f($settings->member_singular_accusative ?? null, $memberSingular),
+                'singular_instrumental' => $f($settings->member_singular_instrumental ?? null, $memberSingular),
+                'singular_prepositional' => $f($settings->member_singular_prepositional ?? null, $memberSingular),
 
                 // Множественное число
-                'plural_nominative' => $settings->member_plural_nominative,
-                'plural_genitive' => $settings->member_plural_genitive,
-                'plural_dative' => $settings->member_plural_dative,
-                'plural_accusative' => $settings->member_plural_accusative,
-                'plural_instrumental' => $settings->member_plural_instrumental,
-                'plural_prepositional' => $settings->member_plural_prepositional,
+                'plural_nominative' => $memberPlural,
+                'plural_genitive' => $memberGenitive,
+                'plural_dative' => $f($settings->member_plural_dative ?? null, $memberPlural),
+                'plural_accusative' => $f($settings->member_plural_accusative ?? null, $memberPlural),
+                'plural_instrumental' => $f($settings->member_plural_instrumental ?? null, $memberPlural),
+                'plural_prepositional' => $f($settings->member_plural_prepositional ?? null, $memberPlural),
             ],
             'actions' => [
-                'join' => $settings->action_join,
-                'leave' => $settings->action_leave,
-                'support' => $settings->action_support,
+                'join' => $f($settings->action_join ?? null, 'Присоединиться'),
+                'leave' => $f($settings->action_leave ?? null, 'Покинуть'),
+                'support' => $f($settings->action_support ?? null, 'Поддержать'),
             ],
         ];
+    }
+
+    /**
+     * Терминология для организации (с простым кешом под ключом org)
+     */
+    public function getTerminologyForOrganization(int $organizationId): array
+    {
+        $key = "terminology:org:{$organizationId}";
+        return Cache::remember($key, 900, function () { // 15 минут
+            return $this->getTerminology();
+        });
+    }
+
+    /**
+     * Очистка кеша терминологии (глобальной и организационной)
+     */
+    public function clearTerminologyCache(?int $organizationId = null): void
+    {
+        if ($organizationId) {
+            Cache::forget("terminology:org:{$organizationId}");
+        }
+        Cache::forget('terminology:global');
     }
 
     /**
@@ -154,6 +191,7 @@ class GlobalSettingsService
 
         // Очищаем кеш
         $this->clearCache();
+        $this->clearTerminologyCache();
 
         return $settings;
     }

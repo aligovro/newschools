@@ -8,6 +8,7 @@ import { HeroWidget } from '../HeroWidgetRefactored';
 import { ImageWidget } from '../ImageWidget';
 import { MenuWidget } from '../MenuWidget';
 import { ProjectsWidget } from '../ProjectsWidget';
+import { ReferralLeaderboardWidget } from '../ReferralLeaderboardWidget';
 import { RegionRatingWidget } from '../RegionRatingWidget';
 import { StatsWidget } from '../StatsWidget';
 import { TextWidget } from '../TextWidget';
@@ -261,6 +262,25 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         onConfigChange,
     }) => (
         <DonationsListWidget
+            config={widget.config || {}}
+            isEditable={isEditable}
+            autoExpandSettings={autoExpandSettings}
+            onSave={onSave}
+            widgetId={widget.id}
+            organizationId={getOrganizationId(widget.config)}
+            onConfigChange={onConfigChange}
+        />
+    ),
+
+    // Виджет рейтинга по приглашениям
+    referral_leaderboard: ({
+        widget,
+        isEditable,
+        autoExpandSettings,
+        onSave,
+        onConfigChange,
+    }) => (
+        <ReferralLeaderboardWidget
             config={widget.config || {}}
             isEditable={isEditable}
             autoExpandSettings={autoExpandSettings}

@@ -21,8 +21,13 @@ import { DonationsListWidget } from '@/components/widgets/DonationsListWidget';
 import { FormWidget } from '@/components/widgets/FormWidget';
 import { HeroWidget } from '@/components/widgets/HeroWidgetRefactored';
 import { MenuWidget } from '@/components/widgets/MenuWidget';
+import { ReferralLeaderboardWidget } from '@/components/widgets/ReferralLeaderboardWidget';
 import { RegionRatingWidget } from '@/components/widgets/RegionRatingWidget';
 import { TextWidget } from '@/components/widgets/TextWidget';
+import {
+    StylingPanel,
+    type StylingConfig,
+} from '@/components/widgets/common/StylingPanel';
 import { getOrganizationId, isCustomWidget } from '@/utils/widgetHelpers';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -74,7 +79,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         is_visible: true,
     });
 
-    const [pendingConfig, setPendingConfig] = useState<WidgetConfig | null>(
+    const [_pendingConfig, setPendingConfig] = useState<WidgetConfig | null>(
         null,
     );
 
@@ -98,16 +103,19 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         if (!widget) return;
 
         try {
-            if (onSaveConfig && pendingConfig) {
-                await onSaveConfig(widget.id, pendingConfig);
+            // Сначала сохраняем конфигурацию, если есть изменения
+            if (onSaveConfig && _pendingConfig) {
+                await onSaveConfig(widget.id, _pendingConfig);
             }
 
+            // Затем сохраняем основные поля виджета
             const minimalUpdates = {
                 id: widget.id,
                 name: formData.name,
                 slug: formData.slug,
                 is_active: formData.is_active,
                 is_visible: formData.is_visible,
+                config: _pendingConfig || formData.config,
             } as unknown as WidgetData;
 
             onSave(minimalUpdates);
@@ -115,7 +123,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         } catch (error) {
             console.error('Error saving widget:', error);
         }
-    }, [widget, pendingConfig, formData, onSaveConfig, onSave, onClose]);
+    }, [widget, formData, _pendingConfig, onSaveConfig, onSave, onClose]);
 
     // Мемоизированная функция изменения полей
     const handleInputChange = useCallback((field: string, value: unknown) => {
@@ -126,15 +134,14 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
     }, []);
 
     // Мемоизированная функция сохранения конфига
-    const handleConfigUpdate = useCallback(
-        async (cfg: WidgetConfig) => {
-            setPendingConfig(cfg);
-            if (onSaveConfig && widget) {
-                await onSaveConfig(widget.id, cfg);
-            }
-        },
-        [onSaveConfig, widget],
-    );
+    const handleConfigUpdate = useCallback(async (cfg: WidgetConfig) => {
+        setPendingConfig(cfg);
+        // Обновляем локальное состояние формы
+        setFormData((prev) => ({
+            ...prev,
+            config: cfg,
+        }));
+    }, []);
 
     // Мемоизируем ID организации
     const organizationId = useMemo(
@@ -186,10 +193,16 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     name: widget.name,
                     slug: widget.slug as 'form',
                     description: widget.config.description as string,
-                    settings: (widget.config.settings || {}) as any,
-                    styling: (widget.config.styling || {}) as any,
-                    fields: (widget.config.fields || []) as any,
-                    actions: (widget.config.actions || []) as any,
+                    settings: (widget.config.settings || {}) as Record<
+                        string,
+                        unknown
+                    >,
+                    styling: (widget.config.styling || {}) as Record<
+                        string,
+                        unknown
+                    >,
+                    fields: (widget.config.fields || []) as any[],
+                    actions: (widget.config.actions || []) as any[],
                     css_class: widget.config.css_class as string,
                     is_active: widget.is_active,
                     sort_order: widget.order,
@@ -236,6 +249,19 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             case 'donations_list':
                 return (
                     <DonationsListWidget
+                        config={widget.config || {}}
+                        isEditable
+                        autoExpandSettings
+                        onSave={handleConfigUpdate}
+                        widgetId={widget.id}
+                        organizationId={organizationId}
+                        onConfigChange={setPendingConfig}
+                    />
+                );
+
+            case 'referral_leaderboard':
+                return (
+                    <ReferralLeaderboardWidget
                         config={widget.config || {}}
                         isEditable
                         autoExpandSettings
@@ -362,19 +388,38 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         [widget],
     );
 
+    // Универсальная вкладка стилизации
+    const [activeTab, setActiveTab] = useState<'editor' | 'styling'>('editor');
+    const stylingConfig = (formData.config?.styling || {}) as StylingConfig;
+
     if (!widget) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-h-[85vh] min-w-[1000px]">
-                <DialogHeader>
+            <DialogContent className="flex max-h-[90vh] min-w-[1000px] flex-col">
+                <DialogHeader className="flex-shrink-0">
                     <DialogTitle>Редактирование виджета</DialogTitle>
                     <DialogDescription>
                         Настройте параметры виджета и его содержимое
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
+                <div className="mb-3 flex flex-shrink-0 items-center gap-2">
+                    <button
+                        className={`form-widget-editor__tab ${activeTab === 'editor' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('editor')}
+                    >
+                        Редактор
+                    </button>
+                    <button
+                        className={`form-widget-editor__tab ${activeTab === 'styling' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('styling')}
+                    >
+                        Стилизация
+                    </button>
+                </div>
+
+                <div className="max-h-[60vh] min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
                     {/* Выбор позиции */}
                     {positions.length > 0 && (
                         <div>
@@ -401,13 +446,34 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                         </div>
                     )}
 
-                    {/* Кастомный редактор или стандартные поля */}
-                    {hasCustomEditor
-                        ? renderCustomWidget
-                        : renderStandardFields}
+                    {/* Кастомный редактор/стандартные поля + вкладка стилизации */}
+                    {activeTab === 'editor' ? (
+                        hasCustomEditor ? (
+                            renderCustomWidget
+                        ) : (
+                            renderStandardFields
+                        )
+                    ) : (
+                        <div className="rounded-lg border bg-white p-4">
+                            <h4 className="mb-3 text-sm font-semibold text-gray-700">
+                                Стилизация
+                            </h4>
+                            <StylingPanel
+                                value={stylingConfig}
+                                onChange={(val) => {
+                                    const cfg = {
+                                        ...(formData.config || {}),
+                                        styling: val,
+                                    };
+                                    setPendingConfig(cfg);
+                                    handleInputChange('config', cfg);
+                                }}
+                            />
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex justify-end space-x-2 pt-4">
+                <div className="flex flex-shrink-0 justify-end space-x-2 border-t bg-white pt-4">
                     <Button variant="outline" onClick={onClose}>
                         Отмена
                     </Button>

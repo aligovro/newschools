@@ -87,7 +87,36 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
             });
         }, [widget, isEditable, autoExpandSettings, onSave, previewMode]);
 
-        return <div className="widget-renderer">{renderedWidget}</div>;
+        // Apply universal styling if present in config.styling
+        const styling = (widget.config?.styling || {}) as any;
+        const style: React.CSSProperties = {
+            backgroundColor: styling.backgroundColor,
+            color: styling.textColor,
+            padding: styling.padding,
+            margin: styling.margin,
+            borderRadius: styling.borderRadius,
+            borderWidth: styling.borderWidth,
+            borderColor: styling.borderColor,
+            borderStyle: styling.borderWidth ? 'solid' : undefined,
+        };
+        const shadowClass =
+            styling.boxShadow === 'sm'
+                ? 'shadow-sm'
+                : styling.boxShadow === 'md'
+                  ? 'shadow-md'
+                  : styling.boxShadow === 'lg'
+                    ? 'shadow-lg'
+                    : '';
+        const extraClass = styling.customClass || '';
+
+        return (
+            <div
+                className={`widget-renderer ${shadowClass} ${extraClass}`}
+                style={style}
+            >
+                {renderedWidget}
+            </div>
+        );
     },
 );
 

@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { sitesApi } from '@/lib/api/index';
 import { Loader2, Save } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 
@@ -60,18 +61,7 @@ const PaymentSettings: React.FC<PaymentSettingsProps> = ({
         setIsLoading(true);
         setErrors([]);
         try {
-            const res = await fetch(`/api/sites/${siteId}/settings/payments`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN':
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute('content') || '',
-                },
-                body: JSON.stringify(settings),
-            });
-            const data = await res.json();
+            const data = await sitesApi.savePaymentSettings(siteId, settings);
             if (!data.success) {
                 setErrors([
                     data.message || 'Ошибка при сохранении платежных настроек',

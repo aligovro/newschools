@@ -26,14 +26,14 @@ export const WidgetSelectModal: React.FC<WidgetSelectModalProps> = ({
 }) => {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-                <DialogHeader>
+            <DialogContent className="flex max-h-[80vh] max-w-4xl flex-col">
+                <DialogHeader className="flex-shrink-0">
                     <DialogTitle>
                         Выберите виджет для позиции "{positionName}"
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-4 grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto md:grid-cols-2 lg:grid-cols-3">
                     {widgets.map((widget) => (
                         <Card
                             key={widget.id}

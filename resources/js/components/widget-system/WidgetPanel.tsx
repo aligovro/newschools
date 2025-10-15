@@ -1,18 +1,9 @@
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { getCategoryIcon, getCategoryName } from '@/config/widgetCategories';
+import { Widget, widgetsSystemApi } from '@/lib/api/index';
 import { Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useDrag } from 'react-dnd';
-
-interface Widget {
-    id: number;
-    name: string;
-    slug: string;
-    description: string;
-    icon?: string;
-    category: string;
-    component_name?: string;
-}
 
 interface WidgetPanelProps {
     template: LayoutConfig;
@@ -37,6 +28,7 @@ const DraggableWidget: React.FC<{
             className={`cursor-grab transition-opacity hover:shadow-md ${
                 isDragging ? 'opacity-50' : 'opacity-100'
             }`}
+            style={{ pointerEvents: 'auto' }}
         >
             <Card className="h-full">
                 <CardHeader className="pb-2">
@@ -76,15 +68,14 @@ export const WidgetPanel: React.FC<WidgetPanelProps> = ({
     const loadWidgets = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/widgets');
-            const data = await response.json();
+            const response = await widgetsSystemApi.getWidgets();
 
-            if (data.success) {
-                setWidgets(data.data || []);
+            if (response.success) {
+                setWidgets(response.data || []);
 
                 // Получаем уникальные категории
                 const categories =
-                    data.data?.map((w: Widget) => w.category) || [];
+                    response.data?.map((w: Widget) => w.category) || [];
                 const uniqueCategories = [...new Set(categories)] as string[];
                 setCategories(['all', ...uniqueCategories]);
             }

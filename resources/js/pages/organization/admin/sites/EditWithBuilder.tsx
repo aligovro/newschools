@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useSiteSettings } from '@/hooks';
 import AppLayout from '@/layouts/app-layout';
+import { sitesApi } from '@/lib/api/index';
+import SitePreview from '@/pages/SitePreview';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Eye, Globe, Save, Settings, Share } from 'lucide-react';
@@ -117,6 +119,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
     }, []);
     const [isSaving, setIsSaving] = useState(false);
     const [widgets, setWidgets] = useState<any[]>([]);
+    const [isWidgetsLoading, setIsWidgetsLoading] = useState(false);
     const [validationErrors, setValidationErrors] = useState<{
         [key: string]: string[];
     }>({});
@@ -183,11 +186,11 @@ export default function EditWithBuilder({ organization, site }: Props) {
         },
     });
 
-    const handleSiteSettingChange = (key: string, value: string) => {
+    const _handleSiteSettingChange = (key: string, value: string) => {
         updateSetting(key as keyof typeof siteSettings, value);
     };
 
-    const handleSaveSettings = async () => {
+    const _handleSaveSettings = async () => {
         try {
             setIsSaving(true);
             // Здесь будет логика сохранения настроек
@@ -314,39 +317,26 @@ export default function EditWithBuilder({ organization, site }: Props) {
         }
     };
 
-    const handlePreview = async () => {
+    const _handlePreview = async () => {
         try {
             // Получаем URL для предпросмотра
-            const response = await fetch(`/api/sites/${site.id}/preview`, {
-                method: 'GET',
-                headers: {
-                    'X-CSRF-TOKEN':
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute('content') || '',
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to get preview URL');
-            }
-
-            const result = await response.json();
-            console.log('Preview URL:', result.data.preview_url);
+            const result = await sitesApi.getPreviewUrl(site.id);
+            console.log('Preview URL:', result.preview_url);
 
             // Открываем предпросмотр в новой вкладке
-            window.open(result.data.preview_url, '_blank');
+            window.open(result.preview_url, '_blank');
         } catch (error) {
             console.error('Error getting preview:', error);
             alert('Ошибка при получении предпросмотра');
         }
     };
 
-    const handleWidgetsChange = (newWidgets: any[]) => {
+    const handleWidgetsChange = (newWidgets: any[], isLoading: boolean) => {
         setWidgets(newWidgets);
+        setIsWidgetsLoading(isLoading);
     };
 
-    const handleAddWidget = async (widgetData: any) => {
+    const _handleAddWidget = async (widgetData: any) => {
         try {
             // Здесь будет логика добавления виджета через API
             console.log('Adding widget:', widgetData);
@@ -418,7 +408,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
                             <Button
                                 size="sm"
                                 disabled={isSaving}
-                                onClick={() => handleSave({})}
+                                onClick={handleSave}
                             >
                                 <Save className="mr-2 h-4 w-4" />
                                 {isSaving ? 'Сохранение...' : 'Сохранить'}
@@ -462,49 +452,89 @@ export default function EditWithBuilder({ organization, site }: Props) {
                     {activeTab === 'builder' && (
                         <SiteBuilder
                             siteId={site.id}
-                            template={site.template}
+                            template={
+                                site.template as unknown as Record<
+                                    string,
+                                    unknown
+                                >
+                            }
                             initialLayoutConfig={site.layout_config || {}}
-                            initialWidgets={site.widgets_config || []}
+                            initialWidgets={
+                                ((site as any).widgets || []) as any
+                            }
                             onWidgetsChange={handleWidgetsChange}
                             validationErrors={validationErrors['builder'] || []}
                         />
                     )}
 
                     {activeTab === 'preview' && (
-                        <div className="bg-muted flex h-full items-center justify-center">
-                            <div className="text-center">
-                                <Eye className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-                                <h3 className="mb-2 text-lg font-semibold">
-                                    Предварительный просмотр
-                                </h3>
-                                <p className="mb-4 text-muted-foreground">
-                                    Здесь будет отображаться предварительный
-                                    просмотр сайта
-                                </p>
-                                {site.url && (
-                                    <Button asChild>
-                                        <a
-                                            href={site.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            <Globe className="mr-2 h-4 w-4" />
-                                            Открыть сайт
-                                        </a>
-                                    </Button>
-                                )}
-                            </div>
+                        <div className="h-full overflow-auto bg-white">
+                            {(() => {
+                                // Всегда используем виджеты из базы данных для предпросмотра
+                                const siteWidgets = (site as any).widgets || [];
+
+                                console.log('EditWithBuilder Debug:', {
+                                    widgetsFromDB: (site as any).widgets,
+                                    widgetsFromDBLength:
+                                        (site as any).widgets?.length || 0,
+                                    usingWidgets: siteWidgets,
+                                    usingWidgetsLength:
+                                        siteWidgets?.length || 0,
+                                    activeTab: activeTab,
+                                    firstWidget: siteWidgets[0],
+                                    firstWidgetConfig: siteWidgets[0]?.config,
+                                    firstWidgetConfigType:
+                                        typeof siteWidgets[0]?.config,
+                                });
+
+                                return (
+                                    <SitePreview
+                                        site={{
+                                            id: site.id,
+                                            name: site.name,
+                                            slug: site.slug,
+                                            description: site.description,
+                                            template:
+                                                site.template as unknown as string,
+                                            widgets_config: siteWidgets.map(
+                                                (w: any) => ({
+                                                    id: w.id.toString(),
+                                                    name: w.name,
+                                                    slug:
+                                                        w.widget?.slug ||
+                                                        w.slug ||
+                                                        'unknown',
+                                                    config: w.config || {},
+                                                    settings: w.settings || {},
+                                                    position_name:
+                                                        w.position_name ||
+                                                        w.position_slug ||
+                                                        'content',
+                                                    position_slug:
+                                                        w.position?.slug ||
+                                                        w.position_slug ||
+                                                        w.position_name,
+                                                    order:
+                                                        w.order ??
+                                                        w.sort_order ??
+                                                        0,
+                                                    is_active:
+                                                        w.is_active !== false,
+                                                    is_visible:
+                                                        w.is_visible !== false,
+                                                }),
+                                            ),
+                                            seo_config:
+                                                (site as any).seo_config || {},
+                                        }}
+                                    />
+                                );
+                            })()}
                         </div>
                     )}
 
                     {activeTab === 'settings' && (
-                        <SettingsContent
-                            siteSettings={siteSettings}
-                            site={site}
-                            isSaving={isSaving}
-                            onSettingChange={handleSiteSettingChange}
-                            onSaveSettings={handleSaveSettings}
-                        />
+                        <SettingsContent site={site} />
                     )}
                 </div>
             </div>

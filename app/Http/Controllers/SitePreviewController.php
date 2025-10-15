@@ -18,8 +18,9 @@ class SitePreviewController extends Controller
         ->where('status', 'published')
         ->firstOrFail();
 
-      // Получаем конфигурацию виджетов
-      $widgetsConfig = $site->widgets_config ?? [];
+      // Получаем конфигурацию виджетов из нормализованных таблиц
+      $widgetDataService = app(\App\Services\WidgetDataService::class);
+      $widgetsConfig = $widgetDataService->getSiteWidgetsWithData($site->id);
 
       return Inertia::render('SitePreview', [
         'site' => [
