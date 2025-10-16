@@ -6,11 +6,16 @@ interface WidgetData {
     id: string;
     widget_id: number;
     name: string;
-    slug: string;
+    widget_slug: string;
     position_name: string;
     position_slug: string;
     order: number;
     config: Record<string, unknown>;
+    configs: Array<{
+        config_key: string;
+        config_value: string;
+        config_type: string;
+    }>;
     settings: Record<string, unknown>;
     is_active: boolean;
     is_visible: boolean;
@@ -120,14 +125,16 @@ export const useWidgets = (
                         const updatedWidget = data.widget as WidgetData;
                         setWidgets((prev) =>
                             prev.map((w) =>
-                                w.id === widgetId ? updatedWidget : w,
+                                w.id === parseInt(widgetId) ? updatedWidget : w,
                             ),
                         );
                     } else {
                         // Обновляем локально только измененные поля
                         setWidgets((prev) =>
                             prev.map((w) =>
-                                w.id === widgetId ? { ...w, ...updates } : w,
+                                w.id === parseInt(widgetId)
+                                    ? { ...w, ...updates }
+                                    : w,
                             ),
                         );
                     }

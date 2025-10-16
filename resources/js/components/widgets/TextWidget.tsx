@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getConfigValue, WidgetConfig } from '@/utils/getConfigValue';
 import {
     Bold,
     ChevronDown,
@@ -46,6 +47,9 @@ interface TextWidgetProps {
     autoExpandSettings?: boolean;
     onSave?: (config: Record<string, unknown>) => Promise<void>;
     widgetId?: string;
+    // Поддержка configs для нормализованных данных
+    configs?: WidgetConfig[];
+    styling?: Record<string, any>;
 }
 
 export const TextWidget: React.FC<TextWidgetProps> = ({
@@ -54,18 +58,69 @@ export const TextWidget: React.FC<TextWidgetProps> = ({
     autoExpandSettings = false,
     onSave: _onSave,
     widgetId: _widgetId,
+    configs,
+    styling,
 }) => {
     const [isSettingsExpanded, setIsSettingsExpanded] =
         useState(autoExpandSettings);
-    const [localConfig, setLocalConfig] = useState(config);
+
+    // Извлекаем значения из configs если они переданы
+    const configValues = configs
+        ? {
+              title: getConfigValue(configs, 'title', config.title),
+              content: getConfigValue(configs, 'content', config.content),
+              fontSize: getConfigValue(configs, 'fontSize', config.fontSize),
+              textAlign: getConfigValue(configs, 'textAlign', config.textAlign),
+              backgroundColor: getConfigValue(
+                  configs,
+                  'backgroundColor',
+                  config.backgroundColor,
+              ),
+              textColor: getConfigValue(configs, 'textColor', config.textColor),
+              titleColor: getConfigValue(
+                  configs,
+                  'titleColor',
+                  config.titleColor,
+              ),
+              padding: getConfigValue(configs, 'padding', config.padding),
+              margin: getConfigValue(configs, 'margin', config.margin),
+              borderRadius: getConfigValue(
+                  configs,
+                  'borderRadius',
+                  config.borderRadius,
+              ),
+              borderWidth: getConfigValue(
+                  configs,
+                  'borderWidth',
+                  config.borderWidth,
+              ),
+              borderColor: getConfigValue(
+                  configs,
+                  'borderColor',
+                  config.borderColor,
+              ),
+              enableFormatting: getConfigValue(
+                  configs,
+                  'enableFormatting',
+                  config.enableFormatting,
+              ),
+              enableColors: getConfigValue(
+                  configs,
+                  'enableColors',
+                  config.enableColors,
+              ),
+          }
+        : config;
+
+    const [localConfig, setLocalConfig] = useState(configValues);
     const [showLinkModal, setShowLinkModal] = useState(false);
     const [linkUrl, setLinkUrl] = useState('');
     const textareaRef = useRef<HTMLDivElement>(null);
 
     // Синхронизируем локальное состояние с внешним config
     useEffect(() => {
-        setLocalConfig(config);
-    }, [config]);
+        setLocalConfig(configValues);
+    }, [config, configs]);
 
     // Обновляем состояние при изменении autoExpandSettings
     useEffect(() => {
@@ -849,6 +904,8 @@ export const TextWidget: React.FC<TextWidgetProps> = ({
                     borderColor:
                         borderWidth !== '0px' ? borderColor : undefined,
                     borderStyle: borderWidth !== '0px' ? 'solid' : undefined,
+                    // Применяем стили из styling
+                    ...(styling || {}),
                 }}
             >
                 <h4

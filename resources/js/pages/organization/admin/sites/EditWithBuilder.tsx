@@ -12,6 +12,33 @@ import { ArrowLeft, Eye, Globe, Save, Settings, Share } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import * as yup from 'yup';
 
+// Утилитарная функция для работы с configs
+const getConfigValue = (
+    configs: any[],
+    key: string,
+    defaultValue: any = null,
+) => {
+    const config = configs.find((c) => c.config_key === key);
+    if (!config) return defaultValue;
+
+    switch (config.config_type) {
+        case 'number':
+            return parseFloat(config.config_value);
+        case 'boolean':
+            return (
+                config.config_value === '1' || config.config_value === 'true'
+            );
+        case 'json':
+            try {
+                return JSON.parse(config.config_value);
+            } catch (e) {
+                return defaultValue;
+            }
+        default:
+            return config.config_value;
+    }
+};
+
 interface Organization {
     id: number;
     name: string;
@@ -20,12 +47,41 @@ interface Organization {
 
 interface SiteWidget {
     id: number;
+    widget_id: number;
     name: string;
+    widget_slug: string;
     config: any;
     settings: any;
     sort_order: number;
+    order: number;
     is_active: boolean;
     is_visible: boolean;
+    position_name: string;
+    position_slug: string;
+    created_at: string;
+    updated_at: string;
+    configs: Array<{
+        config_key: string;
+        config_value: string;
+        config_type: string;
+    }>;
+    hero_slides?: Array<{
+        id: string;
+        title: string;
+        subtitle?: string;
+        description?: string;
+        buttonText?: string;
+        buttonLink?: string;
+        buttonLinkType?: string;
+        buttonOpenInNewTab?: boolean;
+        backgroundImage?: string;
+        overlayColor?: string;
+        overlayOpacity?: number;
+        overlayGradient?: string;
+        overlayGradientIntensity?: number;
+        sortOrder?: number;
+        isActive?: boolean;
+    }>;
     widget: {
         id: number;
         name: string;
@@ -118,7 +174,9 @@ export default function EditWithBuilder({ organization, site }: Props) {
         return () => window.removeEventListener('popstate', onPopState);
     }, []);
     const [isSaving, setIsSaving] = useState(false);
-    const [widgets, setWidgets] = useState<any[]>([]);
+
+    const [widgets, setWidgets] = useState<SiteWidget[]>(site.widgets || []);
+
     const [isWidgetsLoading, setIsWidgetsLoading] = useState(false);
     const [validationErrors, setValidationErrors] = useState<{
         [key: string]: string[];
@@ -130,7 +188,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
         .shape({
             id: yup.number().required(),
             name: yup.string().required(),
-            slug: yup.string().required(),
+            widget_slug: yup.string().required(),
             config: yup.object().default({}),
             settings: yup.object().default({}),
             position_name: yup.string().required(),
@@ -146,8 +204,8 @@ export default function EditWithBuilder({ organization, site }: Props) {
                 if (!value.name || value.name.trim() === '') {
                     errors.push(`Виджет ${value.id}: Название обязательно`);
                 }
-                if (!value.slug || value.slug.trim() === '') {
-                    errors.push(`Виджет ${value.id}: Slug обязателен`);
+                if (!value.widget_slug || value.widget_slug.trim() === '') {
+                    errors.push(`Виджет ${value.id}: Widget slug обязателен`);
                 }
                 if (!value.position_name || value.position_name.trim() === '') {
                     errors.push(`Виджет ${value.id}: Позиция обязательна`);
@@ -194,7 +252,6 @@ export default function EditWithBuilder({ organization, site }: Props) {
         try {
             setIsSaving(true);
             // Здесь будет логика сохранения настроек
-            console.log('Saving settings:', siteSettings);
             // TODO: Добавить API вызов для сохранения настроек
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -283,9 +340,6 @@ export default function EditWithBuilder({ organization, site }: Props) {
                 widgets: widgets,
             };
 
-            console.log('Site ID:', site.id);
-            console.log('Saving content:', content);
-
             // Используем Inertia.js для отправки данных
             router.post(
                 `/sites/${site.id}/save-config`,
@@ -294,7 +348,6 @@ export default function EditWithBuilder({ organization, site }: Props) {
                 },
                 {
                     onSuccess: () => {
-                        console.log('Site configuration saved successfully');
                         setValidationErrors({});
                         // Можно добавить toast уведомление вместо alert
                     },
@@ -321,7 +374,6 @@ export default function EditWithBuilder({ organization, site }: Props) {
         try {
             // Получаем URL для предпросмотра
             const result = await sitesApi.getPreviewUrl(site.id);
-            console.log('Preview URL:', result.preview_url);
 
             // Открываем предпросмотр в новой вкладке
             window.open(result.preview_url, '_blank');
@@ -339,7 +391,6 @@ export default function EditWithBuilder({ organization, site }: Props) {
     const _handleAddWidget = async (widgetData: any) => {
         try {
             // Здесь будет логика добавления виджета через API
-            console.log('Adding widget:', widgetData);
             // await addWidgetToSite(site.id, widgetData);
         } catch (error) {
             console.error('Error adding widget:', error);
@@ -459,9 +510,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
                                 >
                             }
                             initialLayoutConfig={site.layout_config || {}}
-                            initialWidgets={
-                                ((site as any).widgets || []) as any
-                            }
+                            initialWidgets={widgets}
                             onWidgetsChange={handleWidgetsChange}
                             validationErrors={validationErrors['builder'] || []}
                         />
@@ -469,67 +518,70 @@ export default function EditWithBuilder({ organization, site }: Props) {
 
                     {activeTab === 'preview' && (
                         <div className="h-full overflow-auto bg-white">
-                            {(() => {
-                                // Всегда используем виджеты из базы данных для предпросмотра
-                                const siteWidgets = (site as any).widgets || [];
-
-                                console.log('EditWithBuilder Debug:', {
-                                    widgetsFromDB: (site as any).widgets,
-                                    widgetsFromDBLength:
-                                        (site as any).widgets?.length || 0,
-                                    usingWidgets: siteWidgets,
-                                    usingWidgetsLength:
-                                        siteWidgets?.length || 0,
-                                    activeTab: activeTab,
-                                    firstWidget: siteWidgets[0],
-                                    firstWidgetConfig: siteWidgets[0]?.config,
-                                    firstWidgetConfigType:
-                                        typeof siteWidgets[0]?.config,
-                                });
-
-                                return (
-                                    <SitePreview
-                                        site={{
-                                            id: site.id,
-                                            name: site.name,
-                                            slug: site.slug,
-                                            description: site.description,
-                                            template:
-                                                site.template as unknown as string,
-                                            widgets_config: siteWidgets.map(
-                                                (w: any) => ({
-                                                    id: w.id.toString(),
-                                                    name: w.name,
-                                                    slug:
-                                                        w.widget?.slug ||
-                                                        w.slug ||
-                                                        'unknown',
-                                                    config: w.config || {},
-                                                    settings: w.settings || {},
-                                                    position_name:
-                                                        w.position_name ||
-                                                        w.position_slug ||
-                                                        'content',
-                                                    position_slug:
-                                                        w.position?.slug ||
-                                                        w.position_slug ||
-                                                        w.position_name,
-                                                    order:
-                                                        w.order ??
-                                                        w.sort_order ??
-                                                        0,
-                                                    is_active:
-                                                        w.is_active !== false,
-                                                    is_visible:
-                                                        w.is_visible !== false,
-                                                }),
+                            <SitePreview
+                                site={{
+                                    id: site.id,
+                                    name: site.name,
+                                    slug: site.slug,
+                                    description: site.description,
+                                    template:
+                                        site.template as unknown as string,
+                                    widgets_config: site.widgets.map((w) => ({
+                                        id: w.id.toString(),
+                                        name: w.name,
+                                        slug: w.widget_slug,
+                                        config: {
+                                            alignment: getConfigValue(
+                                                w.configs,
+                                                'alignment',
+                                                'start',
                                             ),
-                                            seo_config:
-                                                (site as any).seo_config || {},
-                                        }}
-                                    />
-                                );
-                            })()}
+                                            fontSize: getConfigValue(
+                                                w.configs,
+                                                'fontSize',
+                                                '16px',
+                                            ),
+                                            gap: getConfigValue(
+                                                w.configs,
+                                                'gap',
+                                                12,
+                                            ),
+                                            items: getConfigValue(
+                                                w.configs,
+                                                'items',
+                                                [],
+                                            ),
+                                            orientation: getConfigValue(
+                                                w.configs,
+                                                'orientation',
+                                                'row',
+                                            ),
+                                            styling: getConfigValue(
+                                                w.configs,
+                                                'styling',
+                                                {},
+                                            ),
+                                            title: getConfigValue(
+                                                w.configs,
+                                                'title',
+                                                '',
+                                            ),
+                                            uppercase: getConfigValue(
+                                                w.configs,
+                                                'uppercase',
+                                                false,
+                                            ),
+                                        },
+                                        settings: w.settings || {},
+                                        position_name: w.position_name,
+                                        position_slug: w.position_slug,
+                                        order: w.order,
+                                        is_active: w.is_active,
+                                        is_visible: w.is_visible,
+                                    })),
+                                    seo_config: site.seo_config || {},
+                                }}
+                            />
                         </div>
                     )}
 

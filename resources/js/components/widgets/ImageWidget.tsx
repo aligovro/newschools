@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { getConfigValue, WidgetConfig } from '@/utils/getConfigValue';
 import React from 'react';
 
 interface ImageWidgetProps {
@@ -8,6 +9,9 @@ interface ImageWidgetProps {
     alignment?: 'left' | 'center' | 'right';
     size?: 'small' | 'medium' | 'large' | 'full';
     className?: string;
+    // Поддержка configs для нормализованных данных
+    configs?: WidgetConfig[];
+    styling?: Record<string, any>;
 }
 
 export const ImageWidget: React.FC<ImageWidgetProps> = ({
@@ -17,7 +21,23 @@ export const ImageWidget: React.FC<ImageWidgetProps> = ({
     alignment = 'center',
     size = 'medium',
     className,
+    configs,
+    styling,
 }) => {
+    // Извлекаем значения из configs если они переданы
+    const configImage = configs
+        ? getConfigValue(configs, 'image', image)
+        : image;
+    const configAltText = configs
+        ? getConfigValue(configs, 'altText', altText)
+        : altText;
+    const configCaption = configs
+        ? getConfigValue(configs, 'caption', caption)
+        : caption;
+    const configAlignment = configs
+        ? getConfigValue(configs, 'alignment', alignment)
+        : alignment;
+    const configSize = configs ? getConfigValue(configs, 'size', size) : size;
     const sizeClasses = {
         small: 'max-w-sm',
         medium: 'max-w-md',
@@ -35,24 +55,27 @@ export const ImageWidget: React.FC<ImageWidgetProps> = ({
         <figure
             className={cn(
                 'block',
-                sizeClasses[size],
-                alignmentClasses[alignment],
+                sizeClasses[configSize as keyof typeof sizeClasses],
+                alignmentClasses[
+                    configAlignment as keyof typeof alignmentClasses
+                ],
                 className,
             )}
+            style={styling}
         >
             <img
-                src={image}
-                alt={altText}
+                src={configImage}
+                alt={configAltText}
                 className={cn(
                     'rounded-lg shadow-md',
-                    size === 'full'
+                    configSize === 'full'
                         ? 'h-auto w-full'
                         : 'h-auto w-full object-cover',
                 )}
             />
-            {caption && (
+            {configCaption && (
                 <figcaption className="mt-2 text-center text-sm text-gray-600">
-                    {caption}
+                    {configCaption}
                 </figcaption>
             )}
         </figure>

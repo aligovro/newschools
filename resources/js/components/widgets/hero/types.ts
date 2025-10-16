@@ -35,4 +35,15 @@ export interface HeroWidgetProps {
     widgetId?: string;
     onConfigChange?: (config: Record<string, unknown>) => void;
     css_class?: string;
+    // Поддержка configs для нормализованных данных
+    configs?: WidgetConfig[];
+    styling?: Record<string, any>;
+    // Слайды из специализированной таблицы
+    hero_slides?: HeroSlide[];
 }
+
+export type WidgetConfig = {
+    config_key: string;
+    config_value: string;
+    config_type: string;
+};

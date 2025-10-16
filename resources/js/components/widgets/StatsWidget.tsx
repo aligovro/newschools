@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { getConfigValue, WidgetConfig } from '@/utils/getConfigValue';
 import React from 'react';
 
 interface StatItem {
@@ -17,6 +18,9 @@ interface StatsWidgetProps {
     showIcons?: boolean;
     animation?: 'none' | 'count-up' | 'fade-in';
     className?: string;
+    // Поддержка configs для нормализованных данных
+    configs?: WidgetConfig[];
+    styling?: Record<string, any>;
 }
 
 export const StatsWidget: React.FC<StatsWidgetProps> = ({
@@ -27,7 +31,28 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
     showIcons = true,
     animation = 'fade-in',
     className,
+    configs,
+    styling,
 }) => {
+    // Извлекаем значения из configs если они переданы
+    const configTitle = configs
+        ? getConfigValue(configs, 'title', title)
+        : title;
+    const configStats = configs
+        ? getConfigValue(configs, 'stats', stats)
+        : stats;
+    const configColumns = configs
+        ? getConfigValue(configs, 'columns', columns)
+        : columns;
+    const configLayout = configs
+        ? getConfigValue(configs, 'layout', layout)
+        : layout;
+    const configShowIcons = configs
+        ? getConfigValue(configs, 'showIcons', showIcons)
+        : showIcons;
+    const configAnimation = configs
+        ? getConfigValue(configs, 'animation', animation)
+        : animation;
     const gridCols = {
         1: 'grid-cols-1',
         2: 'grid-cols-2',
@@ -41,6 +66,11 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
         none: '',
         'count-up': 'animate-count-up',
         'fade-in': 'animate-fade-in',
+    };
+
+    // Применяем стили из styling
+    const containerStyle = {
+        ...(styling || {}),
     };
 
     const getDefaultIcon = (index: number) => {
@@ -102,27 +132,29 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
         return value;
     };
 
-    if (layout === 'list') {
+    if (configLayout === 'list') {
         return (
-            <section className={cn('py-8', className)}>
+            <section className={cn('py-8', className)} style={containerStyle}>
                 <div className="container mx-auto px-4">
-                    {title && (
+                    {configTitle && (
                         <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
-                            {title}
+                            {configTitle}
                         </h2>
                     )}
 
                     <div className="space-y-4">
-                        {stats.map((stat, index) => (
+                        {configStats.map((stat: StatItem, index: number) => (
                             <div
                                 key={index}
                                 className={cn(
                                     'flex items-center justify-between rounded-lg border bg-white p-6 shadow-sm',
-                                    animationClasses[animation],
+                                    animationClasses[
+                                        configAnimation as keyof typeof animationClasses
+                                    ],
                                 )}
                             >
                                 <div className="flex items-center space-x-4">
-                                    {showIcons && (
+                                    {configShowIcons && (
                                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
                                             {stat.icon || getDefaultIcon(index)}
                                         </div>
@@ -152,30 +184,32 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
     }
 
     return (
-        <section className={cn('py-8', className)}>
+        <section className={cn('py-8', className)} style={containerStyle}>
             <div className="container mx-auto px-4">
-                {title && (
+                {configTitle && (
                     <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
-                        {title}
+                        {configTitle}
                     </h2>
                 )}
 
                 <div
                     className={cn(
                         'grid gap-6',
-                        gridCols[columns as keyof typeof gridCols] ||
+                        gridCols[configColumns as keyof typeof gridCols] ||
                             'grid-cols-3',
                     )}
                 >
-                    {stats.map((stat, index) => (
+                    {configStats.map((stat: StatItem, index: number) => (
                         <div
                             key={index}
                             className={cn(
                                 'rounded-lg border bg-white p-6 text-center shadow-sm',
-                                animationClasses[animation],
+                                animationClasses[
+                                    configAnimation as keyof typeof animationClasses
+                                ],
                             )}
                         >
-                            {showIcons && (
+                            {configShowIcons && (
                                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
                                     {stat.icon || getDefaultIcon(index)}
                                 </div>

@@ -3,7 +3,7 @@ import React from 'react';
 import { HeroSlide } from './types';
 
 interface HeroRendererProps {
-    slide: HeroSlide;
+    slide: HeroSlide | null;
     height: string;
     getGradientStyle: (
         color: string,
@@ -20,10 +20,41 @@ export const HeroRenderer: React.FC<HeroRendererProps> = ({
     getGradientStyle,
     css_class,
 }) => {
-    // Отфильтруем blob: URL при неинтерактивном просмотре, оставим только нормальные URL
+    // Если slide не существует, показываем пустой блок
+    if (!slide) {
+        return (
+            <div
+                className={`hero-renderer ${css_class || ''}`}
+                style={{ height }}
+            >
+                <div className="flex h-full items-center justify-center text-gray-500">
+                    Нет данных для отображения
+                </div>
+            </div>
+        );
+    }
+
+    // Генерируем URL изображения
     const bg = slide.backgroundImage || '';
-    const safeImage =
-        typeof bg === 'string' && bg.startsWith('blob:') ? '' : bg;
+
+    let safeImage = '';
+    if (bg) {
+        if (bg.startsWith('blob:')) {
+            safeImage = '';
+        } else if (bg.startsWith('http://') || bg.startsWith('https://')) {
+            safeImage = bg;
+        } else {
+            // Убираем лишние слеши и добавляем /storage/
+            const cleanPath = bg.replace(/^\/+/, '');
+            safeImage = `${window.location.origin}/storage/${cleanPath}`;
+        }
+    }
+
+    console.log('HeroRenderer: Slide image URL', {
+        slide_id: slide.id,
+        backgroundImage: slide.backgroundImage,
+        final_url: safeImage,
+    });
 
     const slideStyle = {
         backgroundImage: safeImage
@@ -58,10 +89,13 @@ export const HeroRenderer: React.FC<HeroRendererProps> = ({
         <div
             key={slide.id}
             className={`hero-slide ${css_class || ''}`}
-            style={slideStyle}
+            style={{ ...slideStyle, pointerEvents: 'none' }}
         >
             <div style={overlayStyle} />
-            <div className="relative z-10 flex h-full items-center justify-center">
+            <div
+                className="relative z-10 flex h-full items-center justify-center"
+                style={{ pointerEvents: 'auto' }}
+            >
                 <div className="max-w-4xl px-6 text-center text-white">
                     <h1 className="mb-4 text-5xl font-bold md:text-6xl">
                         {slide.title}

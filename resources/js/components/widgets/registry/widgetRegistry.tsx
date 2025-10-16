@@ -25,8 +25,13 @@ interface WidgetData {
     id: string;
     widget_id: number;
     name: string;
-    slug: string;
+    widget_slug: string;
     config: Record<string, unknown>;
+    configs: Array<{
+        config_key: string;
+        config_value: string;
+        config_type: string;
+    }>;
     settings: Record<string, unknown>;
     is_active: boolean;
     is_visible: boolean;
@@ -59,20 +64,25 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         autoExpandSettings,
         onSave,
         onConfigChange,
-    }) => (
-        <HeroWidget
-            config={widget.config}
-            isEditable={isEditable}
-            autoExpandSettings={autoExpandSettings}
-            onSave={onSave}
-            widgetId={widget.id}
-            onConfigChange={onConfigChange}
-        />
-    ),
+    }) => {
+        return (
+            <HeroWidget
+                config={widget.config || {}}
+                isEditable={isEditable}
+                autoExpandSettings={autoExpandSettings}
+                onSave={onSave}
+                widgetId={widget.id}
+                onConfigChange={onConfigChange}
+                configs={widget.configs}
+                styling={widget.config?.styling}
+                hero_slides={widget.hero_slides}
+            />
+        );
+    },
 
     // Текстовый виджет
     text: ({ widget, isEditable, autoExpandSettings, onSave }) => {
-        const cfg = widget.config;
+        const cfg = widget.config || {};
         return (
             <TextWidget
                 config={{
@@ -95,26 +105,30 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                 autoExpandSettings={autoExpandSettings}
                 onSave={onSave}
                 widgetId={widget.id}
+                configs={widget.configs}
+                styling={cfg.styling as Record<string, any>}
             />
         );
     },
 
     // Галерея
     gallery: ({ widget }) => {
-        const cfg = widget.config;
+        const cfg = widget.config || {};
         return (
             <GalleryWidget
                 images={(cfg.images as string[]) || []}
                 columns={cfg.columns as number}
                 showCaptions={cfg.showCaptions as boolean}
                 lightbox={cfg.lightbox as boolean}
+                configs={widget.configs}
+                styling={cfg.styling as Record<string, any>}
             />
         );
     },
 
     // Статистика
     stats: ({ widget }) => {
-        const cfg = widget.config;
+        const cfg = widget.config || {};
         return (
             <StatsWidget
                 title={cfg.title as string}
@@ -125,13 +139,15 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                 animation={
                     cfg.animation as 'none' | 'count-up' | 'fade-in' | undefined
                 }
+                configs={widget.configs}
+                styling={cfg.styling as Record<string, any>}
             />
         );
     },
 
     // Проекты
     projects: ({ widget }) => {
-        const cfg = widget.config;
+        const cfg = widget.config || {};
         return (
             <ProjectsWidget
                 title={cfg.title as string}
@@ -157,13 +173,15 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                         | 'scale'
                         | undefined
                 }
+                configs={widget.configs}
+                styling={cfg.styling as Record<string, any>}
             />
         );
     },
 
     // Изображение
     image: ({ widget }) => {
-        const cfg = widget.config;
+        const cfg = widget.config || {};
         return (
             <ImageWidget
                 image={cfg.image as string}
@@ -180,6 +198,8 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                         | 'full'
                         | undefined
                 }
+                configs={widget.configs}
+                styling={cfg.styling as Record<string, any>}
             />
         );
     },
@@ -187,7 +207,7 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     // Меню (универсальное - для любой позиции)
     menu: ({ widget, isEditable, onConfigChange }) => (
         <MenuWidget
-            config={widget.config}
+            configs={widget.configs}
             isEditable={isEditable}
             onConfigChange={onConfigChange}
         />
@@ -195,12 +215,12 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
 
     // Форма
     form: ({ widget, isEditable, onSave: _onSave, onConfigChange, siteId }) => {
-        const cfg = widget.config;
+        const cfg = widget.config || {};
         const formWidget = {
             id: typeof widget.id === 'string' ? parseInt(widget.id) : widget.id,
             site_id: (cfg.site_id as number) || siteId || 1,
             name: widget.name,
-            slug: widget.slug as 'form',
+            slug: widget.widget_slug as 'form',
             description: cfg.description,
             settings: cfg.settings || {},
             styling: cfg.styling || {},
@@ -298,6 +318,6 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
 export const defaultWidgetRenderer: WidgetRenderer = ({ widget }) => (
     <div className="rounded-lg border border-gray-300 bg-gray-50 p-4">
         <h3 className="mb-2 text-lg font-semibold">{widget.name}</h3>
-        <p className="text-gray-600">Виджет "{widget.slug}" не найден</p>
+        <p className="text-gray-600">Виджет "{widget.widget_slug}" не найден</p>
     </div>
 );

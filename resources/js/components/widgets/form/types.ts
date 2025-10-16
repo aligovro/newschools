@@ -87,7 +87,7 @@ export interface FormWidget {
     id?: number;
     site_id: number;
     name: string;
-    slug: string;
+    widget_slug: string;
     description?: string;
     settings?: FormSettings;
     styling?: FormStyling;
