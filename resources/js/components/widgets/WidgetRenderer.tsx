@@ -8,8 +8,13 @@ interface WidgetData {
     id: string;
     widget_id: number;
     name: string;
-    slug: string;
+    widget_slug: string;
     config: Record<string, unknown>;
+    configs: Array<{
+        config_key: string;
+        config_value: string;
+        config_type: string;
+    }>;
     settings: Record<string, unknown>;
     is_active: boolean;
     is_visible: boolean;
@@ -18,6 +23,25 @@ interface WidgetData {
     position_slug: string;
     created_at: string;
     updated_at?: string;
+    // Специализированные данные
+    hero_slides?: Array<{
+        id: string;
+        title: string;
+        subtitle?: string;
+        description?: string;
+        button_text?: string;
+        button_link?: string;
+        button_link_type: string;
+        button_open_in_new_tab: boolean;
+        background_image?: string;
+        overlay_color?: string;
+        overlay_opacity?: number;
+        overlay_gradient?: string;
+        overlay_gradient_intensity?: number;
+        overlay_style?: string;
+        sort_order: number;
+        is_active: boolean;
+    }>;
 }
 
 interface WidgetRendererProps {
@@ -39,7 +63,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
         // Мемоизируем рендер виджета
         const renderedWidget = useMemo(() => {
             // Специальный превью для Hero виджета
-            if (previewMode && widget.slug === 'hero') {
+            if (previewMode && widget.widget_slug === 'hero') {
                 const cfg = widget.config || {};
                 const type = cfg.type || (cfg.slides ? 'slider' : 'single');
                 const firstSlide =
@@ -75,8 +99,9 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
             }
 
             // Получаем рендерер из реестра
+
             const renderer =
-                widgetRegistry[widget.slug] || defaultWidgetRenderer;
+                widgetRegistry[widget.widget_slug] || defaultWidgetRenderer;
 
             // Рендерим виджет
             return renderer({

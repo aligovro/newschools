@@ -8,8 +8,13 @@ interface WidgetData {
     id: string;
     widget_id: number;
     name: string;
-    slug: string;
+    widget_slug: string;
     config: Record<string, unknown>;
+    configs: Array<{
+        config_key: string;
+        config_value: string;
+        config_type: string;
+    }>;
     settings: Record<string, unknown>;
     is_active: boolean;
     is_visible: boolean;
@@ -18,6 +23,25 @@ interface WidgetData {
     position_slug: string;
     created_at: string;
     updated_at?: string;
+    // Специализированные данные
+    hero_slides?: Array<{
+        id: string;
+        title: string;
+        subtitle?: string;
+        description?: string;
+        button_text?: string;
+        button_link?: string;
+        button_link_type: string;
+        button_open_in_new_tab: boolean;
+        background_image?: string;
+        overlay_color?: string;
+        overlay_opacity?: number;
+        overlay_gradient?: string;
+        overlay_gradient_intensity?: number;
+        overlay_style?: string;
+        sort_order: number;
+        is_active: boolean;
+    }>;
 }
 
 interface WidgetDisplayProps {
@@ -89,8 +113,8 @@ export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
 
             {/* Панель управления (только в режиме редактирования) */}
             {isEditable && (
-                <div className="absolute right-2 top-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                    <div className="flex space-x-1">
+                <div className="pointer-events-none absolute right-2 top-2 z-50 opacity-0 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                    <div className="pointer-events-auto flex space-x-1">
                         <Button
                             size="sm"
                             variant="secondary"

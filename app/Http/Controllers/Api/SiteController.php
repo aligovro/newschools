@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\SiteWidgetResource;
 use App\Models\OrganizationSite;
 use App\Models\Widget;
 use App\Models\WidgetPosition;
@@ -271,34 +272,36 @@ class SiteController extends Controller
                 'position_name' => $position->name,
                 'position_slug' => $position->slug,
                 'widget_slug' => $widget->slug,
-                'config' => $processedConfig,
-                'settings' => $request->settings ?? [],
                 'order' => $order,
                 'sort_order' => $order,
                 'is_active' => true,
                 'is_visible' => true,
             ]);
 
-            // Мигрируем данные в нормализованные таблицы
-            $widgetDataService = app(\App\Services\WidgetDataService::class);
-            $widgetDataService->migrateWidgetData($siteWidget);
+            // Сохраняем конфигурацию в отдельной таблице
+            if (!empty($processedConfig)) {
+                $siteWidget->syncConfig($processedConfig);
+            }
+
+            // Данные уже мигрированы в syncConfig выше
+
+            // Загружаем связанные данные для корректного ответа
+            $siteWidget->load([
+                'configs',
+                'heroSlides',
+                'formFields',
+                'menuItems',
+                'galleryImages',
+                'donationSettings',
+                'regionRatingSettings',
+                'donationsListSettings',
+                'referralLeaderboardSettings',
+                'imageSettings',
+            ]);
 
             return response()->json([
                 'success' => true,
-                'widget' => [
-                    'id' => $siteWidget->id,
-                    'widget_id' => $siteWidget->widget_id,
-                    'name' => $siteWidget->name,
-                    'slug' => $siteWidget->widget_slug,
-                    'position_name' => $siteWidget->position_name,
-                    'position_slug' => $siteWidget->position_slug,
-                    'order' => $siteWidget->order,
-                    'config' => $siteWidget->config,
-                    'settings' => $siteWidget->settings,
-                    'is_active' => $siteWidget->is_active,
-                    'is_visible' => $siteWidget->is_visible,
-                    'created_at' => $siteWidget->created_at->toISOString(),
-                ],
+                'widget' => new SiteWidgetResource($siteWidget),
                 'message' => 'Виджет успешно добавлен',
             ]);
         } catch (\Exception $e) {
@@ -341,10 +344,18 @@ class SiteController extends Controller
                 ], 404);
             }
 
-            $oldConfig = $siteWidget->config ?? [];
+            $oldConfig = $siteWidget->getNormalizedConfig();
 
             // Валидируем конфигурацию виджета
             if ($request->has('config')) {
+                Log::info('SiteController::updateWidget - Received config', [
+                    'widget_id' => $siteWidget->id,
+                    'widget_slug' => $siteWidget->widget_slug,
+                    'config_keys' => array_keys($request->config),
+                    'has_slides' => isset($request->config['slides']),
+                    'slides_count' => isset($request->config['slides']) ? count($request->config['slides']) : 0,
+                ]);
+
                 $validationErrors = $this->widgetService->validateWidgetConfig(
                     $request->config,
                     $siteWidget->widget_slug
@@ -364,20 +375,22 @@ class SiteController extends Controller
                     $siteWidget->widget_slug
                 );
 
+                Log::info('SiteController::updateWidget - Processed config', [
+                    'widget_id' => $siteWidget->id,
+                    'processed_config_keys' => array_keys($processedConfig),
+                    'has_slides' => isset($processedConfig['slides']),
+                    'slides_count' => isset($processedConfig['slides']) ? count($processedConfig['slides']) : 0,
+                ]);
+
                 // Очищаем старые изображения
                 $this->widgetService->cleanupOldImages($oldConfig, $processedConfig, $siteWidget->widget_slug);
 
-                $request->merge(['config' => $processedConfig]);
+                // Синхронизируем конфигурацию с нормализованными данными
+                $siteWidget->syncConfig($processedConfig);
             }
 
             // Обновляем виджет в нормализованных таблицах
             $updateData = [];
-            if ($request->has('config')) {
-                $updateData['config'] = $request->config;
-            }
-            if ($request->has('settings')) {
-                $updateData['settings'] = $request->settings;
-            }
             if ($request->has('is_active')) {
                 $updateData['is_active'] = $request->is_active;
             }
@@ -385,28 +398,29 @@ class SiteController extends Controller
                 $updateData['is_visible'] = $request->is_visible;
             }
 
-            $siteWidget->update($updateData);
+            if (!empty($updateData)) {
+                $siteWidget->update($updateData);
+            }
 
-            // Мигрируем данные в нормализованные таблицы
-            $widgetDataService = app(\App\Services\WidgetDataService::class);
-            $widgetDataService->migrateWidgetData($siteWidget);
+            // Данные уже мигрированы в syncConfig выше
+
+            // Загружаем связанные данные для корректного ответа
+            $siteWidget->load([
+                'configs',
+                'heroSlides',
+                'formFields',
+                'menuItems',
+                'galleryImages',
+                'donationSettings',
+                'regionRatingSettings',
+                'donationsListSettings',
+                'referralLeaderboardSettings',
+                'imageSettings',
+            ]);
 
             return response()->json([
                 'success' => true,
-                'widget' => [
-                    'id' => $siteWidget->id,
-                    'widget_id' => $siteWidget->widget_id,
-                    'name' => $siteWidget->name,
-                    'slug' => $siteWidget->widget_slug,
-                    'position_name' => $siteWidget->position_name,
-                    'position_slug' => $siteWidget->position_slug,
-                    'order' => $siteWidget->order,
-                    'config' => $siteWidget->config,
-                    'settings' => $siteWidget->settings,
-                    'is_active' => $siteWidget->is_active,
-                    'is_visible' => $siteWidget->is_visible,
-                    'updated_at' => $siteWidget->updated_at->toISOString(),
-                ],
+                'widget' => new SiteWidgetResource($siteWidget),
                 'message' => 'Виджет успешно обновлен',
             ]);
         } catch (\Exception $e) {
@@ -430,17 +444,30 @@ class SiteController extends Controller
         try {
             $site = $this->getSite($site);
 
-            // Находим и удаляем виджет из нормализованных таблиц
+            // Находим виджет в нормализованных таблицах
             $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
                 ->where('id', $widgetId)
                 ->first();
 
-            if ($siteWidget) {
-                $siteWidget->delete();
+            if (!$siteWidget) {
+                return back()->withErrors(['error' => 'Виджет не найден']);
             }
 
-            return back();
+            // Удаляем все связанные данные
+            $this->deleteWidgetRelatedData($siteWidget);
+
+            // Удаляем сам виджет
+            $siteWidget->delete();
+
+            return back()->with('success', 'Виджет успешно удален');
         } catch (\Exception $e) {
+            Log::error('Error deleting widget', [
+                'site_id' => $site,
+                'widget_id' => $widgetId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return back()->withErrors(['error' => 'Ошибка при удалении виджета: ' . $e->getMessage()]);
         }
     }
@@ -476,20 +503,7 @@ class SiteController extends Controller
                 'sort_order' => $request->order,
             ]);
 
-            return back()->with('widget', [
-                'id' => $siteWidget->id,
-                'widget_id' => $siteWidget->widget_id,
-                'name' => $siteWidget->name,
-                'slug' => $siteWidget->widget_slug,
-                'position_name' => $siteWidget->position_name,
-                'position_slug' => $siteWidget->position_slug,
-                'order' => $siteWidget->order,
-                'config' => $siteWidget->config,
-                'settings' => $siteWidget->settings,
-                'is_active' => $siteWidget->is_active,
-                'is_visible' => $siteWidget->is_visible,
-                'updated_at' => $siteWidget->updated_at->toISOString(),
-            ]);
+            return back()->with('widget', new SiteWidgetResource($siteWidget));
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Ошибка при перемещении виджета: ' . $e->getMessage()]);
         }
@@ -571,13 +585,16 @@ class SiteController extends Controller
                 'position_name' => $widgetData['position_name'],
                 'position_slug' => $widgetData['position_slug'],
                 'widget_slug' => $widgetData['slug'],
-                'config' => $widgetData['config'],
-                'settings' => $widgetData['settings'],
                 'order' => $widgetData['order'],
                 'sort_order' => $widgetData['order'],
                 'is_active' => $widgetData['is_active'],
                 'is_visible' => $widgetData['is_visible'],
             ]);
+
+            // Сохраняем конфигурацию в отдельной таблице
+            if (!empty($widgetData['config'])) {
+                $siteWidget->syncConfig($widgetData['config']);
+            }
 
             // Мигрируем данные в нормализованные таблицы
             $widgetDataService->migrateWidgetData($siteWidget);
@@ -650,6 +667,44 @@ class SiteController extends Controller
         ];
 
         return $defaultConfigs[$widgetSlug] ?? [];
+    }
+
+    // Удаление всех связанных данных виджета
+    private function deleteWidgetRelatedData(\App\Models\SiteWidget $siteWidget): void
+    {
+        // Удаляем конфигурации виджета
+        $siteWidget->configs()->delete();
+
+        // Удаляем данные в зависимости от типа виджета
+        switch ($siteWidget->widget_slug) {
+            case 'hero':
+                $siteWidget->heroSlides()->delete();
+                break;
+            case 'form':
+                $siteWidget->formFields()->delete();
+                break;
+            case 'menu':
+                $siteWidget->menuItems()->delete();
+                break;
+            case 'gallery':
+                $siteWidget->galleryImages()->delete();
+                break;
+            case 'donation':
+                $siteWidget->donationSettings()->delete();
+                break;
+            case 'region-rating':
+                $siteWidget->regionRatingSettings()->delete();
+                break;
+            case 'donations-list':
+                $siteWidget->donationsListSettings()->delete();
+                break;
+            case 'referral-leaderboard':
+                $siteWidget->referralLeaderboardSettings()->delete();
+                break;
+            case 'image':
+                $siteWidget->imageSettings()->delete();
+                break;
+        }
     }
 
     // Получение сайта с проверкой прав

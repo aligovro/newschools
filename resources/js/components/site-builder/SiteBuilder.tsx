@@ -32,7 +32,7 @@ interface WidgetData {
     id: string;
     widget_id: number;
     name: string;
-    slug: string;
+    widget_slug: string;
     config: WidgetConfig;
     settings: WidgetSettings;
     is_active: boolean;
@@ -43,13 +43,13 @@ interface WidgetData {
     created_at: string;
     updated_at?: string;
     // Нормализованные данные
-    configs?: Array<{
+    configs: Array<{
         config_key: string;
         config_value: string;
         config_type: string;
     }>;
     hero_slides?: Array<{
-        id: number;
+        id: string;
         title: string;
         subtitle?: string;
         description?: string;
@@ -230,6 +230,7 @@ const PositionDropZone: React.FC<{
         .filter((widget) => widget.position_slug === position.slug)
         .sort((a, b) => a.order - b.order);
 
+
     // Функция для получения ошибок валидации для конкретного виджета
     const getWidgetErrors = (widget: WidgetData) => {
         return validationErrors.filter(
@@ -310,6 +311,7 @@ const PositionDropZone: React.FC<{
                 {positionWidgets.map((widget) => {
                     const widgetErrors = getWidgetErrors(widget);
                     const shouldExpand = newlyAddedWidgetId === widget.id;
+
                     return (
                         <div key={widget.id} className="space-y-2">
                             <WidgetDisplay
@@ -384,13 +386,6 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     const [editingWidget, setEditingWidget] = useState<WidgetData | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-    // Логирование изменений состояния модального окна
-    useEffect(() => {
-        console.log('Modal state changed:', {
-            isEditModalOpen,
-            editingWidget: editingWidget?.id,
-        });
-    }, [isEditModalOpen, editingWidget]);
     const [isWidgetSelectModalOpen, setIsWidgetSelectModalOpen] =
         useState(false);
     const [selectedPosition, setSelectedPosition] = useState<string | null>(
@@ -487,7 +482,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
 
             try {
                 const newWidget = await addWidget(
-                    widget.slug,
+                    widget.widget_slug,
                     selectedPosition,
                 );
                 setIsWidgetSelectModalOpen(false);
@@ -510,25 +505,15 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
             const widgetData = item.widget || item;
 
             try {
-                console.log(
-                    'Dropping widget:',
-                    widgetData.slug,
-                    'to position:',
-                    positionSlug,
-                );
                 const newWidget = await addWidget(
                     widgetData.slug,
                     positionSlug,
                 );
-                console.log('New widget added:', newWidget);
                 // После успешного добавления виджета, автоматически открываем его настройки
                 if (newWidget) {
-                    console.log('Opening edit modal for widget:', newWidget.id);
                     setNewlyAddedWidgetId(newWidget.id);
                     setEditingWidget(newWidget);
                     setIsEditModalOpen(true);
-                } else {
-                    console.log('No widget returned from addWidget');
                 }
             } catch (error) {
                 console.error('Error adding widget:', error);
@@ -582,7 +567,6 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
         async (widgetId: string, config: Record<string, unknown>) => {
             try {
                 await updateWidget(widgetId, { config });
-                console.log('Widget config saved:', widgetId, config);
             } catch (error) {
                 console.error('Error saving widget config:', error);
                 throw error;

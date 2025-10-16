@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 
 class SiteWidget extends Model
 {
@@ -21,8 +22,6 @@ class SiteWidget extends Model
         'position_name',
         'position_slug',
         'widget_slug',
-        'config',
-        'settings',
         'order',
         'sort_order',
         'is_active',
@@ -30,8 +29,6 @@ class SiteWidget extends Model
     ];
 
     protected $casts = [
-        'config' => 'array',
-        'settings' => 'array',
         'is_active' => 'boolean',
         'is_visible' => 'boolean',
     ];
@@ -163,24 +160,12 @@ class SiteWidget extends Model
     // Методы
     public function getConfigAttribute(): array
     {
-        $config = $this->getRawOriginal('config');
-        if (empty($config)) {
-            return [];
-        }
-
-        $decoded = json_decode($config, true);
-        return $decoded ?: [];
+        return $this->getNormalizedConfig();
     }
 
     public function getSettingsAttribute(): array
     {
-        $settings = $this->getRawOriginal('settings');
-        if (empty($settings)) {
-            return [];
-        }
-
-        $decoded = json_decode($settings, true);
-        return $decoded ?: [];
+        return $this->getNormalizedSettings();
     }
 
     public function getConfigValue(string $key, $default = null)
@@ -195,16 +180,17 @@ class SiteWidget extends Model
 
     public function setConfigValue(string $key, $value): void
     {
-        $config = $this->config;
+        $config = $this->getNormalizedConfig();
         data_set($config, $key, $value);
-        $this->config = $config;
+        $this->syncConfig($config);
     }
 
     public function setSettingValue(string $key, $value): void
     {
-        $settings = $this->settings;
+        // Пока используем старый способ для настроек, позже добавим отдельную таблицу
+        $settings = $this->getNormalizedSettings();
         data_set($settings, $key, $value);
-        $this->settings = $settings;
+        // TODO: Implement settings sync when settings table is created
     }
 
     public function getMergedConfig(): array
@@ -244,17 +230,23 @@ class SiteWidget extends Model
 
     public function duplicate(OrganizationSite $newSite): SiteWidget
     {
-        return $newSite->widgets()->create([
+        $newWidget = $newSite->widgets()->create([
             'widget_id' => $this->widget_id,
             'position_id' => $this->position_id,
             'name' => $this->name,
             'position_name' => $this->position_name,
-            'config' => $this->config,
-            'settings' => $this->settings,
             'order' => $this->order,
             'is_active' => $this->is_active,
             'is_visible' => $this->is_visible,
         ]);
+
+        // Копируем конфигурацию
+        $config = $this->getNormalizedConfig();
+        if (!empty($config)) {
+            $newWidget->syncConfig($config);
+        }
+
+        return $newWidget;
     }
 
     public function isInArea(string $area): bool
@@ -272,9 +264,149 @@ class SiteWidget extends Model
      */
     public function getNormalizedConfig(): array
     {
-        return $this->configs->mapWithKeys(function ($config) {
+        $config = $this->configs->mapWithKeys(function ($config) {
             return [$config->config_key => $config->typed_value];
         })->toArray();
+
+        // Добавляем данные из специализированных таблиц
+        $this->addSpecializedDataToConfig($config);
+
+        return $config;
+    }
+
+    /**
+     * Добавить данные из специализированных таблиц в конфигурацию
+     */
+    private function addSpecializedDataToConfig(array &$config): void
+    {
+        switch ($this->widget_slug) {
+            case 'hero':
+                Log::info('Adding hero slides to config', [
+                    'widget_id' => $this->id,
+                    'hero_slides_count' => $this->heroSlides->count(),
+                    'hero_slides_loaded' => $this->relationLoaded('heroSlides'),
+                    'hero_slides_exists' => method_exists($this, 'heroSlides'),
+                    'widget_slug' => $this->widget_slug,
+                ]);
+
+                // Добавляем слайды в конфигурацию для фронтенда
+                $config['hero_slides'] = $this->heroSlides->map(function ($slide) {
+                    return [
+                        'id' => (string) $slide->id,
+                        'title' => $slide->title,
+                        'subtitle' => $slide->subtitle,
+                        'description' => $slide->description,
+                        'buttonText' => $slide->button_text,
+                        'buttonLink' => $slide->button_link,
+                        'buttonLinkType' => $slide->button_link_type,
+                        'buttonOpenInNewTab' => $slide->button_open_in_new_tab,
+                        'backgroundImage' => $slide->background_image ? '/storage/' . $slide->background_image : '',
+                        'overlayColor' => $slide->overlay_color,
+                        'overlayOpacity' => $slide->overlay_opacity,
+                        'overlayGradient' => $slide->overlay_gradient,
+                        'overlayGradientIntensity' => $slide->overlay_gradient_intensity,
+                        'sortOrder' => $slide->sort_order,
+                        'isActive' => $slide->is_active,
+                    ];
+                })->toArray();
+                break;
+
+            case 'form':
+                $config['fields'] = $this->formFields->where('is_active', true)->map(function ($field) {
+                    return [
+                        'id' => $field->id,
+                        'type' => $field->field_type,
+                        'label' => $field->label,
+                        'placeholder' => $field->placeholder,
+                        'required' => $field->is_required,
+                        'validation' => $field->validation_rules,
+                        'options' => $field->options,
+                        'order' => $field->sort_order,
+                    ];
+                })->toArray();
+                break;
+
+            case 'menu':
+                $config['items'] = $this->menuItems->where('is_active', true)->map(function ($item) {
+                    return [
+                        'id' => $item->item_id,
+                        'title' => $item->title,
+                        'url' => $item->url,
+                        'type' => $item->type,
+                        'newTab' => $item->open_in_new_tab,
+                        'order' => $item->sort_order,
+                    ];
+                })->toArray();
+                break;
+
+            case 'gallery':
+                $config['images'] = $this->galleryImages->map(function ($image) {
+                    return [
+                        'id' => $image->id,
+                        'url' => $image->image_url,
+                        'alt' => $image->alt_text,
+                        'caption' => $image->caption,
+                        'order' => $image->sort_order,
+                    ];
+                })->toArray();
+                break;
+
+            case 'donation':
+                if ($this->donationSettings) {
+                    $config = array_merge($config, [
+                        'organizationId' => $this->donationSettings->organization_id,
+                        'amounts' => $this->donationSettings->amounts,
+                        'customAmountEnabled' => $this->donationSettings->custom_amount_enabled,
+                        'minimumAmount' => $this->donationSettings->minimum_amount,
+                        'maximumAmount' => $this->donationSettings->maximum_amount,
+                        'currency' => $this->donationSettings->currency,
+                        'paymentMethods' => $this->donationSettings->payment_methods,
+                        'recurringEnabled' => $this->donationSettings->recurring_enabled,
+                        'recurringOptions' => $this->donationSettings->recurring_options,
+                        'thankYouMessage' => $this->donationSettings->thank_you_message,
+                        'redirectUrl' => $this->donationSettings->redirect_url,
+                    ]);
+                }
+                break;
+
+            case 'region_rating':
+                if ($this->regionRatingSettings) {
+                    $config = array_merge($config, [
+                        'regionId' => $this->regionRatingSettings->region_id,
+                        'ratingType' => $this->regionRatingSettings->rating_type,
+                        'showRanking' => $this->regionRatingSettings->show_ranking,
+                        'showProgress' => $this->regionRatingSettings->show_progress,
+                        'showStats' => $this->regionRatingSettings->show_stats,
+                    ]);
+                }
+                break;
+
+            case 'donations_list':
+                if ($this->donationsListSettings) {
+                    $config = array_merge($config, [
+                        'organizationId' => $this->donationsListSettings->organization_id,
+                        'limit' => $this->donationsListSettings->limit,
+                        'showAmount' => $this->donationsListSettings->show_amount,
+                        'showDate' => $this->donationsListSettings->show_date,
+                        'showAnonymous' => $this->donationsListSettings->show_anonymous,
+                        'sortBy' => $this->donationsListSettings->sort_by,
+                        'sortOrder' => $this->donationsListSettings->sort_order,
+                    ]);
+                }
+                break;
+
+            case 'referral_leaderboard':
+                if ($this->referralLeaderboardSettings) {
+                    $config = array_merge($config, [
+                        'organizationId' => $this->referralLeaderboardSettings->organization_id,
+                        'limit' => $this->referralLeaderboardSettings->limit,
+                        'period' => $this->referralLeaderboardSettings->period,
+                        'showRanking' => $this->referralLeaderboardSettings->show_ranking,
+                        'showStats' => $this->referralLeaderboardSettings->show_stats,
+                    ]);
+                }
+                break;
+        }
     }
 
     /**
@@ -306,7 +438,7 @@ class SiteWidget extends Model
                         'buttonLink' => $slide->button_link,
                         'buttonLinkType' => $slide->button_link_type,
                         'buttonOpenInNewTab' => $slide->button_open_in_new_tab,
-                        'backgroundImage' => $slide->safe_background_image,
+                        'backgroundImage' => $slide->background_image,
                         'overlayColor' => $slide->overlay_color,
                         'overlayOpacity' => $slide->overlay_opacity,
                         'overlayGradient' => $slide->overlay_gradient,
@@ -334,6 +466,19 @@ class SiteWidget extends Model
                 break;
         }
 
+        // Добавляем дополнительные поля для совместимости
+        $baseData['id'] = $this->id;
+        $baseData['widget_id'] = $this->widget_id;
+        $baseData['name'] = $this->name;
+        $baseData['slug'] = $this->widget_slug;
+        $baseData['position_name'] = $this->position_name;
+        $baseData['position_slug'] = $this->position_slug;
+        $baseData['order'] = $this->order;
+        $baseData['is_active'] = $this->is_active;
+        $baseData['is_visible'] = $this->is_visible;
+        $baseData['created_at'] = $this->created_at;
+        $baseData['updated_at'] = $this->updated_at;
+
         return $baseData;
     }
 
@@ -342,15 +487,293 @@ class SiteWidget extends Model
      */
     public function syncConfig(array $config): void
     {
+        Log::info('SiteWidget::syncConfig called', [
+            'widget_id' => $this->id,
+            'widget_slug' => $this->widget_slug,
+            'config_keys' => array_keys($config),
+            'has_slides' => isset($config['slides']),
+            'slides_count' => isset($config['slides']) ? count($config['slides']) : 0,
+        ]);
+
         // Удаляем старые конфигурации
         $this->configs()->delete();
 
-        // Создаем новые
-        foreach ($config as $key => $value) {
-            $this->configs()->create([
-                'config_key' => $key,
-                'config_value' => $value,
+        // Обрабатываем специализированные данные в зависимости от типа виджета
+        $specializedData = [];
+        $generalConfig = [];
+
+        switch ($this->widget_slug) {
+            case 'hero':
+                Log::info('Hero case in syncConfig', [
+                    'widget_id' => $this->id,
+                    'config_keys' => array_keys($config),
+                    'has_slides' => isset($config['slides']),
+                    'slides_count' => isset($config['slides']) ? count($config['slides']) : 0,
+                    'slides_is_array' => isset($config['slides']) ? is_array($config['slides']) : false,
+                ]);
+
+                if (isset($config['slides']) && is_array($config['slides'])) {
+                    $specializedData['slides'] = $config['slides'];
+                    unset($config['slides']);
+                    Log::info('Hero slides extracted for specialized storage', [
+                        'slides_count' => count($specializedData['slides']),
+                    ]);
+                }
+                break;
+
+            case 'form':
+                if (isset($config['fields'])) {
+                    $specializedData['fields'] = $config['fields'];
+                    unset($config['fields']);
+                }
+                break;
+
+            case 'menu':
+                if (isset($config['items'])) {
+                    $specializedData['items'] = $config['items'];
+                    unset($config['items']);
+                }
+                break;
+
+            case 'gallery':
+                if (isset($config['images'])) {
+                    $specializedData['images'] = $config['images'];
+                    unset($config['images']);
+                }
+                break;
+        }
+
+        Log::info('SiteWidget::syncConfig - Before syncSpecializedData', [
+            'widget_id' => $this->id,
+            'specialized_data_keys' => array_keys($specializedData),
+            'remaining_config_keys' => array_keys($config),
+        ]);
+
+        // Сохраняем специализированные данные
+        try {
+            $this->syncSpecializedData($specializedData);
+            Log::info('SiteWidget::syncConfig - syncSpecializedData completed successfully');
+        } catch (\Exception $e) {
+            Log::error('SiteWidget::syncConfig - Error in syncSpecializedData', [
+                'widget_id' => $this->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
+            throw $e;
+        }
+
+        // Создаем новые конфигурации для общих данных
+        try {
+            foreach ($config as $key => $value) {
+                $configRecord = $this->configs()->create([
+                    'config_key' => $key,
+                ]);
+                $configRecord->setTypedValue($value);
+                $configRecord->save();
+            }
+            Log::info('SiteWidget::syncConfig - configs created successfully');
+        } catch (\Exception $e) {
+            Log::error('SiteWidget::syncConfig - Error creating configs', [
+                'widget_id' => $this->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+
+        Log::info('SiteWidget::syncConfig - Completed', [
+            'widget_id' => $this->id,
+            'configs_created' => count($config),
+        ]);
+    }
+
+    /**
+     * Извлечь путь к файлу из полного URL
+     */
+    private function extractImagePathFromUrl(string $url): string
+    {
+        Log::info('extractImagePathFromUrl called', [
+            'input_url' => $url,
+            'url_length' => strlen($url),
+            'is_empty' => empty($url),
+        ]);
+
+        if (empty($url)) {
+            Log::info('extractImagePathFromUrl - empty URL, returning empty string');
+            return '';
+        }
+
+        // Если это не полный URL, возвращаем как есть
+        if (!str_starts_with($url, 'http://') && !str_starts_with($url, 'https://')) {
+            Log::info('extractImagePathFromUrl - not a full URL, returning as is', [
+                'returned_path' => $url,
+            ]);
+            return $url;
+        }
+
+        // Извлекаем путь после /storage/
+        if (preg_match('/\/storage\/(.+)$/', $url, $matches)) {
+            $extractedPath = $matches[1];
+            Log::info('extractImagePathFromUrl - extracted path from URL', [
+                'extracted_path' => $extractedPath,
+            ]);
+            return $extractedPath;
+        }
+
+        Log::info('extractImagePathFromUrl - no match found, returning original URL', [
+            'returned_url' => $url,
+        ]);
+        return $url;
+    }
+
+    /**
+     * Синхронизировать специализированные данные
+     */
+    private function syncSpecializedData(array $data): void
+    {
+        Log::info('SiteWidget::syncSpecializedData called', [
+            'widget_id' => $this->id,
+            'widget_slug' => $this->widget_slug,
+            'data_keys' => array_keys($data),
+        ]);
+
+        switch ($this->widget_slug) {
+            case 'hero':
+                Log::info('Hero case in syncSpecializedData', [
+                    'widget_id' => $this->id,
+                    'data_keys' => array_keys($data),
+                    'has_slides' => isset($data['slides']),
+                    'slides_count' => isset($data['slides']) ? count($data['slides']) : 0,
+                ]);
+
+                if (isset($data['slides'])) {
+                    Log::info('Processing hero slides', [
+                        'slides_count' => count($data['slides']),
+                    ]);
+
+                    // Удаляем старые слайды
+                    $this->heroSlides()->delete();
+
+                    // Создаем новые слайды
+                    foreach ($data['slides'] as $index => $slideData) {
+                        Log::info('Creating hero slide', [
+                            'widget_id' => $this->id,
+                            'slide_index' => $index,
+                            'slide_data' => $slideData,
+                        ]);
+
+                        try {
+                            $originalImageUrl = $slideData['backgroundImage'] ?? $slideData['background_image'] ?? '';
+                            $extractedPath = $this->extractImagePathFromUrl($originalImageUrl);
+
+                            Log::info('Hero slide image processing', [
+                                'widget_id' => $this->id,
+                                'slide_index' => $index,
+                                'original_url' => $originalImageUrl,
+                                'extracted_path' => $extractedPath,
+                            ]);
+
+                            $slide = $this->heroSlides()->create([
+                                'title' => $slideData['title'] ?? '',
+                                'subtitle' => $slideData['subtitle'] ?? '',
+                                'description' => $slideData['description'] ?? '',
+                                'button_text' => $slideData['buttonText'] ?? '',
+                                'button_link' => $slideData['buttonLink'] ?? '',
+                                'button_link_type' => $slideData['buttonLinkType'] ?? 'internal',
+                                'button_open_in_new_tab' => $slideData['buttonOpenInNewTab'] ?? false,
+                                'background_image' => $extractedPath,
+                                'overlay_color' => $slideData['overlayColor'] ?? '#000000',
+                                'overlay_opacity' => $slideData['overlayOpacity'] ?? 30,
+                                'overlay_gradient' => $slideData['overlayGradient'] ?? 'none',
+                                'overlay_gradient_intensity' => $slideData['overlayGradientIntensity'] ?? 50,
+                                'sort_order' => $slideData['order'] ?? 1,
+                            ]);
+
+                            Log::info('Hero slide created successfully', [
+                                'slide_id' => $slide->id,
+                                'title' => $slide->title,
+                                'widget_id' => $this->id,
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('Error creating hero slide', [
+                                'widget_id' => $this->id,
+                                'slide_index' => $index,
+                                'error' => $e->getMessage(),
+                                'slide_data' => $slideData,
+                            ]);
+                        }
+                    }
+
+                    Log::info('Hero slides processing completed', [
+                        'total_slides_created' => count($data['slides']),
+                        'widget_id' => $this->id,
+                    ]);
+
+                    // Проверяем, что слайды действительно сохранились
+                    $actualSlidesCount = $this->heroSlides()->count();
+                    Log::info('Hero slides verification', [
+                        'widget_id' => $this->id,
+                        'expected_count' => count($data['slides']),
+                        'actual_count' => $actualSlidesCount,
+                    ]);
+                }
+                break;
+
+            case 'form':
+                if (isset($data['fields'])) {
+                    // Удаляем старые поля
+                    $this->formFields()->delete();
+
+                    // Создаем новые поля
+                    foreach ($data['fields'] as $fieldData) {
+                        $this->formFields()->create([
+                            'field_type' => $fieldData['type'] ?? 'text',
+                            'label' => $fieldData['label'] ?? '',
+                            'placeholder' => $fieldData['placeholder'] ?? '',
+                            'is_required' => $fieldData['required'] ?? false,
+                            'validation_rules' => $fieldData['validation'] ?? '',
+                            'options' => $fieldData['options'] ?? '',
+                            'sort_order' => $fieldData['order'] ?? 1,
+                        ]);
+                    }
+                }
+                break;
+
+            case 'menu':
+                if (isset($data['items'])) {
+                    // Удаляем старые пункты меню
+                    $this->menuItems()->delete();
+
+                    // Создаем новые пункты меню
+                    foreach ($data['items'] as $itemData) {
+                        $this->menuItems()->create([
+                            'item_id' => $itemData['id'] ?? uniqid(),
+                            'title' => $itemData['title'] ?? '',
+                            'url' => $itemData['url'] ?? '',
+                            'type' => $itemData['type'] ?? 'internal',
+                            'open_in_new_tab' => $itemData['newTab'] ?? false,
+                            'sort_order' => $itemData['order'] ?? 1,
+                        ]);
+                    }
+                }
+                break;
+
+            case 'gallery':
+                if (isset($data['images'])) {
+                    // Удаляем старые изображения
+                    $this->galleryImages()->delete();
+
+                    // Создаем новые изображения
+                    foreach ($data['images'] as $imageData) {
+                        $this->galleryImages()->create([
+                            'image_url' => $imageData['url'] ?? '',
+                            'alt_text' => $imageData['alt'] ?? '',
+                            'caption' => $imageData['caption'] ?? '',
+                            'sort_order' => $imageData['order'] ?? 1,
+                        ]);
+                    }
+                }
+                break;
         }
     }
 }

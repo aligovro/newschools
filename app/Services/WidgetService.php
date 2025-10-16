@@ -79,9 +79,9 @@ class WidgetService
         if (isset($image['file']) && $image['file'] instanceof UploadedFile) {
           $processed = $this->imageService->processGalleryImage($image['file']);
           return [
-            'url' => $this->imageService->getImageUrl($processed['original']),
+            'url' => $this->imageService->getImagePath($processed['original']),
             'thumbnails' => array_map(
-              fn($path) => $this->imageService->getImageUrl($path),
+              fn($path) => $this->imageService->getImagePath($path),
               $processed['thumbnails']
             ),
             'alt' => $image['alt'] ?? '',
@@ -113,9 +113,9 @@ class WidgetService
               'thumbnail' => ['width' => 50, 'height' => 50, 'fit' => 'cover']
             ]
           );
-          $testimonial['avatar'] = $this->imageService->getImageUrl($processed['original']);
+          $testimonial['avatar'] = $this->imageService->getImagePath($processed['original']);
           $testimonial['avatar_thumbnails'] = array_map(
-            fn($path) => $this->imageService->getImageUrl($path),
+            fn($path) => $this->imageService->getImagePath($path),
             $processed['thumbnails']
           );
         }
@@ -145,9 +145,9 @@ class WidgetService
         ]
       );
 
-      $processedSlide['backgroundImage'] = $this->imageService->getImageUrl($processed['original']);
+      $processedSlide['backgroundImage'] = $this->imageService->getImagePath($processed['original']);
       $processedSlide['backgroundImageThumbnails'] = array_map(
-        fn($path) => $this->imageService->getImageUrl($path),
+        fn($path) => $this->imageService->getImagePath($path),
         $processed['thumbnails']
       );
 

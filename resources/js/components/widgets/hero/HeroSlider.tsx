@@ -57,6 +57,12 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({
         );
     };
 
+    console.log('HeroSlider: slides debug', {
+        slides_count: slides.length,
+        current_slide: currentSlide,
+        current_slide_data: slides[currentSlide],
+    });
+
     if (slides.length === 0) return null;
 
     return (

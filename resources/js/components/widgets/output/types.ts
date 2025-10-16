@@ -3,7 +3,7 @@
 export interface WidgetOutputData {
     id: string | number;
     name: string;
-    slug: string;
+    widget_slug: string;
     config: Record<string, unknown>;
     settings: Record<string, unknown>;
     is_active: boolean;

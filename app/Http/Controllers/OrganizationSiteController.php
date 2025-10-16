@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Organization;
 use App\Models\OrganizationSite;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use App\Http\Resources\SiteWidgetResource;
 
 class OrganizationSiteController extends Controller
 {
@@ -172,29 +174,36 @@ class OrganizationSiteController extends Controller
             'widgets.position'
         ]);
 
-        // Debug: Log the widgets data
-        \Log::info('Site widgets loaded with normalized data:', [
-            'site_id' => $site->id,
-            'widgets_count' => $site->widgets->count(),
-            'widgets' => $site->widgets->map(function ($widget) {
-                return [
-                    'id' => $widget->id,
-                    'name' => $widget->name,
-                    'slug' => $widget->widget->slug ?? 'unknown',
-                    'position_name' => $widget->position_name,
-                    'position_slug' => $widget->position->slug ?? 'unknown',
-                    'is_active' => $widget->is_active,
-                    'is_visible' => $widget->is_visible,
-                    'configs_count' => $widget->configs->count(),
-                    'hero_slides_count' => $widget->heroSlides->count(),
-                    'form_fields_count' => $widget->formFields->count(),
-                ];
-            })->toArray()
-        ]);
+
+        // Преобразуем виджеты для фронтенда используя ресурс
+        $widgets = SiteWidgetResource::collection($site->widgets)->toArray(request());
+
+        // Исправляем hero_slides для правильного отображения картинок
+        foreach ($widgets as &$widget) {
+            if (isset($widget['hero_slides']) && is_array($widget['hero_slides'])) {
+                foreach ($widget['hero_slides'] as &$slide) {
+                    // Если есть background_image, но нет backgroundImage, создаем backgroundImage
+                    if (isset($slide['background_image']) && !isset($slide['backgroundImage'])) {
+                        $slide['backgroundImage'] = $slide['background_image'] ? '/storage/' . $slide['background_image'] : '';
+                    }
+                    // Убираем background_image, оставляем только backgroundImage
+                    unset($slide['background_image']);
+                }
+            }
+        }
 
         return Inertia::render('organization/admin/sites/EditWithBuilder', [
             'organization' => $organization,
-            'site' => $site,
+            'site' => [
+                'id' => $site->id,
+                'name' => $site->name,
+                'slug' => $site->slug,
+                'description' => $site->description,
+                'status' => $site->status,
+                'created_at' => $site->created_at,
+                'updated_at' => $site->updated_at,
+                'widgets' => $widgets,
+            ],
         ]);
     }
 

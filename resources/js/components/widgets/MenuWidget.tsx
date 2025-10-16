@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { getConfigValue, WidgetConfig } from '@/utils/getConfigValue';
 import { MoveDown, MoveUp, Plus, Trash2 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -33,11 +34,12 @@ interface MenuWidgetConfig {
     uppercase?: boolean;
     gap?: number; // px
     css_class?: string;
+    styling?: Record<string, any>; // CSS стили
     items?: MenuItem[];
 }
 
 interface MenuWidgetProps {
-    config?: MenuWidgetConfig;
+    configs: WidgetConfig[];
     isEditable?: boolean;
     onConfigChange?: (config: Record<string, unknown>) => void;
 }
@@ -48,26 +50,24 @@ const defaultItems: MenuItem[] = [
 ];
 
 export const MenuWidget: React.FC<MenuWidgetProps> = ({
-    config = {},
+    configs,
     isEditable = false,
     onConfigChange,
 }) => {
     const [activeTab, setActiveTab] = useState<'settings' | 'menu'>('settings');
-    const initialConfig: MenuWidgetConfig = useMemo(
-        () => ({
-            title: config.title ?? '',
-            orientation: config.orientation ?? 'row',
-            alignment: (config.alignment as AlignmentType) ?? 'start',
-            fontSize: config.fontSize ?? '16px',
-            uppercase: config.uppercase ?? false,
-            gap: typeof config.gap === 'number' ? config.gap : 12,
-            items:
-                Array.isArray(config.items) && config.items.length > 0
-                    ? (config.items as MenuItem[])
-                    : defaultItems,
-        }),
-        [config],
-    );
+    const initialConfig: MenuWidgetConfig = useMemo(() => {
+        return {
+            title: getConfigValue(configs, 'title', ''),
+            orientation: getConfigValue(configs, 'orientation', 'row'),
+            alignment: getConfigValue(configs, 'alignment', 'start'),
+            fontSize: getConfigValue(configs, 'fontSize', '16px'),
+            uppercase: getConfigValue(configs, 'uppercase', false),
+            gap: getConfigValue(configs, 'gap', 12),
+            css_class: getConfigValue(configs, 'css_class', ''),
+            styling: getConfigValue(configs, 'styling', {}),
+            items: getConfigValue(configs, 'items', defaultItems),
+        };
+    }, [configs]);
 
     const [localConfig, setLocalConfig] =
         useState<MenuWidgetConfig>(initialConfig);
@@ -77,15 +77,41 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
         setLocalConfig(initialConfig);
     }, [initialConfig]);
 
+    // Обновляем localConfig при изменении configs
+    useEffect(() => {
+        if (configs && configs.length > 0) {
+            const newConfig = {
+                title: getConfigValue(configs, 'title', ''),
+                orientation: getConfigValue(configs, 'orientation', 'row'),
+                alignment: getConfigValue(configs, 'alignment', 'start'),
+                fontSize: getConfigValue(configs, 'fontSize', '16px'),
+                uppercase: getConfigValue(configs, 'uppercase', false),
+                gap: getConfigValue(configs, 'gap', 12),
+                css_class: getConfigValue(configs, 'css_class', ''),
+                styling: getConfigValue(configs, 'styling', {}),
+                items: getConfigValue(configs, 'items', defaultItems),
+            };
+            setLocalConfig(newConfig);
+        }
+    }, [configs]);
+
     // Уведомляем о изменениях
     useEffect(() => {
         if (onConfigChange) {
-            onConfigChange(localConfig);
+            onConfigChange(localConfig as Record<string, unknown>);
         }
     }, [localConfig, onConfigChange]);
 
-    const { title, orientation, alignment, fontSize, uppercase, gap, items } =
-        localConfig;
+    const {
+        title,
+        orientation,
+        alignment,
+        fontSize,
+        uppercase,
+        gap,
+        items,
+        styling,
+    } = localConfig;
 
     const directionClass = orientation === 'column' ? 'flex-col' : 'flex-row';
     const alignClass = {
@@ -99,7 +125,12 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
 
     const textStyle = {
         fontSize: fontSize || '16px',
-        textTransform: uppercase ? 'uppercase' : 'none',
+        textTransform: (uppercase ? 'uppercase' : 'none') as
+            | 'uppercase'
+            | 'none',
+        // Применяем стили из styling, преобразуя textColor в color
+        ...(styling || {}),
+        ...(styling?.textColor && { color: styling.textColor }),
     };
 
     const addItem = () => {
@@ -311,7 +342,8 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
                                                 <Input
                                                     id="css_class"
                                                     value={
-                                                        config.css_class || ''
+                                                        localConfig.css_class ||
+                                                        ''
                                                     }
                                                     onChange={(e) =>
                                                         setLocalConfig((p) => ({
@@ -342,11 +374,11 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
                                                 </div>
                                             )}
                                             <nav className="flex items-center space-x-4">
-                                                {items.map((item) => (
+                                                {(items || []).map((item) => (
                                                     <a
                                                         key={item.id}
                                                         href={item.url}
-                                                        className="text-blue-600 hover:text-blue-800"
+                                                        className="hover:opacity-80"
                                                         style={textStyle}
                                                     >
                                                         {item.title}
@@ -375,174 +407,188 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
                                         </div>
 
                                         <div className="space-y-3">
-                                            {items.map((item, index) => (
-                                                <div
-                                                    key={item.id}
-                                                    className="rounded-md border p-3"
-                                                >
-                                                    <div className="mb-2 flex items-center justify-between">
-                                                        <div className="text-sm text-gray-600">
-                                                            #{index + 1}
+                                            {(items || []).map(
+                                                (item, index) => (
+                                                    <div
+                                                        key={item.id}
+                                                        className="rounded-md border p-3"
+                                                    >
+                                                        <div className="mb-2 flex items-center justify-between">
+                                                            <div className="text-sm text-gray-600">
+                                                                #{index + 1}
+                                                            </div>
+                                                            <div className="flex space-x-1">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    onClick={() =>
+                                                                        moveItem(
+                                                                            item.id,
+                                                                            'up',
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        index ===
+                                                                        0
+                                                                    }
+                                                                >
+                                                                    <MoveUp className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    onClick={() =>
+                                                                        moveItem(
+                                                                            item.id,
+                                                                            'down',
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        index ===
+                                                                        (
+                                                                            items ||
+                                                                            []
+                                                                        )
+                                                                            .length -
+                                                                            1
+                                                                    }
+                                                                >
+                                                                    <MoveDown className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    onClick={() =>
+                                                                        removeItem(
+                                                                            item.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex space-x-1">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                onClick={() =>
-                                                                    moveItem(
-                                                                        item.id,
-                                                                        'up',
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    index === 0
-                                                                }
-                                                            >
-                                                                <MoveUp className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                onClick={() =>
-                                                                    moveItem(
-                                                                        item.id,
-                                                                        'down',
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    index ===
-                                                                    items.length -
-                                                                        1
-                                                                }
-                                                            >
-                                                                <MoveDown className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                onClick={() =>
-                                                                    removeItem(
-                                                                        item.id,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
+
+                                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                                            <div>
+                                                                <Label
+                                                                    htmlFor={`title-${item.id}`}
+                                                                >
+                                                                    Название
+                                                                </Label>
+                                                                <Input
+                                                                    id={`title-${item.id}`}
+                                                                    value={
+                                                                        item.title
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        updateItem(
+                                                                            item.id,
+                                                                            {
+                                                                                title: e
+                                                                                    .target
+                                                                                    .value,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </div>
+
+                                                            <div>
+                                                                <Label
+                                                                    htmlFor={`url-${item.id}`}
+                                                                >
+                                                                    URL
+                                                                </Label>
+                                                                <Input
+                                                                    id={`url-${item.id}`}
+                                                                    value={
+                                                                        item.url
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        updateItem(
+                                                                            item.id,
+                                                                            {
+                                                                                url: e
+                                                                                    .target
+                                                                                    .value,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </div>
+
+                                                            <div>
+                                                                <Label
+                                                                    htmlFor={`type-${item.id}`}
+                                                                >
+                                                                    Тип ссылки
+                                                                </Label>
+                                                                <Select
+                                                                    value={
+                                                                        item.type
+                                                                    }
+                                                                    onValueChange={(
+                                                                        v,
+                                                                    ) =>
+                                                                        updateItem(
+                                                                            item.id,
+                                                                            {
+                                                                                type: v as LinkType,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <SelectTrigger>
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="internal">
+                                                                            Внутренняя
+                                                                        </SelectItem>
+                                                                        <SelectItem value="external">
+                                                                            Внешняя
+                                                                        </SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
                                                         </div>
+
+                                                        {item.type ===
+                                                            'external' && (
+                                                            <div className="mt-2 flex items-center space-x-2">
+                                                                <Switch
+                                                                    id={`newtab-${item.id}`}
+                                                                    checked={
+                                                                        !!item.newTab
+                                                                    }
+                                                                    onCheckedChange={(
+                                                                        v,
+                                                                    ) =>
+                                                                        updateItem(
+                                                                            item.id,
+                                                                            {
+                                                                                newTab: v,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                />
+                                                                <Label
+                                                                    htmlFor={`newtab-${item.id}`}
+                                                                >
+                                                                    Открывать в
+                                                                    новой
+                                                                    вкладке
+                                                                </Label>
+                                                            </div>
+                                                        )}
                                                     </div>
-
-                                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                                        <div>
-                                                            <Label
-                                                                htmlFor={`title-${item.id}`}
-                                                            >
-                                                                Название
-                                                            </Label>
-                                                            <Input
-                                                                id={`title-${item.id}`}
-                                                                value={
-                                                                    item.title
-                                                                }
-                                                                onChange={(e) =>
-                                                                    updateItem(
-                                                                        item.id,
-                                                                        {
-                                                                            title: e
-                                                                                .target
-                                                                                .value,
-                                                                        },
-                                                                    )
-                                                                }
-                                                            />
-                                                        </div>
-
-                                                        <div>
-                                                            <Label
-                                                                htmlFor={`url-${item.id}`}
-                                                            >
-                                                                URL
-                                                            </Label>
-                                                            <Input
-                                                                id={`url-${item.id}`}
-                                                                value={item.url}
-                                                                onChange={(e) =>
-                                                                    updateItem(
-                                                                        item.id,
-                                                                        {
-                                                                            url: e
-                                                                                .target
-                                                                                .value,
-                                                                        },
-                                                                    )
-                                                                }
-                                                            />
-                                                        </div>
-
-                                                        <div>
-                                                            <Label
-                                                                htmlFor={`type-${item.id}`}
-                                                            >
-                                                                Тип ссылки
-                                                            </Label>
-                                                            <Select
-                                                                value={
-                                                                    item.type
-                                                                }
-                                                                onValueChange={(
-                                                                    v,
-                                                                ) =>
-                                                                    updateItem(
-                                                                        item.id,
-                                                                        {
-                                                                            type: v as LinkType,
-                                                                        },
-                                                                    )
-                                                                }
-                                                            >
-                                                                <SelectTrigger>
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="internal">
-                                                                        Внутренняя
-                                                                    </SelectItem>
-                                                                    <SelectItem value="external">
-                                                                        Внешняя
-                                                                    </SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                    </div>
-
-                                                    {item.type ===
-                                                        'external' && (
-                                                        <div className="mt-2 flex items-center space-x-2">
-                                                            <Switch
-                                                                id={`newtab-${item.id}`}
-                                                                checked={
-                                                                    !!item.newTab
-                                                                }
-                                                                onCheckedChange={(
-                                                                    v,
-                                                                ) =>
-                                                                    updateItem(
-                                                                        item.id,
-                                                                        {
-                                                                            newTab: v,
-                                                                        },
-                                                                    )
-                                                                }
-                                                            />
-                                                            <Label
-                                                                htmlFor={`newtab-${item.id}`}
-                                                            >
-                                                                Открывать в
-                                                                новой вкладке
-                                                            </Label>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                ),
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -559,8 +605,11 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
     // Публичный рендер
     return (
         <div
-            className={`menu-widget flex ${directionClass} ${alignClass} ${config.css_class || ''}`}
-            style={gapStyle}
+            className={`menu-widget flex ${directionClass} ${alignClass} ${localConfig.css_class || ''}`}
+            style={{
+                ...gapStyle,
+                ...(styling || {}), // Применяем стили из styling к контейнеру
+            }}
         >
             {(title || '').trim() !== '' && (
                 <div className="font-medium text-gray-900" style={textStyle}>
@@ -568,11 +617,11 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
                 </div>
             )}
             <nav className="flex items-center space-x-4">
-                {items.map((item) => (
+                {(items || []).map((item) => (
                     <a
                         key={item.id}
                         href={item.url}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="hover:opacity-80"
                         style={textStyle}
                         {...(item.type === 'external' && item.newTab
                             ? { target: '_blank', rel: 'noopener noreferrer' }

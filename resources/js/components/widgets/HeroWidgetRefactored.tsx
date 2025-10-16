@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { getConfigValue } from '@/utils/getConfigValue';
 import { Plus } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { HeroRenderer } from './hero/HeroRenderer';
 import { HeroSettings } from './hero/HeroSettings';
 import { HeroSlideEditor } from './hero/HeroSlideEditor';
@@ -13,32 +14,108 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
     isEditable = false,
     autoExpandSettings = false,
     onConfigChange,
+    configs,
+    styling,
+    hero_slides = [],
 }) => {
     const [isSettingsExpanded, setIsSettingsExpanded] =
         useState(autoExpandSettings);
     const [activeTab, setActiveTab] = useState<'settings' | 'slides'>(
         'settings',
     );
-    const [localConfig, setLocalConfig] = useState<HeroConfig>(config);
+
+    // Извлекаем значения из configs если они переданы
+    const configValues = useMemo(() => {
+        if (!configs) return config;
+
+        return {
+            type: getConfigValue(configs, 'type', config.type || 'single'),
+            height: getConfigValue(configs, 'height', config.height || '400px'),
+            animation: getConfigValue(
+                configs,
+                'animation',
+                config.animation || 'fade',
+            ),
+            autoplay: getConfigValue(
+                configs,
+                'autoplay',
+                config.autoplay || false,
+            ),
+            autoplayDelay: getConfigValue(
+                configs,
+                'autoplayDelay',
+                config.autoplayDelay || 5000,
+            ),
+            showDots: getConfigValue(
+                configs,
+                'showDots',
+                config.showDots || true,
+            ),
+            showArrows: getConfigValue(
+                configs,
+                'showArrows',
+                config.showArrows || true,
+            ),
+            slides:
+                hero_slides.length > 0
+                    ? hero_slides
+                    : getConfigValue(configs, 'slides', config.slides || []),
+            singleSlide: getConfigValue(
+                configs,
+                'singleSlide',
+                config.singleSlide,
+            ),
+            css_class: getConfigValue(
+                configs,
+                'css_class',
+                config.css_class || '',
+            ),
+        };
+    }, [configs, config, hero_slides]);
+
+    // Лог для отладки hero_slides
+    console.log('HeroWidget: hero_slides debug', {
+        hero_slides: hero_slides,
+        hero_slides_length: hero_slides?.length || 0,
+        slides_in_config: getConfigValue(
+            configs,
+            'slides',
+            config.slides || [],
+        ),
+        final_slides: configValues.slides,
+        first_slide_background:
+            hero_slides?.[0]?.backgroundImage || 'not_found',
+        first_slide_background_image:
+            hero_slides?.[0]?.background_image || 'not_found',
+    });
+
+    const [localConfig, setLocalConfig] = useState<HeroConfig>(configValues);
 
     // Синхронизируем локальное состояние с внешним config
     useEffect(() => {
-        setLocalConfig(config);
-    }, [config]);
+        setLocalConfig(configValues);
+    }, [configValues]);
 
     // Сообщаем об изменениях конфигурации наружу
+    const handleConfigChange = useCallback(
+        (newConfig: Record<string, unknown>) => {
+            if (onConfigChange) {
+                onConfigChange(newConfig);
+            }
+        },
+        [onConfigChange],
+    );
+
     useEffect(() => {
-        if (onConfigChange) {
-            onConfigChange(localConfig as unknown as Record<string, unknown>);
-        }
-    }, [localConfig, onConfigChange]);
+        handleConfigChange(localConfig as unknown as Record<string, unknown>);
+    }, [localConfig, handleConfigChange]);
 
     // Обновляем состояние при изменении autoExpandSettings
     useEffect(() => {
         if (autoExpandSettings) {
             setIsSettingsExpanded(true);
         }
-    }, [autoExpandSettings, isSettingsExpanded]);
+    }, [autoExpandSettings]);
 
     // Функция для создания градиентного стиля наложения
     const getGradientStyle = (
@@ -95,7 +172,8 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
         },
     } = localConfig;
 
-    const currentSlides = type === 'slider' ? slides : [singleSlide];
+    const currentSlides =
+        type === 'slider' ? slides : singleSlide ? [singleSlide] : [];
 
     // Обработчики для настроек
     const handleTypeChange = (newType: 'single' | 'slider') => {
@@ -393,7 +471,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
     }
 
     return (
-        <div className="hero-widget">
+        <div className="hero-widget" style={styling || {}}>
             {type === 'slider' ? (
                 <HeroSlider
                     slides={slides}
@@ -408,7 +486,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                 />
             ) : (
                 <HeroRenderer
-                    slide={singleSlide}
+                    slide={singleSlide || null}
                     height={height}
                     getGradientStyle={getGradientStyle}
                     css_class={localConfig.css_class}
