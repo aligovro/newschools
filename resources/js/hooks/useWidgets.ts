@@ -135,6 +135,9 @@ export const useWidgets = (
                         );
                     }
                 } else {
+                    console.error('useWidgets: updateWidget failed', {
+                        message: data.message,
+                    });
                     setErrors([
                         data.message || 'Ошибка при обновлении виджета',
                     ]);

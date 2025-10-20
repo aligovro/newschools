@@ -25,6 +25,16 @@ class OrganizationSiteResource extends JsonResource
       'created_at' => optional($this->created_at)->toISOString(),
       'updated_at' => optional($this->updated_at)->toISOString(),
       'pages_count' => $this->when(isset($this->pages_count), $this->pages_count),
+      'widgets_count' => $this->when(isset($this->widgets_count), $this->widgets_count),
+
+      // Minimal organization info for listings and links
+      'organization' => $this->whenLoaded('organization', function () {
+        return [
+          'id' => $this->organization->id,
+          'name' => $this->organization->name,
+          'slug' => $this->organization->slug,
+        ];
+      }),
 
       'pages' => $this->whenLoaded('pages', function () {
         return OrganizationPageResource::collection($this->pages)->toArray(request());

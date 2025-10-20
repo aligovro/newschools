@@ -6,7 +6,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { WidgetConfig } from '@/types/global';
 import React from 'react';
 
 interface WidgetSelectModalProps {

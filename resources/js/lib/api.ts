@@ -37,7 +37,6 @@ api.interceptors.request.use(
 // Интерцептор для ответов - обрабатываем ошибки авторизации
 api.interceptors.response.use(
     (response: AxiosResponse) => {
-        console.log('API Response:', response.config.url, response.status);
         return response;
     },
     (error) => {
@@ -48,13 +47,21 @@ api.interceptors.response.use(
             error.response?.data,
         );
         if (error.response?.status === 401) {
-            console.log('API request failed with 401 - user not authenticated');
             // Не делаем автоматический редирект, пусть компоненты сами решают что делать
         }
 
         return Promise.reject(error);
     },
 );
+
+// Вспомогательная функция для SPA-аутентификации Sanctum: гарантируем CSRF cookie перед мутациями
+async function ensureCsrfCookie(): Promise<void> {
+    const token = Cookies.get('XSRF-TOKEN');
+    if (!token) {
+        // Важно: csrf-cookie находится на корне, вне baseURL '/api'
+        await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
+    }
+}
 
 // Утилиты для работы с API
 export const apiClient = {
@@ -63,28 +70,40 @@ export const apiClient = {
         config?: Record<string, unknown>,
     ): Promise<AxiosResponse<T>> => api.get<T>(url, config),
 
-    post: <T = unknown>(
+    post: async <T = unknown>(
         url: string,
         data?: unknown,
         config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.post<T>(url, data, config),
+    ): Promise<AxiosResponse<T>> => {
+        await ensureCsrfCookie();
+        return api.post<T>(url, data, config);
+    },
 
-    put: <T = unknown>(
+    put: async <T = unknown>(
         url: string,
         data?: unknown,
         config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.put<T>(url, data, config),
+    ): Promise<AxiosResponse<T>> => {
+        await ensureCsrfCookie();
+        return api.put<T>(url, data, config);
+    },
 
-    patch: <T = unknown>(
+    patch: async <T = unknown>(
         url: string,
         data?: unknown,
         config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.patch<T>(url, data, config),
+    ): Promise<AxiosResponse<T>> => {
+        await ensureCsrfCookie();
+        return api.patch<T>(url, data, config);
+    },
 
-    delete: <T = unknown>(
+    delete: async <T = unknown>(
         url: string,
         config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.delete<T>(url, config),
+    ): Promise<AxiosResponse<T>> => {
+        await ensureCsrfCookie();
+        return api.delete<T>(url, config);
+    },
 
     // Специальные методы для работы с файлами
     uploadFile: <T = unknown>(

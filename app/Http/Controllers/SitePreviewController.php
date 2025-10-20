@@ -22,6 +22,12 @@ class SitePreviewController extends Controller
       $widgetDataService = app(\App\Services\WidgetDataService::class);
       $widgetsConfig = $widgetDataService->getSiteWidgetsWithData($site->id);
 
+      \Log::info('SitePreviewController::preview - widgets config:', [
+        'site_id' => $site->id,
+        'widgets_count' => count($widgetsConfig),
+        'first_widget' => $widgetsConfig[0] ?? null,
+      ]);
+
       return Inertia::render('SitePreview', [
         'site' => [
           'id' => $site->id,

@@ -13,12 +13,14 @@ import { MenuOutput } from './MenuOutput';
 import { ProjectsOutput } from './ProjectsOutput';
 import { ReferralLeaderboardOutput } from './ReferralLeaderboardOutput';
 import { RegionRatingOutput } from './RegionRatingOutput';
+import { SliderOutput } from './SliderOutput';
 import { StatsOutput } from './StatsOutput';
 import { TextOutput } from './TextOutput';
 
 // Registry of output components
 const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
     hero: HeroOutput,
+    slider: SliderOutput,
     text: TextOutput,
     image: ImageOutput,
     gallery: GalleryOutput,
@@ -58,6 +60,17 @@ export const WidgetOutputRenderer: React.FC<WidgetOutputProps> = memo(
         // Get the appropriate output component
         const widgetSlug = (widget as any).widget_slug;
         const OutputComponent = outputRegistry[widgetSlug] || DefaultOutput;
+
+        // Логируем данные виджета в рендерере
+        console.log('WidgetOutputRenderer - Rendering widget:', {
+            widget_slug: widgetSlug,
+            widget_name: widget.name,
+            widget_id: widget.id,
+            hasOutputComponent: !!outputRegistry[widgetSlug],
+            config: widget.config,
+            hero_slides: (widget as any).hero_slides,
+            slider_slides: (widget as any).slider_slides,
+        });
 
         // Apply universal styling if present in config.styling
         const styling = (widget.config?.styling || {}) as any;

@@ -4,7 +4,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { widgetsSystemApi } from '@/lib/api/index';
+import {
+    widgetsSystemApi,
+    type PaymentMethod as ApiPaymentMethod,
+} from '@/lib/api/index';
 import {
     AlertCircle,
     CheckCircle2,
@@ -18,16 +21,6 @@ import {
     Smartphone,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-
-interface PaymentMethod {
-    id: number;
-    name: string;
-    slug: string;
-    icon: string;
-    description: string;
-    min_amount: number;
-    max_amount: number;
-}
 
 interface Fundraiser {
     id: number;
@@ -106,7 +99,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     isEditable = false,
     autoExpandSettings = false,
     onSave,
-    widgetId,
+    widgetId: _widgetId,
     organizationId,
 }) => {
     const [isSettingsExpanded, setIsSettingsExpanded] =
@@ -115,10 +108,12 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         useState<DonationWidgetConfig>(config);
 
     // Состояние для публичного виджета
-    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+    const [paymentMethods, setPaymentMethods] = useState<ApiPaymentMethod[]>(
+        [],
+    );
     const [fundraiser, setFundraiser] = useState<Fundraiser | null>(null);
     const [terminology, setTerminology] = useState<Terminology | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [_isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
@@ -155,14 +150,9 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         }
     }, [autoExpandSettings, isEditable]);
 
-    // Загрузка данных виджета
-    useEffect(() => {
-        if (!isEditable && organizationId) {
-            loadWidgetData();
-        }
-    }, [isEditable, organizationId, localConfig.fundraiser_id]);
+    const loadWidgetData = React.useCallback(async () => {
+        if (!organizationId) return;
 
-    const loadWidgetData = async () => {
         setIsLoading(true);
         setError(null);
 
@@ -175,12 +165,14 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
             // Устанавливаем терминологию
             if (widgetData.terminology) {
-                setTerminology(widgetData.terminology);
+                setTerminology(
+                    widgetData.terminology as unknown as Terminology,
+                );
             }
 
             // Устанавливаем fundraiser если есть
             if (widgetData.fundraiser) {
-                setFundraiser(widgetData.fundraiser);
+                setFundraiser(widgetData.fundraiser as unknown as Fundraiser);
             }
 
             // Загружаем методы оплаты
@@ -189,13 +181,20 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                     organizationId,
                 );
             setPaymentMethods(paymentMethods || []);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error loading widget data:', err);
             setError('Ошибка загрузки данных виджета');
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [organizationId, localConfig.fundraiser_id]);
+
+    // Загрузка данных виджета
+    useEffect(() => {
+        if (!isEditable && organizationId) {
+            loadWidgetData();
+        }
+    }, [isEditable, organizationId, loadWidgetData]);
 
     // Автоматическое сохранение конфигурации при изменении (с debounce)
     useEffect(() => {
@@ -262,6 +261,11 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         setIsProcessing(true);
 
         try {
+            if (!organizationId) {
+                setError('Не указан ID организации');
+                return;
+            }
+
             const response = await widgetsSystemApi.submitDonation(
                 organizationId,
                 {
@@ -299,12 +303,15 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 setAgreedToPolicy(false);
                 setAgreedToRecurring(false);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error creating donation:', err);
-            setError(
-                err.response?.data?.message ||
-                    'Ошибка при создании пожертвования',
-            );
+            const errorMessage =
+                err instanceof Error && 'response' in err
+                    ? (err as { response?: { data?: { message?: string } } })
+                          .response?.data?.message ||
+                      'Ошибка при создании пожертвования'
+                    : 'Ошибка при создании пожертвования';
+            setError(errorMessage);
         } finally {
             setIsProcessing(false);
         }
@@ -326,10 +333,10 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         recurring_periods = ['daily', 'weekly', 'monthly'],
         require_name = true,
         allow_anonymous = true,
-        show_message_field = false,
+        show_message_field: _show_message_field = false,
         button_text = defaultButtonText,
         button_style = 'primary',
-        primary_color = '#3b82f6',
+        primary_color: _primary_color = '#3b82f6',
         border_radius = 'medium',
         shadow = 'small',
     } = localConfig;
@@ -757,7 +764,10 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                                                 type="button"
                                                 onClick={() =>
                                                     setRecurringPeriod(
-                                                        period as any,
+                                                        period as
+                                                            | 'daily'
+                                                            | 'weekly'
+                                                            | 'monthly',
                                                     )
                                                 }
                                                 className={`px-3 py-2 text-sm ${borderRadiusClass} border transition-colors ${
@@ -813,10 +823,10 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                             {paymentMethods.length > 0 ? (
                                 paymentMethods.map((method) => (
                                     <label
-                                        key={method.slug}
+                                        key={method.id}
                                         className={`flex items-center gap-3 border p-3 ${borderRadiusClass} cursor-pointer transition-colors ${
                                             selectedPaymentMethod ===
-                                            method.slug
+                                            method.id.toString()
                                                 ? 'border-blue-600 bg-blue-50'
                                                 : 'border-gray-300 bg-white hover:bg-gray-50'
                                         }`}
@@ -824,10 +834,10 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                                         <input
                                             type="radio"
                                             name="payment_method"
-                                            value={method.slug}
+                                            value={method.id.toString()}
                                             checked={
                                                 selectedPaymentMethod ===
-                                                method.slug
+                                                method.id.toString()
                                             }
                                             onChange={(e) =>
                                                 setSelectedPaymentMethod(
@@ -840,20 +850,20 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                                             <div className="font-medium">
                                                 {method.name}
                                             </div>
-                                            {method.description && (
+                                            {method.name && (
                                                 <div className="text-xs text-gray-600">
-                                                    {method.description}
+                                                    {method.name}
                                                 </div>
                                             )}
                                         </div>
-                                        {method.slug === 'sbp' && (
+                                        {method.name === 'sbp' && (
                                             <QrCode className="h-5 w-5 text-gray-400" />
                                         )}
-                                        {(method.slug === 'yookassa' ||
-                                            method.slug === 'tinkoff') && (
+                                        {(method.name === 'yookassa' ||
+                                            method.name === 'tinkoff') && (
                                             <CreditCard className="h-5 w-5 text-gray-400" />
                                         )}
-                                        {method.slug === 'sberpay' && (
+                                        {method.name === 'sberpay' && (
                                             <Smartphone className="h-5 w-5 text-gray-400" />
                                         )}
                                     </label>

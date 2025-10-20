@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 
 class SiteWidgetResource extends JsonResource
 {
@@ -48,6 +49,29 @@ class SiteWidgetResource extends JsonResource
     // Inject hero slides if present
     if ($this->relationLoaded('heroSlides') && $this->heroSlides->isNotEmpty()) {
       $slides = $this->heroSlides->map(function ($slide) {
+        $backgroundImage = '';
+        if ($slide->background_image) {
+          Log::info('SiteWidgetResource hero slide processing', [
+            'slide_id' => $slide->id,
+            'background_image_from_db' => $slide->background_image,
+            'starts_with_http' => str_starts_with($slide->background_image, 'http'),
+            'starts_with_storage' => str_starts_with($slide->background_image, '/storage/'),
+          ]);
+
+          if (str_starts_with($slide->background_image, 'http')) {
+            $backgroundImage = $slide->background_image;
+          } elseif (str_starts_with($slide->background_image, '/storage/')) {
+            $backgroundImage = $slide->background_image;
+          } else {
+            $backgroundImage = '/storage/' . $slide->background_image;
+          }
+
+          Log::info('SiteWidgetResource hero slide result', [
+            'slide_id' => $slide->id,
+            'final_backgroundImage' => $backgroundImage,
+          ]);
+        }
+
         return [
           'id' => (string) $slide->id,
           'title' => $slide->title,
@@ -57,7 +81,7 @@ class SiteWidgetResource extends JsonResource
           'buttonLink' => $slide->button_link,
           'buttonLinkType' => $slide->button_link_type,
           'buttonOpenInNewTab' => (bool) $slide->button_open_in_new_tab,
-          'backgroundImage' => $slide->background_image ? '/storage/' . $slide->background_image : '',
+          'backgroundImage' => $backgroundImage,
           'overlayColor' => $slide->overlay_color,
           'overlayOpacity' => $slide->overlay_opacity,
           'overlayGradient' => $slide->overlay_gradient,
@@ -69,6 +93,46 @@ class SiteWidgetResource extends JsonResource
       $normalizedConfig['hero_slides'] = $slides;
       $configsArray[] = [
         'config_key' => 'hero_slides',
+        'config_value' => json_encode($slides),
+        'config_type' => 'json',
+      ];
+    }
+
+    // Inject slider slides if present
+    if ($this->relationLoaded('sliderSlides') && $this->sliderSlides->isNotEmpty()) {
+      $slides = $this->sliderSlides->map(function ($slide) {
+        $backgroundImage = '';
+        if ($slide->background_image) {
+          if (str_starts_with($slide->background_image, 'http')) {
+            $backgroundImage = $slide->background_image;
+          } elseif (str_starts_with($slide->background_image, '/storage/')) {
+            $backgroundImage = $slide->background_image;
+          } else {
+            $backgroundImage = '/storage/' . $slide->background_image;
+          }
+        }
+
+        return [
+          'id' => (string) $slide->id,
+          'title' => $slide->title,
+          'subtitle' => $slide->subtitle,
+          'description' => $slide->description,
+          'buttonText' => $slide->button_text,
+          'buttonLink' => $slide->button_link,
+          'buttonLinkType' => $slide->button_link_type,
+          'buttonOpenInNewTab' => (bool) $slide->button_open_in_new_tab,
+          'backgroundImage' => $backgroundImage,
+          'overlayColor' => $slide->overlay_color,
+          'overlayOpacity' => $slide->overlay_opacity,
+          'overlayGradient' => $slide->overlay_gradient,
+          'overlayGradientIntensity' => $slide->overlay_gradient_intensity,
+          'sortOrder' => $slide->sort_order,
+          'isActive' => true,
+        ];
+      })->toArray();
+      $normalizedConfig['slider_slides'] = $slides;
+      $configsArray[] = [
+        'config_key' => 'slider_slides',
         'config_value' => json_encode($slides),
         'config_type' => 'json',
       ];
@@ -146,6 +210,17 @@ class SiteWidgetResource extends JsonResource
           // Если heroSlides не загружены, берем из config
           $config = $this->getNormalizedConfig();
           return $config['hero_slides'] ?? [];
+        }
+      ),
+      'slider_slides' => $this->when(
+        $this->relationLoaded('sliderSlides') && $this->sliderSlides->isNotEmpty(),
+        function () {
+          return SliderSlideResource::collection($this->sliderSlides)->toArray(request());
+        },
+        function () {
+          // Если sliderSlides не загружены, берем из config
+          $config = $this->getNormalizedConfig();
+          return $config['slider_slides'] ?? [];
         }
       ),
       'form_fields' => $this->whenLoaded('formFields', function () {

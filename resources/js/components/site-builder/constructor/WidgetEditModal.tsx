@@ -28,8 +28,10 @@ import {
     StylingPanel,
     type StylingConfig,
 } from '@/components/widgets/common/StylingPanel';
+import { SliderWidget } from '@/components/widgets/slider';
 import { getOrganizationId, isCustomWidget } from '@/utils/widgetHelpers';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { WidgetData } from '../types';
 
 type WidgetConfig = Record<string, unknown>;
 
@@ -96,56 +98,6 @@ const convertConfigsToConfig = (configs: any[]): WidgetConfig => {
 
     return config;
 };
-
-interface WidgetData {
-    id: string;
-    widget_id: number;
-    name: string;
-    widget_slug: string;
-    config: WidgetConfig;
-    configs: Array<{
-        config_key: string;
-        config_value: string;
-        config_type: string;
-    }>;
-    settings: Record<string, unknown>;
-    is_active: boolean;
-    is_visible: boolean;
-    order: number;
-    position_name: string;
-    position_slug: string;
-    created_at: string;
-    updated_at?: string;
-    // Специализированные данные
-    hero_slides?: Array<{
-        id: string;
-        title: string;
-        subtitle?: string;
-        description?: string;
-        button_text?: string;
-        button_link?: string;
-        button_link_type: string;
-        button_open_in_new_tab: boolean;
-        background_image?: string;
-        overlay_color?: string;
-        overlay_opacity?: number;
-        overlay_gradient?: string;
-        overlay_gradient_intensity?: number;
-        overlay_style?: string;
-        sort_order: number;
-        is_active: boolean;
-    }>;
-    menu_items?: Array<{
-        id: number;
-        item_id: string;
-        title: string;
-        url: string;
-        type: string;
-        open_in_new_tab: boolean;
-        sort_order: number;
-        is_active: boolean;
-    }>;
-}
 
 interface WidgetEditModalProps {
     widget: WidgetData | null;
@@ -267,7 +219,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     />
                 );
 
-            case 'hero':
+            case 'hero': {
                 const heroConfig = widget.configs
                     ? convertConfigsToConfig(widget.configs)
                     : widget.config || {};
@@ -283,6 +235,25 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                         hero_slides={widget.hero_slides}
                     />
                 );
+            }
+
+            case 'slider': {
+                const sliderConfig = widget.configs
+                    ? convertConfigsToConfig(widget.configs)
+                    : widget.config || {};
+
+                return (
+                    <SliderWidget
+                        config={sliderConfig}
+                        isEditable
+                        autoExpandSettings
+                        onConfigChange={setPendingConfig}
+                        configs={widget.configs}
+                        styling={widget.config?.styling as Record<string, any>}
+                        slider_slides={widget.slider_slides}
+                    />
+                );
+            }
 
             case 'menu': {
                 const baseConfigs = widget.configs || [];
@@ -485,7 +456,9 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                                 const parsed = JSON.parse(e.target.value);
                                 handleInputChange('config', parsed);
                                 setPendingConfig(parsed as WidgetConfig);
-                            } catch {}
+                            } catch (error) {
+                                // Invalid JSON - ignore silently
+                            }
                         }}
                         placeholder="{}"
                         rows={4}
@@ -505,7 +478,9 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                                     'settings',
                                     parsed as WidgetConfig,
                                 );
-                            } catch {}
+                            } catch (error) {
+                                // Invalid JSON - ignore silently
+                            }
                         }}
                         placeholder="{}"
                         rows={4}

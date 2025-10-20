@@ -35,6 +35,7 @@ export interface HeroOutputConfig {
     slides?: HeroSlide[];
     singleSlide?: HeroSlide;
     css_class?: string;
+    styling?: Record<string, unknown>;
 }
 
 export interface HeroSlide {

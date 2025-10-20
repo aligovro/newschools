@@ -3,46 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WidgetOutputRenderer, WidgetRenderer } from '@/components/widgets';
 import { Edit, Eye, EyeOff, Trash2 } from 'lucide-react';
 import React from 'react';
-
-interface WidgetData {
-    id: string;
-    widget_id: number;
-    name: string;
-    widget_slug: string;
-    config: Record<string, unknown>;
-    configs: Array<{
-        config_key: string;
-        config_value: string;
-        config_type: string;
-    }>;
-    settings: Record<string, unknown>;
-    is_active: boolean;
-    is_visible: boolean;
-    order: number;
-    position_name: string;
-    position_slug: string;
-    created_at: string;
-    updated_at?: string;
-    // Специализированные данные
-    hero_slides?: Array<{
-        id: string;
-        title: string;
-        subtitle?: string;
-        description?: string;
-        button_text?: string;
-        button_link?: string;
-        button_link_type: string;
-        button_open_in_new_tab: boolean;
-        background_image?: string;
-        overlay_color?: string;
-        overlay_opacity?: number;
-        overlay_gradient?: string;
-        overlay_gradient_intensity?: number;
-        overlay_style?: string;
-        sort_order: number;
-        is_active: boolean;
-    }>;
-}
+import type { WidgetData } from '../types';
 
 interface WidgetDisplayProps {
     widget: WidgetData;
@@ -72,6 +33,16 @@ export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
     suppressRender = false,
     useOutputRenderer = false,
 }) => {
+    // Логируем данные виджета
+    console.log('WidgetDisplay - Widget data:', {
+        id: widget.id,
+        name: widget.name,
+        widget_slug: widget.widget_slug,
+        useOutputRenderer,
+        config: widget.config,
+        hero_slides: (widget as any).hero_slides,
+        slider_slides: (widget as any).slider_slides,
+    });
     const handleEdit = () => {
         if (onEdit) {
             onEdit(widget);

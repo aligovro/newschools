@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { sitesApi } from '@/lib/api/index';
 import { useCallback, useState } from 'react';
 
 interface DesignSettingsData {
@@ -38,23 +38,15 @@ export const useDesignSettings = (
     const saveSettings = useCallback(async () => {
         setIsLoading(true);
         setErrors([]);
-
         try {
-            await router.post(`/sites/${siteId}/settings/design`, settings, {
-                onSuccess: () => {
-                    console.log('Настройки дизайна сохранены');
-                },
-                onError: (errors) => {
-                    const errorMessages = Object.values(errors).flat();
-                    setErrors(errorMessages);
-                },
-                onFinish: () => {
-                    setIsLoading(false);
-                },
-            });
+            const res = await sitesApi.saveDesignSettings(siteId, settings);
+            if (!res.success) {
+                setErrors([res.message || 'Не удалось сохранить настройки']);
+            }
         } catch (error) {
             console.error('Ошибка при сохранении настроек дизайна:', error);
             setErrors(['Ошибка при сохранении настроек']);
+        } finally {
             setIsLoading(false);
         }
     }, [siteId, settings]);

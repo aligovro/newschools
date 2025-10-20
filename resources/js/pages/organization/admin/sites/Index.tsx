@@ -82,17 +82,7 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
         }
     };
 
-    const getTemplateBadge = (template: string) => {
-        const templates: Record<string, string> = {
-            default: 'По умолчанию',
-            modern: 'Современный',
-            classic: 'Классический',
-            minimal: 'Минималистичный',
-        };
-        return (
-            <Badge variant="outline">{templates[template] || template}</Badge>
-        );
-    };
+    const getTemplateBadge = (_template: string) => null;
 
     const handleDelete = (siteId: number) => {
         if (
@@ -128,10 +118,10 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Сайты - ${organization.name}`} />
 
-            <div className="space-y-6">
+            <div className="space-x-6 space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div>
+                    <div className="ml-6 mt-6 flex flex-col items-start space-y-2">
                         <h1 className="text-3xl font-bold">Сайты</h1>
                         <p className="text-muted-foreground">
                             Управление сайтами организации
@@ -231,9 +221,7 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
                                                     {site.name}
                                                 </h3>
                                                 {getStatusBadge(site.status)}
-                                                {getTemplateBadge(
-                                                    site.template,
-                                                )}
+                                                {/* Template badge removed */}
                                                 {site.is_maintenance_mode && (
                                                     <Badge variant="destructive">
                                                         Тех. работы

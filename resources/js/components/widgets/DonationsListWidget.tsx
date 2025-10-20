@@ -28,7 +28,7 @@ interface DonationData {
     donor_email?: string;
     donor_phone?: string;
     is_anonymous: boolean;
-    payment_method: string;
+    payment_method?: string;
     status: string;
     created_at: string;
     region_name?: string;
@@ -144,7 +144,7 @@ export const DonationsListWidget: React.FC<DonationsListWidgetProps> = ({
         setError(null);
 
         try {
-            const response = await widgetsApi.getDonations(organizationId, {
+            const response = await widgetsApi.getDonations(organizationId!, {
                 page: currentPage,
                 per_page: localConfig.items_per_page || 10,
                 search: searchQuery,
@@ -203,7 +203,7 @@ export const DonationsListWidget: React.FC<DonationsListWidgetProps> = ({
         });
     };
 
-    const getPaymentMethodLabel = (method: string): string => {
+    const getPaymentMethodLabel = (method?: string): string => {
         const methods: Record<string, string> = {
             sbp: 'СБП',
             sberpay: 'SberPay',
@@ -211,7 +211,7 @@ export const DonationsListWidget: React.FC<DonationsListWidgetProps> = ({
             yoomoney: 'ЮMoney',
             card: 'Банковская карта',
         };
-        return methods[method.toLowerCase()] || method;
+        return methods[method?.toLowerCase() || ''] || method || 'Не указан';
     };
 
     const renderDonationItem = (donation: DonationData) => {

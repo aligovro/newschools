@@ -12,6 +12,7 @@ import { ReferralLeaderboardWidget } from '../ReferralLeaderboardWidget';
 import { RegionRatingWidget } from '../RegionRatingWidget';
 import { StatsWidget } from '../StatsWidget';
 import { TextWidget } from '../TextWidget';
+import { SliderWidget } from '../slider';
 
 interface StatItem {
     value: string | number;
@@ -76,6 +77,29 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                 configs={widget.configs}
                 styling={widget.config?.styling}
                 hero_slides={widget.hero_slides}
+            />
+        );
+    },
+
+    // Универсальный слайдер
+    slider: ({
+        widget,
+        isEditable,
+        autoExpandSettings,
+        onSave,
+        onConfigChange,
+    }) => {
+        return (
+            <SliderWidget
+                config={widget.config || {}}
+                isEditable={isEditable}
+                autoExpandSettings={autoExpandSettings}
+                onSave={onSave}
+                widgetId={widget.id}
+                onConfigChange={onConfigChange}
+                configs={widget.configs}
+                styling={widget.config?.styling}
+                slider_slides={widget.slider_slides}
             />
         );
     },
@@ -220,7 +244,7 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
             id: typeof widget.id === 'string' ? parseInt(widget.id) : widget.id,
             site_id: (cfg.site_id as number) || siteId || 1,
             name: widget.name,
-            slug: widget.widget_slug as 'form',
+            widget_slug: widget.widget_slug as 'form',
             description: cfg.description,
             settings: cfg.settings || {},
             styling: cfg.styling || {},

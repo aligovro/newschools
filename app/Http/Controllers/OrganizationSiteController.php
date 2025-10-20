@@ -39,9 +39,24 @@ class OrganizationSiteController extends Controller
       ->orderBy('sort_order')
       ->get();
 
-    return Inertia::render('organization/admin/sites/Create', [
+    // Для создания сайта используем тот же конструктор, передавая пустой site и список шаблонов
+    return Inertia::render('organization/admin/sites/organization-site-builder/OrganizationSiteBuilder', [
       'organization' => (new OrganizationResource($organization))->toArray(request()),
+      'site' => [
+        'id' => null,
+        'name' => '',
+        'slug' => '',
+        'description' => '',
+        'status' => 'draft',
+        'created_at' => null,
+        'updated_at' => null,
+        'widgets' => [],
+        'template' => '',
+        'layout_config' => new \stdClass(),
+        'seo_config' => new \stdClass(),
+      ],
       'templates' => $templates,
+      'mode' => 'create',
     ]);
   }
 
@@ -165,6 +180,7 @@ class OrganizationSiteController extends Controller
     $site->load([
       'widgets.configs',
       'widgets.heroSlides',
+      'widgets.sliderSlides',
       'widgets.formFields',
       'widgets.menuItems',
       'widgets.galleryImages',
@@ -181,13 +197,43 @@ class OrganizationSiteController extends Controller
     // Преобразуем виджеты для фронтенда используя ресурс
     $widgets = SiteWidgetResource::collection($site->widgets)->toArray(request());
 
-    // Исправляем hero_slides для правильного отображения картинок
+    // Логируем данные виджетов для отладки
+    Log::info('OrganizationSiteController::editWithBuilder - Widgets data:', [
+      'site_id' => $site->id,
+      'widgets_count' => count($widgets),
+      'widgets_data' => array_map(function ($widget) {
+        return [
+          'id' => $widget['id'],
+          'widget_slug' => $widget['widget_slug'],
+          'name' => $widget['name'],
+          'has_hero_slides' => isset($widget['hero_slides']),
+          'has_slider_slides' => isset($widget['slider_slides']),
+          'hero_slides_count' => isset($widget['hero_slides']) ? count($widget['hero_slides']) : 0,
+          'slider_slides_count' => isset($widget['slider_slides']) ? count($widget['slider_slides']) : 0,
+        ];
+      }, $widgets),
+    ]);
+
+    // Исправляем hero_slides и slider_slides для правильного отображения картинок
     foreach ($widgets as &$widget) {
+      // Обрабатываем hero_slides
       if (isset($widget['hero_slides']) && is_array($widget['hero_slides'])) {
         foreach ($widget['hero_slides'] as &$slide) {
           // Если есть background_image, но нет backgroundImage, создаем backgroundImage
           if (isset($slide['background_image']) && !isset($slide['backgroundImage'])) {
-            $slide['backgroundImage'] = $slide['background_image'] ? '/storage/' . $slide['background_image'] : '';
+            $slide['backgroundImage'] = $slide['background_image'] ?: '';
+          }
+          // Убираем background_image, оставляем только backgroundImage
+          unset($slide['background_image']);
+        }
+      }
+
+      // Обрабатываем slider_slides
+      if (isset($widget['slider_slides']) && is_array($widget['slider_slides'])) {
+        foreach ($widget['slider_slides'] as &$slide) {
+          // Если есть background_image, но нет backgroundImage, создаем backgroundImage
+          if (isset($slide['background_image']) && !isset($slide['backgroundImage'])) {
+            $slide['backgroundImage'] = $slide['background_image'] ?: '';
           }
           // Убираем background_image, оставляем только backgroundImage
           unset($slide['background_image']);
@@ -195,14 +241,21 @@ class OrganizationSiteController extends Controller
       }
     }
 
-    return Inertia::render('organization/admin/sites/EditWithBuilder', [
+    return Inertia::render('organization/admin/sites/organization-site-builder/OrganizationSiteBuilder', [
       'organization' => (new OrganizationResource($organization))->toArray(request()),
       'site' => [
         'id' => $site->id,
         'name' => $site->name,
         'slug' => $site->slug,
         'description' => $site->description,
+        'template' => $site->template,
         'status' => $site->status,
+        'is_public' => (bool) $site->is_public,
+        'is_maintenance_mode' => (bool) $site->is_maintenance_mode,
+        'layout_config' => $site->layout_config ?? [],
+        'theme_config' => $site->theme_config ?? [],
+        'seo_config' => $site->seo_config ?? [],
+        'custom_settings' => $site->custom_settings ?? [],
         'created_at' => $site->created_at,
         'updated_at' => $site->updated_at,
         'widgets' => $widgets,
@@ -430,11 +483,11 @@ class OrganizationSiteController extends Controller
           'id' => time() . rand(1000, 9999),
           'widget_id' => $widget->id,
           'name' => $widget->name,
-          'slug' => $widget->slug,
+          'widget_slug' => $widget->widget_slug,
           'position_name' => $position->name,
           'position_slug' => $position->slug,
           'order' => 1,
-          'config' => $this->getDefaultConfigForWidget($widget->slug),
+          'config' => $this->getDefaultConfigForWidget($widget->widget_slug),
           'settings' => [],
           'is_active' => true,
           'is_visible' => true,
@@ -456,7 +509,7 @@ class OrganizationSiteController extends Controller
 
     foreach ($defaultWidgets as $widgetData) {
       // Находим widget и position
-      $widget = \App\Models\Widget::where('slug', $widgetData['slug'])->first();
+      $widget = \App\Models\Widget::where('widget_slug', $widgetData['widget_slug'])->first();
       $position = \App\Models\WidgetPosition::where('slug', $widgetData['position_slug'])->first();
 
       if (!$widget || !$position) {
@@ -497,7 +550,7 @@ class OrganizationSiteController extends Controller
     ];
 
     $widgetSlug = $defaultWidgets[$positionSlug] ?? null;
-    return $widgetSlug ? \App\Models\Widget::where('slug', $widgetSlug)->first() : null;
+    return $widgetSlug ? \App\Models\Widget::where('widget_slug', $widgetSlug)->first() : null;
   }
 
   /**

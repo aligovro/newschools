@@ -180,19 +180,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/export', [App\Http\Controllers\OrganizationReportsController::class, 'exportReport'])->name('export');
       });
 
-      // Конструктор сайтов
-      Route::prefix('sites')->name('sites.')->group(function () {
-        Route::get('/builder/{site}', [SiteConstructorController::class, 'builder'])->name('builder');
-        Route::put('/save/{site}', [SiteConstructorController::class, 'save'])->name('save');
-        Route::post('/add-widget/{site}', [SiteConstructorController::class, 'addWidget'])->name('add-widget');
-        Route::put('/update-widget/{site}', [SiteConstructorController::class, 'updateWidget'])->name('update-widget');
-        Route::delete('/remove-widget/{site}', [SiteConstructorController::class, 'removeWidget'])->name('remove-widget');
-        Route::patch('/reorder-widgets/{site}', [SiteConstructorController::class, 'reorderWidgets'])->name('reorder-widgets');
-        Route::post('/apply-color-scheme/{site}', [SiteConstructorController::class, 'applyColorScheme'])->name('apply-color-scheme');
-        Route::get('/preview/{site}', [SiteConstructorController::class, 'preview'])->name('preview');
-        Route::post('/publish/{site}', [SiteConstructorController::class, 'publish'])->name('publish');
-        Route::post('/unpublish/{site}', [SiteConstructorController::class, 'unpublish'])->name('unpublish');
-      });
+      // Конструктор сайтов (legacy routes removed; use canonical /sites/{site}/builder)
 
       // API для виджетов
       Route::prefix('api/widgets')->name('widgets.')->group(function () {

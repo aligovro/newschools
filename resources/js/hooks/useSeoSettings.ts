@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { sitesApi } from '@/lib/api/index';
 import { useCallback, useState } from 'react';
 
 interface SeoSettingsData {
@@ -34,23 +34,15 @@ export const useSeoSettings = (
     const saveSettings = useCallback(async () => {
         setIsLoading(true);
         setErrors([]);
-
         try {
-            await router.post(`/sites/${siteId}/settings/seo`, settings, {
-                onSuccess: () => {
-                    console.log('SEO настройки сохранены');
-                },
-                onError: (errors) => {
-                    const errorMessages = Object.values(errors).flat();
-                    setErrors(errorMessages);
-                },
-                onFinish: () => {
-                    setIsLoading(false);
-                },
-            });
+            const res = await sitesApi.saveSeoSettings(siteId, settings);
+            if (!res.success) {
+                setErrors([res.message || 'Не удалось сохранить настройки']);
+            }
         } catch (error) {
             console.error('Ошибка при сохранении SEO настроек:', error);
             setErrors(['Ошибка при сохранении настроек']);
+        } finally {
             setIsLoading(false);
         }
     }, [siteId, settings]);

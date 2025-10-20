@@ -13,8 +13,6 @@ interface SettingsContentProps {
         description?: string;
         theme_config?: Record<string, unknown>;
         seo_config?: Record<string, unknown>;
-        theme_config?: Record<string, unknown>;
-        seo_config?: Record<string, unknown>;
         custom_settings?: Record<string, unknown>;
     };
 }
@@ -74,6 +72,9 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                             notifications:
                                 (site.custom_settings as any)?.telegram
                                     ?.notifications ?? {},
+                            note:
+                                (site.custom_settings as any)?.telegram?.note ??
+                                '',
                         }}
                     />
 

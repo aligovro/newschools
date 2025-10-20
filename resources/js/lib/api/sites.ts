@@ -2,6 +2,52 @@ import { apiClient } from '@/lib/api';
 
 // API методы для сайтов
 export const sitesApi = {
+    // Сохранение основных настроек сайта
+    saveBasicSettings: (
+        siteId: number,
+        settings: { name: string; description?: string },
+    ): Promise<{ success: boolean; message?: string }> =>
+        apiClient
+            .post<{
+                success: boolean;
+                message?: string;
+            }>(`/sites/${siteId}/settings/basic`, settings)
+            .then((response) => response.data),
+
+    // Сохранение SEO настроек сайта
+    saveSeoSettings: (
+        siteId: number,
+        settings: {
+            seo_title?: string;
+            seo_description?: string;
+            seo_keywords?: string;
+        },
+    ): Promise<{ success: boolean; message?: string }> =>
+        apiClient
+            .post<{
+                success: boolean;
+                message?: string;
+            }>(`/sites/${siteId}/settings/seo`, settings)
+            .then((response) => response.data),
+
+    // Сохранение настроек дизайна
+    saveDesignSettings: (
+        siteId: number,
+        settings: {
+            color_scheme?: string;
+            font_family?: string;
+            font_size?: string;
+            layout?: string;
+            header_style?: string;
+            footer_style?: string;
+        },
+    ): Promise<{ success: boolean; message?: string }> =>
+        apiClient
+            .post<{
+                success: boolean;
+                message?: string;
+            }>(`/sites/${siteId}/settings/design`, settings)
+            .then((response) => response.data),
     // Сохранение настроек макета сайта
     saveLayoutSettings: (
         siteId: number,

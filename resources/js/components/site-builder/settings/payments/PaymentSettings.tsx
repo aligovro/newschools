@@ -15,6 +15,7 @@ import { Loader2, Save } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 
 interface PaymentSettingsData {
+    [key: string]: unknown;
     gateway?: 'sbp' | 'yookassa' | 'tinkoff';
     credentials?: Record<string, string>;
     options?: Record<string, any>;

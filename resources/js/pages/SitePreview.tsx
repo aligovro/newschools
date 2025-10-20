@@ -1,4 +1,4 @@
-import { WidgetDisplay } from '@/components/site-builder/WidgetDisplay';
+import { WidgetDisplay } from '@/components/site-builder/constructor/WidgetDisplay';
 import { widgetsSystemApi } from '@/lib/api/index';
 import { Head } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
@@ -12,7 +12,7 @@ interface Site {
     widgets_config: Array<{
         id: string;
         name: string;
-        slug: string;
+        widget_slug: string;
         config: Record<string, unknown>;
         settings: Record<string, unknown>;
         position_name: string;
@@ -23,7 +23,7 @@ interface Site {
         widget?: {
             id: number;
             name: string;
-            slug: string;
+            widget_slug: string;
         };
         position?: {
             id: number;
@@ -174,6 +174,37 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
     const [positions, setPositions] = useState<WidgetPosition[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Логируем данные сайта
+    console.log('SitePreview - Site data:', site);
+    console.log('SitePreview - Widgets config:', site.widgets_config);
+
+    // Логируем каждый виджет
+    site.widgets_config.forEach((widget, index) => {
+        console.log(`SitePreview - Widget ${index}:`, {
+            id: widget.id,
+            name: widget.name,
+            widget_slug: widget.widget_slug,
+            position_slug: widget.position_slug,
+            is_active: widget.is_active,
+            is_visible: widget.is_visible,
+            config: widget.config,
+            hero_slides: widget.hero_slides,
+            slider_slides: (widget as any).slider_slides,
+        });
+
+        // Детально логируем config для hero и slider виджетов
+        if (widget.widget_slug === 'hero' || widget.widget_slug === 'slider') {
+            console.log(`SitePreview - ${widget.widget_slug} config details:`, {
+                config_keys: Object.keys(widget.config),
+                has_hero_slides_in_config: 'hero_slides' in widget.config,
+                has_slider_slides_in_config: 'slider_slides' in widget.config,
+                hero_slides_in_config: widget.config.hero_slides,
+                slider_slides_in_config: widget.config.slider_slides,
+                full_config: widget.config,
+            });
+        }
+    });
+
     // Загружаем позиции виджетов
     useEffect(() => {
         const loadPositions = async () => {
@@ -211,6 +242,20 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
         const positionWidgets = widgets
             .filter((widget) => widget.position_slug === position.slug)
             .sort((a, b) => a.order - b.order);
+
+        // Логируем данные позиции
+        console.log(`SitePreview - renderPosition for ${position.slug}:`, {
+            position_slug: position.slug,
+            position_name: position.name,
+            widgets_in_position: positionWidgets.length,
+            widgets: positionWidgets.map((w) => ({
+                id: w.id,
+                name: w.name,
+                widget_slug: w.widget_slug,
+                is_active: w.is_active,
+                is_visible: w.is_visible,
+            })),
+        });
 
         return (
             <div

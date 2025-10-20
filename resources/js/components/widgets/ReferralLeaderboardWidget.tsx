@@ -91,8 +91,23 @@ export const ReferralLeaderboardWidget: React.FC<ReferralLeaderboardProps> = ({
                     page: currentPage,
                 },
             );
-            setLeaders(response.data || []);
-        } catch (e) {
+            // Преобразуем ReferralLeader в LeaderItem
+            const transformedLeaders: LeaderItem[] = (response.data || []).map(
+                (leader, index) => ({
+                    position: index + 1,
+                    referrer_user_id: leader.id,
+                    name: leader.name,
+                    days_in_system: 0, // Это поле не доступно в ReferralLeader
+                    invites_count: leader.referral_count,
+                    total_amount: leader.total_amount,
+                    formatted_total_amount: new Intl.NumberFormat('ru-RU', {
+                        style: 'currency',
+                        currency: 'RUB',
+                    }).format(leader.total_amount),
+                }),
+            );
+            setLeaders(transformedLeaders);
+        } catch {
             setError('Ошибка загрузки рейтинга');
         } finally {
             setIsLoading(false);

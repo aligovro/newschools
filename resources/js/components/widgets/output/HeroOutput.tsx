@@ -1,5 +1,24 @@
 import { Button } from '@/components/ui/button';
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
+import {
+    Autoplay,
+    EffectCube,
+    EffectFade,
+    EffectFlip,
+    Navigation,
+    Pagination,
+} from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/autoplay';
+import 'swiper/css/effect-cube';
+import 'swiper/css/effect-fade';
+import 'swiper/css/effect-flip';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+
 import { HeroOutputConfig, HeroSlide, WidgetOutputProps } from './types';
 
 // Single hero slide renderer
@@ -105,11 +124,11 @@ const HeroSlideRenderer: React.FC<{
     );
 };
 
-// Hero slider component
+// Hero slider component using Swiper
 const HeroSlider: React.FC<{
     slides: HeroSlide[];
     height: string;
-    animation: 'fade' | 'slide' | 'zoom';
+    animation: 'fade' | 'slide' | 'zoom' | 'flip' | 'cube';
     autoplay: boolean;
     autoplayDelay: number;
     showDots: boolean;
@@ -124,7 +143,7 @@ const HeroSlider: React.FC<{
 }> = ({
     slides,
     height,
-    animation: _animation,
+    animation,
     autoplay,
     autoplayDelay,
     showDots,
@@ -132,106 +151,114 @@ const HeroSlider: React.FC<{
     getGradientStyle,
     css_class,
 }) => {
-    const [currentSlide, setCurrentSlide] = useState(0);
+    // Swiper modules configuration
+    const swiperModules = useMemo(() => {
+        const modules = [Navigation, Pagination];
 
-    // Autoplay
-    useEffect(() => {
-        if (!autoplay || slides.length <= 1) return;
+        if (autoplay) modules.push(Autoplay);
 
-        const interval = setInterval(() => {
-            setCurrentSlide((prev) =>
-                prev === slides.length - 1 ? 0 : prev + 1,
-            );
-        }, autoplayDelay);
+        switch (animation) {
+            case 'fade':
+                modules.push(EffectFade);
+                break;
+            case 'flip':
+                modules.push(EffectFlip);
+                break;
+            case 'cube':
+                modules.push(EffectCube);
+                break;
+        }
 
-        return () => clearInterval(interval);
-    }, [autoplay, autoplayDelay, slides.length]);
+        return modules;
+    }, [autoplay, animation]);
 
-    const goToPrevious = () => {
-        setCurrentSlide(
-            currentSlide === 0 ? slides.length - 1 : currentSlide - 1,
-        );
-    };
+    // Swiper configuration
+    const swiperConfig = useMemo(() => {
+        const config: Record<string, any> = {
+            modules: swiperModules,
+            spaceBetween: 0,
+            loop: false,
+            autoplay: autoplay
+                ? {
+                      delay: autoplayDelay || 5000,
+                      disableOnInteraction: false,
+                  }
+                : false,
+            navigation: showArrows
+                ? {
+                      nextEl: '.swiper-button-next',
+                      prevEl: '.swiper-button-prev',
+                  }
+                : false,
+            pagination: showDots
+                ? {
+                      clickable: true,
+                      dynamicBullets: true,
+                  }
+                : false,
+        };
 
-    const goToNext = () => {
-        setCurrentSlide(
-            currentSlide === slides.length - 1 ? 0 : currentSlide + 1,
-        );
-    };
+        // Animation settings
+        if (animation === 'fade') {
+            config.effect = 'fade';
+            config.fadeEffect = {
+                crossFade: true,
+            };
+        } else if (animation === 'flip') {
+            config.effect = 'flip';
+            config.flipEffect = {
+                slideShadows: true,
+                limitRotation: true,
+            };
+        } else if (animation === 'cube') {
+            config.effect = 'cube';
+            config.cubeEffect = {
+                slideShadows: true,
+                shadow: true,
+                shadowOffset: 20,
+                shadowScale: 0.94,
+            };
+        }
+
+        config.slidesPerView = 1;
+
+        return config;
+    }, [
+        swiperModules,
+        autoplay,
+        autoplayDelay,
+        showArrows,
+        showDots,
+        animation,
+    ]);
 
     if (slides.length === 0) return null;
 
     return (
-        <div className="hero-slider relative">
-            {/* Render only current slide for performance */}
-            <HeroSlideRenderer
-                slide={slides[currentSlide]}
-                height={height}
-                getGradientStyle={getGradientStyle}
-                css_class={css_class}
-            />
-
-            {/* Navigation dots */}
-            {showDots && slides.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 transform space-x-2">
-                    {slides.map((_, index) => (
-                        <button
-                            key={index}
-                            className={`h-3 w-3 rounded-full transition-colors ${
-                                index === currentSlide
-                                    ? 'bg-white'
-                                    : 'bg-white/50 hover:bg-white/75'
-                            }`}
-                            onClick={() => setCurrentSlide(index)}
-                            aria-label={`Go to slide ${index + 1}`}
+        <div
+            className={`hero-slider relative ${css_class || ''}`}
+            style={{
+                height: height || '600px', // Применяем высоту к контейнеру
+            }}
+        >
+            <Swiper
+                {...swiperConfig}
+                className="h-full"
+                style={{
+                    height: height || '600px', // Применяем высоту к Swiper
+                }}
+            >
+                {slides.map((slide) => (
+                    <SwiperSlide key={slide.id}>
+                        <HeroSlideRenderer
+                            slide={slide}
+                            height={height}
+                            getGradientStyle={getGradientStyle}
+                            css_class={css_class}
                         />
-                    ))}
-                </div>
-            )}
-
-            {/* Navigation arrows */}
-            {showArrows && slides.length > 1 && (
-                <>
-                    <button
-                        className="absolute left-4 top-1/2 -translate-y-1/2 transform rounded-full bg-white/20 p-2 text-white transition-colors hover:bg-white/30"
-                        onClick={goToPrevious}
-                        aria-label="Previous slide"
-                    >
-                        <svg
-                            className="h-6 w-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 19l-7-7 7-7"
-                            />
-                        </svg>
-                    </button>
-                    <button
-                        className="absolute right-4 top-1/2 -translate-y-1/2 transform rounded-full bg-white/20 p-2 text-white transition-colors hover:bg-white/30"
-                        onClick={goToNext}
-                        aria-label="Next slide"
-                    >
-                        <svg
-                            className="h-6 w-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                            />
-                        </svg>
-                    </button>
-                </>
-            )}
+                    </SwiperSlide>
+                ))}
+            </Swiper>
         </div>
     );
 };
@@ -243,6 +270,16 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
     style,
 }) => {
     const config = widget.config as HeroOutputConfig;
+
+    // Логируем данные hero виджета (временно отключено)
+    // console.log('HeroOutput - Widget data:', {
+    //     widget_id: widget.id,
+    //     widget_name: widget.name,
+    //     config,
+    //     hero_slides: (widget as any).hero_slides,
+    //     slides_from_config: config.slides,
+    //     singleSlide: config.singleSlide,
+    // });
 
     const {
         type = 'single',
@@ -269,6 +306,7 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
             overlayGradientIntensity: 50,
         },
         css_class,
+        styling = {},
     } = config;
 
     // Function to create gradient overlay style
@@ -300,7 +338,28 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
         }
     };
 
-    const currentSlides = type === 'slider' ? slides : [singleSlide];
+    // Get slides from widget data or config
+    const currentSlides = useMemo(() => {
+        // Try to get slides from widget data first
+        if (
+            (widget as any).hero_slides &&
+            (widget as any).hero_slides.length > 0
+        ) {
+            return (widget as any).hero_slides;
+        }
+
+        // Fallback to config slides
+        if (slides && slides.length > 0) {
+            return slides;
+        }
+
+        // If single slide is provided, convert to array
+        if (singleSlide) {
+            return [singleSlide];
+        }
+
+        return [];
+    }, [widget, slides, singleSlide]);
 
     if (currentSlides.length === 0) return null;
 
@@ -308,7 +367,7 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
         <div className={`hero-output ${className || ''}`} style={style}>
             {type === 'slider' ? (
                 <HeroSlider
-                    slides={slides}
+                    slides={currentSlides}
                     height={height}
                     animation={animation}
                     autoplay={autoplay}
@@ -320,7 +379,7 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
                 />
             ) : (
                 <HeroSlideRenderer
-                    slide={singleSlide}
+                    slide={currentSlides[0]}
                     height={height}
                     getGradientStyle={getGradientStyle}
                     css_class={css_class}
