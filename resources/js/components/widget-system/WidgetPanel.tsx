@@ -16,7 +16,19 @@ const DraggableWidget: React.FC<{
 }> = ({ widget }) => {
     const [{ isDragging }, drag] = useDrag({
         type: 'widget',
-        item: { widget },
+        item: () => {
+            const widgetSlug =
+                (widget as any).widget_slug || (widget as any).slug;
+            console.log('[DND] drag start from panel', { widgetSlug, widget });
+            return { widget: { ...widget, widget_slug: widgetSlug } };
+        },
+        end: (item, monitor) => {
+            const didDrop = monitor.didDrop();
+            console.log('[DND] drag end from panel', {
+                didDrop,
+                item,
+            });
+        },
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),
         }),

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use App\Http\Resources\UserResource;
+use App\Support\InertiaResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -44,7 +46,7 @@ class UserController extends Controller
     $permissions = Permission::all();
 
     return Inertia::render('users/UserManagementPage', [
-      'users' => $users,
+      'users' => InertiaResource::paginate($users, UserResource::class),
       'roles' => $roles,
       'permissions' => $permissions,
       'filters' => $request->only(['role', 'search', 'sort_by', 'sort_direction', 'per_page']),

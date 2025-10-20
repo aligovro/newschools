@@ -316,22 +316,22 @@ class WidgetDataService
         // Получаем конфигурацию из нормализованных данных
         $config = $widget->getNormalizedConfig();
 
-        \Log::info("Widget {$widget->name} config: " . json_encode($config));
-        \Log::info("Config empty: " . (empty($config) ? 'YES' : 'NO'));
-        \Log::info("Config count: " . count($config));
+        Log::info("Widget {$widget->name} config: " . json_encode($config));
+        Log::info("Config empty: " . (empty($config) ? 'YES' : 'NO'));
+        Log::info("Config count: " . count($config));
 
         // Проверяем, есть ли реальные данные в конфигурации
         if (empty($config) || (is_array($config) && count($config) === 0)) {
-            \Log::info("Skipping widget {$widget->name} - empty config");
+            Log::info("Skipping widget {$widget->name} - empty config");
             return;
         }
 
-        \Log::info("Migrating widget {$widget->name} with config: " . json_encode($config));
+        Log::info("Migrating widget {$widget->name} with config: " . json_encode($config));
 
         DB::transaction(function () use ($widget, $config) {
             // Мигрируем специфичные данные в зависимости от типа виджета
-            $widgetSlug = $widget->widget_slug ?? $widget->widget->slug ?? 'unknown';
-            \Log::info("Widget slug: {$widgetSlug}");
+            $widgetSlug = $widget->widget_slug ?? $widget->widget->widget_slug ?? 'unknown';
+            Log::info("Widget slug: {$widgetSlug}");
 
             switch ($widgetSlug) {
                 case 'hero':
@@ -370,7 +370,7 @@ class WidgetDataService
      */
     private function syncConfigToNormalized(SiteWidget $widget, array $config): void
     {
-        \Log::info("Syncing config for widget {$widget->name}: " . json_encode($config));
+        Log::info("Syncing config for widget {$widget->name}: " . json_encode($config));
 
         // Удаляем старые конфигурации
         $widget->configs()->delete();
@@ -397,28 +397,21 @@ class WidgetDataService
                 'config_type' => $type,
             ]);
 
-            \Log::info("Created config: {$key} = {$value} (type: {$type})");
+            Log::info("Created config: {$key} = {$value} (type: {$type})");
         }
     }
 
-    /**
-     * Мигрировать данные hero виджета
-     */
     private function migrateHeroData(SiteWidget $widget, array $config): void
     {
         if (isset($config['slides']) && is_array($config['slides'])) {
             $this->saveHeroSlides($widget, $config['slides']);
         }
 
-        // Также мигрируем singleSlide если есть
         if (isset($config['singleSlide']) && is_array($config['singleSlide'])) {
             $this->saveHeroSlides($widget, [$config['singleSlide']]);
         }
     }
 
-    /**
-     * Мигрировать данные формы
-     */
     private function migrateFormData(SiteWidget $widget, array $config): void
     {
         if (isset($config['fields']) && is_array($config['fields'])) {
@@ -426,9 +419,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные меню
-     */
     private function migrateMenuData(SiteWidget $widget, array $config): void
     {
         if (isset($config['items']) && is_array($config['items'])) {
@@ -436,9 +426,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные галереи
-     */
     private function migrateGalleryData(SiteWidget $widget, array $config): void
     {
         if (isset($config['images']) && is_array($config['images'])) {
@@ -446,9 +433,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные пожертвований
-     */
     private function migrateDonationData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -456,9 +440,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные рейтинга регионов
-     */
     private function migrateRegionRatingData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -466,9 +447,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные списка пожертвований
-     */
     private function migrateDonationsListData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -476,9 +454,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные рейтинга по приглашениям
-     */
     private function migrateReferralLeaderboardData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -486,9 +461,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные изображения
-     */
     private function migrateImageData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -496,18 +468,15 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Получить статистику по виджетам
-     */
     public function getWidgetStats(int $siteId): array
     {
         $stats = DB::table('site_widgets')
             ->join('widgets', 'site_widgets.widget_id', '=', 'widgets.id')
             ->where('site_widgets.site_id', $siteId)
-            ->selectRaw('widgets.slug, COUNT(*) as count')
-            ->groupBy('widgets.slug')
+            ->selectRaw('widgets.widget_slug, COUNT(*) as count')
+            ->groupBy('widgets.widget_slug')
             ->get()
-            ->pluck('count', 'slug')
+            ->pluck('count', 'widget_slug')
             ->toArray();
 
         return $stats;

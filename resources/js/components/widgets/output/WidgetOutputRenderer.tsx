@@ -45,7 +45,8 @@ const DefaultOutput: React.FC<WidgetOutputProps> = ({
                 {widget.name}
             </h3>
             <p className="text-gray-600">
-                Виджет "{widget.slug}" не поддерживается в режиме предпросмотра
+                Виджет "{(widget as any).widget_slug}" не поддерживается в
+                режиме предпросмотра
             </p>
         </div>
     </div>
@@ -55,7 +56,8 @@ const DefaultOutput: React.FC<WidgetOutputProps> = ({
 export const WidgetOutputRenderer: React.FC<WidgetOutputProps> = memo(
     ({ widget, className, style }) => {
         // Get the appropriate output component
-        const OutputComponent = outputRegistry[widget.slug] || DefaultOutput;
+        const widgetSlug = (widget as any).widget_slug;
+        const OutputComponent = outputRegistry[widgetSlug] || DefaultOutput;
 
         // Apply universal styling if present in config.styling
         const styling = (widget.config?.styling || {}) as any;

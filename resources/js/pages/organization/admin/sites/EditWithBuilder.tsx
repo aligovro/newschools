@@ -7,7 +7,7 @@ import AppLayout from '@/layouts/app-layout';
 import { sitesApi } from '@/lib/api/index';
 import SitePreview from '@/pages/SitePreview';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Eye, Globe, Save, Settings, Share } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import * as yup from 'yup';
@@ -46,7 +46,7 @@ interface Organization {
 }
 
 interface SiteWidget {
-    id: number;
+    id: number | string;
     widget_id: number;
     name: string;
     widget_slug: string;
@@ -186,7 +186,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
     const widgetSchema = yup
         .object()
         .shape({
-            id: yup.number().required(),
+            id: yup.mixed().required(),
             name: yup.string().required(),
             widget_slug: yup.string().required(),
             config: yup.object().default({}),
@@ -199,23 +199,36 @@ export default function EditWithBuilder({ organization, site }: Props) {
         .test('widget-validation', function (value) {
             const errors: string[] = [];
 
-            // Проверяем только если виджет реально добавлен (не пустой)
-            if (value && value.id) {
-                if (!value.name || value.name.trim() === '') {
-                    errors.push(`Виджет ${value.id}: Название обязательно`);
-                }
-                if (!value.widget_slug || value.widget_slug.trim() === '') {
-                    errors.push(`Виджет ${value.id}: Widget slug обязателен`);
-                }
-                if (!value.position_name || value.position_name.trim() === '') {
-                    errors.push(`Виджет ${value.id}: Позиция обязательна`);
+            if (value && (value as any).id) {
+                if (!(value as any).name || (value as any).name.trim() === '') {
+                    errors.push(
+                        `Виджет ${(value as any).id}: Название обязательно`,
+                    );
                 }
                 if (
-                    value.order === undefined ||
-                    value.order === null ||
-                    value.order < 0
+                    !(value as any).widget_slug ||
+                    (value as any).widget_slug.trim() === ''
                 ) {
-                    errors.push(`Виджет ${value.id}: Порядок обязателен`);
+                    errors.push(
+                        `Виджет ${(value as any).id}: Widget slug обязателен`,
+                    );
+                }
+                if (
+                    !(value as any).position_name ||
+                    (value as any).position_name.trim() === ''
+                ) {
+                    errors.push(
+                        `Виджет ${(value as any).id}: Позиция обязательна`,
+                    );
+                }
+                if (
+                    (value as any).order === undefined ||
+                    (value as any).order === null ||
+                    (value as any).order < 0
+                ) {
+                    errors.push(
+                        `Виджет ${(value as any).id}: Порядок обязателен`,
+                    );
                 }
             }
 
@@ -228,12 +241,10 @@ export default function EditWithBuilder({ organization, site }: Props) {
 
     const widgetsSchema = yup.array().of(widgetSchema);
 
-    // Функция для проверки наличия ошибок в вкладке
     const hasErrorsInTab = (tab: string) => {
         return validationErrors[tab] && validationErrors[tab].length > 0;
     };
 
-    // Настройки сайта с хуком
     const { siteSettings, updateSetting } = useSiteSettings({
         initialSettings: {
             title: site.name || '',
@@ -251,8 +262,6 @@ export default function EditWithBuilder({ organization, site }: Props) {
     const _handleSaveSettings = async () => {
         try {
             setIsSaving(true);
-            // Здесь будет логика сохранения настроек
-            // TODO: Добавить API вызов для сохранения настроек
         } catch (error) {
             console.error('Error saving settings:', error);
         } finally {
@@ -261,14 +270,8 @@ export default function EditWithBuilder({ organization, site }: Props) {
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Dashboard',
-            href: '/dashboard',
-        },
-        {
-            title: 'Организации',
-            href: '/dashboard/organizations',
-        },
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Организации', href: '/dashboard/organizations' },
         {
             title: organization.name,
             href: `/dashboard/organization/${organization.id}/admin`,
@@ -299,69 +302,52 @@ export default function EditWithBuilder({ organization, site }: Props) {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // Проверяем, что site.id существует
-            if (!site?.id) {
-                throw new Error('Site ID is not defined');
-            }
+            if (!site?.id) throw new Error('Site ID is not defined');
 
-            // Валидируем виджеты только если они есть
             if (widgets.length > 0) {
                 try {
                     await widgetsSchema.validate(widgets, {
                         abortEarly: false,
                     });
-                    // Очищаем ошибки если валидация прошла успешно
                     setValidationErrors({});
                 } catch (validationError) {
                     if (validationError instanceof yup.ValidationError) {
                         const errors: string[] = [];
-
                         validationError.inner.forEach((error) => {
                             if (error.message) {
-                                // Разбиваем сообщения по точкам с запятой для получения отдельных ошибок
                                 const errorMessages = error.message.split('; ');
                                 errors.push(...errorMessages);
                             }
                         });
-
-                        console.error('Validation errors:', errors);
                         setValidationErrors({ builder: errors });
                         setIsSaving(false);
                         return;
                     }
                 }
             } else {
-                // Если виджетов нет, очищаем ошибки
                 setValidationErrors({});
             }
 
-            // Сохраняем конфигурацию виджетов
-            const content = {
-                widgets: widgets,
+            const payload = {
+                widgets: widgets.map((w) => ({
+                    id: w.id,
+                    name: w.name,
+                    widget_slug: w.widget_slug,
+                    position_name: w.position_name,
+                    position_slug: w.position_slug,
+                    order: w.order,
+                    is_active: w.is_active,
+                    is_visible: w.is_visible,
+                    // Передаем configs если есть, иначе плоский config
+                    configs: w.configs || undefined,
+                    config: w.configs ? undefined : w.config || {},
+                })),
             };
 
-            // Используем Inertia.js для отправки данных
-            router.post(
-                `/sites/${site.id}/save-config`,
-                {
-                    widgets: content.widgets || [],
-                },
-                {
-                    onSuccess: () => {
-                        setValidationErrors({});
-                        // Можно добавить toast уведомление вместо alert
-                    },
-                    onError: (errors) => {
-                        console.error('Error saving:', errors);
-                        alert(
-                            'Ошибка при сохранении: ' + JSON.stringify(errors),
-                        );
-                    },
-                    onFinish: () => {
-                        setIsSaving(false);
-                    },
-                },
-            );
+            const res = await sitesApi.saveSiteConfig(site.id, payload);
+            if (!res.success) {
+                throw new Error(res.message || 'Save failed');
+            }
         } catch (error) {
             console.error('Error saving:', error);
             alert('Ошибка при сохранении конфигурации');
@@ -372,10 +358,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
 
     const _handlePreview = async () => {
         try {
-            // Получаем URL для предпросмотра
             const result = await sitesApi.getPreviewUrl(site.id);
-
-            // Открываем предпросмотр в новой вкладке
             window.open(result.preview_url, '_blank');
         } catch (error) {
             console.error('Error getting preview:', error);
@@ -384,35 +367,21 @@ export default function EditWithBuilder({ organization, site }: Props) {
     };
 
     const handleWidgetsChange = (newWidgets: any[], isLoading: boolean) => {
-        setWidgets(newWidgets);
+        setWidgets(newWidgets as SiteWidget[]);
         setIsWidgetsLoading(isLoading);
     };
 
     const _handleAddWidget = async (widgetData: any) => {
         try {
-            // Здесь будет логика добавления виджета через API
-            // await addWidgetToSite(site.id, widgetData);
         } catch (error) {
             console.error('Error adding widget:', error);
         }
     };
 
     const tabs = [
-        {
-            id: 'settings',
-            label: 'Настройки',
-            icon: Settings,
-        },
-        {
-            id: 'builder',
-            label: 'Конструктор',
-            icon: Globe,
-        },
-        {
-            id: 'preview',
-            label: 'Предпросмотр',
-            icon: Eye,
-        },
+        { id: 'settings', label: 'Настройки', icon: Settings },
+        { id: 'builder', label: 'Конструктор', icon: Globe },
+        { id: 'preview', label: 'Предпросмотр', icon: Eye },
     ];
 
     return (
@@ -448,7 +417,11 @@ export default function EditWithBuilder({ organization, site }: Props) {
                         </div>
 
                         <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={_handlePreview}
+                            >
                                 <Eye className="mr-2 h-4 w-4" />
                                 Предпросмотр
                             </Button>
@@ -481,11 +454,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
                                         activeTab === tab.id
                                             ? 'bg-primary text-primary-foreground'
                                             : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                                    } ${
-                                        hasErrorsInTab(tab.id)
-                                            ? 'border-2 border-red-500'
-                                            : ''
-                                    }`}
+                                    } ${hasErrorsInTab(tab.id) ? 'border-2 border-red-500' : ''}`}
                                 >
                                     <Icon className="h-4 w-4" />
                                     <span>{tab.label}</span>
@@ -510,7 +479,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
                                 >
                             }
                             initialLayoutConfig={site.layout_config || {}}
-                            initialWidgets={widgets}
+                            initialWidgets={widgets as any}
                             onWidgetsChange={handleWidgetsChange}
                             validationErrors={validationErrors['builder'] || []}
                         />
@@ -527,7 +496,7 @@ export default function EditWithBuilder({ organization, site }: Props) {
                                     template:
                                         site.template as unknown as string,
                                     widgets_config: site.widgets.map((w) => ({
-                                        id: w.id.toString(),
+                                        id: String(w.id),
                                         name: w.name,
                                         slug: w.widget_slug,
                                         config: {

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class WidgetController extends Controller
 {
@@ -52,7 +53,7 @@ class WidgetController extends Controller
         $availableBlocks = $template->available_blocks ?? [];
 
         $widgets = Widget::active()
-            ->whereIn('slug', $availableBlocks)
+            ->whereIn('widget_slug', $availableBlocks)
             ->ordered()
             ->get();
 

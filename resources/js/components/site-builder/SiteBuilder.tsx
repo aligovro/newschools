@@ -5,7 +5,6 @@ import { PanelRight } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import { WidgetPanel } from '../widget-system/WidgetPanel';
-import { ContentBlocksPanel } from './ContentBlocksPanel';
 import { DragDropProvider } from './DragDropProvider';
 import { WidgetDisplay } from './WidgetDisplay';
 import { WidgetEditModal } from './WidgetEditModal';
@@ -215,10 +214,23 @@ const PositionDropZone: React.FC<{
     onMoveSidebarRight,
     sidebarPosition,
 }) => {
+    useEffect(() => {
+        console.log('[Builder] position props', position);
+    }, [position]);
+
     const [{ isOver, canDrop }, drop] = useDrop({
         accept: 'widget',
         drop: (item: { widget: any }) => {
+            console.log('[DND] drop on position', {
+                position: position.slug,
+                item,
+            });
             onDropWidget(item, position.slug);
+        },
+        hover: (item, monitor) => {
+            if (monitor.isOver({ shallow: true })) {
+                console.log('[DND] hover over position', position.slug);
+            }
         },
         collect: (monitor) => ({
             isOver: monitor.isOver(),
@@ -230,6 +242,13 @@ const PositionDropZone: React.FC<{
         .filter((widget) => widget.position_slug === position.slug)
         .sort((a, b) => a.order - b.order);
 
+    useEffect(() => {
+        console.log(
+            '[Builder] position widgets',
+            position.slug,
+            positionWidgets,
+        );
+    }, [position.slug, positionWidgets]);
 
     // Функция для получения ошибок валидации для конкретного виджета
     const getWidgetErrors = (widget: WidgetData) => {
@@ -376,8 +395,14 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     onWidgetsChange,
     validationErrors = [],
 }) => {
-    const { widgets, addWidget, updateWidget, deleteWidget, isLoading } =
-        useWidgets(siteId, initialWidgets);
+    const {
+        widgets,
+        addWidget,
+        updateWidget,
+        deleteWidget,
+        isLoading,
+        refreshWidgets,
+    } = useWidgets(siteId, initialWidgets);
 
     const [positions, setPositions] = useState<WidgetPosition[]>([]);
     const [loading, setLoading] = useState(true);
@@ -468,6 +493,11 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
         loadPositions();
     }, [loadPositions]);
 
+    // Загружаем актуальные виджеты с бэка при маунте
+    useEffect(() => {
+        refreshWidgets();
+    }, [refreshWidgets]);
+
     const handleAddWidgetToPosition = useCallback(
         async (positionSlug: string) => {
             setSelectedPosition(positionSlug);
@@ -482,7 +512,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
 
             try {
                 const newWidget = await addWidget(
-                    widget.widget_slug,
+                    (widget as any).widget_slug,
                     selectedPosition,
                 );
                 setIsWidgetSelectModalOpen(false);
@@ -502,15 +532,19 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
 
     const handleDropWidget = useCallback(
         async (item: { widget: any }, positionSlug: string) => {
+            console.log('[DND] handleDropWidget', { item, positionSlug });
             const widgetData = item.widget || item;
-
+            const slug = widgetData.widget_slug;
+            if (!slug) {
+                console.error('Widget slug is missing', widgetData);
+                return;
+            }
+            console.log('[DND] resolved slug', slug);
             try {
-                const newWidget = await addWidget(
-                    widgetData.slug,
-                    positionSlug,
-                );
+                const newWidget = await addWidget(slug, positionSlug);
                 // После успешного добавления виджета, автоматически открываем его настройки
                 if (newWidget) {
+                    console.log('[DND] widget created', newWidget);
                     setNewlyAddedWidgetId(newWidget.id);
                     setEditingWidget(newWidget);
                     setIsEditModalOpen(true);
@@ -618,14 +652,10 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                     {/* Left Sidebar - Widgets Panel */}
                     {isRightPanelOpen && (
                         <div className="h-full w-80 flex-shrink-0 border-r border-gray-200 bg-white">
-                            {template ? (
-                                <WidgetPanel
-                                    template={template}
-                                    className="h-full"
-                                />
-                            ) : (
-                                <ContentBlocksPanel className="h-full" />
-                            )}
+                            <WidgetPanel
+                                template={template}
+                                className="h-full"
+                            />
                         </div>
                     )}
 

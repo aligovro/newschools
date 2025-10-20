@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Enums\DonationStatus;
 
 class Donation extends Model
 {
@@ -47,6 +48,7 @@ class Donation extends Model
     'webhook_data' => 'array',
     'paid_at' => 'datetime',
     'refunded_at' => 'datetime',
+    'status' => DonationStatus::class,
   ];
 
   // Связи
@@ -83,12 +85,12 @@ class Donation extends Model
   // Скоупы
   public function scopeCompleted($query)
   {
-    return $query->where('status', 'completed');
+    return $query->where('status', DonationStatus::Completed);
   }
 
   public function scopePending($query)
   {
-    return $query->where('status', 'pending');
+    return $query->where('status', DonationStatus::Pending);
   }
 
   public function scopeByOrganization($query, $organizationId)
@@ -148,12 +150,12 @@ class Donation extends Model
 
   public function getIsPaidAttribute(): bool
   {
-    return $this->status === 'completed' && $this->paid_at !== null;
+    return $this->status === DonationStatus::Completed && $this->paid_at !== null;
   }
 
   public function getIsRefundedAttribute(): bool
   {
-    return $this->status === 'refunded' && $this->refunded_at !== null;
+    return $this->status === DonationStatus::Refunded && $this->refunded_at !== null;
   }
 
   public function getReceiptEmailAttribute(): ?string

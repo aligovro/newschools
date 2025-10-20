@@ -271,7 +271,7 @@ class SiteController extends Controller
                 'name' => $widget->name,
                 'position_name' => $position->name,
                 'position_slug' => $position->slug,
-                'widget_slug' => $widget->slug,
+                'widget_slug' => $widget->widget_slug,
                 'order' => $order,
                 'sort_order' => $order,
                 'is_active' => true,
@@ -534,13 +534,110 @@ class SiteController extends Controller
         try {
             $site = $this->getSite($site);
 
-            // Используем WidgetDataService для получения нормализованных данных
-            $widgetDataService = app(\App\Services\WidgetDataService::class);
-            $widgets = $widgetDataService->getSiteWidgetsWithData($site->id);
+            // Централизованный вывод через ресурс, чтобы включать специализированные данные
+            $widgets = \App\Models\SiteWidget::with([
+                'configs',
+                'heroSlides',
+                'formFields',
+                'menuItems',
+                'galleryImages',
+                'donationSettings',
+                'regionRatingSettings',
+                'donationsListSettings',
+                'referralLeaderboardSettings',
+                'imageSettings',
+                'widget',
+                'position',
+            ])
+                ->where('site_id', $site->id)
+                ->active()
+                ->visible()
+                ->ordered()
+                ->get();
 
-            return back()->with('data', $widgets);
+            return response()->json([
+                'success' => true,
+                'data' => SiteWidgetResource::collection($widgets)->toArray(request()),
+            ]);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Ошибка при получении конфигурации: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при получении конфигурации: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Сохранение конфигурации сайта (массовое)
+    public function saveConfig(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'widgets' => 'required|array',
+        ]);
+
+        try {
+            $site = $this->getSite($id);
+            $widgets = $request->widgets;
+
+            foreach ($widgets as $w) {
+                if (empty($w['id'])) {
+                    continue;
+                }
+                $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
+                    ->where('id', $w['id'])
+                    ->first();
+                if (!$siteWidget) {
+                    continue;
+                }
+
+                $update = [];
+                if (array_key_exists('is_active', $w)) {
+                    $update['is_active'] = (bool) $w['is_active'];
+                }
+                if (array_key_exists('is_visible', $w)) {
+                    $update['is_visible'] = (bool) $w['is_visible'];
+                }
+                if (array_key_exists('order', $w)) {
+                    $update['order'] = (int) $w['order'];
+                    $update['sort_order'] = (int) $w['order'];
+                }
+                if (array_key_exists('position_slug', $w)) {
+                    $pos = WidgetPosition::where('slug', $w['position_slug'])->first();
+                    if ($pos) {
+                        $update['position_slug'] = $pos->slug;
+                        $update['position_name'] = $pos->name;
+                        $update['position_id'] = $pos->id;
+                    }
+                }
+                if (!empty($update)) {
+                    $siteWidget->update($update);
+                }
+
+                // Если есть конфиг, синхронизируем его (ожидаем ключ configs или config)
+                if (!empty($w['config']) && is_array($w['config'])) {
+                    $siteWidget->syncConfig($w['config']);
+                } elseif (!empty($w['configs']) && is_array($w['configs'])) {
+                    // Если пришли нормализованные configs (ключ/значение/тип) — преобразуем в плоский вид
+                    $flat = [];
+                    foreach ($w['configs'] as $c) {
+                        if (!empty($c['config_key'])) {
+                            $flat[$c['config_key']] = $c['config_value'];
+                        }
+                    }
+                    if (!empty($flat)) {
+                        $siteWidget->syncConfig($flat);
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Конфигурация сохранена',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении конфигурации: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -559,11 +656,11 @@ class SiteController extends Controller
                     'id' => time() . rand(1000, 9999),
                     'widget_id' => $widget->id,
                     'name' => $widget->name,
-                    'slug' => $widget->slug,
+                    'slug' => $widget->widget_slug,
                     'position_name' => $position->name,
                     'position_slug' => $position->slug,
                     'order' => 1,
-                    'config' => $this->getDefaultConfigForWidget($widget->slug),
+                    'config' => $this->getDefaultConfigForWidget($widget->widget_slug),
                     'settings' => [],
                     'is_active' => true,
                     'is_visible' => true,

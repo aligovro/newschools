@@ -216,7 +216,7 @@ class SiteWidget extends Model
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'widget' => $this->widget->slug,
+            'widget' => $this->widget->widget_slug,
             'component' => $this->widget->component_name,
             'config' => $this->getMergedConfig(),
             'settings' => $this->getMergedSettings(),
@@ -470,7 +470,8 @@ class SiteWidget extends Model
         $baseData['id'] = $this->id;
         $baseData['widget_id'] = $this->widget_id;
         $baseData['name'] = $this->name;
-        $baseData['slug'] = $this->widget_slug;
+        $baseData['widget_slug'] = $this->widget_slug;
+        $baseData['slug'] = $this->widget_slug; // backward compat
         $baseData['position_name'] = $this->position_name;
         $baseData['position_slug'] = $this->position_slug;
         $baseData['order'] = $this->order;

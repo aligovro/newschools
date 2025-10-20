@@ -30,8 +30,22 @@ export const sitesApi = {
     // Получение URL для предпросмотра сайта
     getPreviewUrl: (siteId: number): Promise<{ preview_url: string }> =>
         apiClient
-            .get<{ preview_url: string }>(`/sites/${siteId}/preview`)
-            .then((response) => response.data),
+            .get<{
+                success: boolean;
+                data: { preview_url: string };
+            }>(`/sites/${siteId}/preview`)
+            .then((response) => ({
+                preview_url: response.data.data.preview_url,
+            })),
+
+    // Получение конфигурации виджетов сайта
+    getConfig: (siteId: number): Promise<{ widgets: unknown[] }> =>
+        apiClient
+            .get<{
+                success: boolean;
+                data: unknown[];
+            }>(`/sites/${siteId}/config`)
+            .then((response) => ({ widgets: response.data.data || [] })),
 
     // Сохранение настроек Telegram
     saveTelegramSettings: (

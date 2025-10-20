@@ -98,10 +98,10 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
                 );
             }
 
-            // Получаем рендерер из реестра
-
+            // Получаем рендерер из реестра (поддержка старого поля slug)
+            const registryKey = (widget as any).widget_slug;
             const renderer =
-                widgetRegistry[widget.widget_slug] || defaultWidgetRenderer;
+                widgetRegistry[registryKey] || defaultWidgetRenderer;
 
             // Рендерим виджет
             return renderer({

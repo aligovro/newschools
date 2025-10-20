@@ -8,6 +8,8 @@ use App\Models\OrganizationDomain;
 use App\Services\SliderService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Http\Resources\OrganizationSiteResource;
+use App\Http\Resources\OrganizationPageResource;
 
 class PublicSiteController extends Controller
 {
@@ -71,8 +73,8 @@ class PublicSiteController extends Controller
     $navigation = $this->getNavigation($site);
 
     return Inertia::render('sites/Show', [
-      'site' => $site,
-      'homepage' => $homepage,
+      'site' => (new OrganizationSiteResource($site))->toArray(request()),
+      'homepage' => (new OrganizationPageResource($homepage))->toArray(request()),
       'navigation' => $navigation,
       'sliders' => $sliders,
     ]);
@@ -134,8 +136,8 @@ class PublicSiteController extends Controller
     $breadcrumbs = $page->getBreadcrumbs();
 
     return Inertia::render('sites/Page', [
-      'site' => $site,
-      'page' => $page,
+      'site' => (new OrganizationSiteResource($site))->toArray(request()),
+      'page' => (new OrganizationPageResource($page))->toArray(request()),
       'navigation' => $navigation,
       'sliders' => $sliders,
       'breadcrumbs' => $breadcrumbs,

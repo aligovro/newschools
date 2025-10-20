@@ -4,11 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\OrganizationSite;
 use App\Models\Organization;
+use App\Http\Resources\OrganizationSiteResource;
+use App\Support\InertiaResource;
 use Illuminate\Http\Request;
+use App\Http\Requests\Site\StoreSiteRequest;
+use App\Http\Requests\Site\UpdateSiteRequest;
 use Inertia\Inertia;
 
 class SiteController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index(Request $request)
     {
         $query = OrganizationSite::with(['organization'])
@@ -70,7 +79,7 @@ class SiteController extends Controller
             ->get();
 
         return Inertia::render('sites/SiteManagementPage', [
-            'sites' => $sites,
+            'sites' => InertiaResource::paginate($sites, OrganizationSiteResource::class),
             'organizations' => $organizations,
             'templates' => $templates,
             'filters' => $request->only(['search', 'status', 'template', 'organization_id', 'sort_by', 'sort_direction', 'per_page']),
@@ -82,20 +91,12 @@ class SiteController extends Controller
         $site->load(['organization', 'pages', 'widgets.widget', 'widgets.position']);
 
         return Inertia::render('sites/SiteShowPage', [
-            'site' => $site,
+            'site' => (new OrganizationSiteResource($site))->toArray(request()),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreSiteRequest $request)
     {
-        $request->validate([
-            'organization_id' => 'required|exists:organizations,id',
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:organization_sites,slug',
-            'description' => 'nullable|string|max:1000',
-            'template' => 'required|string|exists:site_templates,slug',
-        ]);
-
         $template = \App\Models\SiteTemplate::where('slug', $request->template)->first();
 
         $site = OrganizationSite::create([
@@ -121,19 +122,17 @@ class SiteController extends Controller
         return redirect()->back()->with('success', 'Сайт успешно создан');
     }
 
-    public function update(Request $request, OrganizationSite $site)
+    public function update(UpdateSiteRequest $request, OrganizationSite $site)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:organization_sites,slug,' . $site->id,
-            'description' => 'nullable|string|max:1000',
-            'template' => 'required|string|exists:site_templates,slug',
-            'status' => 'required|string|in:draft,published,archived',
-            'is_public' => 'boolean',
-            'is_maintenance_mode' => 'boolean',
-        ]);
-
-        $site->update($request->all());
+        $site->update($request->only([
+            'name',
+            'slug',
+            'description',
+            'template',
+            'status',
+            'is_public',
+            'is_maintenance_mode',
+        ]));
 
         return redirect()->back()->with('success', 'Сайт успешно обновлен');
     }

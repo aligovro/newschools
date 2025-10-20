@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use App\Traits\HasSlug;
+use App\Enums\OrganizationStatus;
 
 class Organization extends Model
 {
@@ -50,6 +51,7 @@ class Organization extends Model
     'latitude' => 'decimal:8',
     'longitude' => 'decimal:8',
     'is_public' => 'boolean',
+    'status' => OrganizationStatus::class,
   ];
 
   // Связи
@@ -229,7 +231,7 @@ class Organization extends Model
   // Скоупы
   public function scopeActive($query)
   {
-    return $query->where('status', 'active');
+    return $query->where('status', OrganizationStatus::Active);
   }
 
   public function scopePublic($query)
@@ -255,7 +257,7 @@ class Organization extends Model
   // Методы
   public function getTotalDonationsAttribute(): int
   {
-    return $this->donations()->where('status', 'completed')->sum('amount');
+    return $this->donations()->where('status', \App\Enums\DonationStatus::Completed)->sum('amount');
   }
 
   public function getTotalDonationsRublesAttribute(): float

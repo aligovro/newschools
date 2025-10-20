@@ -8,17 +8,25 @@ use App\Models\Donation;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
+use App\Http\Requests\Payments\CreatePaymentRequest;
+use App\Http\Requests\Payments\RefundPaymentRequest;
+use App\Http\Requests\Payments\TestPaymentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use App\Http\Resources\OrganizationResource;
+use App\Http\Resources\OrganizationDonationResource;
+use App\Support\InertiaResource;
 
 class OrganizationPaymentsController extends Controller
 {
     public function __construct()
     {
         // Middleware применяется в маршрутах
+        $this->middleware('auth');
     }
 
     /**
@@ -27,11 +35,14 @@ class OrganizationPaymentsController extends Controller
     public function index(Organization $organization)
     {
         $stats = $this->getPaymentStats($organization);
-        $recentTransactions = $this->getRecentTransactions($organization);
+        $recentTransactions = InertiaResource::list(
+            $organization->donations()->with(['member', 'paymentTransaction'])->latest()->limit(10)->get(),
+            OrganizationDonationResource::class
+        );
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 
         return Inertia::render('organization/admin/PaymentsIndex', [
-            'organization' => $organization,
+            'organization' => (new OrganizationResource($organization))->toArray(request()),
             'stats' => $stats,
             'recentTransactions' => $recentTransactions,
             'paymentMethods' => $paymentMethods,
@@ -88,7 +99,7 @@ class OrganizationPaymentsController extends Controller
     /**
      * Создать платеж
      */
-    public function createPayment(Request $request, Organization $organization): JsonResponse
+    public function createPayment(CreatePaymentRequest $request, Organization $organization): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric|min:1',
@@ -107,23 +118,51 @@ class OrganizationPaymentsController extends Controller
         }
 
         try {
-            $donation = $organization->donations()->create([
-                'member_id' => $request->member_id,
-                'project_id' => $request->project_id,
-                'amount' => $request->amount * 100, // Конвертируем в копейки
-                'status' => 'pending',
-                'description' => $request->description,
-                'payment_method' => $request->payment_method,
-            ]);
+            $result = DB::transaction(function () use ($request, $organization) {
+                // Optional client idempotency
+                $idempotencyKey = $request->header('Idempotency-Key') ?? $request->get('idempotency_key');
+                if ($idempotencyKey) {
+                    $existing = PaymentTransaction::where('organization_id', $organization->id)
+                        ->where('metadata->idempotency_key', $idempotencyKey)
+                        ->latest('id')
+                        ->first();
+                    if ($existing) {
+                        return [
+                            'donation' => $existing->donation,
+                            'transaction' => $existing,
+                            'payment_url' => $this->getPaymentUrl($existing, $existing->metadata['return_url'] ?? null),
+                        ];
+                    }
+                }
 
-            // Создаем транзакцию
-            $transaction = $this->createPaymentTransaction($donation, $request->all());
+                $donation = $organization->donations()->create([
+                    'member_id' => $request->member_id,
+                    'project_id' => $request->project_id,
+                    'amount' => (int) ($request->amount * 100), // minor units
+                    'status' => 'pending',
+                    'description' => $request->description,
+                    'payment_method' => $request->payment_method,
+                ]);
+
+                // Создаем транзакцию
+                $data = $request->all();
+                if ($idempotencyKey) {
+                    $data['idempotency_key'] = $idempotencyKey;
+                }
+                $transaction = $this->createPaymentTransaction($donation, $data);
+
+                return [
+                    'donation' => $donation,
+                    'transaction' => $transaction,
+                    'payment_url' => $this->getPaymentUrl($transaction, $request->return_url),
+                ];
+            });
 
             return response()->json([
                 'message' => 'Платеж создан',
-                'donation' => $donation,
-                'transaction' => $transaction,
-                'payment_url' => $this->getPaymentUrl($transaction, $request->return_url),
+                'donation' => $result['donation'],
+                'transaction' => $result['transaction'],
+                'payment_url' => $result['payment_url'],
             ]);
         } catch (\Exception $e) {
             Log::error('Payment creation failed', [
@@ -153,33 +192,46 @@ class OrganizationPaymentsController extends Controller
                 return response()->json(['message' => 'Invalid webhook data'], 400);
             }
 
-            $transaction = PaymentTransaction::where('external_id', $transactionId)->first();
+            $processed = DB::transaction(function () use ($transactionId, $data) {
+                $transaction = PaymentTransaction::where('external_id', $transactionId)->lockForUpdate()->first();
+                if (!$transaction) {
+                    Log::warning('Transaction not found', ['transaction_id' => $transactionId]);
+                    return ['error' => 'not_found'];
+                }
 
-            if (!$transaction) {
-                Log::warning('Transaction not found', ['transaction_id' => $transactionId]);
+                $donation = $transaction->donation;
+                $status = $data['object']['status'] ?? null;
+
+                $target = match ($status) {
+                    'succeeded' => 'completed',
+                    'canceled' => 'failed',
+                    'waiting_for_capture' => 'pending',
+                    default => null,
+                };
+
+                if ($target === null) {
+                    return ['ok' => true];
+                }
+
+                // Idempotent: if already set, skip updates
+                if ($transaction->status === $target && $donation->status === $target) {
+                    return ['ok' => true];
+                }
+
+                $donation->update(['status' => $target]);
+                $transaction->update(['status' => $target]);
+
+                return ['ok' => true, 'target' => $target, 'donation' => $donation];
+            });
+
+            if (isset($processed['error']) && $processed['error'] === 'not_found') {
                 return response()->json(['message' => 'Transaction not found'], 404);
             }
 
-            $donation = $transaction->donation;
-            $status = $data['object']['status'] ?? null;
-
-            switch ($status) {
-                case 'succeeded':
-                    $donation->update(['status' => 'completed']);
-                    $transaction->update(['status' => 'completed']);
-                    $this->sendPaymentNotification($donation, 'success');
-                    break;
-
-                case 'canceled':
-                    $donation->update(['status' => 'failed']);
-                    $transaction->update(['status' => 'failed']);
-                    $this->sendPaymentNotification($donation, 'failed');
-                    break;
-
-                case 'waiting_for_capture':
-                    $donation->update(['status' => 'pending']);
-                    $transaction->update(['status' => 'pending']);
-                    break;
+            if (($processed['target'] ?? null) === 'completed' && isset($processed['donation'])) {
+                $this->sendPaymentNotification($processed['donation'], 'success');
+            } elseif (($processed['target'] ?? null) === 'failed' && isset($processed['donation'])) {
+                $this->sendPaymentNotification($processed['donation'], 'failed');
             }
 
             return response()->json(['message' => 'Webhook processed']);
@@ -196,7 +248,7 @@ class OrganizationPaymentsController extends Controller
     /**
      * Возврат платежа
      */
-    public function refund(Request $request, Organization $organization, Donation $donation): JsonResponse
+    public function refund(RefundPaymentRequest $request, Organization $organization, Donation $donation): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'amount' => 'nullable|numeric|min:1|max:' . ($donation->amount / 100),
@@ -217,26 +269,33 @@ class OrganizationPaymentsController extends Controller
         }
 
         try {
-            $refundAmount = $request->amount ? $request->amount * 100 : $donation->amount;
+            $result = DB::transaction(function () use ($request, $organization, $donation) {
+                $refundAmount = $request->amount ? (int) ($request->amount * 100) : $donation->amount;
 
-            // Здесь должен быть вызов API ЮKassa для создания возврата
-            $refundData = $this->createYookassaRefund($donation, $refundAmount, $request->reason);
+                // Здесь должен быть вызов API ЮKassa для создания возврата
+                $refundData = $this->createYookassaRefund($donation, $refundAmount, $request->reason);
 
-            // Создаем запись о возврате
-            $refundDonation = $organization->donations()->create([
-                'member_id' => $donation->member_id,
-                'project_id' => $donation->project_id,
-                'amount' => -$refundAmount, // Отрицательная сумма для возврата
-                'status' => 'completed',
-                'description' => 'Возврат: ' . ($request->reason ?? 'Без указания причины'),
-                'payment_method' => $donation->payment_method,
-                'parent_donation_id' => $donation->id,
-            ]);
+                // Создаем запись о возврате
+                $refundDonation = $organization->donations()->create([
+                    'member_id' => $donation->member_id,
+                    'project_id' => $donation->project_id,
+                    'amount' => -$refundAmount, // Отрицательная сумма для возврата
+                    'status' => 'completed',
+                    'description' => 'Возврат: ' . ($request->reason ?? 'Без указания причины'),
+                    'payment_method' => $donation->payment_method,
+                    'parent_donation_id' => $donation->id,
+                ]);
+
+                return [
+                    'refund' => $refundDonation,
+                    'refund_data' => $refundData,
+                ];
+            });
 
             return response()->json([
                 'message' => 'Возврат создан',
-                'refund' => $refundDonation,
-                'refund_data' => $refundData,
+                'refund' => $result['refund'],
+                'refund_data' => $result['refund_data'],
             ]);
         } catch (\Exception $e) {
             Log::error('Refund creation failed', [
@@ -324,7 +383,7 @@ class OrganizationPaymentsController extends Controller
         $integrationSettings = $settings?->integration_settings ?? [];
 
         return Inertia::render('organization/admin/PaymentSettings', [
-            'organization' => $organization,
+            'organization' => (new OrganizationResource($organization))->toArray(request()),
             'paymentSettings' => $paymentSettings,
             'integrationSettings' => $integrationSettings,
             'availableMethods' => PaymentMethod::all(),
@@ -364,7 +423,7 @@ class OrganizationPaymentsController extends Controller
     /**
      * Тестирование платежной системы
      */
-    public function testPayment(Request $request, Organization $organization): JsonResponse
+    public function testPayment(TestPaymentRequest $request, Organization $organization): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric|min:1|max:1000',
@@ -379,21 +438,28 @@ class OrganizationPaymentsController extends Controller
         }
 
         try {
-            // Создаем тестовый платеж
-            $donation = $organization->donations()->create([
-                'amount' => $request->amount * 100,
-                'status' => 'pending',
-                'description' => 'Тестовый платеж',
-                'payment_method' => $request->payment_method,
-            ]);
+            $result = DB::transaction(function () use ($request, $organization) {
+                // Создаем тестовый платеж
+                $donation = $organization->donations()->create([
+                    'amount' => (int) ($request->amount * 100),
+                    'status' => 'pending',
+                    'description' => 'Тестовый платеж',
+                    'payment_method' => $request->payment_method,
+                ]);
 
-            $transaction = $this->createPaymentTransaction($donation, $request->all());
+                $transaction = $this->createPaymentTransaction($donation, $request->all());
+
+                return [
+                    'donation' => $donation,
+                    'transaction' => $transaction,
+                ];
+            });
 
             return response()->json([
                 'message' => 'Тестовый платеж создан',
-                'donation' => $donation,
-                'transaction' => $transaction,
-                'payment_url' => $this->getPaymentUrl($transaction),
+                'donation' => $result['donation'],
+                'transaction' => $result['transaction'],
+                'payment_url' => $this->getPaymentUrl($result['transaction']),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -432,23 +498,11 @@ class OrganizationPaymentsController extends Controller
      */
     private function getRecentTransactions(Organization $organization): array
     {
-        return $organization->donations()
-            ->with(['member', 'paymentTransaction'])
-            ->latest()
-            ->limit(10)
-            ->get()
-            ->map(function ($donation) {
-                return [
-                    'id' => $donation->id,
-                    'amount' => $donation->amount,
-                    'status' => $donation->status,
-                    'member_name' => $donation->member->name ?? 'Аноним',
-                    'payment_method' => $donation->payment_method,
-                    'created_at' => $donation->created_at,
-                    'transaction_id' => $donation->paymentTransaction->external_id ?? null,
-                ];
-            })
-            ->toArray();
+        // Deprecated by Resource-based approach; kept for backward compatibility if used elsewhere.
+        return InertiaResource::list(
+            $organization->donations()->with(['member', 'paymentTransaction'])->latest()->limit(10)->get(),
+            OrganizationDonationResource::class
+        );
     }
 
     /**

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Inertia\Inertia;
+use App\Http\Resources\OrganizationResource;
 
 class OrganizationReportsController extends Controller
 {
@@ -30,7 +31,7 @@ class OrganizationReportsController extends Controller
     $recentReports = $this->getRecentReports($organization);
 
     return Inertia::render('organization/admin/ReportsIndex', [
-      'organization' => $organization,
+      'organization' => (new OrganizationResource($organization))->toArray(request()),
       'availableReports' => $availableReports,
       'recentReports' => $recentReports,
     ]);

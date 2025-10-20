@@ -135,6 +135,16 @@ interface WidgetData {
         sort_order: number;
         is_active: boolean;
     }>;
+    menu_items?: Array<{
+        id: number;
+        item_id: string;
+        title: string;
+        url: string;
+        type: string;
+        open_in_new_tab: boolean;
+        sort_order: number;
+        is_active: boolean;
+    }>;
 }
 
 interface WidgetEditModalProps {
@@ -174,11 +184,9 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
     // Синхронизация формы с виджетом
     useEffect(() => {
         if (widget) {
-
             const config = widget.configs
                 ? convertConfigsToConfig(widget.configs)
                 : widget.config || {};
-
 
             setFormData({
                 name: widget.name || '',
@@ -197,12 +205,10 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         if (!widget) return;
 
         try {
-            // Сначала сохраняем конфигурацию, если есть изменения
             if (onSaveConfig && _pendingConfig) {
                 await onSaveConfig(widget.id, _pendingConfig);
             }
 
-            // Затем сохраняем основные поля виджета
             const minimalUpdates = {
                 id: widget.id,
                 name: formData.name,
@@ -230,7 +236,6 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
     // Мемоизированная функция сохранения конфига
     const handleConfigUpdate = useCallback(async (cfg: WidgetConfig) => {
         setPendingConfig(cfg);
-        // Обновляем локальное состояние формы
         setFormData((prev) => ({
             ...prev,
             config: cfg,
@@ -243,7 +248,6 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         [widget?.config],
     );
 
-    // Рендерер для кастомных виджетов
     const renderCustomWidget = useMemo(() => {
         if (!widget) return null;
 
@@ -268,7 +272,6 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     ? convertConfigsToConfig(widget.configs)
                     : widget.config || {};
 
-
                 return (
                     <HeroWidget
                         config={heroConfig}
@@ -281,14 +284,35 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     />
                 );
 
-            case 'menu':
+            case 'menu': {
+                const baseConfigs = widget.configs || [];
+                const items = (widget.menu_items || []).map((mi) => ({
+                    id: String(mi.item_id || mi.id),
+                    title: mi.title,
+                    url: mi.url,
+                    type: mi.type as string as 'internal' | 'external',
+                    newTab: !!mi.open_in_new_tab,
+                }));
+                const configsWithItems =
+                    items.length > 0
+                        ? [
+                              ...baseConfigs,
+                              {
+                                  config_key: 'items',
+                                  config_type: 'json',
+                                  config_value: JSON.stringify(items),
+                              },
+                          ]
+                        : baseConfigs;
+
                 return (
                     <MenuWidget
-                        configs={widget.configs || []}
+                        configs={configsWithItems as any}
                         isEditable
                         onConfigChange={setPendingConfig}
                     />
                 );
+            }
 
             case 'form': {
                 const formWidget = {
@@ -393,7 +417,6 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         }
     }, [widget, siteId, organizationId, handleConfigUpdate]);
 
-    // Стандартные поля для остальных виджетов
     const renderStandardFields = useMemo(
         () => (
             <>
@@ -462,9 +485,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                                 const parsed = JSON.parse(e.target.value);
                                 handleInputChange('config', parsed);
                                 setPendingConfig(parsed as WidgetConfig);
-                            } catch {
-                                // Игнорируем ошибки парсинга во время ввода
-                            }
+                            } catch {}
                         }}
                         placeholder="{}"
                         rows={4}
@@ -484,9 +505,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                                     'settings',
                                     parsed as WidgetConfig,
                                 );
-                            } catch {
-                                // Игнорируем ошибки парсинга во время ввода
-                            }
+                            } catch {}
                         }}
                         placeholder="{}"
                         rows={4}
@@ -498,13 +517,11 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         [formData, handleInputChange],
     );
 
-    // Проверяем, есть ли виджет с кастомным редактором
     const hasCustomEditor = useMemo(
         () => widget && isCustomWidget(widget.widget_slug),
         [widget],
     );
 
-    // Универсальная вкладка стилизации
     const [activeTab, setActiveTab] = useState<'editor' | 'styling'>('editor');
     const stylingConfig = (formData.config?.styling || {}) as StylingConfig;
 
@@ -535,8 +552,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     </button>
                 </div>
 
-                <div className="max-h-[70vh] min-h-0 flex-1 space-y-4 overflow-y-auto pr-1 pb-4">
-                    {/* Выбор позиции */}
+                <div className="max-h-[70vh] min-h-0 flex-1 space-y-4 overflow-y-auto pb-4 pr-1">
                     {positions.length > 0 && (
                         <div>
                             <Label htmlFor="position">Позиция</Label>
@@ -562,7 +578,6 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                         </div>
                     )}
 
-                    {/* Кастомный редактор/стандартные поля + вкладка стилизации */}
                     {activeTab === 'editor' ? (
                         hasCustomEditor ? (
                             renderCustomWidget

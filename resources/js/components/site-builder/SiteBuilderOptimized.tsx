@@ -72,7 +72,7 @@ export const SiteBuilderOptimized: React.FC<SiteBuilderProps> = React.memo(
                     const newWidget: WidgetData = {
                         id: Date.now(),
                         name: widget.name,
-                        slug: widget.slug,
+                        slug: widget.widget_slug,
                         config: {},
                         settings: {},
                         is_active: true,
@@ -80,12 +80,12 @@ export const SiteBuilderOptimized: React.FC<SiteBuilderProps> = React.memo(
                         order: widgets.length + 1,
                         position_name: selectedPosition,
                         component_name: widget.component_name,
-                    };
+                    } as any;
 
                     addWidget(newWidget);
 
                     // Открываем модальное окно редактирования только для не-Hero виджетов
-                    if (widget.slug !== 'hero') {
+                    if (widget.widget_slug !== 'hero') {
                         setEditingWidget(newWidget);
                         setIsEditModalOpen(true);
                     }
@@ -102,21 +102,21 @@ export const SiteBuilderOptimized: React.FC<SiteBuilderProps> = React.memo(
                 const widgetData = item.widget || item;
                 const newWidget: WidgetData = {
                     id: Date.now(),
-                    name: widgetData.name,
-                    slug: widgetData.slug,
+                    name: (widgetData as any).name,
+                    slug: (widgetData as any).widget_slug,
                     config: {},
                     settings: {},
                     is_active: true,
                     is_visible: true,
                     order: widgets.length + 1,
                     position_name: position,
-                    component_name: widgetData.component_name,
-                };
+                    component_name: (widgetData as any).component_name,
+                } as any;
 
                 addWidget(newWidget);
 
                 // Открываем модальное окно редактирования только для не-Hero виджетов
-                if (widgetData.slug !== 'hero') {
+                if ((widgetData as any).widget_slug !== 'hero') {
                     setEditingWidget(newWidget);
                     setIsEditModalOpen(true);
                 }
