@@ -12,6 +12,7 @@ export { MenuOutput } from './MenuOutput';
 export { ProjectsOutput } from './ProjectsOutput';
 export { ReferralLeaderboardOutput } from './ReferralLeaderboardOutput';
 export { RegionRatingOutput } from './RegionRatingOutput';
+export { SliderOutput } from './SliderOutput';
 export { StatsOutput } from './StatsOutput';
 export { TextOutput } from './TextOutput';
 

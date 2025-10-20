@@ -74,17 +74,13 @@ export const useWidgets = (
                     config,
                 });
 
-                console.log('AddWidget response:', data);
-
                 if (data.success && data.widget) {
-                    console.log('Виджет добавлен');
-                    const newWidget = data.widget as WidgetData;
+                    const newWidget = data.widget as unknown as WidgetData;
                     setWidgets((prev) => {
-                        // Проверяем, нет ли уже такого виджета
-                        const exists = prev.some((w) => w.id === newWidget.id);
-                        if (exists) {
-                            return prev;
-                        }
+                        const exists = prev.some(
+                            (w) => String(w.id) === String(newWidget.id),
+                        );
+                        if (exists) return prev;
                         return [...prev, newWidget];
                     });
                     setLastAddedWidget(newWidget);
@@ -115,30 +111,33 @@ export const useWidgets = (
                 const data = await sitesApi.updateWidget(
                     siteId,
                     parseInt(widgetId),
-                    updates,
+                    updates as Record<string, unknown>,
                 );
 
                 if (data.success) {
-                    console.log('Виджет обновлен');
-                    // Если есть обновленный виджет в ответе, используем его, иначе обновляем локально
                     if (data.widget) {
-                        const updatedWidget = data.widget as WidgetData;
+                        const updatedWidget =
+                            data.widget as unknown as WidgetData;
                         setWidgets((prev) =>
                             prev.map((w) =>
-                                w.id === parseInt(widgetId) ? updatedWidget : w,
+                                String(w.id) === String(widgetId)
+                                    ? updatedWidget
+                                    : w,
                             ),
                         );
                     } else {
-                        // Обновляем локально только измененные поля
                         setWidgets((prev) =>
                             prev.map((w) =>
-                                w.id === parseInt(widgetId)
+                                String(w.id) === String(widgetId)
                                     ? { ...w, ...updates }
                                     : w,
                             ),
                         );
                     }
                 } else {
+                    console.error('useWidgets: updateWidget failed', {
+                        message: data.message,
+                    });
                     setErrors([
                         data.message || 'Ошибка при обновлении виджета',
                     ]);
@@ -163,14 +162,15 @@ export const useWidgets = (
                     `/dashboard/sites/${siteId}/widgets/${widgetId}`,
                     {
                         onSuccess: () => {
-                            console.log('Виджет удален');
                             setWidgets((prev) =>
-                                prev.filter((w) => w.id !== widgetId),
+                                prev.filter(
+                                    (w) => String(w.id) !== String(widgetId),
+                                ),
                             );
                         },
                         onError: (errors) => {
                             const errorMessages = Object.values(errors).flat();
-                            setErrors(errorMessages);
+                            setErrors(errorMessages as string[]);
                         },
                         onFinish: () => {
                             setIsLoading(false);
@@ -192,38 +192,23 @@ export const useWidgets = (
             setErrors([]);
 
             try {
-                await router.post(
-                    `/dashboard/sites/${siteId}/widgets/${widgetId}/move`,
-                    {
-                        position_slug: positionSlug,
-                        order,
-                    },
-                    {
-                        onSuccess: (page) => {
-                            console.log('Виджет перемещен');
-                            // Обновляем локальное состояние
-                            if (page.props.widget) {
-                                setWidgets((prev) =>
-                                    prev.map((w) =>
-                                        w.id === widgetId
-                                            ? page.props.widget
-                                            : w,
-                                    ),
-                                );
-                            }
-                        },
-                        onError: (errors) => {
-                            const errorMessages = Object.values(errors).flat();
-                            setErrors(errorMessages);
-                        },
-                        onFinish: () => {
-                            setIsLoading(false);
-                        },
-                    },
+                await sitesApi.moveWidget(siteId, parseInt(widgetId), {
+                    position_slug: positionSlug,
+                    order,
+                });
+                // Обновление локально
+                setWidgets((prev) =>
+                    prev.map((w) =>
+                        String(w.id) === String(widgetId)
+                            ? { ...w, position_slug: positionSlug, order }
+                            : w,
+                    ),
                 );
             } catch (error) {
                 console.error('Ошибка при перемещении виджета:', error);
                 setErrors(['Ошибка при перемещении виджета']);
+                setIsLoading(false);
+            } finally {
                 setIsLoading(false);
             }
         },
@@ -235,32 +220,16 @@ export const useWidgets = (
         setErrors([]);
 
         try {
-            await router.get(
-                `/dashboard/sites/${siteId}/config`,
-                {},
-                {
-                    onSuccess: (page) => {
-                        if (page.props.data) {
-                            setWidgets(page.props.data);
-                        }
-                    },
-                    onError: (errors) => {
-                        const errorMessages = Object.values(errors).flat();
-                        setErrors(errorMessages);
-                    },
-                    onFinish: () => {
-                        setIsLoading(false);
-                    },
-                },
-            );
+            const { widgets: data } = await sitesApi.getConfig(siteId);
+            setWidgets(data as WidgetData[]);
         } catch (error) {
             console.error('Ошибка при загрузке виджетов:', error);
             setErrors(['Ошибка при загрузке виджетов']);
+        } finally {
             setIsLoading(false);
         }
     }, [siteId]);
 
-    // Мемоизируем виджеты для предотвращения лишних ререндеров
     const memoizedWidgets = useMemo(() => widgets, [widgets]);
 
     return {

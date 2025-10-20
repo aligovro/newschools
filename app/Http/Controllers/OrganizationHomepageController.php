@@ -12,6 +12,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use App\Http\Resources\OrganizationResource;
+use App\Http\Resources\OrganizationPageResource;
+use App\Http\Resources\OrganizationSliderResource;
 
 class OrganizationHomepageController extends Controller
 {
@@ -43,9 +46,9 @@ class OrganizationHomepageController extends Controller
     $stats = $this->getHomepageStats($organization);
 
     return Inertia::render('organization/admin/HomepageEditor', [
-      'organization' => $organization,
-      'homepage' => $homepage,
-      'sliders' => $sliders,
+      'organization' => (new OrganizationResource($organization))->toArray(request()),
+      'homepage' => (new OrganizationPageResource($homepage))->toArray(request()),
+      'sliders' => OrganizationSliderResource::collection($sliders)->toArray(request()),
       'menus' => $menus,
       'stats' => $stats,
       'availableComponents' => $this->getAvailableComponents(),
@@ -298,8 +301,8 @@ class OrganizationHomepageController extends Controller
     }
 
     return Inertia::render('organization/HomepagePreview', [
-      'organization' => $organization,
-      'homepage' => $homepage,
+      'organization' => (new OrganizationResource($organization))->toArray(request()),
+      'homepage' => (new OrganizationPageResource($homepage))->toArray(request()),
       'preview' => true,
     ]);
   }

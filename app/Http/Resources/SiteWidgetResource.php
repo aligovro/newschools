@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 
 class SiteWidgetResource extends JsonResource
 {
@@ -14,8 +15,172 @@ class SiteWidgetResource extends JsonResource
    */
   public function toArray(Request $request): array
   {
+    $normalizedConfig = $this->getNormalizedConfig();
+
+    // Build configs array from DB
+    $configsArray = $this->configs->map(function ($config) {
+      return [
+        'config_key' => $config->config_key,
+        'config_value' => $config->config_value,
+        'config_type' => $config->config_type,
+      ];
+    })->toArray();
+
+    // If menu items are available, inject them into config and configs for builder compatibility
+    if ($this->relationLoaded('menuItems') && $this->menuItems->isNotEmpty()) {
+      $menuItems = $this->menuItems->map(function ($item) {
+        return [
+          'id' => (string) ($item->item_id ?? $item->id),
+          'title' => $item->title,
+          'url' => $item->url,
+          'type' => $item->type,
+          'newTab' => (bool) $item->open_in_new_tab,
+        ];
+      })->toArray();
+
+      $normalizedConfig['items'] = $menuItems;
+      $configsArray[] = [
+        'config_key' => 'items',
+        'config_value' => json_encode($menuItems),
+        'config_type' => 'json',
+      ];
+    }
+
+    // Inject hero slides if present
+    if ($this->relationLoaded('heroSlides') && $this->heroSlides->isNotEmpty()) {
+      $slides = $this->heroSlides->map(function ($slide) {
+        $backgroundImage = '';
+        if ($slide->background_image) {
+          Log::info('SiteWidgetResource hero slide processing', [
+            'slide_id' => $slide->id,
+            'background_image_from_db' => $slide->background_image,
+            'starts_with_http' => str_starts_with($slide->background_image, 'http'),
+            'starts_with_storage' => str_starts_with($slide->background_image, '/storage/'),
+          ]);
+
+          if (str_starts_with($slide->background_image, 'http')) {
+            $backgroundImage = $slide->background_image;
+          } elseif (str_starts_with($slide->background_image, '/storage/')) {
+            $backgroundImage = $slide->background_image;
+          } else {
+            $backgroundImage = '/storage/' . $slide->background_image;
+          }
+
+          Log::info('SiteWidgetResource hero slide result', [
+            'slide_id' => $slide->id,
+            'final_backgroundImage' => $backgroundImage,
+          ]);
+        }
+
+        return [
+          'id' => (string) $slide->id,
+          'title' => $slide->title,
+          'subtitle' => $slide->subtitle,
+          'description' => $slide->description,
+          'buttonText' => $slide->button_text,
+          'buttonLink' => $slide->button_link,
+          'buttonLinkType' => $slide->button_link_type,
+          'buttonOpenInNewTab' => (bool) $slide->button_open_in_new_tab,
+          'backgroundImage' => $backgroundImage,
+          'overlayColor' => $slide->overlay_color,
+          'overlayOpacity' => $slide->overlay_opacity,
+          'overlayGradient' => $slide->overlay_gradient,
+          'overlayGradientIntensity' => $slide->overlay_gradient_intensity,
+          'sortOrder' => $slide->sort_order,
+          'isActive' => true,
+        ];
+      })->toArray();
+      $normalizedConfig['hero_slides'] = $slides;
+      $configsArray[] = [
+        'config_key' => 'hero_slides',
+        'config_value' => json_encode($slides),
+        'config_type' => 'json',
+      ];
+    }
+
+    // Inject slider slides if present
+    if ($this->relationLoaded('sliderSlides') && $this->sliderSlides->isNotEmpty()) {
+      $slides = $this->sliderSlides->map(function ($slide) {
+        $backgroundImage = '';
+        if ($slide->background_image) {
+          if (str_starts_with($slide->background_image, 'http')) {
+            $backgroundImage = $slide->background_image;
+          } elseif (str_starts_with($slide->background_image, '/storage/')) {
+            $backgroundImage = $slide->background_image;
+          } else {
+            $backgroundImage = '/storage/' . $slide->background_image;
+          }
+        }
+
+        return [
+          'id' => (string) $slide->id,
+          'title' => $slide->title,
+          'subtitle' => $slide->subtitle,
+          'description' => $slide->description,
+          'buttonText' => $slide->button_text,
+          'buttonLink' => $slide->button_link,
+          'buttonLinkType' => $slide->button_link_type,
+          'buttonOpenInNewTab' => (bool) $slide->button_open_in_new_tab,
+          'backgroundImage' => $backgroundImage,
+          'overlayColor' => $slide->overlay_color,
+          'overlayOpacity' => $slide->overlay_opacity,
+          'overlayGradient' => $slide->overlay_gradient,
+          'overlayGradientIntensity' => $slide->overlay_gradient_intensity,
+          'sortOrder' => $slide->sort_order,
+          'isActive' => true,
+        ];
+      })->toArray();
+      $normalizedConfig['slider_slides'] = $slides;
+      $configsArray[] = [
+        'config_key' => 'slider_slides',
+        'config_value' => json_encode($slides),
+        'config_type' => 'json',
+      ];
+    }
+
+    // Inject form fields if present
+    if ($this->relationLoaded('formFields') && $this->formFields->isNotEmpty()) {
+      $fields = $this->formFields->where('is_active', true)->map(function ($field) {
+        return [
+          'id' => $field->id,
+          'type' => $field->field_type,
+          'label' => $field->field_label,
+          'placeholder' => $field->field_placeholder,
+          'required' => (bool) $field->field_required,
+          'validation' => $field->field_validation,
+          'options' => $field->field_options,
+          'order' => $field->sort_order,
+        ];
+      })->toArray();
+      $normalizedConfig['fields'] = $fields;
+      $configsArray[] = [
+        'config_key' => 'fields',
+        'config_value' => json_encode($fields),
+        'config_type' => 'json',
+      ];
+    }
+
+    // Inject gallery images if present
+    if ($this->relationLoaded('galleryImages') && $this->galleryImages->isNotEmpty()) {
+      $images = $this->galleryImages->map(function ($image) {
+        return [
+          'id' => $image->id,
+          'url' => $image->image_url,
+          'alt' => $image->alt_text,
+          'caption' => $image->caption,
+          'order' => $image->sort_order,
+        ];
+      })->toArray();
+      $normalizedConfig['images'] = $images;
+      $configsArray[] = [
+        'config_key' => 'images',
+        'config_value' => json_encode($images),
+        'config_type' => 'json',
+      ];
+    }
+
     return [
-      'id' => $this->id,
+      'id' => (string) $this->id,
       'widget_id' => $this->widget_id,
       'name' => $this->name,
       'widget_slug' => $this->widget_slug,
@@ -29,17 +194,11 @@ class SiteWidgetResource extends JsonResource
       'updated_at' => $this->updated_at,
 
       // Нормализованная конфигурация
-      'config' => $this->getNormalizedConfig(),
+      'config' => $normalizedConfig,
       'settings' => $this->getNormalizedSettings(),
 
-      // Конфигурации
-      'configs' => $this->configs->map(function ($config) {
-        return [
-          'config_key' => $config->config_key,
-          'config_value' => $config->config_value,
-          'config_type' => $config->config_type,
-        ];
-      })->toArray(),
+      // Конфигурации (синтетически добавляем items для меню)
+      'configs' => $configsArray,
 
       // Специализированные данные
       'hero_slides' => $this->when(
@@ -51,6 +210,17 @@ class SiteWidgetResource extends JsonResource
           // Если heroSlides не загружены, берем из config
           $config = $this->getNormalizedConfig();
           return $config['hero_slides'] ?? [];
+        }
+      ),
+      'slider_slides' => $this->when(
+        $this->relationLoaded('sliderSlides') && $this->sliderSlides->isNotEmpty(),
+        function () {
+          return SliderSlideResource::collection($this->sliderSlides)->toArray(request());
+        },
+        function () {
+          // Если sliderSlides не загружены, берем из config
+          $config = $this->getNormalizedConfig();
+          return $config['slider_slides'] ?? [];
         }
       ),
       'form_fields' => $this->whenLoaded('formFields', function () {

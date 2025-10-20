@@ -141,7 +141,7 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
         setError(null);
 
         try {
-            const response = await widgetsApi.getRegionRating(organizationId, {
+            const response = await widgetsApi.getRegionRating(organizationId!, {
                 page: currentPage,
                 per_page: localConfig.items_per_page || 10,
                 search: searchQuery,

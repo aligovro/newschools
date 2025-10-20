@@ -2,7 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { getConfigValue } from '@/utils/getConfigValue';
 import { Plus } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { HeroRenderer } from './hero/HeroRenderer';
 import { HeroSettings } from './hero/HeroSettings';
 import { HeroSlideEditor } from './hero/HeroSlideEditor';
@@ -73,22 +79,6 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
         };
     }, [configs, config, hero_slides]);
 
-    // Лог для отладки hero_slides
-    console.log('HeroWidget: hero_slides debug', {
-        hero_slides: hero_slides,
-        hero_slides_length: hero_slides?.length || 0,
-        slides_in_config: getConfigValue(
-            configs,
-            'slides',
-            config.slides || [],
-        ),
-        final_slides: configValues.slides,
-        first_slide_background:
-            hero_slides?.[0]?.backgroundImage || 'not_found',
-        first_slide_background_image:
-            hero_slides?.[0]?.background_image || 'not_found',
-    });
-
     const [localConfig, setLocalConfig] = useState<HeroConfig>(configValues);
 
     // Синхронизируем локальное состояние с внешним config
@@ -100,13 +90,46 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
     const handleConfigChange = useCallback(
         (newConfig: Record<string, unknown>) => {
             if (onConfigChange) {
-                onConfigChange(newConfig);
+                // Используем слайды из локального состояния, как в универсальном слайдере
+                const slidesToSend = (newConfig as HeroConfig).slides || [];
+
+                const configWithSlides = {
+                    ...newConfig,
+                    slides: slidesToSend,
+                };
+
+                onConfigChange(configWithSlides);
             }
         },
         [onConfigChange],
     );
 
     useEffect(() => {
+        handleConfigChange(localConfig as unknown as Record<string, unknown>);
+    }, [localConfig, handleConfigChange]);
+
+    // Отслеживаем изменения localConfig и уведомляем родительский компонент
+    const prevLocalConfigRef = useRef<HeroConfig | undefined>(undefined);
+    const isInitialMount = useRef(true);
+
+    useEffect(() => {
+        // Пропускаем первый рендер
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            prevLocalConfigRef.current = localConfig;
+            return;
+        }
+
+        // Проверяем, действительно ли конфигурация изменилась
+        if (
+            prevLocalConfigRef.current &&
+            JSON.stringify(prevLocalConfigRef.current) ===
+                JSON.stringify(localConfig)
+        ) {
+            return;
+        }
+
+        prevLocalConfigRef.current = localConfig;
         handleConfigChange(localConfig as unknown as Record<string, unknown>);
     }, [localConfig, handleConfigChange]);
 
@@ -237,18 +260,26 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
     // Обработчики для слайдов
     const handleSlideUpdate = (updatedSlide: HeroSlide) => {
         if (type === 'slider') {
-            setLocalConfig((prev) => ({
-                ...prev,
-                slides:
-                    prev.slides?.map((s) =>
-                        s.id === updatedSlide.id ? updatedSlide : s,
-                    ) || [],
-            }));
+            setLocalConfig((prev) => {
+                const newConfig = {
+                    ...prev,
+                    slides:
+                        prev.slides?.map((s) =>
+                            s.id === updatedSlide.id ? updatedSlide : s,
+                        ) || [],
+                };
+
+                return newConfig;
+            });
         } else {
-            setLocalConfig((prev) => ({
-                ...prev,
-                singleSlide: updatedSlide,
-            }));
+            setLocalConfig((prev) => {
+                const newConfig = {
+                    ...prev,
+                    singleSlide: updatedSlide,
+                };
+
+                return newConfig;
+            });
         }
     };
 
@@ -268,54 +299,106 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
             overlayGradient: 'none',
             overlayGradientIntensity: 50,
         };
-        setLocalConfig((prev) => ({
-            ...prev,
-            slides: [...(prev.slides || []), newSlide],
-        }));
+        setLocalConfig((prev) => {
+            const newConfig = {
+                ...prev,
+                slides: [...(prev.slides || []), newSlide],
+            };
+
+            return newConfig;
+        });
     };
 
     const handleDeleteSlide = (slideId: string) => {
-        setLocalConfig((prev) => ({
-            ...prev,
-            slides: prev.slides?.filter((s) => s.id !== slideId) || [],
-        }));
+        setLocalConfig((prev) => {
+            const newConfig = {
+                ...prev,
+                slides: prev.slides?.filter((s) => s.id !== slideId) || [],
+            };
+
+            return newConfig;
+        });
     };
 
     // Обработчики для изображений
-    const handleImageUpload = (
-        slideId: string,
-        file: File,
-        serverUrl?: string,
-    ) => {
-        if (serverUrl && !serverUrl.startsWith('blob:')) {
-            const updatedSlide = currentSlides.find((s) => s.id === slideId);
-            if (updatedSlide) {
-                const newSlide = {
-                    ...updatedSlide,
-                    backgroundImage: serverUrl,
-                };
-                handleSlideUpdate(newSlide);
+    const handleImageUpload = useCallback(
+        (slideId: string, file: File, serverUrl?: string) => {
+            if (serverUrl && !serverUrl.startsWith('blob:')) {
+                if (type === 'slider') {
+                    setLocalConfig((prev) => {
+                        const updatedSlides =
+                            prev.slides?.map((s) =>
+                                s.id === slideId
+                                    ? { ...s, backgroundImage: serverUrl }
+                                    : s,
+                            ) || [];
+                        return { ...prev, slides: updatedSlides };
+                    });
+                } else {
+                    setLocalConfig((prev) => ({
+                        ...prev,
+                        singleSlide: {
+                            ...prev.singleSlide!,
+                            backgroundImage: serverUrl,
+                        },
+                    }));
+                }
             }
-        }
-    };
+        },
+        [type],
+    );
 
-    const handleImageCrop = (slideId: string, url: string) => {
-        if (!url.startsWith('blob:')) {
-            const updatedSlide = currentSlides.find((s) => s.id === slideId);
-            if (updatedSlide) {
-                const newSlide = { ...updatedSlide, backgroundImage: url };
-                handleSlideUpdate(newSlide);
+    const handleImageCrop = useCallback(
+        (slideId: string, url: string) => {
+            if (!url.startsWith('blob:')) {
+                if (type === 'slider') {
+                    setLocalConfig((prev) => {
+                        const updatedSlides =
+                            prev.slides?.map((s) =>
+                                s.id === slideId
+                                    ? { ...s, backgroundImage: url }
+                                    : s,
+                            ) || [];
+                        return { ...prev, slides: updatedSlides };
+                    });
+                } else {
+                    setLocalConfig((prev) => ({
+                        ...prev,
+                        singleSlide: {
+                            ...prev.singleSlide!,
+                            backgroundImage: url,
+                        },
+                    }));
+                }
             }
-        }
-    };
+        },
+        [type],
+    );
 
-    const handleImageDelete = (slideId: string) => {
-        const updatedSlide = currentSlides.find((s) => s.id === slideId);
-        if (updatedSlide) {
-            const newSlide = { ...updatedSlide, backgroundImage: '' };
-            handleSlideUpdate(newSlide);
-        }
-    };
+    const handleImageDelete = useCallback(
+        (slideId: string) => {
+            if (type === 'slider') {
+                setLocalConfig((prev) => {
+                    const updatedSlides =
+                        prev.slides?.map((s) =>
+                            s.id === slideId
+                                ? { ...s, backgroundImage: '' }
+                                : s,
+                        ) || [];
+                    return { ...prev, slides: updatedSlides };
+                });
+            } else {
+                setLocalConfig((prev) => ({
+                    ...prev,
+                    singleSlide: {
+                        ...prev.singleSlide!,
+                        backgroundImage: '',
+                    },
+                }));
+            }
+        },
+        [type],
+    );
 
     if (isEditable) {
         return (
@@ -411,8 +494,13 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                                             )}
 
                                             <div className="max-h-[400px] space-y-4 overflow-y-auto">
-                                                {currentSlides.map(
-                                                    (slide, index) => (
+                                                {currentSlides
+                                                    .sort(
+                                                        (a, b) =>
+                                                            parseInt(b.id) -
+                                                            parseInt(a.id),
+                                                    )
+                                                    .map((slide, index) => (
                                                         <HeroSlideEditor
                                                             key={slide.id}
                                                             slide={slide}
@@ -456,8 +544,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                                                                 getGradientStyle
                                                             }
                                                         />
-                                                    ),
-                                                )}
+                                                    ))}
                                             </div>
                                         </div>
                                     )}

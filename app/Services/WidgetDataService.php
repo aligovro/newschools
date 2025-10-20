@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\SiteWidget;
 use App\Models\SiteWidgetConfig;
 use App\Models\SiteWidgetHeroSlide;
+use App\Models\SiteWidgetSliderSlide;
 use App\Models\SiteWidgetFormField;
 use App\Models\SiteWidgetMenuItem;
 use App\Models\SiteWidgetGalleryImage;
@@ -26,6 +27,43 @@ class WidgetDataService
         DB::transaction(function () use ($widget, $config) {
             // Синхронизируем с нормализованными данными
             $this->syncConfigToNormalized($widget, $config);
+
+            // Мигрируем специфичные данные в зависимости от типа виджета
+            $widgetSlug = $widget->widget_slug ?? $widget->widget->widget_slug ?? 'unknown';
+            Log::info("Widget slug: {$widgetSlug}");
+
+            switch ($widgetSlug) {
+                case 'hero':
+                    $this->migrateHeroData($widget, $config);
+                    break;
+                case 'slider':
+                    $this->migrateSliderData($widget, $config);
+                    break;
+                case 'form':
+                    $this->migrateFormData($widget, $config);
+                    break;
+                case 'menu':
+                    $this->migrateMenuData($widget, $config);
+                    break;
+                case 'gallery':
+                    $this->migrateGalleryData($widget, $config);
+                    break;
+                case 'donation':
+                    $this->migrateDonationData($widget, $config);
+                    break;
+                case 'region_rating':
+                    $this->migrateRegionRatingData($widget, $config);
+                    break;
+                case 'donations_list':
+                    $this->migrateDonationsListData($widget, $config);
+                    break;
+                case 'referral_leaderboard':
+                    $this->migrateReferralLeaderboardData($widget, $config);
+                    break;
+                case 'image':
+                    $this->migrateImageData($widget, $config);
+                    break;
+            }
         });
     }
 
@@ -58,7 +96,37 @@ class WidgetDataService
                     'button_link' => $slide['buttonLink'] ?? null,
                     'button_link_type' => $slide['buttonLinkType'] ?? 'internal',
                     'button_open_in_new_tab' => $slide['buttonOpenInNewTab'] ?? false,
-                    'background_image' => $slide['backgroundImage'] ?? null,
+                    'background_image' => $this->extractImagePathFromUrl($slide['backgroundImage'] ?? ''),
+                    'overlay_color' => $slide['overlayColor'] ?? null,
+                    'overlay_opacity' => $slide['overlayOpacity'] ?? 50,
+                    'overlay_gradient' => $slide['overlayGradient'] ?? 'none',
+                    'overlay_gradient_intensity' => $slide['overlayGradientIntensity'] ?? 50,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Сохранить слайды slider виджета
+     */
+    public function saveSliderSlides(SiteWidget $widget, array $slides): void
+    {
+        DB::transaction(function () use ($widget, $slides) {
+            // Удаляем старые слайды
+            $widget->sliderSlides()->delete();
+
+            // Создаем новые слайды
+            foreach ($slides as $index => $slide) {
+                $widget->sliderSlides()->create([
+                    'sort_order' => $index + 1,
+                    'title' => $slide['title'] ?? null,
+                    'subtitle' => $slide['subtitle'] ?? null,
+                    'description' => $slide['description'] ?? null,
+                    'button_text' => $slide['buttonText'] ?? null,
+                    'button_link' => $slide['buttonLink'] ?? null,
+                    'button_link_type' => $slide['buttonLinkType'] ?? 'internal',
+                    'button_open_in_new_tab' => $slide['buttonOpenInNewTab'] ?? false,
+                    'background_image' => $this->extractImagePathFromUrl($slide['backgroundImage'] ?? ''),
                     'overlay_color' => $slide['overlayColor'] ?? null,
                     'overlay_opacity' => $slide['overlayOpacity'] ?? 50,
                     'overlay_gradient' => $slide['overlayGradient'] ?? 'none',
@@ -286,6 +354,7 @@ class WidgetDataService
         $widgets = SiteWidget::with([
             'configs',
             'heroSlides',
+            'sliderSlides',
             'formFields',
             'menuItems',
             'galleryImages',
@@ -303,9 +372,27 @@ class WidgetDataService
             ->ordered()
             ->get();
 
-        return $widgets->map(function ($widget) {
-            return $this->getWidgetRenderData($widget);
+        $result = $widgets->map(function ($widget) {
+            $renderData = $this->getWidgetRenderData($widget);
+            Log::info('WidgetDataService::getSiteWidgetsWithData - widget render data:', [
+                'widget_id' => $widget->id,
+                'widget_name' => $widget->name,
+                'widget_slug' => $widget->widget_slug,
+                'render_data_keys' => array_keys($renderData),
+                'has_widget_slug' => isset($renderData['widget_slug']),
+                'has_slug' => isset($renderData['slug']),
+                'render_data' => $renderData,
+            ]);
+            return $renderData;
         })->toArray();
+
+        Log::info('WidgetDataService::getSiteWidgetsWithData - final result:', [
+            'site_id' => $siteId,
+            'widgets_count' => count($result),
+            'first_widget' => $result[0] ?? null,
+        ]);
+
+        return $result;
     }
 
     /**
@@ -316,26 +403,29 @@ class WidgetDataService
         // Получаем конфигурацию из нормализованных данных
         $config = $widget->getNormalizedConfig();
 
-        \Log::info("Widget {$widget->name} config: " . json_encode($config));
-        \Log::info("Config empty: " . (empty($config) ? 'YES' : 'NO'));
-        \Log::info("Config count: " . count($config));
+        Log::info("Widget {$widget->name} config: " . json_encode($config));
+        Log::info("Config empty: " . (empty($config) ? 'YES' : 'NO'));
+        Log::info("Config count: " . count($config));
 
         // Проверяем, есть ли реальные данные в конфигурации
         if (empty($config) || (is_array($config) && count($config) === 0)) {
-            \Log::info("Skipping widget {$widget->name} - empty config");
+            Log::info("Skipping widget {$widget->name} - empty config");
             return;
         }
 
-        \Log::info("Migrating widget {$widget->name} with config: " . json_encode($config));
+        Log::info("Migrating widget {$widget->name} with config: " . json_encode($config));
 
         DB::transaction(function () use ($widget, $config) {
             // Мигрируем специфичные данные в зависимости от типа виджета
-            $widgetSlug = $widget->widget_slug ?? $widget->widget->slug ?? 'unknown';
-            \Log::info("Widget slug: {$widgetSlug}");
+            $widgetSlug = $widget->widget_slug ?? $widget->widget->widget_slug ?? 'unknown';
+            Log::info("Widget slug: {$widgetSlug}");
 
             switch ($widgetSlug) {
                 case 'hero':
                     $this->migrateHeroData($widget, $config);
+                    break;
+                case 'slider':
+                    $this->migrateSliderData($widget, $config);
                     break;
                 case 'form':
                     $this->migrateFormData($widget, $config);
@@ -370,7 +460,7 @@ class WidgetDataService
      */
     private function syncConfigToNormalized(SiteWidget $widget, array $config): void
     {
-        \Log::info("Syncing config for widget {$widget->name}: " . json_encode($config));
+        Log::info("Syncing config for widget {$widget->name}: " . json_encode($config));
 
         // Удаляем старые конфигурации
         $widget->configs()->delete();
@@ -397,28 +487,32 @@ class WidgetDataService
                 'config_type' => $type,
             ]);
 
-            \Log::info("Created config: {$key} = {$value} (type: {$type})");
+            Log::info("Created config: {$key} = {$value} (type: {$type})");
         }
     }
 
-    /**
-     * Мигрировать данные hero виджета
-     */
     private function migrateHeroData(SiteWidget $widget, array $config): void
     {
         if (isset($config['slides']) && is_array($config['slides'])) {
             $this->saveHeroSlides($widget, $config['slides']);
         }
 
-        // Также мигрируем singleSlide если есть
         if (isset($config['singleSlide']) && is_array($config['singleSlide'])) {
             $this->saveHeroSlides($widget, [$config['singleSlide']]);
         }
     }
 
-    /**
-     * Мигрировать данные формы
-     */
+    private function migrateSliderData(SiteWidget $widget, array $config): void
+    {
+        if (isset($config['slides']) && is_array($config['slides'])) {
+            $this->saveSliderSlides($widget, $config['slides']);
+        }
+
+        if (isset($config['singleSlide']) && is_array($config['singleSlide'])) {
+            $this->saveSliderSlides($widget, [$config['singleSlide']]);
+        }
+    }
+
     private function migrateFormData(SiteWidget $widget, array $config): void
     {
         if (isset($config['fields']) && is_array($config['fields'])) {
@@ -426,9 +520,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные меню
-     */
     private function migrateMenuData(SiteWidget $widget, array $config): void
     {
         if (isset($config['items']) && is_array($config['items'])) {
@@ -436,9 +527,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные галереи
-     */
     private function migrateGalleryData(SiteWidget $widget, array $config): void
     {
         if (isset($config['images']) && is_array($config['images'])) {
@@ -446,9 +534,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные пожертвований
-     */
     private function migrateDonationData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -456,9 +541,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные рейтинга регионов
-     */
     private function migrateRegionRatingData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -466,9 +548,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные списка пожертвований
-     */
     private function migrateDonationsListData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -476,9 +555,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные рейтинга по приглашениям
-     */
     private function migrateReferralLeaderboardData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -486,9 +562,6 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Мигрировать данные изображения
-     */
     private function migrateImageData(SiteWidget $widget, array $config): void
     {
         if (!empty($config)) {
@@ -496,20 +569,65 @@ class WidgetDataService
         }
     }
 
-    /**
-     * Получить статистику по виджетам
-     */
     public function getWidgetStats(int $siteId): array
     {
         $stats = DB::table('site_widgets')
             ->join('widgets', 'site_widgets.widget_id', '=', 'widgets.id')
             ->where('site_widgets.site_id', $siteId)
-            ->selectRaw('widgets.slug, COUNT(*) as count')
-            ->groupBy('widgets.slug')
+            ->selectRaw('widgets.widget_slug, COUNT(*) as count')
+            ->groupBy('widgets.widget_slug')
             ->get()
-            ->pluck('count', 'slug')
+            ->pluck('count', 'widget_slug')
             ->toArray();
 
         return $stats;
+    }
+
+    /**
+     * Извлекает путь изображения из URL для сохранения в базу данных
+     */
+    private function extractImagePathFromUrl(string $url): string
+    {
+        if (empty($url)) {
+            return '';
+        }
+
+        Log::info('extractImagePathFromUrl called', [
+            'input_url' => $url,
+            'url_length' => strlen($url),
+            'is_empty' => empty($url)
+        ]);
+
+        // Если это полный URL, извлекаем путь после /storage/
+        if (substr($url, 0, 7) === 'http://' || substr($url, 0, 8) === 'https://') {
+            if (preg_match('/\/storage\/(.+)$/', $url, $matches)) {
+                Log::info('extractImagePathFromUrl - extracted and cleaned path from URL', [
+                    'original_url' => $url,
+                    'extracted_path' => $matches[1]
+                ]);
+                return $matches[1];
+            }
+            Log::info('extractImagePathFromUrl - full URL but no /storage/ match, returning as is', [
+                'original_url' => $url
+            ]);
+            return $url;
+        }
+
+        // Просто убираем /storage/ если он есть в начале
+        if (substr($url, 0, 9) === '/storage/') {
+            $result = substr($url, 9);
+            Log::info('extractImagePathFromUrl - removed /storage/ prefix', [
+                'original_url' => $url,
+                'result' => $result
+            ]);
+            return $result;
+        }
+
+        // Иначе возвращаем как есть
+        Log::info('extractImagePathFromUrl - returning as is', [
+            'original_url' => $url,
+            'returned_path' => $url
+        ]);
+        return $url;
     }
 }

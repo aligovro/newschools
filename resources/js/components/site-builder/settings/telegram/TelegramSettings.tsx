@@ -9,10 +9,12 @@ import { Loader2, Save } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 
 interface TelegramSettingsData {
+    [key: string]: unknown;
     enabled?: boolean;
     bot_token?: string;
     chat_id?: string;
     notifications?: Record<string, boolean>;
+    note?: string;
 }
 
 interface TelegramSettingsProps {
@@ -32,6 +34,7 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({
             donations: true,
             errors: true,
         },
+        note: (initialSettings as any)?.note ?? '',
     });
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
@@ -164,6 +167,8 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({
                         id="tg-note"
                         placeholder="Например, как настроить доступ к чату: пригласить бота как администратора и т.д."
                         rows={2}
+                        value={settings.note || ''}
+                        onChange={(e) => update('note', e.target.value)}
                     />
                 </div>
             </CardContent>

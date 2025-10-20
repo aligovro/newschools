@@ -26,6 +26,7 @@ export const isCustomWidget = (slug: string): boolean => {
         'text',
         'menu',
         'hero',
+        'slider',
         'form',
         'donation',
         'region_rating',
@@ -46,6 +47,7 @@ export type WidgetSlug =
     | 'projects'
     | 'image'
     | 'menu'
+    | 'slider'
     | 'form'
     | 'donation'
     | 'region_rating'

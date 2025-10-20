@@ -84,9 +84,7 @@ export default function SiteManagementPage({
 }: Props) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || 'all');
-    const [templateFilter, setTemplateFilter] = useState(
-        filters.template || 'all',
-    );
+    const [templateFilter, setTemplateFilter] = useState('all');
     const [organizationFilter, setOrganizationFilter] = useState(
         filters.organization_id || 'all',
     );
@@ -119,25 +117,13 @@ export default function SiteManagementPage({
         }
     };
 
-    const getTemplateBadge = (template: string) => {
-        const templateNames: Record<string, string> = {
-            default: 'По умолчанию',
-            modern: 'Современный',
-            classic: 'Классический',
-            minimal: 'Минималистичный',
-        };
-        return (
-            <Badge variant="outline">
-                {templateNames[template] || template}
-            </Badge>
-        );
-    };
+    const getTemplateBadge = (_template: string) => null;
 
     const handleSearch = () => {
         router.get('/dashboard/sites', {
             search: searchTerm,
             status: statusFilter === 'all' ? '' : statusFilter,
-            template: templateFilter === 'all' ? '' : templateFilter,
+            template: '',
             organization_id:
                 organizationFilter === 'all' ? '' : organizationFilter,
             sort_by: sortBy,
@@ -315,27 +301,7 @@ export default function SiteManagementPage({
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Select
-                                value={templateFilter}
-                                onValueChange={setTemplateFilter}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Шаблон" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        Все шаблоны
-                                    </SelectItem>
-                                    {templates.map((template) => (
-                                        <SelectItem
-                                            key={template.slug}
-                                            value={template.slug}
-                                        >
-                                            {template.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            {/* Template filter removed */}
                             <Select
                                 value={organizationFilter}
                                 onValueChange={setOrganizationFilter}
@@ -397,7 +363,8 @@ export default function SiteManagementPage({
                                             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                                                 <span>
                                                     Организация:{' '}
-                                                    {site.organization.name}
+                                                    {site.organization?.name ??
+                                                        '—'}
                                                 </span>
                                                 <span>
                                                     Создан:{' '}
@@ -432,7 +399,11 @@ export default function SiteManagementPage({
 
                                     <div className="flex items-center space-x-2">
                                         <Link
-                                            href={`/dashboard/organization/${site.organization.id}/admin/sites/${site.id}/builder`}
+                                            href={
+                                                site.organization
+                                                    ? `/dashboard/organization/${site.organization.id}/admin/sites/${site.id}/builder`
+                                                    : '#'
+                                            }
                                         >
                                             <Button variant="outline" size="sm">
                                                 <Edit className="mr-1 h-4 w-4" />
@@ -441,7 +412,11 @@ export default function SiteManagementPage({
                                         </Link>
 
                                         <Link
-                                            href={`/dashboard/organization/${site.organization.id}/admin`}
+                                            href={
+                                                site.organization
+                                                    ? `/dashboard/organization/${site.organization.id}/admin`
+                                                    : '#'
+                                            }
                                         >
                                             <Button variant="ghost" size="sm">
                                                 <Settings className="h-4 w-4" />

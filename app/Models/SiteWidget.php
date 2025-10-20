@@ -66,6 +66,14 @@ class SiteWidget extends Model
     }
 
     /**
+     * Отношение к слайдам slider виджета
+     */
+    public function sliderSlides(): HasMany
+    {
+        return $this->hasMany(SiteWidgetSliderSlide::class)->ordered();
+    }
+
+    /**
      * Отношение к полям формы
      */
     public function formFields(): HasMany
@@ -216,7 +224,7 @@ class SiteWidget extends Model
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'widget' => $this->widget->slug,
+            'widget_slug' => $this->widget->widget_slug,
             'component' => $this->widget->component_name,
             'config' => $this->getMergedConfig(),
             'settings' => $this->getMergedSettings(),
@@ -291,6 +299,36 @@ class SiteWidget extends Model
 
                 // Добавляем слайды в конфигурацию для фронтенда
                 $config['hero_slides'] = $this->heroSlides->map(function ($slide) {
+                    return [
+                        'id' => (string) $slide->id,
+                        'title' => $slide->title,
+                        'subtitle' => $slide->subtitle,
+                        'description' => $slide->description,
+                        'buttonText' => $slide->button_text,
+                        'buttonLink' => $slide->button_link,
+                        'buttonLinkType' => $slide->button_link_type,
+                        'buttonOpenInNewTab' => $slide->button_open_in_new_tab,
+                        'backgroundImage' => $slide->background_image ? '/storage/' . $slide->background_image : '',
+                        'overlayColor' => $slide->overlay_color,
+                        'overlayOpacity' => $slide->overlay_opacity,
+                        'overlayGradient' => $slide->overlay_gradient,
+                        'overlayGradientIntensity' => $slide->overlay_gradient_intensity,
+                        'sortOrder' => $slide->sort_order,
+                    ];
+                })->toArray();
+                break;
+
+            case 'slider':
+                Log::info('Adding slider slides to config', [
+                    'widget_id' => $this->id,
+                    'slider_slides_count' => $this->sliderSlides->count(),
+                    'slider_slides_loaded' => $this->relationLoaded('sliderSlides'),
+                    'slider_slides_exists' => method_exists($this, 'sliderSlides'),
+                    'widget_slug' => $this->widget_slug,
+                ]);
+
+                // Добавляем слайды в конфигурацию для фронтенда
+                $config['slider_slides'] = $this->sliderSlides->map(function ($slide) {
                     return [
                         'id' => (string) $slide->id,
                         'title' => $slide->title,
@@ -448,6 +486,27 @@ class SiteWidget extends Model
                 })->toArray();
                 break;
 
+            case 'slider':
+                $baseData['slider_slides'] = $this->sliderSlides->map(function ($slide) {
+                    return [
+                        'id' => $slide->id,
+                        'title' => $slide->title,
+                        'subtitle' => $slide->subtitle,
+                        'description' => $slide->description,
+                        'buttonText' => $slide->button_text,
+                        'buttonLink' => $slide->button_link,
+                        'buttonLinkType' => $slide->button_link_type,
+                        'buttonOpenInNewTab' => $slide->button_open_in_new_tab,
+                        'backgroundImage' => $slide->background_image,
+                        'overlayColor' => $slide->overlay_color,
+                        'overlayOpacity' => $slide->overlay_opacity,
+                        'overlayGradient' => $slide->overlay_gradient,
+                        'overlayGradientIntensity' => $slide->overlay_gradient_intensity,
+                        'overlayStyle' => $slide->overlay_style,
+                    ];
+                })->toArray();
+                break;
+
             case 'form':
                 $baseData['fields'] = $this->formFields->active()->map(function ($field) {
                     return [
@@ -470,7 +529,7 @@ class SiteWidget extends Model
         $baseData['id'] = $this->id;
         $baseData['widget_id'] = $this->widget_id;
         $baseData['name'] = $this->name;
-        $baseData['slug'] = $this->widget_slug;
+        $baseData['widget_slug'] = $this->widget_slug;
         $baseData['position_name'] = $this->position_name;
         $baseData['position_slug'] = $this->position_slug;
         $baseData['order'] = $this->order;
@@ -603,25 +662,38 @@ class SiteWidget extends Model
             return '';
         }
 
-        // Если это не полный URL, возвращаем как есть
-        if (!str_starts_with($url, 'http://') && !str_starts_with($url, 'https://')) {
-            Log::info('extractImagePathFromUrl - not a full URL, returning as is', [
-                'returned_path' => $url,
+        // Если это полный URL, извлекаем путь после /storage/
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            if (preg_match('/\/storage\/(.+)$/', $url, $matches)) {
+                $extractedPath = $matches[1];
+                // Очищаем от дублирующихся слешей
+                $extractedPath = preg_replace('#/+#', '/', $extractedPath);
+                Log::info('extractImagePathFromUrl - extracted and cleaned path from URL', [
+                    'original_url' => $url,
+                    'extracted_path' => $extractedPath,
+                ]);
+                return $extractedPath;
+            }
+            Log::info('extractImagePathFromUrl - full URL but no /storage/ match, returning as is', [
+                'original_url' => $url
             ]);
             return $url;
         }
 
-        // Извлекаем путь после /storage/
-        if (preg_match('/\/storage\/(.+)$/', $url, $matches)) {
-            $extractedPath = $matches[1];
-            Log::info('extractImagePathFromUrl - extracted path from URL', [
-                'extracted_path' => $extractedPath,
+        // Просто убираем /storage/ если он есть в начале
+        if (str_starts_with($url, '/storage/')) {
+            $result = substr($url, 9);
+            Log::info('extractImagePathFromUrl - removed /storage/ prefix', [
+                'original_url' => $url,
+                'result' => $result
             ]);
-            return $extractedPath;
+            return $result;
         }
 
-        Log::info('extractImagePathFromUrl - no match found, returning original URL', [
-            'returned_url' => $url,
+        // Иначе возвращаем как есть
+        Log::info('extractImagePathFromUrl - returning as is', [
+            'original_url' => $url,
+            'returned_path' => $url
         ]);
         return $url;
     }

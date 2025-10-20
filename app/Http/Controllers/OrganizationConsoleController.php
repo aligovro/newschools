@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use App\Http\Resources\OrganizationResource;
 
 class OrganizationConsoleController extends Controller
 {
@@ -31,7 +32,7 @@ class OrganizationConsoleController extends Controller
     $quickActions = $this->getQuickActions($organization);
 
     return Inertia::render('organization/admin/ConsoleIndex', [
-      'organization' => $organization,
+      'organization' => (new OrganizationResource($organization))->toArray(request()),
       'stats' => $stats,
       'recentActivity' => $recentActivity,
       'quickActions' => $quickActions,

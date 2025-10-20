@@ -4,6 +4,7 @@ import { apiClient } from '@/lib/api';
 export interface Widget {
     id: number;
     name: string;
+    widget_slug: string;
     description: string;
     category: string;
     icon?: string;

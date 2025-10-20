@@ -14,7 +14,11 @@ export interface WidgetOutputData {
 }
 
 export interface WidgetOutputProps {
-    widget: WidgetOutputData;
+    widget: any & {
+        widget_slug?: string;
+        slug?: string;
+        config?: Record<string, unknown>;
+    };
     className?: string;
     style?: React.CSSProperties;
 }
@@ -31,6 +35,7 @@ export interface HeroOutputConfig {
     slides?: HeroSlide[];
     singleSlide?: HeroSlide;
     css_class?: string;
+    styling?: Record<string, unknown>;
 }
 
 export interface HeroSlide {

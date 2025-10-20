@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Organization;
+use App\Http\Resources\OrganizationResource;
+use App\Http\Resources\OrganizationMenuResource;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -26,8 +28,8 @@ class OrganizationMenuPageController extends Controller
       ->get();
 
     return Inertia::render('OrganizationMenuPage', [
-      'organization' => $organization,
-      'menus' => $menus,
+      'organization' => (new OrganizationResource($organization))->toArray(request()),
+      'menus' => OrganizationMenuResource::collection($menus)->toArray(request()),
       'locations' => \App\Models\OrganizationMenu::getAvailableLocations(),
       'pages' => $pages,
       'types' => \App\Models\OrganizationMenuItem::getAvailableTypes(),

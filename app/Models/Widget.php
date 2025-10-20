@@ -13,7 +13,7 @@ class Widget extends Model
 
   protected $fillable = [
     'name',
-    'slug',
+    'widget_slug',
     'description',
     'icon',
     'category',
@@ -120,7 +120,7 @@ class Widget extends Model
       ],
     ];
 
-    return $defaultConfigs[$this->slug] ?? [];
+    return $defaultConfigs[$this->widget_slug] ?? [];
   }
 
   public function getDefaultSettingsConfig(): array
@@ -143,7 +143,7 @@ class Widget extends Model
       ],
     ];
 
-    return $defaultConfigs[$this->slug] ?? [];
+    return $defaultConfigs[$this->widget_slug] ?? [];
   }
 
   // События модели
@@ -152,8 +152,8 @@ class Widget extends Model
     parent::boot();
 
     static::creating(function ($widget) {
-      if (empty($widget->slug)) {
-        $widget->slug = Str::slug($widget->name);
+      if (empty($widget->widget_slug)) {
+        $widget->widget_slug = Str::slug($widget->name);
       }
 
       // Устанавливаем конфигурацию полей по умолчанию если не задана

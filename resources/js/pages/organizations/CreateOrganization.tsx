@@ -132,7 +132,7 @@ export default function CreateOrganization({ referenceData }: Props) {
         create_gallery: true,
         create_slider: true,
         create_site: false,
-        site_template: 'default',
+        site_template: 'modern',
     });
 
     // Генерация slug из названия
@@ -758,43 +758,7 @@ export default function CreateOrganization({ referenceData }: Props) {
                                     </Label>
                                 </div>
 
-                                {data.create_site && (
-                                    <div className="create-organization__field-group">
-                                        <div className="create-organization__field">
-                                            <UniversalSelect
-                                                options={[
-                                                    {
-                                                        value: 'default',
-                                                        label: 'Стандартный',
-                                                        description:
-                                                            'Классический макет',
-                                                    },
-                                                    {
-                                                        value: 'modern',
-                                                        label: 'Современный',
-                                                        description:
-                                                            'Современный дизайн',
-                                                    },
-                                                    {
-                                                        value: 'classic',
-                                                        label: 'Классический',
-                                                        description:
-                                                            'Традиционный макет',
-                                                    },
-                                                ]}
-                                                value={data.site_template}
-                                                onChange={(value) =>
-                                                    setData(
-                                                        'site_template',
-                                                        value as string,
-                                                    )
-                                                }
-                                                label="Шаблон сайта"
-                                                placeholder="Выберите шаблон"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
+                                {/* Template selection removed: default to 'modern' */}
                             </div>
                         </div>
 
