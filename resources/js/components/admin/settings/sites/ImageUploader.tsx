@@ -14,12 +14,13 @@ const DEBUG_CROP = false;
 interface ImageUploaderProps {
     onImageUpload: (file: File, croppedImage?: string) => void;
     onImageCrop: (croppedImage: string) => void;
+    onImageDelete?: () => void;
     maxSize?: number;
     acceptedTypes?: string[];
     aspectRatio?: number;
     className?: string;
     widgetSlug?: string;
-    imageType?: 'background' | 'avatar' | 'gallery';
+    imageType?: 'background' | 'avatar' | 'gallery' | 'image';
     slideId?: string;
     enableServerUpload?: boolean;
     existingImageUrl?: string;
@@ -28,8 +29,15 @@ interface ImageUploaderProps {
 const ImageUploader: React.FC<ImageUploaderProps> = ({
     onImageUpload,
     onImageCrop,
+    onImageDelete,
     maxSize = 10 * 1024 * 1024, // 10MB
-    acceptedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    acceptedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/svg+xml',
+    ],
     aspectRatio,
     className = '',
     widgetSlug,
@@ -197,32 +205,23 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     // Локальная обработка - используем только файл, без blob URL
                     onImageUpload(file);
 
-                    // Если нужно обрезание, показываем модальное окно
-                    if (aspectRatio) {
-                        const reader = new FileReader();
-                        reader.addEventListener('load', () => {
-                            const src = reader.result?.toString() || '';
-                            setImgSrc(src);
-                            setOriginalSrc(src);
+                    // Показать предпросмотр выбранного файла
+                    const reader = new FileReader();
+                    reader.addEventListener('load', () => {
+                        const src = reader.result?.toString() || '';
+                        setPreviewUrl(src);
+                        setImgSrc(src);
+                        setOriginalSrc(src);
+
+                        // Если нужно обрезание, показываем модальное окно
+                        if (aspectRatio) {
                             setShowCropModal(true);
-                            if (DEBUG_CROP)
-                                console.log(
-                                    '[Uploader] reader loaded (local, aspect)',
-                                );
-                        });
-                        reader.readAsDataURL(file);
-                    } else {
-                        // Показать предпросмотр выбранного файла
-                        const reader = new FileReader();
-                        reader.addEventListener('load', () => {
-                            setPreviewUrl(reader.result?.toString() || '');
-                            if (DEBUG_CROP)
-                                console.log(
-                                    '[Uploader] preview set (local, no-aspect)',
-                                );
-                        });
-                        reader.readAsDataURL(file);
-                    }
+                        }
+
+                        if (DEBUG_CROP)
+                            console.log('[Uploader] reader loaded (local)');
+                    });
+                    reader.readAsDataURL(file);
                 }
             }
         },
@@ -514,68 +513,75 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         }
     };
 
+    // Определяем, есть ли загруженное изображение
+    const hasImage =
+        (previewUrl || existingImageUrl) && !showCropModal && !uploadError;
+
     return (
         <div className={`image-uploader ${className}`}>
-            <div
-                {...getRootProps()}
-                className={`image-uploader__dropzone ${
-                    isDragActive ? 'image-uploader__dropzone--active' : ''
-                }`}
-            >
-                <input {...getInputProps()} />
-                <div className="image-uploader__content">
-                    {isUploading ? (
-                        <div className="image-uploader__uploading">
-                            <div className="image-uploader__spinner">
-                                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+            {/* Показываем зону загрузки только если нет изображения или идет загрузка */}
+            {(!hasImage || isUploading) && (
+                <div
+                    {...getRootProps()}
+                    className={`image-uploader__dropzone ${
+                        isDragActive ? 'image-uploader__dropzone--active' : ''
+                    }`}
+                >
+                    <input {...getInputProps()} />
+                    <div className="image-uploader__content">
+                        {isUploading ? (
+                            <div className="image-uploader__uploading">
+                                <div className="image-uploader__spinner">
+                                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                                </div>
+                                <p className="image-uploader__text">
+                                    Загрузка изображения...
+                                </p>
                             </div>
+                        ) : isDragActive ? (
                             <p className="image-uploader__text">
-                                Загрузка изображения...
+                                Отпустите файл здесь...
                             </p>
-                        </div>
-                    ) : isDragActive ? (
-                        <p className="image-uploader__text">
-                            Отпустите файл здесь...
-                        </p>
-                    ) : (
-                        <div className="image-uploader__placeholder">
-                            <div className="image-uploader__icon">
-                                <svg
-                                    width="48"
-                                    height="48"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                >
-                                    <rect
-                                        x="3"
-                                        y="3"
-                                        width="18"
-                                        height="18"
-                                        rx="2"
-                                        ry="2"
-                                    />
-                                    <circle cx="8.5" cy="8.5" r="1.5" />
-                                    <polyline points="21,15 16,10 5,21" />
-                                </svg>
+                        ) : (
+                            <div className="image-uploader__placeholder">
+                                <div className="image-uploader__icon">
+                                    <svg
+                                        width="48"
+                                        height="48"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <rect
+                                            x="3"
+                                            y="3"
+                                            width="18"
+                                            height="18"
+                                            rx="2"
+                                            ry="2"
+                                        />
+                                        <circle cx="8.5" cy="8.5" r="1.5" />
+                                        <polyline points="21,15 16,10 5,21" />
+                                    </svg>
+                                </div>
+                                <p className="image-uploader__text">
+                                    Перетащите изображение сюда или{' '}
+                                    <span className="image-uploader__text--link">
+                                        выберите файл
+                                    </span>
+                                </p>
+                                <p className="image-uploader__hint">
+                                    Поддерживаются: JPG, PNG, GIF, WebP, SVG (до{' '}
+                                    {maxSize / (1024 * 1024)}MB)
+                                </p>
                             </div>
-                            <p className="image-uploader__text">
-                                Перетащите изображение сюда или{' '}
-                                <span className="image-uploader__text--link">
-                                    выберите файл
-                                </span>
-                            </p>
-                            <p className="image-uploader__hint">
-                                Поддерживаются: JPG, PNG, GIF, WebP (до{' '}
-                                {maxSize / (1024 * 1024)}MB)
-                            </p>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Отображение ошибок */}
             {uploadError && (
@@ -584,21 +590,47 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 </div>
             )}
 
-            {/* Кнопка редактирования после обрезки */}
-            {(hasCroppedImage ||
-                (!!existingImageUrl && existingImageUrl.length > 0)) &&
-                !showCropModal &&
-                !uploadError && (
-                    <div className="image-uploader__edit-section">
-                        <button
-                            type="button"
-                            className="image-uploader__edit-button"
-                            onClick={handleEditImage}
-                        >
-                            ✏️ Редактировать изображение
-                        </button>
+            {/* Отображение загруженного изображения */}
+            {hasImage && (
+                <div className="image-uploader__preview">
+                    <div className="flex items-start gap-3">
+                        <img
+                            src={previewUrl || existingImageUrl}
+                            alt="Preview"
+                            className="image-uploader__preview-image flex-1"
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '200px',
+                                objectFit: 'contain',
+                            }}
+                        />
+                        <div className="flex flex-col gap-2">
+                            {/* Показываем кнопку редактирования только для растровых изображений */}
+                            {previewUrl &&
+                                !previewUrl.includes('.svg') &&
+                                !existingImageUrl?.includes('.svg') && (
+                                    <button
+                                        type="button"
+                                        className="image-uploader__edit-button px-3 py-1 text-sm"
+                                        onClick={handleEditImage}
+                                    >
+                                        ✏️ Редактировать
+                                    </button>
+                                )}
+                            <button
+                                type="button"
+                                className="image-uploader__delete-button px-3 py-1 text-sm"
+                                onClick={() => {
+                                    setPreviewUrl('');
+                                    onImageDelete?.();
+                                }}
+                            >
+                                🗑️ Удалить
+                            </button>
+                        </div>
                     </div>
-                )}
+                </div>
+            )}
 
             {showCropModal && (
                 <div

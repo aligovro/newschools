@@ -28,10 +28,13 @@ export const isCustomWidget = (slug: string): boolean => {
         'hero',
         'slider',
         'form',
+        'auth_menu',
+        'image',
         'donation',
         'region_rating',
         'donations_list',
         'referral_leaderboard',
+        'html',
     ];
     return customWidgets.includes(slug);
 };
@@ -52,4 +55,5 @@ export type WidgetSlug =
     | 'donation'
     | 'region_rating'
     | 'donations_list'
-    | 'referral_leaderboard';
+    | 'referral_leaderboard'
+    | 'html';

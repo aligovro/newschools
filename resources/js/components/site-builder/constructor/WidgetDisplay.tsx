@@ -33,16 +33,6 @@ export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
     suppressRender = false,
     useOutputRenderer = false,
 }) => {
-    // Логируем данные виджета
-    console.log('WidgetDisplay - Widget data:', {
-        id: widget.id,
-        name: widget.name,
-        widget_slug: widget.widget_slug,
-        useOutputRenderer,
-        config: widget.config,
-        hero_slides: (widget as any).hero_slides,
-        slider_slides: (widget as any).slider_slides,
-    });
     const handleEdit = () => {
         if (onEdit) {
             onEdit(widget);

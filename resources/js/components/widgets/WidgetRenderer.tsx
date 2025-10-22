@@ -108,40 +108,6 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
                     slides = widget.hero_slides;
                 }
 
-                // Отладочная информация
-                console.log('WidgetRenderer preview debug:', {
-                    widget_slug: widget.widget_slug,
-                    previewMode,
-                    slides_count: slides.length,
-                    slides: slides,
-                    hero_slides: widget.hero_slides,
-                    slider_slides: widget.slider_slides,
-                    config_slides: cfg.slides,
-                    config_keys: Object.keys(cfg),
-                    final_slides_source:
-                        cfg.slides && Array.isArray(cfg.slides)
-                            ? 'config.slides'
-                            : widget.slider_slides &&
-                                widget.slider_slides.length > 0
-                              ? 'slider_slides'
-                              : widget.hero_slides &&
-                                  widget.hero_slides.length > 0
-                                ? 'hero_slides'
-                                : 'none',
-                });
-
-                // Дополнительная отладка для изображений
-                if (widget.hero_slides && widget.hero_slides.length > 0) {
-                    console.log(
-                        'Hero slides images debug:',
-                        widget.hero_slides.map((slide) => ({
-                            id: slide.id,
-                            title: slide.title,
-                            backgroundImage: slide.backgroundImage,
-                        })),
-                    );
-                }
-
                 // Для слайдера показываем оптимизированное превью без Swiper
                 if (widget.widget_slug === 'slider' && slides.length > 0) {
                     // Функция для получения значения из configs
@@ -182,24 +148,6 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
                             'slidesPerView',
                             cfg.slidesPerView,
                         ) as number) || 1;
-
-                    // Отладочная информация для настроек
-                    console.log('Slider settings debug:', {
-                        layout,
-                        slidesPerView,
-                        configs: widget.configs,
-                        config: cfg,
-                        layout_from_configs: getConfigValue(
-                            widget.configs,
-                            'layout',
-                            null,
-                        ),
-                        slidesPerView_from_configs: getConfigValue(
-                            widget.configs,
-                            'slidesPerView',
-                            null,
-                        ),
-                    });
 
                     // Определяем, какой слайд(ы) показывать
                     let slidesToShow: unknown[] = [];

@@ -104,6 +104,18 @@ export const widgetsSystemApi = {
             .then((response) => response.data);
     },
 
+    // Обновление layout_config позиции
+    updatePositionLayout: (
+        positionId: number,
+        layoutConfig: Record<string, unknown>,
+    ): Promise<{ success: boolean; data: WidgetPosition }> =>
+        apiClient
+            .put<{
+                success: boolean;
+                data: WidgetPosition;
+            }>(`/widgets/positions/${positionId}/layout`, { layout_config: layoutConfig })
+            .then((response) => response.data),
+
     // Получение методов оплаты для виджета пожертвований
     getPaymentMethods: (organizationId: number): Promise<PaymentMethod[]> =>
         apiClient

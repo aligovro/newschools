@@ -110,6 +110,27 @@ class WidgetController extends Controller
     }
 
     /**
+     * Обновить layout_config позиции (ширина/выравнивание и т.п.)
+     */
+    public function updatePositionLayout(Request $request, $positionId): JsonResponse
+    {
+        $request->validate([
+            'layout_config' => 'required|array',
+        ]);
+
+        $position = WidgetPosition::findOrFail($positionId);
+        $layout = $position->layout_config ?? [];
+        $layout = array_merge($layout, $request->input('layout_config', []));
+        $position->layout_config = $layout;
+        $position->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => $position,
+        ]);
+    }
+
+    /**
      * Получить доступные виджеты для позиции
      */
     public function forPosition(Request $request, $positionId): JsonResponse

@@ -150,6 +150,7 @@ class WidgetImageService {
             'image/png',
             'image/gif',
             'image/webp',
+            'image/svg+xml',
         ];
 
         if (file.size > maxSize) {
@@ -157,7 +158,7 @@ class WidgetImageService {
         }
 
         if (!allowedTypes.includes(file.type)) {
-            errors.push('Разрешены только файлы: JPEG, PNG, GIF, WebP');
+            errors.push('Разрешены только файлы: JPEG, PNG, GIF, WebP, SVG');
         }
 
         return {

@@ -60,7 +60,39 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
 
     return (
         <div className="space-y-6 pb-20">
-            {positions.filter((p) => p.area === 'header').map(renderZone)}
+            {/* Header grouped: four columns (header-col-1..4) and a full-width 'header' below */}
+            {(() => {
+                const headerColSlugs = [
+                    'header-col-1',
+                    'header-col-2',
+                    'header-col-3',
+                    'header-col-4',
+                ];
+                const headerCols = positions.filter(
+                    (p) =>
+                        p.area === 'header' && headerColSlugs.includes(p.slug),
+                );
+                const headerFull = positions.find(
+                    (p) => p.area === 'header' && p.slug === 'header',
+                );
+
+                if (headerCols.length === 0 && !headerFull) {
+                    return positions
+                        .filter((p) => p.area === 'header')
+                        .map(renderZone);
+                }
+
+                return (
+                    <div className="space-y-6">
+                        {headerCols.length > 0 && (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                                {headerCols.map(renderZone)}
+                            </div>
+                        )}
+                        {headerFull && <div>{renderZone(headerFull)}</div>}
+                    </div>
+                );
+            })()}
 
             {positions
                 .filter((p) => p.slug === 'hero' || p.area === 'hero')
@@ -94,7 +126,34 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
                     )}
             </div>
 
-            {positions.filter((p) => p.area === 'footer').map(renderZone)}
+            {/* Footer grouped: four equal columns */}
+            {(() => {
+                const footerColSlugs = [
+                    'footer-col-1',
+                    'footer-col-2',
+                    'footer-col-3',
+                    'footer-col-4',
+                ];
+                const footerCols = positions.filter(
+                    (p) =>
+                        p.area === 'footer' && footerColSlugs.includes(p.slug),
+                );
+                const otherFooter = positions.filter(
+                    (p) =>
+                        p.area === 'footer' && !footerColSlugs.includes(p.slug),
+                );
+
+                return (
+                    <div className="space-y-6">
+                        {footerCols.length > 0 && (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                                {footerCols.map(renderZone)}
+                            </div>
+                        )}
+                        {otherFooter.map(renderZone)}
+                    </div>
+                );
+            })()}
         </div>
     );
 };

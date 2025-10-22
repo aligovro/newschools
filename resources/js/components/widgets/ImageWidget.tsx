@@ -38,6 +38,11 @@ export const ImageWidget: React.FC<ImageWidgetProps> = ({
         ? getConfigValue(configs, 'alignment', alignment)
         : alignment;
     const configSize = configs ? getConfigValue(configs, 'size', size) : size;
+
+    // Если нет изображения, не рендерим ничего
+    if (!configImage) {
+        return null;
+    }
     const sizeClasses = {
         small: 'max-w-sm',
         medium: 'max-w-md',

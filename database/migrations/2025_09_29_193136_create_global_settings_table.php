@@ -75,6 +75,20 @@ return new class extends Migration
             // Метаданные
             $table->json('metadata')->nullable();
 
+            // Терминология спонсоров (по умолчанию "спонсор")
+            $table->string('sponsor_singular_nominative')->default('спонсор');
+            $table->string('sponsor_singular_genitive')->default('спонсора');
+            $table->string('sponsor_singular_dative')->default('спонсору');
+            $table->string('sponsor_singular_accusative')->default('спонсора');
+            $table->string('sponsor_singular_instrumental')->default('спонсором');
+            $table->string('sponsor_singular_prepositional')->default('спонсоре');
+            $table->string('sponsor_plural_nominative')->default('спонсоры');
+            $table->string('sponsor_plural_genitive')->default('спонсоров');
+            $table->string('sponsor_plural_dative')->default('спонсорам');
+            $table->string('sponsor_plural_accusative')->default('спонсоров');
+            $table->string('sponsor_plural_instrumental')->default('спонсорами');
+            $table->string('sponsor_plural_prepositional')->default('спонсорах');
+
             $table->timestamps();
         });
     }

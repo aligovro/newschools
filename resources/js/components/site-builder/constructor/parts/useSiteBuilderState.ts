@@ -199,24 +199,8 @@ export const useSiteBuilderState = ({
 
     const handleSaveWidgetConfig = useCallback(
         async (widgetId: string, config: Record<string, unknown>) => {
-            console.log('useSiteBuilderState: handleSaveWidgetConfig called', {
-                widget_id: widgetId,
-                config,
-                config_keys: Object.keys(config),
-                has_slides: 'slides' in config,
-                slides_count:
-                    'slides' in config
-                        ? Array.isArray(config.slides)
-                            ? config.slides.length
-                            : 0
-                        : 0,
-            });
-
             try {
                 await updateWidget(widgetId, { config });
-                console.log(
-                    'useSiteBuilderState: handleSaveWidgetConfig completed successfully',
-                );
             } catch (error) {
                 console.error('Error saving widget config:', error);
                 throw error;

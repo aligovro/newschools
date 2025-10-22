@@ -305,14 +305,66 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
             </Head>
 
             <div className="site-preview">
-                {/* Рендерим позиции в том же порядке, что и в SiteBuilder */}
-                {positions
-                    .filter((p) => p.area === 'header')
-                    .map((position) => (
-                        <header key={position.id} className="site-header">
-                            {renderPosition(position, site.widgets_config)}
-                        </header>
-                    ))}
+                {/* Header: четыре колонки (header-col-1..4) сверху и полная ширина 'header' снизу */}
+                <header className="site-header">
+                    {(() => {
+                        const headerColSlugs = [
+                            'header-col-1',
+                            'header-col-2',
+                            'header-col-3',
+                            'header-col-4',
+                        ];
+                        const headerCols = positions.filter(
+                            (p) =>
+                                p.area === 'header' &&
+                                headerColSlugs.includes(p.slug),
+                        );
+                        const headerFull = positions.find(
+                            (p) => p.area === 'header' && p.slug === 'header',
+                        );
+
+                        return (
+                            <div className="space-y-6">
+                                {headerCols.length > 0 && (
+                                    <div className="container mx-auto px-4">
+                                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                                            {headerCols.map((p) => (
+                                                <div key={p.id}>
+                                                    {renderPosition(
+                                                        p,
+                                                        site.widgets_config,
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {headerFull && (
+                                    <div>
+                                        {renderPosition(
+                                            headerFull,
+                                            site.widgets_config,
+                                        )}
+                                    </div>
+                                )}
+                                {!headerFull && headerCols.length === 0 && (
+                                    <div>
+                                        {positions
+                                            .filter((p) => p.area === 'header')
+                                            .map((p) => (
+                                                <div key={p.id}>
+                                                    {renderPosition(
+                                                        p,
+                                                        site.widgets_config,
+                                                    )}
+                                                </div>
+                                            ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+                </header>
 
                 {positions
                     .filter((p) => p.area === 'hero')
@@ -367,14 +419,51 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
                     </div>
                 </main>
 
-                {/* Footer */}
-                {positions
-                    .filter((p) => p.area === 'footer')
-                    .map((position) => (
-                        <footer key={position.id} className="site-footer">
-                            {renderPosition(position, site.widgets_config)}
-                        </footer>
-                    ))}
+                {/* Footer: четыре колонки (footer-col-1..4) и далее остальные позиции футера */}
+                <footer className="site-footer">
+                    {(() => {
+                        const footerColSlugs = [
+                            'footer-col-1',
+                            'footer-col-2',
+                            'footer-col-3',
+                            'footer-col-4',
+                        ];
+                        const footerCols = positions.filter(
+                            (p) =>
+                                p.area === 'footer' &&
+                                footerColSlugs.includes(p.slug),
+                        );
+                        const otherFooter = positions.filter(
+                            (p) =>
+                                p.area === 'footer' &&
+                                !footerColSlugs.includes(p.slug),
+                        );
+
+                        return (
+                            <div className="space-y-6">
+                                {footerCols.length > 0 && (
+                                    <div className="container mx-auto px-4">
+                                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                                            {footerCols.map((p) => (
+                                                <div key={p.id}>
+                                                    {renderPosition(
+                                                        p,
+                                                        site.widgets_config,
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {otherFooter.map((p) => (
+                                    <div key={p.id}>
+                                        {renderPosition(p, site.widgets_config)}
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })()}
+                </footer>
             </div>
 
             <style>{`

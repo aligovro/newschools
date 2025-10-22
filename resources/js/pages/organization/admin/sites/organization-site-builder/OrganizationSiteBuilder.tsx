@@ -251,7 +251,7 @@ export default function OrganizationSiteBuilder({
         name: '',
         slug: '',
         description: '',
-        template: 'modern',
+        template: 'default',
     });
 
     const handleCreateSubmit = useCallback(
