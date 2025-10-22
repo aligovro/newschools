@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\OrganizationSite;
-use App\Models\OrganizationSitePage;
-use App\Models\OrganizationDomain;
+use App\Models\Site;
+use App\Models\SitePage;
+use App\Models\Domain;
 use App\Services\SliderService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Resources\OrganizationSiteResource;
-use App\Http\Resources\OrganizationPageResource;
+use App\Http\Resources\SitePageResource;
 
 class PublicSiteController extends Controller
 {
@@ -29,7 +29,7 @@ class PublicSiteController extends Controller
     $host = $request->getHost();
 
     // Ищем домен в базе данных
-    $domain = OrganizationDomain::where('domain', $host)
+    $domain = Domain::where('domain', $host)
       ->orWhere('custom_domain', $host)
       ->where('status', 'active')
       ->first();
@@ -74,7 +74,7 @@ class PublicSiteController extends Controller
 
     return Inertia::render('sites/Show', [
       'site' => (new OrganizationSiteResource($site))->toArray(request()),
-      'homepage' => (new OrganizationPageResource($homepage))->toArray(request()),
+      'homepage' => (new SitePageResource($homepage))->toArray(request()),
       'navigation' => $navigation,
       'sliders' => $sliders,
     ]);
@@ -89,7 +89,7 @@ class PublicSiteController extends Controller
     $host = $request->getHost();
 
     // Ищем домен в базе данных
-    $domain = OrganizationDomain::where('domain', $host)
+    $domain = Domain::where('domain', $host)
       ->orWhere('custom_domain', $host)
       ->where('status', 'active')
       ->first();
@@ -137,7 +137,7 @@ class PublicSiteController extends Controller
 
     return Inertia::render('sites/Page', [
       'site' => (new OrganizationSiteResource($site))->toArray(request()),
-      'page' => (new OrganizationPageResource($page))->toArray(request()),
+      'page' => (new SitePageResource($page))->toArray(request()),
       'navigation' => $navigation,
       'sliders' => $sliders,
       'breadcrumbs' => $breadcrumbs,
@@ -151,7 +151,7 @@ class PublicSiteController extends Controller
   {
     $host = $request->getHost();
 
-    $domain = OrganizationDomain::where('domain', $host)
+    $domain = Domain::where('domain', $host)
       ->orWhere('custom_domain', $host)
       ->where('status', 'active')
       ->first();
@@ -194,7 +194,7 @@ class PublicSiteController extends Controller
   /**
    * Получение навигации сайта
    */
-  protected function getNavigation(OrganizationSite $site): array
+  protected function getNavigation(Site $site): array
   {
     $pages = $site->pages()
       ->published()
@@ -217,7 +217,7 @@ class PublicSiteController extends Controller
   /**
    * Получение дочерних страниц
    */
-  protected function getPageChildren(OrganizationSitePage $page): array
+  protected function getPageChildren(SitePage $page): array
   {
     return $page->publishedChildren()
       ->inNavigation()
@@ -241,7 +241,7 @@ class PublicSiteController extends Controller
   {
     $host = $request->getHost();
 
-    $domain = OrganizationDomain::where('domain', $host)
+    $domain = Domain::where('domain', $host)
       ->orWhere('custom_domain', $host)
       ->where('status', 'active')
       ->first();

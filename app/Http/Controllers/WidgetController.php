@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Widget;
 use App\Models\SiteTemplate;
-use App\Models\OrganizationSite;
+use App\Models\Site;
 use App\Models\SiteWidget;
 use App\Models\WidgetPosition;
 use Illuminate\Http\Request;
@@ -70,7 +70,7 @@ class WidgetController extends Controller
   /**
    * Получить виджеты сайта
    */
-  public function getForSite(OrganizationSite $site): JsonResponse
+  public function getForSite(Site $site): JsonResponse
   {
     $widgets = $site->activeWidgets()
       ->with(['widget', 'position'])
@@ -87,7 +87,7 @@ class WidgetController extends Controller
   /**
    * Добавить виджет на сайт
    */
-  public function addToSite(Request $request, OrganizationSite $site): JsonResponse
+  public function addToSite(Request $request, Site $site): JsonResponse
   {
     $validator = Validator::make($request->all(), [
       'widget_id' => 'required|exists:widgets,id',
@@ -143,7 +143,7 @@ class WidgetController extends Controller
   /**
    * Обновить виджет сайта
    */
-  public function updateSiteWidget(Request $request, OrganizationSite $site, SiteWidget $siteWidget): JsonResponse
+  public function updateSiteWidget(Request $request, Site $site, SiteWidget $siteWidget): JsonResponse
   {
     $validator = Validator::make($request->all(), [
       'name' => 'nullable|string|max:255',
@@ -194,7 +194,7 @@ class WidgetController extends Controller
   /**
    * Удалить виджет с сайта
    */
-  public function removeFromSite(OrganizationSite $site, SiteWidget $siteWidget): JsonResponse
+  public function removeFromSite(Site $site, SiteWidget $siteWidget): JsonResponse
   {
     try {
       // Проверяем, что виджет принадлежит сайту
@@ -219,7 +219,7 @@ class WidgetController extends Controller
   /**
    * Изменить порядок виджетов
    */
-  public function reorderWidgets(Request $request, OrganizationSite $site): JsonResponse
+  public function reorderWidgets(Request $request, Site $site): JsonResponse
   {
     $validator = Validator::make($request->all(), [
       'widgets' => 'required|array',

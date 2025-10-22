@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\OrganizationSite;
+use App\Models\Site;
 use App\Services\ImageProcessingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;

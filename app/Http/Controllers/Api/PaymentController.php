@@ -27,7 +27,7 @@ class PaymentController extends Controller
       $validated = $request->validate([
         'organization_id' => 'required|exists:organizations,id',
         'fundraiser_id' => 'nullable|exists:fundraisers,id',
-        'project_id' => 'nullable|exists:organization_projects,id',
+        'project_id' => 'nullable|exists:projects,id',
         'amount' => 'required|integer|min:100', // минимум 1 рубль в копейках
         'currency' => 'nullable|string|size:3',
         'payment_method_slug' => 'required|string|exists:payment_methods,slug',
@@ -234,7 +234,7 @@ class PaymentController extends Controller
       $validated = $request->validate([
         'organization_id' => 'required|exists:organizations,id',
         'fundraiser_id' => 'nullable|exists:fundraisers,id',
-        'project_id' => 'nullable|exists:organization_projects,id',
+        'project_id' => 'nullable|exists:projects,id',
         'status' => 'nullable|string|in:pending,completed,failed,cancelled,refunded',
         'payment_method' => 'nullable|string|exists:payment_methods,slug',
         'date_from' => 'nullable|date',

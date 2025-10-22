@@ -8,7 +8,7 @@ use App\Models\PaymentLog;
 use App\Models\Donation;
 use App\Models\Organization;
 use App\Models\Fundraiser;
-use App\Models\OrganizationProject;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -353,7 +353,7 @@ class PaymentService
     }
 
     if (isset($data['project_id'])) {
-      OrganizationProject::findOrFail($data['project_id']);
+      Project::findOrFail($data['project_id']);
     }
 
     // Проверяем сумму

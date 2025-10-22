@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Organization;
-use App\Models\OrganizationDomain;
+use App\Models\Domain;
 
 class TestDataSeeder extends Seeder
 {
@@ -14,7 +14,7 @@ class TestDataSeeder extends Seeder
     $organizations = Organization::all();
 
     foreach ($organizations as $organization) {
-      OrganizationDomain::create([
+      Domain::create([
         'organization_id' => $organization->id,
         'domain' => 'test-' . $organization->id . '.example.com',
         'is_primary' => true,

@@ -97,16 +97,19 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         if (!widget) return;
 
         try {
+            // Сначала сохраняем конфигурацию, если есть изменения
             if (onSaveConfig && _pendingConfig) {
                 await onSaveConfig(widget.id, _pendingConfig);
             }
 
+            // Затем сохраняем основные данные виджета
             const minimalUpdates = {
                 id: widget.id,
                 name: formData.name,
                 widget_slug: formData.widget_slug,
                 is_active: formData.is_active,
                 is_visible: formData.is_visible,
+                // Используем обновленную конфигурацию
                 config: _pendingConfig || formData.config,
             } as unknown as WidgetData;
 
@@ -114,6 +117,8 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             onClose();
         } catch (error) {
             console.error('Error saving widget:', error);
+            // Показываем пользователю ошибку
+            alert('Ошибка при сохранении виджета. Попробуйте еще раз.');
         }
     }, [widget, formData, _pendingConfig, onSaveConfig, onSave, onClose]);
 
