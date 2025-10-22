@@ -6,7 +6,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -15,92 +14,30 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { DonationWidget } from '@/components/widgets/DonationWidget';
-import { DonationsListWidget } from '@/components/widgets/DonationsListWidget';
-import { FormWidget } from '@/components/widgets/FormWidget';
-import { HeroWidget } from '@/components/widgets/HeroWidgetRefactored';
-import { MenuWidget } from '@/components/widgets/MenuWidget';
-import { ReferralLeaderboardWidget } from '@/components/widgets/ReferralLeaderboardWidget';
-import { RegionRatingWidget } from '@/components/widgets/RegionRatingWidget';
 import {
     StylingPanel,
     type StylingConfig,
 } from '@/components/widgets/common/StylingPanel';
-import { SliderWidget } from '@/components/widgets/slider';
-import { getOrganizationId, isCustomWidget } from '@/utils/widgetHelpers';
+import {
+    convertConfigsToConfig,
+    type WidgetConfig,
+} from '@/utils/widgetConfigUtils';
+import { isCustomWidget } from '@/utils/widgetHelpers';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { WidgetData } from '../types';
+import { StandardWidgetFields } from './components/StandardWidgetFields';
 import { AuthMenuWidgetModal } from './modals/AuthMenuWidgetModal';
+import { DonationWidgetModal } from './modals/DonationWidgetModal';
+import { DonationsListWidgetModal } from './modals/DonationsListWidgetModal';
+import { FormWidgetModal } from './modals/FormWidgetModal';
+import { HeroWidgetModal } from './modals/HeroWidgetModal';
 import { HtmlWidgetModal } from './modals/HtmlWidgetModal';
 import { ImageWidgetModal } from './modals/ImageWidgetModal';
+import { MenuWidgetModal } from './modals/MenuWidgetModal';
+import { ReferralLeaderboardWidgetModal } from './modals/ReferralLeaderboardWidgetModal';
+import { RegionRatingWidgetModal } from './modals/RegionRatingWidgetModal';
+import { SliderWidgetModal } from './modals/SliderWidgetModal';
 import { TextWidgetModal } from './modals/TextWidgetModal';
-
-type WidgetConfig = Record<string, unknown>;
-
-// Утилитарная функция для работы с configs
-const getConfigValue = (
-    configs: any[],
-    key: string,
-    defaultValue: any = null,
-) => {
-    const config = configs.find((c) => c.config_key === key);
-    if (!config) return defaultValue;
-
-    switch (config.config_type) {
-        case 'number':
-            return parseFloat(config.config_value);
-        case 'boolean':
-            return (
-                config.config_value === '1' || config.config_value === 'true'
-            );
-        case 'json':
-            try {
-                return JSON.parse(config.config_value);
-            } catch (e) {
-                return defaultValue;
-            }
-        default:
-            return config.config_value;
-    }
-};
-
-// Преобразуем configs в config для совместимости
-const convertConfigsToConfig = (configs: any[]): WidgetConfig => {
-    if (!configs || configs.length === 0) return {};
-
-    const config: any = {};
-    configs.forEach((item) => {
-        let value = item.config_value;
-
-        switch (item.config_type) {
-            case 'number':
-                value = parseFloat(value);
-                break;
-            case 'boolean':
-                value = value === '1' || value === 'true';
-                break;
-            case 'json':
-                try {
-                    value = JSON.parse(value);
-                } catch (e) {
-                    console.warn(
-                        'Failed to parse JSON config:',
-                        item.config_key,
-                        value,
-                    );
-                }
-                break;
-            default:
-                // string - оставляем как есть
-                break;
-        }
-
-        config[item.config_key] = value;
-    });
-
-    return config;
-};
 
 interface WidgetEditModalProps {
     widget: WidgetData | null;
@@ -188,29 +125,6 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         }));
     }, []);
 
-    // Мемоизированная функция сохранения конфига
-    const handleConfigUpdate = useCallback(
-        (updates: WidgetConfig) => {
-            setPendingConfig((prev) => {
-                const baseConfig = widget?.configs
-                    ? convertConfigsToConfig(widget.configs)
-                    : widget?.config || {};
-                return {
-                    ...baseConfig,
-                    ...prev,
-                    ...updates,
-                };
-            });
-        },
-        [widget?.configs, widget?.config],
-    );
-
-    // Мемоизируем ID организации
-    const organizationId = useMemo(
-        () => getOrganizationId(widget?.config),
-        [widget?.config],
-    );
-
     const renderCustomWidget = useMemo(() => {
         if (!widget) return null;
 
@@ -236,67 +150,31 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             }
 
             case 'hero': {
-                const heroConfig = widget.configs
-                    ? convertConfigsToConfig(widget.configs)
-                    : widget.config || {};
-
                 return (
-                    <HeroWidget
-                        config={heroConfig}
-                        isEditable
-                        autoExpandSettings
-                        onConfigChange={setPendingConfig}
-                        configs={widget.configs}
-                        styling={widget.config?.styling as Record<string, any>}
-                        hero_slides={widget.hero_slides}
+                    <HeroWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
                     />
                 );
             }
 
             case 'slider': {
-                const sliderConfig = widget.configs
-                    ? convertConfigsToConfig(widget.configs)
-                    : widget.config || {};
-
                 return (
-                    <SliderWidget
-                        config={sliderConfig}
-                        isEditable
-                        autoExpandSettings
-                        onConfigChange={setPendingConfig}
-                        configs={widget.configs}
-                        styling={widget.config?.styling as Record<string, any>}
-                        slider_slides={widget.slider_slides}
+                    <SliderWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
                     />
                 );
             }
 
             case 'menu': {
-                const baseConfigs = widget.configs || [];
-                const items = (widget.menu_items || []).map((mi) => ({
-                    id: String(mi.item_id || mi.id),
-                    title: mi.title,
-                    url: mi.url,
-                    type: mi.type as string as 'internal' | 'external',
-                    newTab: !!mi.open_in_new_tab,
-                }));
-                const configsWithItems =
-                    items.length > 0
-                        ? [
-                              ...baseConfigs,
-                              {
-                                  config_key: 'items',
-                                  config_type: 'json',
-                                  config_value: JSON.stringify(items),
-                              },
-                          ]
-                        : baseConfigs;
-
                 return (
-                    <MenuWidget
-                        configs={configsWithItems as any}
-                        isEditable
-                        onConfigChange={setPendingConfig}
+                    <MenuWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
                     />
                 );
             }
@@ -321,208 +199,68 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             }
 
             case 'form': {
-                const formWidget = {
-                    id: parseInt(widget.id),
-                    site_id: siteId,
-                    name: widget.name,
-                    widget_slug: widget.widget_slug as 'form',
-                    description: (widget.configs
-                        ? convertConfigsToConfig(widget.configs)
-                        : widget.config
-                    ).description as string,
-                    settings: ((widget.configs
-                        ? convertConfigsToConfig(widget.configs)
-                        : widget.config
-                    ).settings || {}) as Record<string, unknown>,
-                    styling: ((widget.configs
-                        ? convertConfigsToConfig(widget.configs)
-                        : widget.config
-                    ).styling || {}) as Record<string, unknown>,
-                    fields: ((widget.configs
-                        ? convertConfigsToConfig(widget.configs)
-                        : widget.config
-                    ).fields || []) as any[],
-                    actions: ((widget.configs
-                        ? convertConfigsToConfig(widget.configs)
-                        : widget.config
-                    ).actions || []) as any[],
-                    css_class: (widget.configs
-                        ? convertConfigsToConfig(widget.configs)
-                        : widget.config
-                    ).css_class as string,
-                    is_active: widget.is_active,
-                    sort_order: widget.order,
-                    created_at: widget.created_at,
-                    updated_at: widget.updated_at,
-                };
-
                 return (
-                    <FormWidget
-                        widget={formWidget}
-                        isEditable
-                        onConfigChange={(config) =>
-                            setPendingConfig((prev) => ({ ...prev, ...config }))
-                        }
+                    <FormWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
+                        siteId={siteId}
                     />
                 );
             }
 
-            case 'donation':
+            case 'donation': {
                 return (
-                    <DonationWidget
-                        config={widget.config || {}}
-                        isEditable
-                        autoExpandSettings
-                        onSave={handleConfigUpdate}
-                        widgetId={widget.id}
-                        organizationId={organizationId}
+                    <DonationWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
                     />
                 );
+            }
 
-            case 'region_rating':
+            case 'region_rating': {
                 return (
-                    <RegionRatingWidget
-                        config={widget.config || {}}
-                        isEditable
-                        autoExpandSettings
-                        onSave={handleConfigUpdate}
-                        widgetId={widget.id}
-                        organizationId={organizationId}
-                        onConfigChange={setPendingConfig}
+                    <RegionRatingWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
                     />
                 );
+            }
 
-            case 'donations_list':
+            case 'donations_list': {
                 return (
-                    <DonationsListWidget
-                        config={widget.config || {}}
-                        isEditable
-                        autoExpandSettings
-                        onSave={handleConfigUpdate}
-                        widgetId={widget.id}
-                        organizationId={organizationId}
-                        onConfigChange={setPendingConfig}
+                    <DonationsListWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
                     />
                 );
+            }
 
-            case 'referral_leaderboard':
+            case 'referral_leaderboard': {
                 return (
-                    <ReferralLeaderboardWidget
-                        config={widget.config || {}}
-                        isEditable
-                        autoExpandSettings
-                        onSave={handleConfigUpdate}
-                        widgetId={widget.id}
-                        organizationId={organizationId}
-                        onConfigChange={setPendingConfig}
+                    <ReferralLeaderboardWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
                     />
                 );
+            }
 
             default:
                 return null;
         }
-    }, [widget, siteId, organizationId, handleConfigUpdate]);
+    }, [widget, siteId]);
 
     const renderStandardFields = useMemo(
         () => (
-            <>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <Label htmlFor="name">Название</Label>
-                        <Input
-                            id="name"
-                            value={formData.name}
-                            onChange={(e) =>
-                                handleInputChange('name', e.target.value)
-                            }
-                            placeholder="Введите название виджета"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="widget_slug">Widget Slug</Label>
-                        <Input
-                            id="widget_slug"
-                            value={formData.widget_slug}
-                            onChange={(e) =>
-                                handleInputChange('widget_slug', e.target.value)
-                            }
-                            placeholder="widget-slug"
-                        />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="checkbox"
-                            id="is_active"
-                            checked={formData.is_active}
-                            onChange={(e) =>
-                                handleInputChange('is_active', e.target.checked)
-                            }
-                            className="rounded border-gray-300"
-                        />
-                        <Label htmlFor="is_active">Активен</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="checkbox"
-                            id="is_visible"
-                            checked={formData.is_visible}
-                            onChange={(e) =>
-                                handleInputChange(
-                                    'is_visible',
-                                    e.target.checked,
-                                )
-                            }
-                            className="rounded border-gray-300"
-                        />
-                        <Label htmlFor="is_visible">Видимый</Label>
-                    </div>
-                </div>
-
-                <div>
-                    <Label htmlFor="config">Конфигурация (JSON)</Label>
-                    <Textarea
-                        id="config"
-                        value={JSON.stringify(formData.config, null, 2)}
-                        onChange={(e) => {
-                            try {
-                                const parsed = JSON.parse(e.target.value);
-                                handleInputChange('config', parsed);
-                                setPendingConfig(parsed as WidgetConfig);
-                            } catch (error) {
-                                // Invalid JSON - ignore silently
-                            }
-                        }}
-                        placeholder="{}"
-                        rows={4}
-                        className="font-mono text-sm"
-                    />
-                </div>
-
-                <div>
-                    <Label htmlFor="settings">Настройки (JSON)</Label>
-                    <Textarea
-                        id="settings"
-                        value={JSON.stringify(formData.settings, null, 2)}
-                        onChange={(e) => {
-                            try {
-                                const parsed = JSON.parse(e.target.value);
-                                handleInputChange(
-                                    'settings',
-                                    parsed as WidgetConfig,
-                                );
-                            } catch (error) {
-                                // Invalid JSON - ignore silently
-                            }
-                        }}
-                        placeholder="{}"
-                        rows={4}
-                        className="font-mono text-sm"
-                    />
-                </div>
-            </>
+            <StandardWidgetFields
+                formData={formData}
+                onInputChange={handleInputChange}
+                onConfigUpdate={setPendingConfig}
+            />
         ),
         [formData, handleInputChange],
     );
