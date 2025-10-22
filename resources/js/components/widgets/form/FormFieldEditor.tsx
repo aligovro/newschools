@@ -175,7 +175,7 @@ export const FormFieldEditor: React.FC<FormFieldEditorProps> = ({
                         <div className="form-field-editor__options">
                             {(localField.options || []).map((option, index) => (
                                 <div
-                                    key={index}
+                                    key={`${option.value || 'option'}_${index}`}
                                     className="form-field-editor__option"
                                 >
                                     <div className="form-field-editor__option-content">

@@ -52,9 +52,12 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
 
     const handleDeleteField = useCallback(
         (fieldName: string) => {
+            console.log('handleDeleteField called with:', fieldName);
+            console.log('Current fields:', widget.fields);
             const updatedFields = (widget.fields || []).filter(
                 (field) => field.name !== fieldName,
             );
+            console.log('Updated fields after deletion:', updatedFields);
             onConfigChange({ fields: updatedFields });
             setSelectedField(null);
         },

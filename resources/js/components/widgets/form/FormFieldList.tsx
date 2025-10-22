@@ -79,7 +79,7 @@ export const FormFieldList: React.FC<FormFieldListProps> = ({
                     <div className="form-field-list__items">
                         {fields.map((field, index) => (
                             <div
-                                key={field.name}
+                                key={field.name || `field_${index}`}
                                 className={`form-field-list__item ${
                                     selectedField?.name === field.name
                                         ? 'selected'
@@ -131,6 +131,12 @@ export const FormFieldList: React.FC<FormFieldListProps> = ({
                                             className="form-field-list__action-btn form-field-list__action-btn--delete"
                                             onClick={(e) => {
                                                 e.stopPropagation();
+                                                console.log(
+                                                    'Deleting field:',
+                                                    field.name,
+                                                    'from fields:',
+                                                    fields.map((f) => f.name),
+                                                );
                                                 onDeleteField(field.name);
                                             }}
                                             title="Удалить поле"

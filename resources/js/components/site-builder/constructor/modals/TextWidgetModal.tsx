@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { RichTextEditor } from '@/components/common/RichTextEditor';
 import { ColorPicker } from '@/components/ui/ColorPicker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,19 +9,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import {
-    AlignCenter,
-    AlignLeft,
-    AlignRight,
-    Bold,
-    Italic,
-    List,
-    ListOrdered,
-    Quote,
-    Underline,
-} from 'lucide-react';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 interface TextWidgetModalProps {
     widget: {
@@ -118,8 +106,7 @@ export const TextWidgetModal: React.FC<TextWidgetModalProps> = ({
         [onConfigUpdate],
     );
 
-    // Реф для textarea
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    // textarea больше не используется
 
     // Локальное состояние для формы
     const [formData, setFormData] = useState({
@@ -176,122 +163,6 @@ export const TextWidgetModal: React.FC<TextWidgetModalProps> = ({
         [formData, handleConfigUpdate],
     );
 
-    // Функция для применения форматирования
-    const applyFormat = useCallback(
-        (format: string) => {
-            const textarea = textareaRef.current;
-            if (!textarea) return;
-
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const selectedText = formData.content.substring(start, end);
-
-            let formattedText = '';
-
-            switch (format) {
-                case 'bold':
-                    formattedText = `**${selectedText}**`;
-                    break;
-                case 'italic':
-                    formattedText = `*${selectedText}*`;
-                    break;
-                case 'underline':
-                    formattedText = `__${selectedText}__`;
-                    break;
-                case 'align-left':
-                    formattedText = `[left]${selectedText}[/left]`;
-                    break;
-                case 'align-center':
-                    formattedText = `[center]${selectedText}[/center]`;
-                    break;
-                case 'align-right':
-                    formattedText = `[right]${selectedText}[/right]`;
-                    break;
-                case 'ul': {
-                    const lines = selectedText
-                        .split('\n')
-                        .filter((line) => line.trim());
-                    formattedText = lines.map((line) => `• ${line}`).join('\n');
-                    break;
-                }
-                case 'ol': {
-                    const olLines = selectedText
-                        .split('\n')
-                        .filter((line) => line.trim());
-                    formattedText = olLines
-                        .map((line, index) => `${index + 1}. ${line}`)
-                        .join('\n');
-                    break;
-                }
-                case 'quote':
-                    formattedText = `> ${selectedText}`;
-                    break;
-                default:
-                    formattedText = selectedText;
-            }
-
-            const newContent =
-                formData.content.substring(0, start) +
-                formattedText +
-                formData.content.substring(end);
-            updateFormData('content', newContent);
-
-            // Восстанавливаем фокус и позицию курсора
-            setTimeout(() => {
-                textarea.focus();
-                textarea.setSelectionRange(
-                    start + formattedText.length,
-                    start + formattedText.length,
-                );
-            }, 0);
-        },
-        [formData.content, updateFormData],
-    );
-
-    // Функция для форматирования предпросмотра
-    const formatPreview = useCallback((text: string) => {
-        if (!text) return '';
-
-        return (
-            text
-                // Жирный текст
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                // Курсив
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                // Подчеркнутый
-                .replace(/__(.*?)__/g, '<u>$1</u>')
-                // Выравнивание
-                .replace(
-                    /\[left\](.*?)\[\/left\]/g,
-                    '<div style="text-align: left;">$1</div>',
-                )
-                .replace(
-                    /\[center\](.*?)\[\/center\]/g,
-                    '<div style="text-align: center;">$1</div>',
-                )
-                .replace(
-                    /\[right\](.*?)\[\/right\]/g,
-                    '<div style="text-align: right;">$1</div>',
-                )
-                // Цитаты
-                .replace(
-                    /^> (.*$)/gm,
-                    '<blockquote style="border-left: 4px solid #ccc; margin: 0; padding-left: 1rem; font-style: italic;">$1</blockquote>',
-                )
-                // Списки
-                .replace(
-                    /^• (.*$)/gm,
-                    '<li style="list-style-type: disc; margin-left: 1rem;">$1</li>',
-                )
-                .replace(
-                    /^\d+\. (.*$)/gm,
-                    '<li style="list-style-type: decimal; margin-left: 1rem;">$1</li>',
-                )
-                // Переносы строк
-                .replace(/\n/g, '<br>')
-        );
-    }, []);
-
     return (
         <div className="space-y-4">
             <div>
@@ -306,143 +177,11 @@ export const TextWidgetModal: React.FC<TextWidgetModalProps> = ({
 
             <div>
                 <Label htmlFor="text_content">Содержимое</Label>
-                <div className="overflow-hidden rounded-lg border">
-                    {/* Панель инструментов */}
-                    <div className="flex flex-wrap gap-1 border-b bg-gray-50 p-2">
-                        {/* Форматирование текста */}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyFormat('bold')}
-                            className="h-8 w-8 p-0"
-                            title="Жирный"
-                        >
-                            <Bold className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyFormat('italic')}
-                            className="h-8 w-8 p-0"
-                            title="Курсив"
-                        >
-                            <Italic className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyFormat('underline')}
-                            className="h-8 w-8 p-0"
-                            title="Подчеркнутый"
-                        >
-                            <Underline className="h-4 w-4" />
-                        </Button>
-
-                        <div className="mx-1 h-6 w-px bg-gray-300" />
-
-                        {/* Выравнивание */}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyFormat('align-left')}
-                            className="h-8 w-8 p-0"
-                            title="По левому краю"
-                        >
-                            <AlignLeft className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyFormat('align-center')}
-                            className="h-8 w-8 p-0"
-                            title="По центру"
-                        >
-                            <AlignCenter className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyFormat('align-right')}
-                            className="h-8 w-8 p-0"
-                            title="По правому краю"
-                        >
-                            <AlignRight className="h-4 w-4" />
-                        </Button>
-
-                        <div className="mx-1 h-6 w-px bg-gray-300" />
-
-                        {/* Списки */}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyFormat('ul')}
-                            className="h-8 w-8 p-0"
-                            title="Маркированный список"
-                        >
-                            <List className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyFormat('ol')}
-                            className="h-8 w-8 p-0"
-                            title="Нумерованный список"
-                        >
-                            <ListOrdered className="h-4 w-4" />
-                        </Button>
-
-                        <div className="mx-1 h-6 w-px bg-gray-300" />
-
-                        {/* Цитата */}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyFormat('quote')}
-                            className="h-8 w-8 p-0"
-                            title="Цитата"
-                        >
-                            <Quote className="h-4 w-4" />
-                        </Button>
-                    </div>
-
-                    {/* Текстовое поле */}
-                    <Textarea
-                        ref={textareaRef}
-                        id="text_content"
-                        value={formData.content}
-                        onChange={(e) =>
-                            updateFormData('content', e.target.value)
-                        }
-                        placeholder="Введите текст..."
-                        rows={8}
-                        className="resize-none border-0 focus:ring-0"
-                        style={{ minHeight: '200px' }}
-                    />
-                </div>
-
-                {/* Предпросмотр */}
-                {formData.content && (
-                    <div className="mt-2">
-                        <Label className="mb-2 block text-sm text-gray-600">
-                            Предпросмотр:
-                        </Label>
-                        <div
-                            className="rounded border bg-gray-50 p-3 text-sm"
-                            dangerouslySetInnerHTML={{
-                                __html: formatPreview(formData.content),
-                            }}
-                        />
-                    </div>
-                )}
+                <RichTextEditor
+                    valueHTML={(formData.content as string) || ''}
+                    onChangeHTML={(html) => updateFormData('content', html)}
+                    minHeight={220}
+                />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

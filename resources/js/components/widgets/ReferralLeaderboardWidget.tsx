@@ -284,7 +284,7 @@ export const ReferralLeaderboardWidget: React.FC<ReferralLeaderboardProps> = ({
                 >
                     {leaders.map((item) => (
                         <Card
-                            key={item.referrer_user_id}
+                            key={`leader-${item.referrer_user_id}-${item.position}`}
                             className={
                                 card_style === 'modern'
                                     ? 'shadow-sm'

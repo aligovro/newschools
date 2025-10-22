@@ -44,55 +44,35 @@ export const TextOutput: React.FC<WidgetOutputProps> = ({
         marginBottom: title && content ? '16px' : '0',
     };
 
-    // Simple text formatting parser
-    const formatText = (text: string): React.ReactNode => {
-        if (!enableFormatting) {
-            return text;
+    // Render content: prefer HTML from editor; fallback to plain text with line breaks
+    const renderContent = (text: string): React.ReactNode => {
+        const containsHtml = /<[^>]+>/.test(text || '');
+        if (containsHtml) {
+            return (
+                <div
+                    className="text-content"
+                    dangerouslySetInnerHTML={{ __html: text }}
+                />
+            );
         }
 
-        // Split by line breaks and process each line
-        return text.split('\n').map((line, index) => {
-            if (line.trim() === '') {
-                return <br key={index} />;
-            }
-
-            // Simple markdown-like formatting
-            let formattedLine = line;
-            const parts: React.ReactNode[] = [];
-            let key = 0;
-
-            // Bold text **text**
-            const boldRegex = /\*\*(.*?)\*\*/g;
-            let lastIndex = 0;
-            let match;
-
-            while ((match = boldRegex.exec(line)) !== null) {
-                // Add text before the match
-                if (match.index > lastIndex) {
-                    parts.push(
-                        <span key={key++}>
-                            {formattedLine.slice(lastIndex, match.index)}
-                        </span>,
-                    );
-                }
-                // Add bold text
-                parts.push(<strong key={key++}>{match[1]}</strong>);
-                lastIndex = match.index + match[0].length;
-            }
-
-            // Add remaining text
-            if (lastIndex < line.length) {
-                parts.push(
-                    <span key={key++}>{formattedLine.slice(lastIndex)}</span>,
-                );
-            }
-
+        if (!enableFormatting) {
             return (
-                <p key={index} className="mb-4 last:mb-0">
-                    {parts.length > 0 ? parts : line}
-                </p>
+                <div className="text-content whitespace-pre-line">{text}</div>
             );
-        });
+        }
+
+        // Minimal formatting: convert newlines to paragraphs
+        const lines = (text || '').split('\n');
+        return (
+            <div className="text-content">
+                {lines.map((line, idx) => (
+                    <p key={`p-${idx}`} className="mb-4 last:mb-0">
+                        {line}
+                    </p>
+                ))}
+            </div>
+        );
     };
 
     return (
@@ -105,9 +85,7 @@ export const TextOutput: React.FC<WidgetOutputProps> = ({
                     {title}
                 </h2>
             )}
-            {content && (
-                <div className="text-content">{formatText(content)}</div>
-            )}
+            {content && renderContent(content)}
         </div>
     );
 };
