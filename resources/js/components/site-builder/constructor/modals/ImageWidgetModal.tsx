@@ -33,6 +33,11 @@ const convertConfigsToConfig = (configs: any[]): Record<string, unknown> => {
     configs.forEach((item) => {
         let value = item.config_value;
 
+        // Проверяем, что значение не пустое
+        if (value === null || value === undefined || value === '') {
+            return;
+        }
+
         switch (item.config_type) {
             case 'number':
                 value = parseFloat(value);
@@ -49,6 +54,7 @@ const convertConfigsToConfig = (configs: any[]): Record<string, unknown> => {
                         item.config_key,
                         value,
                     );
+                    return; // Пропускаем некорректные JSON значения
                 }
                 break;
             default:
@@ -77,41 +83,47 @@ export const ImageWidgetModal: React.FC<ImageWidgetModalProps> = ({
         return (pendingConfig as any) || baseConfig;
     }, [pendingConfig, baseConfig]);
 
-    const imageUrl = String(fromCfg.image || '');
-    const altText = String(fromCfg.altText || '');
-    const caption = String(fromCfg.caption || '');
-    const alignment = String(fromCfg.alignment || 'center');
-    const size = String(fromCfg.size || 'medium');
-    const linkUrl = String(fromCfg.linkUrl || '');
-    const linkType = String(fromCfg.linkType || 'internal');
+    const imageUrl = fromCfg.image ? String(fromCfg.image) : '';
+    const altText = fromCfg.altText ? String(fromCfg.altText) : '';
+    const caption = fromCfg.caption ? String(fromCfg.caption) : '';
+    const alignment = fromCfg.alignment ? String(fromCfg.alignment) : 'center';
+    const size = fromCfg.size ? String(fromCfg.size) : 'medium';
+    const linkUrl = fromCfg.linkUrl ? String(fromCfg.linkUrl) : '';
+    const linkType = fromCfg.linkType ? String(fromCfg.linkType) : 'internal';
     const openInNewTab = Boolean(fromCfg.openInNewTab ?? false);
 
     const handleConfigUpdate = useCallback(
         (updates: Record<string, unknown>) => {
-            onConfigUpdate(updates);
+            // Объединяем текущую конфигурацию с обновлениями
+            const newConfig = {
+                ...fromCfg,
+                ...updates,
+            };
+            onConfigUpdate(newConfig);
         },
-        [onConfigUpdate],
+        [fromCfg, onConfigUpdate],
     );
 
     return (
         <div className="space-y-4">
             <div>
                 <ImageUploader
-                    onImageUpload={(file, serverUrl) =>
+                    onImageUpload={(file, serverUrl) => {
+                        const imageUrl = serverUrl || URL.createObjectURL(file);
                         handleConfigUpdate({
-                            image: serverUrl || URL.createObjectURL(file),
-                        })
-                    }
-                    onImageCrop={(croppedUrl) =>
+                            image: imageUrl,
+                        });
+                    }}
+                    onImageCrop={(croppedUrl) => {
                         handleConfigUpdate({
                             image: croppedUrl,
-                        })
-                    }
-                    onImageDelete={() =>
+                        });
+                    }}
+                    onImageDelete={() => {
                         handleConfigUpdate({
                             image: '',
-                        })
-                    }
+                        });
+                    }}
                     acceptedTypes={[
                         'image/jpeg',
                         'image/png',

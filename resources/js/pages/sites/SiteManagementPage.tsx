@@ -36,6 +36,7 @@ interface Site {
     slug: string;
     description: string;
     template: string;
+    site_type: 'organization' | 'main';
     status: 'draft' | 'published' | 'archived';
     is_public: boolean;
     is_maintenance_mode: boolean;
@@ -43,7 +44,7 @@ interface Site {
     updated_at: string;
     pages_count: number;
     widgets_count: number;
-    organization: Organization;
+    organization?: Organization;
     url?: string;
 }
 
@@ -400,9 +401,11 @@ export default function SiteManagementPage({
                                     <div className="flex items-center space-x-2">
                                         <Link
                                             href={
-                                                site.organization
-                                                    ? `/dashboard/organization/${site.organization.id}/admin/sites/${site.id}/builder`
-                                                    : '#'
+                                                site.site_type === 'main'
+                                                    ? '/dashboard/main-site/builder'
+                                                    : site.organization
+                                                      ? `/dashboard/organization/${site.organization.id}/admin/sites/${site.id}/builder`
+                                                      : '#'
                                             }
                                         >
                                             <Button variant="outline" size="sm">
@@ -413,9 +416,11 @@ export default function SiteManagementPage({
 
                                         <Link
                                             href={
-                                                site.organization
-                                                    ? `/dashboard/organization/${site.organization.id}/admin`
-                                                    : '#'
+                                                site.site_type === 'main'
+                                                    ? '/dashboard/main-site'
+                                                    : site.organization
+                                                      ? `/dashboard/organization/${site.organization.id}/admin`
+                                                      : '#'
                                             }
                                         >
                                             <Button variant="ghost" size="sm">

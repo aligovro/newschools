@@ -7,7 +7,7 @@ use App\Models\Organization;
 use App\Models\OrganizationStatistic;
 use App\Models\Donation;
 use App\Models\Member;
-use App\Models\OrganizationProject;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;

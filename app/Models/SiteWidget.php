@@ -36,7 +36,7 @@ class SiteWidget extends Model
   // Связи
   public function site(): BelongsTo
   {
-    return $this->belongsTo(OrganizationSite::class, 'site_id');
+    return $this->belongsTo(Site::class, 'site_id');
   }
 
   public function widget(): BelongsTo
@@ -236,7 +236,7 @@ class SiteWidget extends Model
     ];
   }
 
-  public function duplicate(OrganizationSite $newSite): SiteWidget
+  public function duplicate(Site $newSite): SiteWidget
   {
     $newWidget = $newSite->widgets()->create([
       'widget_id' => $this->widget_id,

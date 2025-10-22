@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Organization;
-use App\Models\OrganizationSite;
+use App\Models\Site;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -114,7 +114,7 @@ class OrganizationSiteController extends Controller
   /**
    * Форма редактирования сайта
    */
-  public function edit(Organization $organization, OrganizationSite $site)
+  public function edit(Organization $organization, Site $site)
   {
     $templates = \App\Models\SiteTemplate::where('is_active', true)
       ->orderBy('sort_order')
@@ -132,7 +132,7 @@ class OrganizationSiteController extends Controller
   /**
    * Обновление сайта
    */
-  public function update(Request $request, Organization $organization, OrganizationSite $site)
+  public function update(Request $request, Organization $organization, Site $site)
   {
     $request->validate([
       'name' => 'required|string|max:255',
@@ -160,7 +160,7 @@ class OrganizationSiteController extends Controller
   /**
    * Удаление сайта
    */
-  public function destroy(Organization $organization, OrganizationSite $site)
+  public function destroy(Organization $organization, Site $site)
   {
     $site->delete();
 
@@ -172,7 +172,7 @@ class OrganizationSiteController extends Controller
   /**
    * Открытие конструктора сайта
    */
-  public function editWithBuilder(Organization $organization, OrganizationSite $site)
+  public function editWithBuilder(Organization $organization, Site $site)
   {
     $site->load(['pages']);
 
@@ -266,7 +266,7 @@ class OrganizationSiteController extends Controller
   /**
    * Публикация сайта
    */
-  public function publish(Organization $organization, OrganizationSite $site)
+  public function publish(Organization $organization, Site $site)
   {
     $site->update(['status' => 'published']);
 
@@ -278,7 +278,7 @@ class OrganizationSiteController extends Controller
   /**
    * Снятие с публикации
    */
-  public function unpublish(Organization $organization, OrganizationSite $site)
+  public function unpublish(Organization $organization, Site $site)
   {
     $site->update(['status' => 'draft']);
 
@@ -290,7 +290,7 @@ class OrganizationSiteController extends Controller
   /**
    * Архивирование сайта
    */
-  public function archive(Organization $organization, OrganizationSite $site)
+  public function archive(Organization $organization, Site $site)
   {
     $site->update(['status' => 'archived']);
 
@@ -302,7 +302,7 @@ class OrganizationSiteController extends Controller
   /**
    * Включение режима технических работ
    */
-  public function enableMaintenanceMode(Organization $organization, OrganizationSite $site)
+  public function enableMaintenanceMode(Organization $organization, Site $site)
   {
     $site->update(['is_maintenance_mode' => true]);
 
@@ -314,7 +314,7 @@ class OrganizationSiteController extends Controller
   /**
    * Отключение режима технических работ
    */
-  public function disableMaintenanceMode(Organization $organization, OrganizationSite $site)
+  public function disableMaintenanceMode(Organization $organization, Site $site)
   {
     $site->update(['is_maintenance_mode' => false]);
 
@@ -326,7 +326,7 @@ class OrganizationSiteController extends Controller
   /**
    * Создание страницы для сайта
    */
-  public function storePage(Request $request, Organization $organization, OrganizationSite $site)
+  public function storePage(Request $request, Organization $organization, Site $site)
   {
     $request->validate([
       'title' => 'required|string|max:255',
@@ -353,7 +353,7 @@ class OrganizationSiteController extends Controller
   /**
    * Обновление страницы сайта
    */
-  public function updatePage(Request $request, Organization $organization, OrganizationSite $site, $pageId)
+  public function updatePage(Request $request, Organization $organization, Site $site, $pageId)
   {
     $request->validate([
       'title' => 'required|string|max:255',
@@ -381,7 +381,7 @@ class OrganizationSiteController extends Controller
   /**
    * Удаление страницы сайта
    */
-  public function destroyPage(Organization $organization, OrganizationSite $site, $pageId)
+  public function destroyPage(Organization $organization, Site $site, $pageId)
   {
     $page = $site->pages()->findOrFail($pageId);
     $page->delete();
@@ -397,7 +397,7 @@ class OrganizationSiteController extends Controller
   /**
    * Публикация страницы
    */
-  public function publishPage(Organization $organization, OrganizationSite $site, $pageId)
+  public function publishPage(Organization $organization, Site $site, $pageId)
   {
     $page = $site->pages()->findOrFail($pageId);
     $page->update(['is_published' => true]);
@@ -413,7 +413,7 @@ class OrganizationSiteController extends Controller
   /**
    * Снятие страницы с публикации
    */
-  public function unpublishPage(Organization $organization, OrganizationSite $site, $pageId)
+  public function unpublishPage(Organization $organization, Site $site, $pageId)
   {
     $page = $site->pages()->findOrFail($pageId);
     $page->update(['is_published' => false]);
@@ -429,7 +429,7 @@ class OrganizationSiteController extends Controller
   /**
    * Создание автоматических страниц для сайта
    */
-  private function createAutoPages(OrganizationSite $site)
+  private function createAutoPages(Site $site)
   {
     $autoPages = [
       [
@@ -466,7 +466,7 @@ class OrganizationSiteController extends Controller
   /**
    * Создание дефолтных виджетов для сайта
    */
-  private function createDefaultWidgets(OrganizationSite $site)
+  private function createDefaultWidgets(Site $site)
   {
     $template = \App\Models\SiteTemplate::where('slug', $site->template)->first();
     if (!$template) {
@@ -503,7 +503,7 @@ class OrganizationSiteController extends Controller
   /**
    * Создать дефолтные виджеты в нормализованных таблицах
    */
-  private function createDefaultWidgetsInTables(OrganizationSite $site, array $defaultWidgets): void
+  private function createDefaultWidgetsInTables(Site $site, array $defaultWidgets): void
   {
     $widgetDataService = app(\App\Services\WidgetDataService::class);
 
@@ -613,7 +613,7 @@ class OrganizationSiteController extends Controller
   /**
    * Получить или создать домен по умолчанию для организации
    */
-  private function getOrCreateDefaultDomain(Organization $organization): \App\Models\OrganizationDomain
+  private function getOrCreateDefaultDomain(Organization $organization): \App\Models\Domain
   {
     // Ищем существующий основной домен
     $domain = $organization->domains()->where('is_primary', true)->first();

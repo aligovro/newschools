@@ -32,7 +32,7 @@ class WidgetImageService {
     async uploadImage(
         file: File,
         widgetSlug: string,
-        imageType: 'background' | 'avatar' | 'gallery',
+        imageType: 'background' | 'avatar' | 'gallery' | 'image',
         slideId?: string,
     ): Promise<ImageUploadResponse> {
         const formData = new FormData();

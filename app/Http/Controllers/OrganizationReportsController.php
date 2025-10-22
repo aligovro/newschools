@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Donation;
 use App\Models\Member;
-use App\Models\OrganizationProject;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -399,9 +399,9 @@ class OrganizationReportsController extends Controller
           ->toArray();
 
       case 'project':
-        return $query->join('organization_projects', 'donations.project_id', '=', 'organization_projects.id')
-          ->selectRaw('organization_projects.title as period, SUM(donations.amount) as total, COUNT(*) as count')
-          ->groupBy('organization_projects.id', 'organization_projects.title')
+        return $query->join('projects', 'donations.project_id', '=', 'projects.id')
+          ->selectRaw('projects.title as period, SUM(donations.amount) as total, COUNT(*) as count')
+          ->groupBy('projects.id', 'projects.title')
           ->orderBy('total', 'desc')
           ->get()
           ->toArray();

@@ -7,13 +7,14 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MainSiteController;
 use App\Http\Controllers\OrganizationMenuPageController;
 use App\Http\Controllers\OrganizationAdminController;
 use App\Http\Controllers\OrganizationCreationController;
 use App\Http\Controllers\SiteConstructorController;
 use App\Http\Controllers\OrganizationSiteController;
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/', [MainSiteController::class, 'index'])->name('home');
 
 // Public organization routes
 Route::get('/organizations', [App\Http\Controllers\PublicOrganizationController::class, 'index'])->name('organizations.index');
@@ -144,20 +145,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/test', [App\Http\Controllers\OrganizationPaymentsController::class, 'testPayment'])->name('test');
             });
 
-            // Редактор главной страницы
-            Route::prefix('homepage')->name('homepage.')->group(function () {
-                Route::get('/', [App\Http\Controllers\OrganizationHomepageController::class, 'index'])->name('index');
-                Route::put('/content', [App\Http\Controllers\OrganizationHomepageController::class, 'updateContent'])->name('update-content');
-                Route::put('/components', [App\Http\Controllers\OrganizationHomepageController::class, 'updateComponents'])->name('update-components');
-                Route::post('/components', [App\Http\Controllers\OrganizationHomepageController::class, 'addComponent'])->name('add-component');
-                Route::delete('/components', [App\Http\Controllers\OrganizationHomepageController::class, 'removeComponent'])->name('remove-component');
-                Route::patch('/components/reorder', [App\Http\Controllers\OrganizationHomepageController::class, 'reorderComponents'])->name('reorder-components');
-                Route::post('/template', [App\Http\Controllers\OrganizationHomepageController::class, 'applyTemplate'])->name('apply-template');
-                Route::get('/preview', [App\Http\Controllers\OrganizationHomepageController::class, 'preview'])->name('preview');
-                Route::post('/publish', [App\Http\Controllers\OrganizationHomepageController::class, 'publish'])->name('publish');
-                Route::post('/unpublish', [App\Http\Controllers\OrganizationHomepageController::class, 'unpublish'])->name('unpublish');
-                Route::post('/upload-image', [App\Http\Controllers\OrganizationHomepageController::class, 'uploadImage'])->name('upload-image');
-            });
 
             // Telegram бот
             Route::prefix('telegram')->name('telegram.')->group(function () {
@@ -197,20 +184,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/position/{position}/widgets', [App\Http\Controllers\WidgetController::class, 'getWidgetsForPosition'])->name('position-widgets');
             });
 
-            // Sliders management
-            Route::get('/sliders', [App\Http\Controllers\OrganizationSliderController::class, 'index'])->name('sliders.index');
-            Route::get('/sliders/create', [App\Http\Controllers\OrganizationSliderController::class, 'create'])->name('sliders.create');
-            Route::post('/sliders', [App\Http\Controllers\OrganizationSliderController::class, 'store'])->name('sliders.store');
-            Route::get('/sliders/{slider}/edit', [App\Http\Controllers\OrganizationSliderController::class, 'edit'])->name('sliders.edit');
-            Route::put('/sliders/{slider}', [App\Http\Controllers\OrganizationSliderController::class, 'update'])->name('sliders.update');
-            Route::delete('/sliders/{slider}', [App\Http\Controllers\OrganizationSliderController::class, 'destroy'])->name('sliders.destroy');
-            Route::patch('/sliders/reorder', [App\Http\Controllers\OrganizationSliderController::class, 'reorder'])->name('sliders.reorder');
-
-            // Slides management
-            Route::post('/sliders/{slider}/slides', [App\Http\Controllers\OrganizationSliderController::class, 'storeSlide'])->name('sliders.store-slide');
-            Route::put('/sliders/{slider}/slides/{slide}', [App\Http\Controllers\OrganizationSliderController::class, 'updateSlide'])->name('sliders.update-slide');
-            Route::delete('/sliders/{slider}/slides/{slide}', [App\Http\Controllers\OrganizationSliderController::class, 'destroySlide'])->name('sliders.destroy-slide');
-            Route::patch('/sliders/{slider}/slides/reorder', [App\Http\Controllers\OrganizationSliderController::class, 'reorderSlides'])->name('sliders.reorder-slides');
 
             // Sites management
             Route::get('/sites', [OrganizationSiteController::class, 'index'])->name('sites.index');
@@ -241,6 +214,55 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
         Route::patch('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
         Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
+
+        // Site builder
+        Route::get('/sites/{site}/builder', function ($siteId) {
+            $site = \App\Models\Site::findOrFail($siteId);
+
+            // Redirect to organization builder if it's an organization site
+            if ($site->site_type === 'organization' && $site->organization_id) {
+                return redirect()->route('organization.admin.sites.builder', [
+                    'organization' => $site->organization_id,
+                    'site' => $siteId
+                ]);
+            }
+
+            // For main site, render the builder directly
+            return redirect()->route('main-site.builder');
+        })->name('sites.builder');
+
+        // Main site management
+        Route::get('/main-site', function () {
+            $mainSite = \App\Models\Site::where('site_type', 'main')->first();
+            return Inertia::render('admin/MainSiteManagementPage', [
+                'mainSite' => $mainSite ? [
+                    'id' => $mainSite->id,
+                    'name' => $mainSite->name,
+                    'slug' => $mainSite->slug,
+                    'status' => $mainSite->status->value,
+                    'is_public' => $mainSite->is_public,
+                    'updated_at' => $mainSite->updated_at->toISOString(),
+                ] : null,
+            ]);
+        })->name('admin.main-site');
+
+        // Main site builder
+        Route::get('/main-site/builder', function () {
+            $mainSite = \App\Models\Site::where('site_type', 'main')->first();
+            if (!$mainSite) {
+                abort(404, 'Главный сайт не найден');
+            }
+
+            // Use the OrganizationSiteController directly with a fake organization
+            $controller = new \App\Http\Controllers\OrganizationSiteController();
+            $request = request();
+
+            // Create a fake organization object for the main site
+            $fakeOrganization = new \App\Models\Organization();
+            $fakeOrganization->id = 0; // Fake ID for main site
+
+            return $controller->editWithBuilder($fakeOrganization, $mainSite);
+        })->name('main-site.builder');
 
         // Site widgets management
         Route::post('/sites/{site}/widgets', [App\Http\Controllers\Api\SiteController::class, 'addWidget'])->name('sites.add-widget');

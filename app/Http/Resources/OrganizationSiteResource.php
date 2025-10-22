@@ -19,7 +19,8 @@ class OrganizationSiteResource extends JsonResource
       'slug' => $this->slug,
       'description' => $this->description,
       'template' => $this->template,
-      'status' => $this->status,
+      'site_type' => $this->site_type,
+      'status' => $this->status->value,
       'is_public' => (bool) ($this->is_public ?? false),
       'is_maintenance_mode' => (bool) ($this->is_maintenance_mode ?? false),
       'created_at' => optional($this->created_at)->toISOString(),
@@ -37,7 +38,7 @@ class OrganizationSiteResource extends JsonResource
       }),
 
       'pages' => $this->whenLoaded('pages', function () {
-        return OrganizationPageResource::collection($this->pages)->toArray(request());
+        return SitePageResource::collection($this->pages)->toArray(request());
       }),
       'widgets' => $this->whenLoaded('widgets', function () {
         return SiteWidgetResource::collection($this->widgets)->toArray(request());

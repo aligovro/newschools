@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\FormWidget;
-use App\Models\OrganizationSite;
+use App\Models\Site;
 use App\Services\FormActionGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -253,9 +253,9 @@ class FormWidgetController extends Controller
   /**
    * Получить сайт с проверкой прав доступа
    */
-  private function getSite(int $siteId): OrganizationSite
+  private function getSite(int $siteId): Site
   {
-    $site = OrganizationSite::findOrFail($siteId);
+    $site = Site::findOrFail($siteId);
 
     // Проверяем права доступа
     $user = Auth::user();

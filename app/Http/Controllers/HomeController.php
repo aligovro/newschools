@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Organization;
 use App\Models\User;
 use App\Models\Donation;
-use App\Models\OrganizationProject;
+use App\Models\Project;
 use App\Http\Resources\OrganizationResource;
 use App\Http\Resources\OrganizationProjectResource;
 use App\Http\Resources\RegionStatResource;
@@ -25,7 +25,7 @@ class HomeController extends Controller
       'totalUsers' => User::count(),
       'totalOrganizations' => Organization::where('status', 'active')->count(),
       'totalDonations' => Donation::where('status', 'completed')->sum('amount') ?? 0,
-      'totalProjects' => OrganizationProject::where('status', 'active')->count(),
+      'totalProjects' => Project::where('status', 'active')->count(),
     ];
 
     // Получаем настройки главного сайта
@@ -63,8 +63,8 @@ class HomeController extends Controller
       ->get();
 
     // Получаем топ регионов по пожертвованиям
-    $topRegions = Organization::selectRaw('regions.name as region_name, SUM(organization_projects.target_amount) as total_amount, COUNT(DISTINCT organizations.id) as organizations_count')
-      ->join('organization_projects', 'organizations.id', '=', 'organization_projects.organization_id')
+    $topRegions = Organization::selectRaw('regions.name as region_name, SUM(projects.target_amount) as total_amount, COUNT(DISTINCT organizations.id) as organizations_count')
+      ->join('projects', 'organizations.id', '=', 'projects.organization_id')
       ->join('regions', 'organizations.region_id', '=', 'regions.id')
       ->where('organizations.status', 'active')
       ->groupBy('regions.id', 'regions.name')
@@ -73,7 +73,7 @@ class HomeController extends Controller
       ->get();
 
     // Получаем активные проекты
-    $activeProjects = OrganizationProject::with('organization')
+    $activeProjects = Project::with('organization')
       ->where('status', 'active')
       ->limit(6)
       ->get();

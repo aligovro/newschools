@@ -60,7 +60,8 @@ export interface Site {
     };
     createdAt: string;
     updatedAt: string;
-    organizationId: number;
+    organizationId?: number;
+    siteType: 'organization' | 'main';
 }
 
 export interface SitesState {

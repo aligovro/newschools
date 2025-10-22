@@ -57,9 +57,9 @@ const getQuickActions = (terminology: any) => [
         color: 'bg-purple-500',
     },
     {
-        title: 'Настройки главного сайта',
-        description: 'SEO, платежи, контакты и аналитика',
-        href: '/dashboard/admin/main-site-settings',
+        title: 'Управление главным сайтом',
+        description: 'Конструктор и настройки главного сайта',
+        href: '/dashboard/main-site',
         icon: Globe,
         color: 'bg-indigo-500',
     },

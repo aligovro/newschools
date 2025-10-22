@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\OrganizationSite;
+use App\Models\Site;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -14,7 +14,7 @@ class SitePreviewController extends Controller
   public function preview(Request $request, $slug)
   {
     try {
-      $site = OrganizationSite::where('slug', $slug)
+      $site = Site::where('slug', $slug)
         ->where('status', 'published')
         ->firstOrFail();
 

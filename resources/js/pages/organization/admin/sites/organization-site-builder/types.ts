@@ -91,12 +91,13 @@ export interface SitePage {
     updated_at: string;
 }
 
-export interface OrganizationSite {
+export interface Site {
     id: number | null;
     name: string;
     slug: string;
     description: string;
     template: string;
+    site_type: 'organization' | 'main';
     status: 'draft' | 'published' | 'archived';
     is_public: boolean;
     is_maintenance_mode: boolean;
@@ -111,6 +112,9 @@ export interface OrganizationSite {
     widgets: SiteWidget[];
     pages?: SitePage[];
 }
+
+// Alias for backward compatibility
+export type OrganizationSite = Site;
 
 export interface SiteTemplate {
     id: number;

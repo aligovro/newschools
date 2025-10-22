@@ -32,7 +32,7 @@ class FormWidget extends Model
 
   public function site(): BelongsTo
   {
-    return $this->belongsTo(OrganizationSite::class, 'site_id');
+    return $this->belongsTo(Site::class, 'site_id');
   }
 
   public function fields(): HasMany
