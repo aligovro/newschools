@@ -1,17 +1,18 @@
 import { getOrganizationId } from '@/utils/widgetHelpers';
 import React from 'react';
+import { AuthMenuWidget } from '../AuthMenuWidget';
 import { DonationWidget } from '../DonationWidget';
 import { DonationsListWidget } from '../DonationsListWidget';
 import { FormWidget } from '../FormWidget';
 import { GalleryWidget } from '../GalleryWidget';
 import { HeroWidget } from '../HeroWidgetRefactored';
+import { HtmlWidget } from '../HtmlWidget';
 import { ImageWidget } from '../ImageWidget';
 import { MenuWidget } from '../MenuWidget';
 import { ProjectsWidget } from '../ProjectsWidget';
 import { ReferralLeaderboardWidget } from '../ReferralLeaderboardWidget';
 import { RegionRatingWidget } from '../RegionRatingWidget';
 import { StatsWidget } from '../StatsWidget';
-import { TextWidget } from '../TextWidget';
 import { SliderWidget } from '../slider';
 
 interface StatItem {
@@ -106,31 +107,209 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
 
     // Текстовый виджет
     text: ({ widget, isEditable, autoExpandSettings, onSave }) => {
-        const cfg = widget.config || {};
+        // Утилитарная функция для работы с configs
+        const convertConfigsToConfig = (
+            configs: any[],
+        ): Record<string, unknown> => {
+            if (!configs || configs.length === 0) return {};
+            const config: any = {};
+            configs.forEach((item) => {
+                let value = item.config_value;
+                switch (item.config_type) {
+                    case 'number':
+                        value = parseFloat(value);
+                        break;
+                    case 'boolean':
+                        value = value === '1' || value === 'true';
+                        break;
+                    case 'json':
+                        try {
+                            value = JSON.parse(value);
+                        } catch (e) {
+                            console.warn(
+                                'Failed to parse JSON config:',
+                                item.config_key,
+                                value,
+                            );
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                config[item.config_key] = value;
+            });
+            return config;
+        };
+
+        // Функция для форматирования текста
+        const formatTextContent = (text: string): string => {
+            if (!text) return '';
+
+            return (
+                text
+                    // Жирный текст
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    // Курсив
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    // Подчеркнутый
+                    .replace(/__(.*?)__/g, '<u>$1</u>')
+                    // Выравнивание
+                    .replace(
+                        /\[left\](.*?)\[\/left\]/g,
+                        '<div style="text-align: left;">$1</div>',
+                    )
+                    .replace(
+                        /\[center\](.*?)\[\/center\]/g,
+                        '<div style="text-align: center;">$1</div>',
+                    )
+                    .replace(
+                        /\[right\](.*?)\[\/right\]/g,
+                        '<div style="text-align: right;">$1</div>',
+                    )
+                    // Цитаты
+                    .replace(
+                        /^> (.*$)/gm,
+                        '<blockquote style="border-left: 4px solid #ccc; margin: 0.5rem 0; padding-left: 1rem; font-style: italic; color: #666;">$1</blockquote>',
+                    )
+                    // Маркированные списки
+                    .replace(
+                        /^• (.*$)/gm,
+                        '<li style="list-style-type: disc; margin-left: 1rem;">$1</li>',
+                    )
+                    // Нумерованные списки
+                    .replace(
+                        /^\d+\. (.*$)/gm,
+                        '<li style="list-style-type: decimal; margin-left: 1rem;">$1</li>',
+                    )
+                    // Переносы строк
+                    .replace(/\n/g, '<br>')
+            );
+        };
+
+        const cfg = widget.configs
+            ? convertConfigsToConfig(widget.configs)
+            : widget.config || {};
+
         return (
-            <TextWidget
+            <div className="text-widget-container">
+                {cfg.title && (
+                    <h3
+                        className="text-widget-title mb-3"
+                        style={{
+                            color: (cfg.titleColor as string) || '#333',
+                            fontSize:
+                                cfg.fontSize === 'large'
+                                    ? '1.5rem'
+                                    : cfg.fontSize === 'small'
+                                      ? '1rem'
+                                      : '1.25rem',
+                            textAlign:
+                                (cfg.textAlign as
+                                    | 'left'
+                                    | 'center'
+                                    | 'right') || 'left',
+                        }}
+                    >
+                        {cfg.title as string}
+                    </h3>
+                )}
+                {cfg.content && (
+                    <div
+                        className="text-widget-content"
+                        dangerouslySetInnerHTML={{
+                            __html: formatTextContent(cfg.content as string),
+                        }}
+                        style={{
+                            color: (cfg.textColor as string) || '#333',
+                            backgroundColor:
+                                (cfg.backgroundColor as string) ||
+                                'transparent',
+                            padding: cfg.padding ? `${cfg.padding}px` : '0',
+                            margin: cfg.margin ? `${cfg.margin}px` : '0',
+                            borderRadius: cfg.borderRadius
+                                ? `${cfg.borderRadius}px`
+                                : '0',
+                            borderWidth: cfg.borderWidth
+                                ? `${cfg.borderWidth}px`
+                                : '0',
+                            borderColor:
+                                (cfg.borderColor as string) || 'transparent',
+                            borderStyle: cfg.borderWidth ? 'solid' : 'none',
+                            textAlign:
+                                (cfg.textAlign as
+                                    | 'left'
+                                    | 'center'
+                                    | 'right') || 'left',
+                            fontSize:
+                                cfg.fontSize === 'large'
+                                    ? '1.125rem'
+                                    : cfg.fontSize === 'small'
+                                      ? '0.875rem'
+                                      : '1rem',
+                            lineHeight: '1.6',
+                        }}
+                    />
+                )}
+            </div>
+        );
+    },
+
+    // HTML виджет
+    html: ({ widget, isEditable, autoExpandSettings, onSave }) => {
+        // Утилитарная функция для работы с configs
+        const convertConfigsToConfig = (
+            configs: any[],
+        ): Record<string, unknown> => {
+            if (!configs || configs.length === 0) return {};
+            const config: any = {};
+            configs.forEach((item) => {
+                let value = item.config_value;
+                switch (item.config_type) {
+                    case 'number':
+                        value = parseFloat(value);
+                        break;
+                    case 'boolean':
+                        value = value === '1' || value === 'true';
+                        break;
+                    case 'json':
+                        try {
+                            value = JSON.parse(value);
+                        } catch (e) {
+                            console.warn(
+                                'Failed to parse JSON config:',
+                                item.config_key,
+                                value,
+                            );
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                config[item.config_key] = value;
+            });
+            return config;
+        };
+
+        const cfg = widget.configs
+            ? convertConfigsToConfig(widget.configs)
+            : widget.config || {};
+
+        return (
+            <HtmlWidget
                 config={{
                     title: cfg.title as string,
-                    content: cfg.content as string,
-                    fontSize: cfg.fontSize as string,
-                    textAlign: cfg.textAlign as 'left' | 'center' | 'right',
+                    htmlContent: cfg.htmlContent as string,
+                    enableScripts: cfg.enableScripts as boolean,
+                    enableStyles: cfg.enableStyles as boolean,
+                    width: cfg.width as string,
+                    height: cfg.height as string,
                     backgroundColor: cfg.backgroundColor as string,
-                    textColor: cfg.textColor as string,
-                    titleColor: cfg.titleColor as string,
                     padding: cfg.padding as string,
                     margin: cfg.margin as string,
                     borderRadius: cfg.borderRadius as string,
                     borderWidth: cfg.borderWidth as string,
                     borderColor: cfg.borderColor as string,
-                    enableFormatting: cfg.enableFormatting as boolean,
-                    enableColors: cfg.enableColors as boolean,
                 }}
-                isEditable={isEditable}
-                autoExpandSettings={autoExpandSettings}
-                onSave={onSave}
-                widgetId={widget.id}
-                configs={widget.configs}
-                styling={cfg.styling as Record<string, any>}
             />
         );
     },
@@ -206,9 +385,16 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     // Изображение
     image: ({ widget }) => {
         const cfg = widget.config || {};
+        const imageUrl = cfg.image as string;
+
+        // Если нет изображения, не рендерим виджет
+        if (!imageUrl) {
+            return null;
+        }
+
         return (
             <ImageWidget
-                image={cfg.image as string}
+                image={imageUrl}
                 altText={cfg.altText as string}
                 caption={cfg.caption as string}
                 alignment={
@@ -232,6 +418,18 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     menu: ({ widget, isEditable, onConfigChange }) => (
         <MenuWidget
             configs={widget.configs}
+            isEditable={isEditable}
+            onConfigChange={onConfigChange}
+        />
+    ),
+
+    // Меню авторизации (модальные окна входа/регистрации)
+    auth_menu: ({ widget, isEditable, onConfigChange }) => (
+        <AuthMenuWidget
+            config={{
+                ...(widget.config as any),
+                site_id: (widget.config as any)?.site_id,
+            }}
             isEditable={isEditable}
             onConfigChange={onConfigChange}
         />

@@ -23,7 +23,6 @@ import { HeroWidget } from '@/components/widgets/HeroWidgetRefactored';
 import { MenuWidget } from '@/components/widgets/MenuWidget';
 import { ReferralLeaderboardWidget } from '@/components/widgets/ReferralLeaderboardWidget';
 import { RegionRatingWidget } from '@/components/widgets/RegionRatingWidget';
-import { TextWidget } from '@/components/widgets/TextWidget';
 import {
     StylingPanel,
     type StylingConfig,
@@ -32,6 +31,10 @@ import { SliderWidget } from '@/components/widgets/slider';
 import { getOrganizationId, isCustomWidget } from '@/utils/widgetHelpers';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { WidgetData } from '../types';
+import { AuthMenuWidgetModal } from './modals/AuthMenuWidgetModal';
+import { HtmlWidgetModal } from './modals/HtmlWidgetModal';
+import { ImageWidgetModal } from './modals/ImageWidgetModal';
+import { TextWidgetModal } from './modals/TextWidgetModal';
 
 type WidgetConfig = Record<string, unknown>;
 
@@ -186,13 +189,21 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
     }, []);
 
     // Мемоизированная функция сохранения конфига
-    const handleConfigUpdate = useCallback(async (cfg: WidgetConfig) => {
-        setPendingConfig(cfg);
-        setFormData((prev) => ({
-            ...prev,
-            config: cfg,
-        }));
-    }, []);
+    const handleConfigUpdate = useCallback(
+        (updates: WidgetConfig) => {
+            setPendingConfig((prev) => {
+                const baseConfig = widget?.configs
+                    ? convertConfigsToConfig(widget.configs)
+                    : widget?.config || {};
+                return {
+                    ...baseConfig,
+                    ...prev,
+                    ...updates,
+                };
+            });
+        },
+        [widget?.configs, widget?.config],
+    );
 
     // Мемоизируем ID организации
     const organizationId = useMemo(
@@ -204,20 +215,25 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         if (!widget) return null;
 
         switch (widget.widget_slug) {
-            case 'text':
+            case 'text': {
                 return (
-                    <TextWidget
-                        config={
-                            widget.configs
-                                ? convertConfigsToConfig(widget.configs)
-                                : widget.config
-                        }
-                        isEditable
-                        autoExpandSettings
-                        onSave={handleConfigUpdate}
-                        widgetId={widget.id}
+                    <TextWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
                     />
                 );
+            }
+
+            case 'html': {
+                return (
+                    <HtmlWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
+                    />
+                );
+            }
 
             case 'hero': {
                 const heroConfig = widget.configs
@@ -281,6 +297,25 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                         configs={configsWithItems as any}
                         isEditable
                         onConfigChange={setPendingConfig}
+                    />
+                );
+            }
+
+            case 'image': {
+                return (
+                    <ImageWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
+                    />
+                );
+            }
+            case 'auth_menu': {
+                return (
+                    <AuthMenuWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={setPendingConfig}
                     />
                 );
             }

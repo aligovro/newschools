@@ -181,17 +181,7 @@ class OrganizationCreationController extends Controller
                     'name' => 'Стандартный',
                     'description' => 'Классический макет с баннером и статистикой',
                     'preview' => '/images/templates/default.jpg',
-                ],
-                'modern' => [
-                    'name' => 'Современный',
-                    'description' => 'Современный дизайн с акцентом на визуал',
-                    'preview' => '/images/templates/modern.jpg',
-                ],
-                'classic' => [
-                    'name' => 'Классический',
-                    'description' => 'Традиционный макет с четкой структурой',
-                    'preview' => '/images/templates/classic.jpg',
-                ],
+                ]
             ];
         });
 

@@ -18,7 +18,7 @@ interface Project {
 
 interface ProjectsWidgetProps {
     title?: string;
-    projects: Project[];
+    projects?: Project[];
     limit?: number;
     columns?: number;
     showDescription?: boolean;
@@ -31,7 +31,7 @@ interface ProjectsWidgetProps {
 
 export const ProjectsWidget: React.FC<ProjectsWidgetProps> = ({
     title = 'Наши проекты',
-    projects,
+    projects = [],
     limit = 6,
     columns = 3,
     showDescription = true,
@@ -41,7 +41,8 @@ export const ProjectsWidget: React.FC<ProjectsWidgetProps> = ({
     hoverEffect = 'lift',
     className,
 }) => {
-    const displayProjects = projects.slice(0, limit);
+    const safeProjects = Array.isArray(projects) ? projects : [];
+    const displayProjects = safeProjects.slice(0, limit);
 
     const gridCols = {
         1: 'grid-cols-1',
@@ -219,7 +220,7 @@ export const ProjectsWidget: React.FC<ProjectsWidgetProps> = ({
                     ))}
                 </div>
 
-                {projects.length > limit && (
+                {safeProjects.length > limit && (
                     <div className="mt-8 text-center">
                         <Button variant="outline" size="lg">
                             Показать все проекты

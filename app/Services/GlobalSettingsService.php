@@ -47,6 +47,11 @@ class GlobalSettingsService
         $memberPlural = $f($settings->member_plural_nominative ?? $settings->member_plural ?? null, 'участники');
         $memberGenitive = $f($settings->member_plural_genitive ?? $settings->member_genitive ?? null, 'участников');
 
+        // Sponsors
+        $sponsorSingular = $f($settings->sponsor_singular_nominative ?? null, 'спонсор');
+        $sponsorPlural = $f($settings->sponsor_plural_nominative ?? null, 'спонсоры');
+        $sponsorGenitive = $f($settings->sponsor_plural_genitive ?? null, 'спонсоров');
+
         return [
             'organization' => [
                 // Единственное число
@@ -81,6 +86,20 @@ class GlobalSettingsService
                 'plural_accusative' => $f($settings->member_plural_accusative ?? null, $memberPlural),
                 'plural_instrumental' => $f($settings->member_plural_instrumental ?? null, $memberPlural),
                 'plural_prepositional' => $f($settings->member_plural_prepositional ?? null, $memberPlural),
+            ],
+            'sponsor' => [
+                'singular_nominative' => $sponsorSingular,
+                'singular_genitive' => $f($settings->sponsor_singular_genitive ?? null, 'спонсора'),
+                'singular_dative' => $f($settings->sponsor_singular_dative ?? null, 'спонсору'),
+                'singular_accusative' => $f($settings->sponsor_singular_accusative ?? null, 'спонсора'),
+                'singular_instrumental' => $f($settings->sponsor_singular_instrumental ?? null, 'спонсором'),
+                'singular_prepositional' => $f($settings->sponsor_singular_prepositional ?? null, 'спонсоре'),
+                'plural_nominative' => $sponsorPlural,
+                'plural_genitive' => $sponsorGenitive,
+                'plural_dative' => $f($settings->sponsor_plural_dative ?? null, 'спонсорам'),
+                'plural_accusative' => $f($settings->sponsor_plural_accusative ?? null, 'спонсоров'),
+                'plural_instrumental' => $f($settings->sponsor_plural_instrumental ?? null, 'спонсорами'),
+                'plural_prepositional' => $f($settings->sponsor_plural_prepositional ?? null, 'спонсорах'),
             ],
             'actions' => [
                 'join' => $f($settings->action_join ?? null, 'Присоединиться'),
@@ -155,17 +174,53 @@ class GlobalSettingsService
 
         // Обновляем только переданные поля
         $allowedFields = [
-            'organization_singular',
-            'organization_plural',
-            'organization_genitive',
-            'organization_dative',
-            'organization_instrumental',
-            'member_singular',
-            'member_plural',
-            'member_genitive',
+            // Новая схема (полная система склонений)
+            'org_singular_nominative',
+            'org_singular_genitive',
+            'org_singular_dative',
+            'org_singular_accusative',
+            'org_singular_instrumental',
+            'org_singular_prepositional',
+            'org_plural_nominative',
+            'org_plural_genitive',
+            'org_plural_dative',
+            'org_plural_accusative',
+            'org_plural_instrumental',
+            'org_plural_prepositional',
+
+            'member_singular_nominative',
+            'member_singular_genitive',
+            'member_singular_dative',
+            'member_singular_accusative',
+            'member_singular_instrumental',
+            'member_singular_prepositional',
+            'member_plural_nominative',
+            'member_plural_genitive',
+            'member_plural_dative',
+            'member_plural_accusative',
+            'member_plural_instrumental',
+            'member_plural_prepositional',
+
+            // Sponsors terminology
+            'sponsor_singular_nominative',
+            'sponsor_singular_genitive',
+            'sponsor_singular_dative',
+            'sponsor_singular_accusative',
+            'sponsor_singular_instrumental',
+            'sponsor_singular_prepositional',
+            'sponsor_plural_nominative',
+            'sponsor_plural_genitive',
+            'sponsor_plural_dative',
+            'sponsor_plural_accusative',
+            'sponsor_plural_instrumental',
+            'sponsor_plural_prepositional',
+
+            // Действия
             'action_join',
             'action_leave',
             'action_support',
+
+            // Система и конфиги
             'system_name',
             'system_description',
             'default_language',
@@ -178,8 +233,27 @@ class GlobalSettingsService
             'feature_flags',
             'integration_settings',
             'default_seo_settings',
-            'metadata'
+            'metadata',
         ];
+
+        // Поддержка legacy-ключей => маппим к новой схеме, если пришли
+        $legacyMap = [
+            'organization_singular' => 'org_singular_nominative',
+            'organization_plural' => 'org_plural_nominative',
+            'organization_genitive' => 'org_plural_genitive',
+            'organization_dative' => 'org_singular_dative',
+            'organization_instrumental' => 'org_singular_instrumental',
+            'member_singular' => 'member_singular_nominative',
+            'member_plural' => 'member_plural_nominative',
+            'member_genitive' => 'member_plural_genitive',
+        ];
+
+        foreach ($legacyMap as $old => $new) {
+            if (isset($data[$old]) && !isset($data[$new])) {
+                $data[$new] = $data[$old];
+                unset($data[$old]);
+            }
+        }
 
         foreach ($allowedFields as $field) {
             if (isset($data[$field])) {

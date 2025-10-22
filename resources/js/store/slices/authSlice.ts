@@ -59,6 +59,8 @@ export const registerUser = createAsyncThunk(
             email: string;
             password: string;
             password_confirmation: string;
+            organization_id?: number;
+            site_id?: number;
         },
         { rejectWithValue },
     ) => {
@@ -67,6 +69,8 @@ export const registerUser = createAsyncThunk(
             const { token, user } = response.data;
 
             localStorage.setItem('token', token);
+            // Устанавливаем заголовок авторизации по умолчанию
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
             return { token, user };
         } catch (error: any) {
@@ -148,6 +152,9 @@ const authSlice = createSlice({
                 state.user = action.payload.user;
                 state.token = action.payload.token;
                 state.error = null;
+                // Устанавливаем заголовок авторизации по умолчанию для axios
+                (axios.defaults.headers.common as any)['Authorization'] =
+                    `Bearer ${action.payload.token}`;
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.isLoading = false;
@@ -169,6 +176,8 @@ const authSlice = createSlice({
                 state.user = action.payload.user;
                 state.token = action.payload.token;
                 state.error = null;
+                (axios.defaults.headers.common as any)['Authorization'] =
+                    `Bearer ${action.payload.token}`;
             })
             .addCase(registerUser.rejected, (state, action) => {
                 state.isLoading = false;
@@ -184,6 +193,8 @@ const authSlice = createSlice({
             state.user = null;
             state.token = null;
             state.error = null;
+            // Сбрасываем заголовок авторизации
+            delete (axios.defaults.headers.common as any)['Authorization'];
         });
 
         // Fetch User

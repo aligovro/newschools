@@ -28,14 +28,15 @@ import React, { useState } from 'react';
 interface GlobalSettingsPageProps {
     settings: {
         id: number;
-        organization_singular: string;
-        organization_plural: string;
-        organization_genitive: string;
-        organization_dative: string;
-        organization_instrumental: string;
-        member_singular: string;
-        member_plural: string;
-        member_genitive: string;
+        // legacy fields (may be absent)
+        organization_singular?: string;
+        organization_plural?: string;
+        organization_genitive?: string;
+        organization_dative?: string;
+        organization_instrumental?: string;
+        member_singular?: string;
+        member_plural?: string;
+        member_genitive?: string;
         action_join: string;
         action_leave: string;
         action_support: string;
@@ -51,6 +52,47 @@ interface GlobalSettingsPageProps {
         feature_flags: any;
         integration_settings: any;
         default_seo_settings: any;
+        // new org/member fields (optional in payload)
+        org_singular_nominative?: string;
+        org_singular_genitive?: string;
+        org_singular_dative?: string;
+        org_singular_accusative?: string;
+        org_singular_instrumental?: string;
+        org_singular_prepositional?: string;
+        org_plural_nominative?: string;
+        org_plural_genitive?: string;
+        org_plural_dative?: string;
+        org_plural_accusative?: string;
+        org_plural_instrumental?: string;
+        org_plural_prepositional?: string;
+
+        member_singular_nominative?: string;
+        member_singular_genitive?: string;
+        member_singular_dative?: string;
+        member_singular_accusative?: string;
+        member_singular_instrumental?: string;
+        member_singular_prepositional?: string;
+        member_plural_nominative?: string;
+        member_plural_genitive?: string;
+        member_plural_dative?: string;
+        member_plural_accusative?: string;
+        member_plural_instrumental?: string;
+        member_plural_prepositional?: string;
+
+        // sponsors optional
+        sponsor_singular_nominative?: string;
+        sponsor_singular_genitive?: string;
+        sponsor_singular_dative?: string;
+        sponsor_singular_accusative?: string;
+        sponsor_singular_instrumental?: string;
+        sponsor_singular_prepositional?: string;
+        sponsor_plural_nominative?: string;
+        sponsor_plural_genitive?: string;
+        sponsor_plural_dative?: string;
+        sponsor_plural_accusative?: string;
+        sponsor_plural_instrumental?: string;
+        sponsor_plural_prepositional?: string;
+        [key: string]: any;
     };
     terminology: any;
     systemSettings: any;
@@ -66,14 +108,47 @@ export default function GlobalSettingsPage({
 
     // Форма для терминологии
     const terminologyForm = useForm({
-        organization_singular: settings.organization_singular,
-        organization_plural: settings.organization_plural,
-        organization_genitive: settings.organization_genitive,
-        organization_dative: settings.organization_dative,
-        organization_instrumental: settings.organization_instrumental,
-        member_singular: settings.member_singular,
-        member_plural: settings.member_plural,
-        member_genitive: settings.member_genitive,
+        org_singular_nominative: settings.org_singular_nominative,
+        org_singular_genitive: settings.org_singular_genitive,
+        org_singular_dative: settings.org_singular_dative,
+        org_singular_accusative: settings.org_singular_accusative,
+        org_singular_instrumental: settings.org_singular_instrumental,
+        org_singular_prepositional: settings.org_singular_prepositional,
+
+        org_plural_nominative: settings.org_plural_nominative,
+        org_plural_genitive: settings.org_plural_genitive,
+        org_plural_dative: settings.org_plural_dative,
+        org_plural_accusative: settings.org_plural_accusative,
+        org_plural_instrumental: settings.org_plural_instrumental,
+        org_plural_prepositional: settings.org_plural_prepositional,
+
+        member_singular_nominative: settings.member_singular_nominative,
+        member_singular_genitive: settings.member_singular_genitive,
+        member_singular_dative: settings.member_singular_dative,
+        member_singular_accusative: settings.member_singular_accusative,
+        member_singular_instrumental: settings.member_singular_instrumental,
+        member_singular_prepositional: settings.member_singular_prepositional,
+        member_plural_nominative: settings.member_plural_nominative,
+        member_plural_genitive: settings.member_plural_genitive,
+        member_plural_dative: settings.member_plural_dative,
+        member_plural_accusative: settings.member_plural_accusative,
+        member_plural_instrumental: settings.member_plural_instrumental,
+        member_plural_prepositional: settings.member_plural_prepositional,
+
+        // Sponsors
+        sponsor_singular_nominative: settings.sponsor_singular_nominative,
+        sponsor_singular_genitive: settings.sponsor_singular_genitive,
+        sponsor_singular_dative: settings.sponsor_singular_dative,
+        sponsor_singular_accusative: settings.sponsor_singular_accusative,
+        sponsor_singular_instrumental: settings.sponsor_singular_instrumental,
+        sponsor_singular_prepositional: settings.sponsor_singular_prepositional,
+        sponsor_plural_nominative: settings.sponsor_plural_nominative,
+        sponsor_plural_genitive: settings.sponsor_plural_genitive,
+        sponsor_plural_dative: settings.sponsor_plural_dative,
+        sponsor_plural_accusative: settings.sponsor_plural_accusative,
+        sponsor_plural_instrumental: settings.sponsor_plural_instrumental,
+        sponsor_plural_prepositional: settings.sponsor_plural_prepositional,
+
         action_join: settings.action_join,
         action_leave: settings.action_leave,
         action_support: settings.action_support,
@@ -98,12 +173,23 @@ export default function GlobalSettingsPage({
         system_settings: settings.system_settings || {},
     });
 
+    // Форма для интеграций (ключи Яндекс.Карт)
+    const integrationsForm = useForm({
+        integration_settings: {
+            ...(settings.integration_settings || {}),
+            yandex_map_apikey:
+                settings.integration_settings?.yandex_map_apikey || '',
+            yandex_suggest_apikey:
+                settings.integration_settings?.yandex_suggest_apikey || '',
+        },
+    });
+
     const handleTerminologySubmit = (e: React.FormEvent) => {
         e.preventDefault();
         terminologyForm.post('/dashboard/admin/global-settings/terminology', {
             onSuccess: () => {
-                // Обновляем предварительный просмотр
-                setPreviewData(terminologyForm.data);
+                // Пересобираем превью из актуальных данных формы
+                generatePreview();
             },
         });
     };
@@ -121,6 +207,11 @@ export default function GlobalSettingsPage({
     const handleSystemConfigSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         systemConfigForm.post('/dashboard/admin/global-settings/system-config');
+    };
+
+    const handleIntegrationsSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        integrationsForm.post('/dashboard/admin/global-settings/integrations');
     };
 
     const handleReset = () => {
@@ -150,28 +241,36 @@ export default function GlobalSettingsPage({
     };
 
     const generatePreview = () => {
-        const data = terminologyForm.data;
+        const d: any = terminologyForm.data;
+        const orgSing = d.org_singular_nominative || 'Организация';
+        const orgPl = d.org_plural_nominative || 'Организации';
+        const orgGen = d.org_plural_genitive || 'организаций';
+
+        const memSing = d.member_singular_nominative || 'участник';
+        const memPl = d.member_plural_nominative || 'участники';
+        const memGen = d.member_plural_genitive || 'участников';
+
         const preview = {
             organization_forms: {
-                1: data.organization_singular,
-                2: data.organization_plural,
-                5: data.organization_genitive,
+                1: orgSing,
+                2: orgPl,
+                5: orgGen,
             },
             member_forms: {
-                1: data.member_singular,
-                2: data.member_plural,
-                5: data.member_genitive,
+                1: memSing,
+                2: memPl,
+                5: memGen,
             },
             examples: [
-                `Управление ${data.organization_plural}`,
-                `Создать ${data.organization_singular}`,
-                `Всего ${data.organization_genitive}: 5`,
-                `Всего ${data.member_genitive}: 25`,
-                `Последние ${data.organization_plural}`,
-                `Последние ${data.member_plural}`,
+                `Управление ${d.org_plural_instrumental || 'организациями'}`,
+                `Создать ${orgSing}`,
+                `Всего ${orgGen}: 5`,
+                `Всего ${memGen}: 25`,
+                `Последние ${orgPl}`,
+                `Последние ${memPl}`,
             ],
-        };
-        setPreviewData(preview);
+        } as const;
+        setPreviewData(preview as any);
     };
 
     return (
@@ -190,13 +289,16 @@ export default function GlobalSettingsPage({
                     onValueChange={setActiveTab}
                     className="space-y-6"
                 >
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="terminology">
                             Терминология
                         </TabsTrigger>
                         <TabsTrigger value="system">Система</TabsTrigger>
                         <TabsTrigger value="features">Функции</TabsTrigger>
                         <TabsTrigger value="config">Конфигурация</TabsTrigger>
+                        <TabsTrigger value="integrations">
+                            Интеграции
+                        </TabsTrigger>
                     </TabsList>
 
                     {/* Терминология */}
@@ -225,18 +327,18 @@ export default function GlobalSettingsPage({
                                             </h3>
                                             <div className="space-y-3">
                                                 <div>
-                                                    <Label htmlFor="organization_singular">
-                                                        Единственное число
+                                                    <Label htmlFor="org_singular_nominative">
+                                                        Единственное число (им.)
                                                     </Label>
                                                     <Input
-                                                        id="organization_singular"
+                                                        id="org_singular_nominative"
                                                         value={
                                                             terminologyForm.data
-                                                                .organization_singular
+                                                                .org_singular_nominative
                                                         }
                                                         onChange={(e) =>
                                                             terminologyForm.setData(
-                                                                'organization_singular',
+                                                                'org_singular_nominative',
                                                                 e.target.value,
                                                             )
                                                         }
@@ -244,18 +346,19 @@ export default function GlobalSettingsPage({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label htmlFor="organization_plural">
+                                                    <Label htmlFor="org_plural_nominative">
                                                         Множественное число
+                                                        (им.)
                                                     </Label>
                                                     <Input
-                                                        id="organization_plural"
+                                                        id="org_plural_nominative"
                                                         value={
                                                             terminologyForm.data
-                                                                .organization_plural
+                                                                .org_plural_nominative
                                                         }
                                                         onChange={(e) =>
                                                             terminologyForm.setData(
-                                                                'organization_plural',
+                                                                'org_plural_nominative',
                                                                 e.target.value,
                                                             )
                                                         }
@@ -263,18 +366,18 @@ export default function GlobalSettingsPage({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label htmlFor="organization_genitive">
-                                                        Родительный падеж
+                                                    <Label htmlFor="org_plural_genitive">
+                                                        Родительный (мн.)
                                                     </Label>
                                                     <Input
-                                                        id="organization_genitive"
+                                                        id="org_plural_genitive"
                                                         value={
                                                             terminologyForm.data
-                                                                .organization_genitive
+                                                                .org_plural_genitive
                                                         }
                                                         onChange={(e) =>
                                                             terminologyForm.setData(
-                                                                'organization_genitive',
+                                                                'org_plural_genitive',
                                                                 e.target.value,
                                                             )
                                                         }
@@ -282,18 +385,18 @@ export default function GlobalSettingsPage({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label htmlFor="organization_dative">
-                                                        Дательный падеж
+                                                    <Label htmlFor="org_singular_dative">
+                                                        Дательный (ед.)
                                                     </Label>
                                                     <Input
-                                                        id="organization_dative"
+                                                        id="org_singular_dative"
                                                         value={
                                                             terminologyForm.data
-                                                                .organization_dative
+                                                                .org_singular_dative
                                                         }
                                                         onChange={(e) =>
                                                             terminologyForm.setData(
-                                                                'organization_dative',
+                                                                'org_singular_dative',
                                                                 e.target.value,
                                                             )
                                                         }
@@ -301,22 +404,60 @@ export default function GlobalSettingsPage({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label htmlFor="organization_instrumental">
-                                                        Творительный падеж
+                                                    <Label htmlFor="org_singular_instrumental">
+                                                        Творительный (ед.)
                                                     </Label>
                                                     <Input
-                                                        id="organization_instrumental"
+                                                        id="org_singular_instrumental"
                                                         value={
                                                             terminologyForm.data
-                                                                .organization_instrumental
+                                                                .org_singular_instrumental
                                                         }
                                                         onChange={(e) =>
                                                             terminologyForm.setData(
-                                                                'organization_instrumental',
+                                                                'org_singular_instrumental',
                                                                 e.target.value,
                                                             )
                                                         }
                                                         placeholder="школой"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="org_singular_accusative">
+                                                        Винительный (ед.)
+                                                    </Label>
+                                                    <Input
+                                                        id="org_singular_accusative"
+                                                        value={
+                                                            terminologyForm.data
+                                                                .org_singular_accusative
+                                                        }
+                                                        onChange={(e) =>
+                                                            terminologyForm.setData(
+                                                                'org_singular_accusative',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="школу"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="org_singular_prepositional">
+                                                        Предложный (ед.)
+                                                    </Label>
+                                                    <Input
+                                                        id="org_singular_prepositional"
+                                                        value={
+                                                            terminologyForm.data
+                                                                .org_singular_prepositional
+                                                        }
+                                                        onChange={(e) =>
+                                                            terminologyForm.setData(
+                                                                'org_singular_prepositional',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="школе"
                                                     />
                                                 </div>
                                             </div>
@@ -329,18 +470,18 @@ export default function GlobalSettingsPage({
                                             </h3>
                                             <div className="space-y-3">
                                                 <div>
-                                                    <Label htmlFor="member_singular">
-                                                        Единственное число
+                                                    <Label htmlFor="member_singular_nominative">
+                                                        Единственное число (им.)
                                                     </Label>
                                                     <Input
-                                                        id="member_singular"
+                                                        id="member_singular_nominative"
                                                         value={
                                                             terminologyForm.data
-                                                                .member_singular
+                                                                .member_singular_nominative
                                                         }
                                                         onChange={(e) =>
                                                             terminologyForm.setData(
-                                                                'member_singular',
+                                                                'member_singular_nominative',
                                                                 e.target.value,
                                                             )
                                                         }
@@ -348,18 +489,19 @@ export default function GlobalSettingsPage({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label htmlFor="member_plural">
+                                                    <Label htmlFor="member_plural_nominative">
                                                         Множественное число
+                                                        (им.)
                                                     </Label>
                                                     <Input
-                                                        id="member_plural"
+                                                        id="member_plural_nominative"
                                                         value={
                                                             terminologyForm.data
-                                                                .member_plural
+                                                                .member_plural_nominative
                                                         }
                                                         onChange={(e) =>
                                                             terminologyForm.setData(
-                                                                'member_plural',
+                                                                'member_plural_nominative',
                                                                 e.target.value,
                                                             )
                                                         }
@@ -367,18 +509,18 @@ export default function GlobalSettingsPage({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label htmlFor="member_genitive">
-                                                        Родительный падеж
+                                                    <Label htmlFor="member_plural_genitive">
+                                                        Родительный (мн.)
                                                     </Label>
                                                     <Input
-                                                        id="member_genitive"
+                                                        id="member_plural_genitive"
                                                         value={
                                                             terminologyForm.data
-                                                                .member_genitive
+                                                                .member_plural_genitive
                                                         }
                                                         onChange={(e) =>
                                                             terminologyForm.setData(
-                                                                'member_genitive',
+                                                                'member_plural_genitive',
                                                                 e.target.value,
                                                             )
                                                         }
@@ -452,6 +594,117 @@ export default function GlobalSettingsPage({
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {/* Спонсоры */}
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-semibold">
+                                                Спонсоры
+                                            </h3>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <Label htmlFor="sponsor_singular_nominative">
+                                                        Единственное число (им.)
+                                                    </Label>
+                                                    <Input
+                                                        id="sponsor_singular_nominative"
+                                                        value={
+                                                            terminologyForm.data
+                                                                .sponsor_singular_nominative
+                                                        }
+                                                        onChange={(e) =>
+                                                            terminologyForm.setData(
+                                                                'sponsor_singular_nominative',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="спонсор"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="sponsor_plural_nominative">
+                                                        Множественное число
+                                                        (им.)
+                                                    </Label>
+                                                    <Input
+                                                        id="sponsor_plural_nominative"
+                                                        value={
+                                                            terminologyForm.data
+                                                                .sponsor_plural_nominative
+                                                        }
+                                                        onChange={(e) =>
+                                                            terminologyForm.setData(
+                                                                'sponsor_plural_nominative',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="спонсоры"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="sponsor_plural_genitive">
+                                                        Родительный (мн.)
+                                                    </Label>
+                                                    <Input
+                                                        id="sponsor_plural_genitive"
+                                                        value={
+                                                            terminologyForm.data
+                                                                .sponsor_plural_genitive
+                                                        }
+                                                        onChange={(e) =>
+                                                            terminologyForm.setData(
+                                                                'sponsor_plural_genitive',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="спонсоров"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <Label htmlFor="sponsor_singular_dative">
+                                                            Дательный (ед.)
+                                                        </Label>
+                                                        <Input
+                                                            id="sponsor_singular_dative"
+                                                            value={
+                                                                terminologyForm
+                                                                    .data
+                                                                    .sponsor_singular_dative
+                                                            }
+                                                            onChange={(e) =>
+                                                                terminologyForm.setData(
+                                                                    'sponsor_singular_dative',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="спонсору"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="sponsor_singular_instrumental">
+                                                            Творительный (ед.)
+                                                        </Label>
+                                                        <Input
+                                                            id="sponsor_singular_instrumental"
+                                                            value={
+                                                                terminologyForm
+                                                                    .data
+                                                                    .sponsor_singular_instrumental
+                                                            }
+                                                            onChange={(e) =>
+                                                                terminologyForm.setData(
+                                                                    'sponsor_singular_instrumental',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="спонсором"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div className="flex gap-3">
@@ -476,34 +729,36 @@ export default function GlobalSettingsPage({
                                 </form>
 
                                 {/* Предварительный просмотр */}
-                                {previewData && (
-                                    <div className="bg-muted mt-6 rounded-lg p-4">
-                                        <h4 className="mb-3 font-semibold">
-                                            Предварительный просмотр:
-                                        </h4>
-                                        <div className="space-y-2">
-                                            {previewData.examples.map(
-                                                (
-                                                    example: string,
-                                                    index: number,
-                                                ) => (
-                                                    <div
-                                                        key={index}
-                                                        className="text-sm"
-                                                    >
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="mr-2"
+                                {previewData &&
+                                    Array.isArray(previewData.examples) && (
+                                        <div className="bg-muted mt-6 rounded-lg p-4">
+                                            <h4 className="mb-3 font-semibold">
+                                                Предварительный просмотр:
+                                            </h4>
+                                            <div className="space-y-2">
+                                                {previewData.examples.map(
+                                                    (
+                                                        example: string,
+                                                        index: number,
+                                                    ) => (
+                                                        <div
+                                                            key={index}
+                                                            className="text-sm"
                                                         >
-                                                            Пример {index + 1}
-                                                        </Badge>
-                                                        {example}
-                                                    </div>
-                                                ),
-                                            )}
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="mr-2"
+                                                            >
+                                                                Пример{' '}
+                                                                {index + 1}
+                                                            </Badge>
+                                                            {example}
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -916,6 +1171,65 @@ export default function GlobalSettingsPage({
                                                 }
                                             />
                                         </div>
+                                        {/* Город по умолчанию для карты */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="default_city_id">
+                                                    ID города по умолчанию
+                                                </Label>
+                                                <Input
+                                                    id="default_city_id"
+                                                    value={
+                                                        (systemConfigForm.data
+                                                            .system_settings
+                                                            .default_city_id as any) ||
+                                                        ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        systemConfigForm.setData(
+                                                            'system_settings',
+                                                            {
+                                                                ...systemConfigForm
+                                                                    .data
+                                                                    .system_settings,
+                                                                default_city_id:
+                                                                    e.target
+                                                                        .value,
+                                                            },
+                                                        )
+                                                    }
+                                                    placeholder="Например: 213"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="default_city_fallback">
+                                                    Название города по умолчанию
+                                                </Label>
+                                                <Input
+                                                    id="default_city_fallback"
+                                                    value={
+                                                        (systemConfigForm.data
+                                                            .system_settings
+                                                            .default_city_fallback as any) ||
+                                                        ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        systemConfigForm.setData(
+                                                            'system_settings',
+                                                            {
+                                                                ...systemConfigForm
+                                                                    .data
+                                                                    .system_settings,
+                                                                default_city_fallback:
+                                                                    e.target
+                                                                        .value,
+                                                            },
+                                                        )
+                                                    }
+                                                    placeholder="Например: Москва"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                     <Button
                                         type="submit"
@@ -923,6 +1237,81 @@ export default function GlobalSettingsPage({
                                     >
                                         <Save className="mr-2 h-4 w-4" />
                                         Сохранить конфигурацию
+                                    </Button>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    {/* Интеграции */}
+                    <TabsContent value="integrations" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Интеграции</CardTitle>
+                                <CardDescription>
+                                    Ключи и настройки внешних сервисов
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <form
+                                    onSubmit={handleIntegrationsSubmit}
+                                    className="space-y-4"
+                                >
+                                    <div>
+                                        <Label htmlFor="yandex_map_apikey">
+                                            Яндекс.Карты API Key
+                                        </Label>
+                                        <Input
+                                            id="yandex_map_apikey"
+                                            value={
+                                                integrationsForm.data
+                                                    .integration_settings
+                                                    .yandex_map_apikey
+                                            }
+                                            onChange={(e) =>
+                                                integrationsForm.setData(
+                                                    'integration_settings',
+                                                    {
+                                                        ...integrationsForm.data
+                                                            .integration_settings,
+                                                        yandex_map_apikey:
+                                                            e.target.value,
+                                                    },
+                                                )
+                                            }
+                                            placeholder="Введите ключ API Яндекс.Карт"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="yandex_suggest_apikey">
+                                            Яндекс.Suggest API Key
+                                        </Label>
+                                        <Input
+                                            id="yandex_suggest_apikey"
+                                            value={
+                                                integrationsForm.data
+                                                    .integration_settings
+                                                    .yandex_suggest_apikey
+                                            }
+                                            onChange={(e) =>
+                                                integrationsForm.setData(
+                                                    'integration_settings',
+                                                    {
+                                                        ...integrationsForm.data
+                                                            .integration_settings,
+                                                        yandex_suggest_apikey:
+                                                            e.target.value,
+                                                    },
+                                                )
+                                            }
+                                            placeholder="Введите ключ Suggest API"
+                                        />
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        disabled={integrationsForm.processing}
+                                    >
+                                        <Save className="mr-2 h-4 w-4" />
+                                        Сохранить интеграции
                                     </Button>
                                 </form>
                             </CardContent>

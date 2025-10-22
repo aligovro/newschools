@@ -1,6 +1,8 @@
+import YandexMap from '@/components/maps/YandexMap';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { fetchMapsConfig, fetchPublicOrganizations } from '@/lib/api/public';
 import { Head, Link } from '@inertiajs/react';
 import { Calendar, Globe, MapPin, Users } from 'lucide-react';
 import React from 'react';
@@ -42,6 +44,84 @@ export default function Organizations({
     pagination,
     filters,
 }: Props) {
+    const [mapCenter, setMapCenter] = React.useState<[number, number]>([
+        55.751244, 37.618423,
+    ]);
+    const [mapZoom, setMapZoom] = React.useState(10);
+    const [markers, setMarkers] = React.useState<
+        { id: number; position: [number, number]; hint?: string }[]
+    >([]);
+
+    React.useEffect(() => {
+        // Load default city from config and try geolocation
+        (async () => {
+            try {
+                const cfg = await fetchMapsConfig();
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            setMapCenter([
+                                pos.coords.latitude,
+                                pos.coords.longitude,
+                            ]);
+                            setMapZoom(12);
+                        },
+                        () => {
+                            if (
+                                cfg.defaultCityId &&
+                                cfg.defaultCityId_lat &&
+                                cfg.defaultCityId_lng
+                            ) {
+                                setMapCenter([
+                                    cfg.defaultCityId_lat,
+                                    cfg.defaultCityId_lng,
+                                ]);
+                            }
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            maximumAge: 30000,
+                            timeout: 5000,
+                        },
+                    );
+                }
+            } catch {}
+        })();
+    }, []);
+
+    const handleBoundsChange = React.useCallback(
+        async (bbox: [number, number, number, number]) => {
+            try {
+                const json = await fetchPublicOrganizations({
+                    bbox: bbox.join(','),
+                });
+                // Inertia page returns paginated; but API returns Inertia view for now.
+                // For map refresh, fallback: map server organizations prop into markers.
+                const items = (json?.organizations?.data || [])
+                    .map((o: any) => ({
+                        id: o.id,
+                        position: [o.latitude, o.longitude] as [number, number],
+                        hint: o.name,
+                    }))
+                    .filter((m: any) => m.position[0] && m.position[1]);
+                if (items.length) setMarkers(items);
+            } catch {
+                // fallback to current props
+                const items = organizations
+                    .map((o) => ({
+                        id: o.id,
+                        position: [
+                            (o as any).latitude || 0,
+                            (o as any).longitude || 0,
+                        ] as [number, number],
+                        hint: o.name,
+                    }))
+                    .filter((m) => m.position[0] && m.position[1]);
+                setMarkers(items);
+            }
+        },
+        [organizations],
+    );
     const getTypeName = (type: string) => {
         const types: Record<string, string> = {
             school: 'Школа',
@@ -107,6 +187,18 @@ export default function Organizations({
                                 поддержке
                             </p>
                         </div>
+                    </div>
+                </div>
+
+                {/* Map */}
+                <div className="border-b bg-white">
+                    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+                        <YandexMap
+                            center={mapCenter}
+                            zoom={mapZoom}
+                            markers={markers}
+                            onBoundsChange={handleBoundsChange}
+                        />
                     </div>
                 </div>
 

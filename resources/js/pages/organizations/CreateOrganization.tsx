@@ -1,3 +1,4 @@
+import YandexMap from '@/components/maps/YandexMap';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import LogoUploader from '@/components/ui/image-uploader/LogoUploader';
@@ -132,7 +133,7 @@ export default function CreateOrganization({ referenceData }: Props) {
         create_gallery: true,
         create_slider: true,
         create_site: false,
-        site_template: 'modern',
+        site_template: 'default',
     });
 
     // Генерация slug из названия
@@ -564,6 +565,36 @@ export default function CreateOrganization({ referenceData }: Props) {
                                 </h2>
                             </div>
                             <div className="create-organization__section-content">
+                                {/* Карта выбора координат */}
+                                <div className="mb-4">
+                                    <div className="mb-2 text-sm text-gray-600">
+                                        Перетащите карту или выберите точку для
+                                        организации. Координаты сохраняются в
+                                        поля широты и долготы.
+                                    </div>
+                                    <YandexMap
+                                        center={[
+                                            data.latitude || 55.751244,
+                                            data.longitude || 37.618423,
+                                        ]}
+                                        zoom={12}
+                                        markers={
+                                            data.latitude && data.longitude
+                                                ? [
+                                                      {
+                                                          id: 'org',
+                                                          position: [
+                                                              data.latitude,
+                                                              data.longitude,
+                                                          ],
+                                                          hint: data.name,
+                                                      },
+                                                  ]
+                                                : []
+                                        }
+                                        onBoundsChange={() => {}}
+                                    />
+                                </div>
                                 <div className="create-organization__field-group create-organization__field-group--three-columns">
                                     <div className="create-organization__field">
                                         <UniversalSelect
@@ -627,6 +658,42 @@ export default function CreateOrganization({ referenceData }: Props) {
                                             clearable
                                             disabled={!data.city_id}
                                             error={errors.settlement_id}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="create-organization__field-group create-organization__field-group--two-columns">
+                                    <div className="create-organization__field">
+                                        <Label htmlFor="latitude">Широта</Label>
+                                        <Input
+                                            id="latitude"
+                                            value={data.latitude ?? ''}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'latitude',
+                                                    e.target.value
+                                                        ? Number(e.target.value)
+                                                        : null,
+                                                )
+                                            }
+                                            placeholder="Например: 55.751244"
+                                        />
+                                    </div>
+                                    <div className="create-organization__field">
+                                        <Label htmlFor="longitude">
+                                            Долгота
+                                        </Label>
+                                        <Input
+                                            id="longitude"
+                                            value={data.longitude ?? ''}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'longitude',
+                                                    e.target.value
+                                                        ? Number(e.target.value)
+                                                        : null,
+                                                )
+                                            }
+                                            placeholder="Например: 37.618423"
                                         />
                                     </div>
                                 </div>

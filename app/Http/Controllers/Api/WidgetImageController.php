@@ -34,10 +34,10 @@ class WidgetImageController extends Controller
     ]);
 
     $validator = Validator::make($request->all(), [
-      'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240', // 10MB
+      'image' => 'required|mimes:jpeg,png,jpg,gif,webp,svg|max:10240', // 10MB, включая SVG
       'widget_slug' => 'required|string',
       'slide_id' => 'nullable|string', // Для hero слайдов
-      'image_type' => 'required|string|in:background,avatar,gallery',
+      'image_type' => 'required|string|in:background,avatar,gallery,image',
     ]);
 
     if ($validator->fails()) {
