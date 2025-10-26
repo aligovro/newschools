@@ -3,7 +3,7 @@ import { widgetsSystemApi } from '@/lib/api/widgets-system';
 import React, { useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import type { WidgetData, WidgetPosition } from '../../types';
-import { WidgetDisplay } from '../WidgetDisplay';
+import { DraggableWidget } from './DraggableWidget';
 
 interface Props {
     position: WidgetPosition;
@@ -23,6 +23,11 @@ interface Props {
     onMoveSidebarLeft?: () => void;
     onMoveSidebarRight?: () => void;
     sidebarPosition?: 'left' | 'right';
+    onMoveWidgetOrder?: (
+        widgetId: string,
+        positionSlug: string,
+        order: number,
+    ) => Promise<void>;
 }
 
 export const PositionDropZone: React.FC<Props> = ({
@@ -40,13 +45,23 @@ export const PositionDropZone: React.FC<Props> = ({
     onMoveSidebarLeft,
     onMoveSidebarRight,
     sidebarPosition,
+    onMoveWidgetOrder,
 }) => {
     useEffect(() => {}, [position]);
 
     const [{ isOver, canDrop }, drop] = useDrop({
-        accept: 'widget',
-        drop: (item: { widget: any }) => {
-            onDropWidget(item, position.slug);
+        accept: ['widget', 'widget-instance'],
+        drop: (item: any) => {
+            if (item.widget) {
+                onDropWidget(item, position.slug);
+            } else if (item.id && onMoveWidgetOrder) {
+                // Drop existing widget instance into this position -> append to end
+                onMoveWidgetOrder(
+                    String(item.id),
+                    position.slug,
+                    positionWidgets.length + 1,
+                );
+            }
         },
         collect: (monitor) => ({
             isOver: monitor.isOver(),
@@ -58,24 +73,14 @@ export const PositionDropZone: React.FC<Props> = ({
         .filter((widget) => widget.position_slug === position.slug)
         .sort((a, b) => a.order - b.order);
 
-    const getWidgetErrors = (widget: WidgetData) => {
-        return validationErrors.filter(
-            (error) =>
-                error.includes(`Виджет ${widget.id}`) ||
-                error.includes(`Виджет ${widget.id}:`),
-        );
-    };
-
-    const showLayoutControls =
+    const isHeaderOrFooter =
         position.slug === 'header' || position.slug === 'footer';
 
     return (
         <div
             ref={drop as unknown as React.RefObject<HTMLDivElement>}
-            className={`widget-position rounded-lg border-2 border-dashed p-4 transition-colors ${
-                isOver && canDrop
-                    ? 'border-blue-400 bg-blue-50'
-                    : 'border-gray-300 bg-gray-50'
+            className={`widget-position widget-position-${position.slug} rounded-lg border-2 border-dashed p-4 transition-colors ${
+                isOver && canDrop ? 'drag-over' : ''
             }`}
         >
             {position.area === 'sidebar' ? (
@@ -117,12 +122,14 @@ export const PositionDropZone: React.FC<Props> = ({
                 </div>
             ) : (
                 <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3
+                        className={`position-label position-label-${position.slug} text-lg font-semibold`}
+                    >
                         {position.name}
                     </h3>
                     <div className="flex items-center space-x-2">
-                        {showLayoutControls && (
-                            <div className="flex items-center gap-2">
+                        {isHeaderOrFooter && (
+                            <div className="layout-controls flex items-center gap-2">
                                 <select
                                     className="rounded border px-2 py-1 text-sm"
                                     value={
@@ -184,41 +191,26 @@ export const PositionDropZone: React.FC<Props> = ({
             )}
 
             <div className="min-h-[100px] space-y-4">
-                {positionWidgets.map((widget) => {
-                    const widgetErrors = getWidgetErrors(widget);
-                    const shouldExpand = newlyAddedWidgetId === widget.id;
-                    return (
-                        <div key={widget.id} className="space-y-2">
-                            <WidgetDisplay
-                                widget={widget}
-                                onEdit={onEditWidget}
-                                onDelete={onDeleteWidget}
-                                onToggleVisibility={onToggleWidgetVisibility}
-                                onSave={onSaveWidget}
-                                isEditable={!isPreviewMode}
-                                autoExpandSettings={shouldExpand}
-                                className="mb-4"
-                                useOutputRenderer={isPreviewMode}
-                            />
-                            {widgetErrors.length > 0 && (
-                                <div className="rounded border border-red-200 bg-red-50 p-2">
-                                    <div className="text-sm text-red-600">
-                                        <ul className="list-inside list-disc space-y-1">
-                                            {widgetErrors.map(
-                                                (error, index) => (
-                                                    <li key={index}>{error}</li>
-                                                ),
-                                            )}
-                                        </ul>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                {positionWidgets.map((widget, index) => (
+                    <DraggableWidget
+                        key={widget.id}
+                        widget={widget}
+                        positionSlug={position.slug}
+                        positionWidgetsLength={positionWidgets.length}
+                        widgetOrder={index + 1}
+                        onEditWidget={onEditWidget}
+                        onDeleteWidget={onDeleteWidget}
+                        onToggleWidgetVisibility={onToggleWidgetVisibility}
+                        onSaveWidget={onSaveWidget}
+                        onMoveWidgetOrder={onMoveWidgetOrder}
+                        isPreviewMode={isPreviewMode}
+                        newlyAddedWidgetId={newlyAddedWidgetId}
+                        validationErrors={validationErrors}
+                    />
+                ))}
 
                 {positionWidgets.length === 0 && (
-                    <div className="flex h-24 items-center justify-center text-gray-500">
+                    <div className="position-empty-state flex h-24 items-center justify-center text-gray-500">
                         <p>
                             {isOver && canDrop
                                 ? 'Отпустите виджет здесь'
@@ -230,7 +222,9 @@ export const PositionDropZone: React.FC<Props> = ({
 
             {position.area === 'sidebar' && (
                 <div className="mt-3 flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3
+                        className={`position-label position-label-${position.slug} text-lg font-semibold`}
+                    >
                         {position.name}
                     </h3>
                     <span className="text-sm text-gray-500">

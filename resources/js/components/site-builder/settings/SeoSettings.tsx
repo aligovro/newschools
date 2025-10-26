@@ -1,3 +1,4 @@
+import ImageUploader from '@/components/admin/settings/sites/ImageUploader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,14 @@ interface SeoSettingsProps {
         seo_title?: string;
         seo_description?: string;
         seo_keywords?: string;
+        og_title?: string;
+        og_description?: string;
+        og_type?: string;
+        og_image?: string;
+        twitter_card?: string;
+        twitter_title?: string;
+        twitter_description?: string;
+        twitter_image?: string;
     };
 }
 
@@ -99,6 +108,120 @@ export const SeoSettings: React.FC<SeoSettingsProps> = React.memo(
                             {settings.seo_keywords?.length || 0}/255 символов
                         </p>
                     </div>
+
+                    {/* Open Graph */}
+                    <div className="pt-2">
+                        <h3 className="text-base font-semibold">Open Graph</h3>
+                    </div>
+                    <div>
+                        <Label htmlFor="og_title">OG Title</Label>
+                        <Input
+                            id="og_title"
+                            value={settings.og_title || ''}
+                            onChange={(e) =>
+                                updateSetting('og_title', e.target.value)
+                            }
+                            placeholder="Заголовок для соцсетей"
+                            maxLength={100}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="og_description">OG Description</Label>
+                        <Textarea
+                            id="og_description"
+                            value={settings.og_description || ''}
+                            onChange={(e) =>
+                                updateSetting('og_description', e.target.value)
+                            }
+                            placeholder="Короткое описание для соцсетей"
+                            rows={3}
+                            maxLength={200}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="og_type">OG Type</Label>
+                        <Input
+                            id="og_type"
+                            value={settings.og_type || 'website'}
+                            onChange={(e) =>
+                                updateSetting('og_type', e.target.value)
+                            }
+                            placeholder="website"
+                        />
+                    </div>
+                    <div>
+                        <Label>OG Image</Label>
+                        <ImageUploader
+                            onImageUpload={(_file, serverUrl) => {
+                                if (serverUrl)
+                                    updateSetting('og_image', serverUrl);
+                            }}
+                            onImageCrop={undefined as unknown as any}
+                            imageType="image"
+                            widgetSlug="og"
+                            enableServerUpload={true}
+                            acceptedTypes={[
+                                'image/jpeg',
+                                'image/png',
+                                'image/gif',
+                                'image/webp',
+                            ]}
+                            existingImageUrl={settings.og_image}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                            Рекомендуем 1200×630, будет создано несколько
+                            размеров
+                        </p>
+                    </div>
+
+                    {/* Twitter Card */}
+                    <div className="pt-2">
+                        <h3 className="text-base font-semibold">Twitter</h3>
+                    </div>
+                    <div>
+                        <Label htmlFor="twitter_card">Twitter Card</Label>
+                        <Input
+                            id="twitter_card"
+                            value={
+                                settings.twitter_card || 'summary_large_image'
+                            }
+                            onChange={(e) =>
+                                updateSetting('twitter_card', e.target.value)
+                            }
+                            placeholder="summary_large_image"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="twitter_title">Twitter Title</Label>
+                        <Input
+                            id="twitter_title"
+                            value={settings.twitter_title || ''}
+                            onChange={(e) =>
+                                updateSetting('twitter_title', e.target.value)
+                            }
+                            placeholder="Заголовок для Twitter"
+                            maxLength={100}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="twitter_description">
+                            Twitter Description
+                        </Label>
+                        <Textarea
+                            id="twitter_description"
+                            value={settings.twitter_description || ''}
+                            onChange={(e) =>
+                                updateSetting(
+                                    'twitter_description',
+                                    e.target.value,
+                                )
+                            }
+                            placeholder="Описание для Twitter"
+                            rows={3}
+                            maxLength={200}
+                        />
+                    </div>
+                    {/* Twitter Image derived from OG upload on the backend */}
                 </CardContent>
             </Card>
         );

@@ -78,18 +78,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/global-settings/reset', [App\Http\Controllers\GlobalSettingsController::class, 'reset'])->name('global-settings.reset');
             Route::post('/global-settings/preview-terminology', [App\Http\Controllers\GlobalSettingsController::class, 'previewTerminology'])->name('global-settings.preview-terminology');
             Route::post('/global-settings/clear-cache', [App\Http\Controllers\GlobalSettingsController::class, 'clearCache'])->name('global-settings.clear-cache');
-
-            // Main site settings management
-            Route::get('/main-site-settings', [App\Http\Controllers\MainSiteSettingsController::class, 'index'])->name('main-site-settings.index');
-            Route::post('/main-site-settings/basic', [App\Http\Controllers\MainSiteSettingsController::class, 'updateBasicSettings'])->name('main-site-settings.basic');
-            Route::post('/main-site-settings/seo', [App\Http\Controllers\MainSiteSettingsController::class, 'updateSeoSettings'])->name('main-site-settings.seo');
-            Route::post('/main-site-settings/contact', [App\Http\Controllers\MainSiteSettingsController::class, 'updateContactSettings'])->name('main-site-settings.contact');
-            Route::post('/main-site-settings/analytics', [App\Http\Controllers\MainSiteSettingsController::class, 'updateAnalyticsSettings'])->name('main-site-settings.analytics');
-            Route::post('/main-site-settings/payments', [App\Http\Controllers\MainSiteSettingsController::class, 'updatePaymentSettings'])->name('main-site-settings.payments');
-            Route::post('/main-site-settings/notifications', [App\Http\Controllers\MainSiteSettingsController::class, 'updateNotificationSettings'])->name('main-site-settings.notifications');
-            Route::post('/main-site-settings/integrations', [App\Http\Controllers\MainSiteSettingsController::class, 'updateIntegrationSettings'])->name('main-site-settings.integrations');
-            Route::post('/main-site-settings/clear-cache', [App\Http\Controllers\MainSiteSettingsController::class, 'clearCache'])->name('main-site-settings.clear-cache');
-            Route::post('/main-site-settings/reset', [App\Http\Controllers\MainSiteSettingsController::class, 'reset'])->name('main-site-settings.reset');
         });
 
         // Organization menu management
@@ -280,7 +268,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/settings', function () {
             return Inertia::render('settings/SettingsPage', [
                 'globalSettings' => app(\App\Services\GlobalSettingsService::class)->getSettings(),
-                'mainSiteSettings' => app(\App\Services\MainSiteSettingsService::class)->getSettings(),
                 'userSettings' => \Illuminate\Support\Facades\Auth::user(),
             ]);
         })->name('settings.index');

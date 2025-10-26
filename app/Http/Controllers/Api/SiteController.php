@@ -8,18 +8,22 @@ use App\Models\Site;
 use App\Models\Widget;
 use App\Models\WidgetPosition;
 use App\Services\WidgetService;
+use App\Services\SiteSeoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class SiteController extends Controller
 {
   private WidgetService $widgetService;
+  private SiteSeoService $siteSeoService;
 
-  public function __construct(WidgetService $widgetService)
+  public function __construct(WidgetService $widgetService, SiteSeoService $siteSeoService)
   {
     $this->widgetService = $widgetService;
+    $this->siteSeoService = $siteSeoService;
   }
   // Основные настройки сайта
   public function saveBasicSettings(Request $request, $id): JsonResponse
@@ -36,6 +40,9 @@ class SiteController extends Controller
         'name' => $request->name,
         'description' => $request->description,
       ]);
+
+      // Автогенерация SEO, если ранее не заполнено — через сервис
+      $this->siteSeoService->ensureSeoDefaults($site);
 
       return response()->json([
         'success' => true,
@@ -95,23 +102,41 @@ class SiteController extends Controller
       'seo_title' => 'nullable|string|max:60',
       'seo_description' => 'nullable|string|max:160',
       'seo_keywords' => 'nullable|string|max:255',
+      'og_title' => 'nullable|string|max:100',
+      'og_description' => 'nullable|string|max:200',
+      'og_type' => 'nullable|string|max:50',
+      'og_image' => 'nullable|string|max:500',
+      'twitter_card' => 'nullable|string|max:50',
+      'twitter_title' => 'nullable|string|max:100',
+      'twitter_description' => 'nullable|string|max:200',
+      'twitter_image' => 'nullable|string|max:500',
     ]);
 
     try {
       $site = $this->getSite($id);
 
-      $seoConfig = $site->seo_config ?? [];
-      $seoConfig = array_merge($seoConfig, $request->only([
+      $incoming = $request->only([
         'seo_title',
         'seo_description',
-        'seo_keywords'
-      ]));
+        'seo_keywords',
+        'og_title',
+        'og_description',
+        'og_type',
+        'og_image',
+        'twitter_card',
+        'twitter_title',
+        'twitter_description',
+        'twitter_image',
+      ]);
+
+      $seoConfig = $this->siteSeoService->applyDefaultsToIncoming($site, $incoming);
 
       $site->update(['seo_config' => $seoConfig]);
 
       return response()->json([
         'success' => true,
         'message' => 'SEO настройки сохранены',
+        'data' => $seoConfig,
       ]);
     } catch (\Exception $e) {
       return response()->json([
@@ -484,7 +509,7 @@ class SiteController extends Controller
     }
   }
 
-  // Перемещение виджета
+  // Перемещение виджета (с пересортировкой соседей)
   public function moveWidget(Request $request, $site, $widgetId)
   {
     $request->validate([
@@ -495,29 +520,96 @@ class SiteController extends Controller
     try {
       $site = $this->getSite($site);
 
-      // Находим виджет в нормализованных таблицах
+      // Находим виджет
       $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
         ->where('id', $widgetId)
         ->first();
 
       if (!$siteWidget) {
-        return back()->withErrors(['error' => 'Виджет не найден']);
+        return response()->json([
+          'success' => false,
+          'message' => 'Виджет не найден',
+        ], 404);
       }
 
-      $position = WidgetPosition::where('slug', $request->position_slug)->firstOrFail();
+      $targetPosition = WidgetPosition::where('slug', $request->position_slug)->firstOrFail();
 
-      // Обновляем позицию и порядок
-      $siteWidget->update([
-        'position_slug' => $position->slug,
-        'position_name' => $position->name,
-        'position_id' => $position->id,
-        'order' => $request->order,
-        'sort_order' => $request->order,
+      $oldPositionSlug = $siteWidget->position_slug;
+      $oldOrder = (int) $siteWidget->order;
+      $newPositionSlug = $targetPosition->slug;
+      $requestedOrder = (int) $request->order;
+
+      DB::transaction(function () use (
+        $site,
+        $siteWidget,
+        $targetPosition,
+        $oldPositionSlug,
+        $oldOrder,
+        $newPositionSlug,
+        $requestedOrder
+      ) {
+        // Закрываем "дыру" в старой позиции, если позиция меняется
+        if ($oldPositionSlug !== $newPositionSlug) {
+          \App\Models\SiteWidget::where('site_id', $site->id)
+            ->where('position_slug', $oldPositionSlug)
+            ->where('order', '>', $oldOrder)
+            ->decrement('order');
+        }
+
+        // Подсчитываем количество виджетов в целевой позиции
+        $siblingsCount = \App\Models\SiteWidget::where('site_id', $site->id)
+          ->where('position_slug', $newPositionSlug)
+          ->when($oldPositionSlug === $newPositionSlug, function ($q) use ($siteWidget) {
+            // При перемещении внутри той же позиции исключаем сам виджет из подсчета
+            $q->where('id', '!=', $siteWidget->id);
+          })
+          ->count();
+
+        // Нормализуем требуемый порядок
+        $newOrder = max(1, min($requestedOrder, $siblingsCount + 1));
+
+        // Сдвигаем соседей в целевой позиции, освобождая место под newOrder
+        \App\Models\SiteWidget::where('site_id', $site->id)
+          ->where('position_slug', $newPositionSlug)
+          ->when($oldPositionSlug === $newPositionSlug, function ($q) use ($siteWidget) {
+            $q->where('id', '!=', $siteWidget->id);
+          })
+          ->where('order', '>=', $newOrder)
+          ->increment('order');
+
+        // Обновляем сам виджет
+        $siteWidget->update([
+          'position_slug' => $targetPosition->slug,
+          'position_name' => $targetPosition->name,
+          'position_id' => $targetPosition->id,
+          'order' => $newOrder,
+          'sort_order' => $newOrder,
+        ]);
+      });
+
+      // Грузим связи и отдаем JSON
+      $siteWidget->load([
+        'configs',
+        'heroSlides',
+        'formFields',
+        'menuItems',
+        'galleryImages',
+        'donationSettings',
+        'regionRatingSettings',
+        'donationsListSettings',
+        'referralLeaderboardSettings',
+        'imageSettings',
       ]);
 
-      return back()->with('widget', new SiteWidgetResource($siteWidget));
+      return response()->json([
+        'success' => true,
+        'widget' => new SiteWidgetResource($siteWidget),
+      ]);
     } catch (\Exception $e) {
-      return back()->withErrors(['error' => 'Ошибка при перемещении виджета: ' . $e->getMessage()]);
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при перемещении виджета: ' . $e->getMessage(),
+      ], 500);
     }
   }
 
@@ -656,7 +748,7 @@ class SiteController extends Controller
   // Создание дефолтных виджетов при создании сайта
   public function createDefaultWidgets($siteId): void
   {
-    $site = OrganizationSite::findOrFail($siteId);
+    $site = Site::findOrFail($siteId);
     $positions = WidgetPosition::where('template_id', $site->template_id)->get();
 
     $defaultWidgets = [];

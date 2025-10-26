@@ -53,45 +53,6 @@ interface Terminology {
     support_action: string;
 }
 
-interface MainSiteSettings {
-    id: number;
-    site_name: string;
-    site_description: string;
-    site_logo: string | null;
-    site_favicon: string | null;
-    site_theme: string;
-    primary_color: string;
-    secondary_color: string;
-    dark_mode: boolean;
-    meta_title: string | null;
-    meta_description: string | null;
-    meta_keywords: string | null;
-    og_title: string | null;
-    og_description: string | null;
-    og_image: string | null;
-    og_type: string;
-    twitter_card: string;
-    twitter_title: string | null;
-    twitter_description: string | null;
-    twitter_image: string | null;
-    contact_email: string | null;
-    contact_phone: string | null;
-    contact_address: string | null;
-    contact_telegram: string | null;
-    contact_vk: string | null;
-    social_links: any;
-    google_analytics_id: string | null;
-    yandex_metrika_id: string | null;
-    custom_head_code: string | null;
-    custom_body_code: string | null;
-    payment_settings: any;
-    notification_settings: any;
-    integration_settings: any;
-    metadata: any;
-    created_at: string;
-    updated_at: string;
-}
-
 interface SeoData {
     title: string;
     description: string;
@@ -128,7 +89,6 @@ interface HomeProps {
     topRegions: Region[];
     activeProjects: Project[];
     seo: SeoData;
-    mainSiteSettings: MainSiteSettings;
     terminology: Terminology;
     heroSliders?: Slider[];
     contentSliders?: Slider[];
@@ -141,7 +101,6 @@ export default function Home({
     topRegions,
     activeProjects,
     seo,
-    mainSiteSettings,
     terminology,
     heroSliders = [],
     contentSliders = [],
@@ -206,11 +165,7 @@ export default function Home({
             </Head>
 
             <div className="min-h-screen bg-white">
-                <Header
-                    auth={auth}
-                    mainSiteSettings={mainSiteSettings}
-                    terminology={terminology}
-                />
+                <Header auth={auth} terminology={terminology} />
 
                 <main>
                     {/* Главные слайдеры */}

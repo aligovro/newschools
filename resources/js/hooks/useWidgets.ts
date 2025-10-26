@@ -80,7 +80,9 @@ export const useWidgets = (
                         const exists = prev.some(
                             (w) => String(w.id) === String(newWidget.id),
                         );
-                        if (exists) return prev;
+                        if (exists) {
+                            return prev;
+                        }
                         return [...prev, newWidget];
                     });
                     setLastAddedWidget(newWidget);
@@ -192,18 +194,72 @@ export const useWidgets = (
             setErrors([]);
 
             try {
-                await sitesApi.moveWidget(siteId, parseInt(widgetId), {
-                    position_slug: positionSlug,
-                    order,
-                });
-                // Обновление локально
-                setWidgets((prev) =>
-                    prev.map((w) =>
-                        String(w.id) === String(widgetId)
-                            ? { ...w, position_slug: positionSlug, order }
-                            : w,
-                    ),
+                const result = await sitesApi.moveWidget(
+                    siteId,
+                    parseInt(widgetId),
+                    {
+                        position_slug: positionSlug,
+                        order,
+                    },
                 );
+
+                if (result.success) {
+                    // Обновляем локальное состояние - меняем порядок виджетов в позиции
+                    setWidgets((prev) => {
+                        // Находим перемещаемый виджет во всех позициях
+                        const movingWidget = prev.find(
+                            (w) => String(w.id) === String(widgetId),
+                        );
+
+                        if (!movingWidget) {
+                            return prev;
+                        }
+
+                        // Получаем виджеты в целевой позиции (исключая перемещаемый)
+                        const widgetsInTargetPosition = prev.filter(
+                            (w) =>
+                                w.position_slug === positionSlug &&
+                                String(w.id) !== String(widgetId),
+                        );
+
+                        // Получаем виджеты в других позициях (исключая перемещаемый)
+                        const widgetsInOtherPositions = prev.filter(
+                            (w) =>
+                                w.position_slug !== positionSlug &&
+                                String(w.id) !== String(widgetId),
+                        );
+
+                        // Сортируем виджеты в целевой позиции по порядку
+                        const sortedTargetWidgets =
+                            widgetsInTargetPosition.sort(
+                                (a, b) => a.order - b.order,
+                            );
+
+                        // Вставляем перемещаемый виджет в нужную позицию
+                        sortedTargetWidgets.splice(order - 1, 0, {
+                            ...movingWidget,
+                            position_slug: positionSlug,
+                        });
+
+                        // Обновляем порядок всех виджетов в целевой позиции
+                        const updatedTargetWidgets = sortedTargetWidgets.map(
+                            (w, index) => ({
+                                ...w,
+                                order: index + 1,
+                            }),
+                        );
+
+                        const result = [
+                            ...widgetsInOtherPositions,
+                            ...updatedTargetWidgets,
+                        ];
+                        return result;
+                    });
+                } else {
+                    setErrors([
+                        result.message || 'Ошибка при перемещении виджета',
+                    ]);
+                }
             } catch (error) {
                 console.error('Ошибка при перемещении виджета:', error);
                 setErrors(['Ошибка при перемещении виджета']);

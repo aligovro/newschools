@@ -9,26 +9,6 @@ interface Terminology {
     support_action: string;
 }
 
-interface MainSiteSettings {
-    id: number;
-    site_name: string;
-    site_description: string;
-    site_logo: string | null;
-    site_favicon: string | null;
-    site_theme: string;
-    primary_color: string;
-    secondary_color: string;
-    dark_mode: boolean;
-    contact_email: string | null;
-    contact_phone: string | null;
-    contact_address: string | null;
-    contact_telegram: string | null;
-    contact_vk: string | null;
-    social_links: any;
-    created_at: string;
-    updated_at: string;
-}
-
 interface HeaderProps {
     auth?: {
         user?: {
@@ -37,15 +17,10 @@ interface HeaderProps {
             email: string;
         };
     };
-    mainSiteSettings: MainSiteSettings;
     terminology: Terminology;
 }
 
-export default function Header({
-    auth,
-    mainSiteSettings,
-    terminology,
-}: HeaderProps) {
+export default function Header({ auth, terminology }: HeaderProps) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (

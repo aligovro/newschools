@@ -30,6 +30,11 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
         'settings',
     );
 
+    // Стабилизируем hero_slides чтобы избежать лишних перерендеров
+    const stableHeroSlides = useMemo(() => {
+        return hero_slides;
+    }, [hero_slides.length, hero_slides.map((slide) => slide.id).join(',')]);
+
     // Извлекаем значения из configs если они переданы
     const configValues = useMemo(() => {
         if (!configs) return config;
@@ -63,8 +68,8 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                 config.showArrows || true,
             ),
             slides:
-                hero_slides.length > 0
-                    ? hero_slides
+                stableHeroSlides.length > 0
+                    ? stableHeroSlides
                     : getConfigValue(configs, 'slides', config.slides || []),
             singleSlide: getConfigValue(
                 configs,
@@ -77,13 +82,17 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                 config.css_class || '',
             ),
         };
-    }, [configs, config, hero_slides]);
+    }, [configs, config, stableHeroSlides]);
 
     const [localConfig, setLocalConfig] = useState<HeroConfig>(configValues);
 
-    // Синхронизируем локальное состояние с внешним config
+    // Синхронизируем локальное состояние с внешним config только при инициализации
+    const isInitialized = useRef(false);
     useEffect(() => {
-        setLocalConfig(configValues);
+        if (!isInitialized.current) {
+            setLocalConfig(configValues);
+            isInitialized.current = true;
+        }
     }, [configValues]);
 
     // Сообщаем об изменениях конфигурации наружу
@@ -103,10 +112,6 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
         },
         [onConfigChange],
     );
-
-    useEffect(() => {
-        handleConfigChange(localConfig as unknown as Record<string, unknown>);
-    }, [localConfig, handleConfigChange]);
 
     // Отслеживаем изменения localConfig и уведомляем родительский компонент
     const prevLocalConfigRef = useRef<HeroConfig | undefined>(undefined);

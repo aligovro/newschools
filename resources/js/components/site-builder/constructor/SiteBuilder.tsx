@@ -43,6 +43,8 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
         selectedPosition,
         newlyAddedWidgetId,
         sidebarPosition,
+        availableWidgets,
+        loadingAvailableWidgets,
         handleAddWidgetToPosition,
         handleSelectWidget,
         handleDropWidget,
@@ -58,6 +60,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
         setIsWidgetSelectModalOpen,
         setSelectedPosition,
         onMoveWidget,
+        onMoveWidgetOrder,
     } = useSiteBuilderState({
         template,
         siteId,
@@ -129,6 +132,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                                     }
                                     onMoveSidebarLeft={moveSidebarLeft}
                                     onMoveSidebarRight={moveSidebarRight}
+                                    onMoveWidgetOrder={onMoveWidgetOrder}
                                 />
                             </div>
                         )}
@@ -155,7 +159,8 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                 }}
                 onSelectWidget={handleSelectWidget}
                 selectedPositionName={selectedPosition || ''}
-                widgets={widgets}
+                widgets={availableWidgets}
+                loadingWidgets={loadingAvailableWidgets}
                 onMoveWidget={onMoveWidget}
             />
         </DragDropProvider>

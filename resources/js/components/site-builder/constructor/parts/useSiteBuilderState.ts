@@ -1,5 +1,6 @@
 import { useWidgets } from '@/hooks/useWidgets';
 import { sitesApi, widgetsSystemApi } from '@/lib/api/index';
+import type { Widget } from '@/lib/api/widgets-system';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { WidgetData, WidgetPosition } from '../../types';
 
@@ -25,6 +26,7 @@ export const useSiteBuilderState = ({
         addWidget,
         updateWidget,
         deleteWidget,
+        moveWidget,
         isLoading,
         refreshWidgets,
     } = useWidgets(siteId, initialWidgets);
@@ -43,6 +45,9 @@ export const useSiteBuilderState = ({
     const [newlyAddedWidgetId, setNewlyAddedWidgetId] = useState<string | null>(
         null,
     );
+    const [availableWidgets, setAvailableWidgets] = useState<Widget[]>([]);
+    const [loadingAvailableWidgets, setLoadingAvailableWidgets] =
+        useState(false);
 
     const initialSidebar = useMemo(() => {
         const cfg = initialLayoutConfig as {
@@ -100,6 +105,20 @@ export const useSiteBuilderState = ({
         }
     }, [template]);
 
+    const loadAvailableWidgets = useCallback(async () => {
+        try {
+            setLoadingAvailableWidgets(true);
+            const widgetsData = await widgetsSystemApi.getWidgets();
+            if (widgetsData.success) {
+                setAvailableWidgets(widgetsData.data || []);
+            }
+        } catch (error) {
+            console.error('Error loading available widgets:', error);
+        } finally {
+            setLoadingAvailableWidgets(false);
+        }
+    }, []);
+
     useEffect(() => {
         loadPositions();
     }, [loadPositions]);
@@ -111,9 +130,10 @@ export const useSiteBuilderState = ({
     const handleAddWidgetToPosition = useCallback(
         async (positionSlug: string) => {
             setSelectedPosition(positionSlug);
+            await loadAvailableWidgets();
             setIsWidgetSelectModalOpen(true);
         },
-        [],
+        [loadAvailableWidgets],
     );
 
     const handleSelectWidget = useCallback(
@@ -142,7 +162,9 @@ export const useSiteBuilderState = ({
         async (item: { widget: any }, positionSlug: string) => {
             const widgetData = item.widget || item;
             const slug = widgetData.widget_slug;
-            if (!slug) return;
+            if (!slug) {
+                return;
+            }
             try {
                 const newWidget = await addWidget(slug, positionSlug);
                 if (newWidget) {
@@ -211,10 +233,12 @@ export const useSiteBuilderState = ({
 
     const onMoveWidget = useCallback(
         async (widgetId: string, positionSlug: string) => {
+            console.log('onMoveWidget called:', { widgetId, positionSlug });
             const widgetsInTarget = widgets
                 .filter((w) => w.position_slug === positionSlug)
                 .sort((a, b) => a.order - b.order);
             const newOrder = widgetsInTarget.length + 1;
+            console.log('Moving widget to order:', newOrder);
             await sitesApi.moveWidget(siteId, parseInt(widgetId), {
                 position_slug: positionSlug,
                 order: newOrder,
@@ -233,6 +257,18 @@ export const useSiteBuilderState = ({
         [widgets, siteId, onWidgetsChange, isLoading],
     );
 
+    const onMoveWidgetOrder = useCallback(
+        async (widgetId: string, positionSlug: string, order: number) => {
+            try {
+                await moveWidget(widgetId, positionSlug, order);
+                // Не вызываем refreshWidgets, так как moveWidget уже обновляет локальное состояние
+            } catch (error) {
+                console.error('Error moving widget order:', error);
+            }
+        },
+        [moveWidget],
+    );
+
     return {
         widgets,
         positions,
@@ -246,6 +282,8 @@ export const useSiteBuilderState = ({
         selectedPosition,
         newlyAddedWidgetId,
         sidebarPosition,
+        availableWidgets,
+        loadingAvailableWidgets,
         handleAddWidgetToPosition,
         handleSelectWidget,
         handleDropWidget,
@@ -261,5 +299,6 @@ export const useSiteBuilderState = ({
         setIsWidgetSelectModalOpen,
         setSelectedPosition,
         onMoveWidget,
+        onMoveWidgetOrder,
     };
 };

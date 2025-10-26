@@ -1,0 +1,42 @@
+/* Styles for public site rendering (SSR-friendly) */
+.site-preview {
+    min-height: 100vh;
+    font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
+}
+
+.site-header {
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.site-hero {
+    background: #f9fafb;
+}
+
+.site-main {
+    background: #fff;
+}
+
+.site-footer {
+    background: #1f2937;
+    color: #fff;
+    margin-top: auto;
+}
+
+.widget-container {
+    margin-bottom: 1rem;
+}
+
+.widget-container:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .grid-cols-1.lg\:grid-cols-4 {
+        grid-template-columns: 1fr;
+    }
+}

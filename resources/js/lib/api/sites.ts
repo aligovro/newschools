@@ -21,6 +21,14 @@ export const sitesApi = {
             seo_title?: string;
             seo_description?: string;
             seo_keywords?: string;
+            og_title?: string;
+            og_description?: string;
+            og_type?: string;
+            og_image?: string;
+            twitter_card?: string;
+            twitter_title?: string;
+            twitter_description?: string;
+            twitter_image?: string;
         },
     ): Promise<{ success: boolean; message?: string }> =>
         apiClient
@@ -65,13 +73,13 @@ export const sitesApi = {
             position_slug: string;
             order: number;
         },
-    ): Promise<void> =>
+    ): Promise<{ success: boolean; message?: string }> =>
         apiClient
-            .post(
-                `/dashboard/sites/${siteId}/widgets/${widgetId}/move`,
-                updates,
-            )
-            .then(() => undefined),
+            .post<{
+                success: boolean;
+                message?: string;
+            }>(`/dashboard/sites/${siteId}/widgets/${widgetId}/move`, updates)
+            .then((response) => response.data),
 
     // Получение URL для предпросмотра сайта
     getPreviewUrl: (siteId: number): Promise<{ preview_url: string }> =>

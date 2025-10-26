@@ -5,6 +5,14 @@ interface SeoSettingsData {
     seo_title?: string;
     seo_description?: string;
     seo_keywords?: string;
+    og_title?: string;
+    og_description?: string;
+    og_type?: string;
+    og_image?: string;
+    twitter_card?: string;
+    twitter_title?: string;
+    twitter_description?: string;
+    twitter_image?: string;
 }
 
 interface UseSeoSettingsReturn {
@@ -38,6 +46,9 @@ export const useSeoSettings = (
             const res = await sitesApi.saveSeoSettings(siteId, settings);
             if (!res.success) {
                 setErrors([res.message || 'Не удалось сохранить настройки']);
+            } else if ((res as any).data) {
+                // Обновляем локальное состояние тем, что вернул сервер
+                setSettings((res as any).data as SeoSettingsData);
             }
         } catch (error) {
             console.error('Ошибка при сохранении SEO настроек:', error);
