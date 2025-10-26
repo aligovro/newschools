@@ -30,6 +30,39 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                         }}
                     />
 
+                    <SeoSettings
+                        siteId={site.id}
+                        initialSettings={{
+                            seo_title:
+                                (site.seo_config as any)?.seo_title ??
+                                site.name,
+                            seo_description:
+                                (site.seo_config as any)?.seo_description ??
+                                site.description,
+                            seo_keywords: (site.seo_config as any)
+                                ?.seo_keywords,
+                            og_title:
+                                (site.seo_config as any)?.og_title ?? site.name,
+                            og_description:
+                                (site.seo_config as any)?.og_description ??
+                                site.description,
+                            og_type:
+                                (site.seo_config as any)?.og_type ?? 'website',
+                            og_image: (site.seo_config as any)?.og_image,
+                            twitter_card:
+                                (site.seo_config as any)?.twitter_card ??
+                                'summary_large_image',
+                            twitter_title:
+                                (site.seo_config as any)?.twitter_title ??
+                                site.name,
+                            twitter_description:
+                                (site.seo_config as any)?.twitter_description ??
+                                site.description,
+                            twitter_image: (site.seo_config as any)
+                                ?.twitter_image,
+                        }}
+                    />
+
                     <DesignSettings
                         siteId={site.id}
                         initialSettings={{
@@ -43,17 +76,6 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                                 ?.header_style,
                             footer_style: (site.theme_config as any)
                                 ?.footer_style,
-                        }}
-                    />
-
-                    <SeoSettings
-                        siteId={site.id}
-                        initialSettings={{
-                            seo_title: (site.seo_config as any)?.seo_title,
-                            seo_description: (site.seo_config as any)
-                                ?.seo_description,
-                            seo_keywords: (site.seo_config as any)
-                                ?.seo_keywords,
                         }}
                     />
 

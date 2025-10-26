@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Site;
+use App\Models\SiteTemplate;
+use App\Models\WidgetPosition;
 use App\Services\WidgetDataService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 
 class MainSiteController extends Controller
 {
@@ -19,7 +22,20 @@ class MainSiteController extends Controller
 
         /** @var WidgetDataService $widgetDataService */
         $widgetDataService = app(WidgetDataService::class);
-        $widgetsConfig = $widgetDataService->getSiteWidgetsWithData($site->id);
+        $widgetsConfig = Cache::remember("site_widgets_config_{$site->id}", 300, function () use ($widgetDataService, $site) {
+            return $widgetDataService->getSiteWidgetsWithData($site->id);
+        });
+
+        $positions = Cache::remember("site_positions_{$site->template}", 600, function () use ($site) {
+            $template = SiteTemplate::where('slug', $site->template)->first();
+            $query = WidgetPosition::active()->ordered();
+            if ($template) {
+                $query->where(function ($q) use ($template) {
+                    $q->where('template_id', $template->id)->orWhereNull('template_id');
+                });
+            }
+            return $query->get();
+        });
 
         return Inertia::render('SitePreview', [
             'site' => [
@@ -31,6 +47,7 @@ class MainSiteController extends Controller
                 'widgets_config' => $widgetsConfig,
                 'seo_config' => $site->seo_config ?? [],
             ],
+            'positions' => $positions,
         ]);
     }
 }

@@ -6,14 +6,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import type { Widget } from '@/lib/api/widgets-system';
 import React from 'react';
 
 interface WidgetSelectModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSelectWidget: (widget: WidgetConfig) => void;
-    widgets: WidgetConfig[];
+    onSelectWidget: (widget: Widget) => void;
+    widgets: Widget[];
     positionName: string;
+    loading?: boolean;
 }
 
 export const WidgetSelectModal: React.FC<WidgetSelectModalProps> = ({
@@ -22,6 +24,7 @@ export const WidgetSelectModal: React.FC<WidgetSelectModalProps> = ({
     onSelectWidget,
     widgets,
     positionName,
+    loading = false,
 }) => {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -32,42 +35,55 @@ export const WidgetSelectModal: React.FC<WidgetSelectModalProps> = ({
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="mt-4 grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto md:grid-cols-2 lg:grid-cols-3">
-                    {widgets.map((widget) => (
-                        <Card
-                            key={widget.id}
-                            className="cursor-pointer transition-shadow hover:shadow-md"
-                            onClick={() => onSelectWidget(widget)}
-                        >
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm">
-                                    {widget.name}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                                <p className="mb-3 text-xs text-muted-foreground">
-                                    {widget.description ||
-                                        'Описание отсутствует'}
-                                </p>
-                                <Button
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onSelectWidget(widget);
-                                    }}
-                                >
-                                    Выбрать
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-
-                {widgets.length === 0 && (
-                    <div className="py-8 text-center text-muted-foreground">
-                        Нет доступных виджетов
+                {loading ? (
+                    <div className="flex h-64 items-center justify-center">
+                        <div className="text-center">
+                            <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                            <p className="text-gray-600">
+                                Загрузка доступных виджетов...
+                            </p>
+                        </div>
                     </div>
+                ) : (
+                    <>
+                        <div className="mt-4 grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto md:grid-cols-2">
+                            {widgets.map((widget) => (
+                                <Card
+                                    key={widget.id}
+                                    className="cursor-pointer transition-shadow hover:shadow-md"
+                                    onClick={() => onSelectWidget(widget)}
+                                >
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm">
+                                            {widget.name}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-0">
+                                        <p className="mb-3 text-xs text-muted-foreground">
+                                            {widget.description ||
+                                                'Описание отсутствует'}
+                                        </p>
+                                        <Button
+                                            size="sm"
+                                            className="w-full"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onSelectWidget(widget);
+                                            }}
+                                        >
+                                            Выбрать
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {widgets.length === 0 && (
+                            <div className="py-8 text-center text-muted-foreground">
+                                Нет доступных виджетов
+                            </div>
+                        )}
+                    </>
                 )}
             </DialogContent>
         </Dialog>

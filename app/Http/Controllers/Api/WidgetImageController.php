@@ -200,13 +200,16 @@ class WidgetImageController extends Controller
         }
         break;
 
-      case 'testimonials':
-        if ($imageType === 'avatar') {
-          $sizes = [
-            'avatar' => ['width' => 100, 'height' => 100, 'fit' => 'cover'],
-            'thumbnail' => ['width' => 50, 'height' => 50, 'fit' => 'cover']
-          ];
-        }
+      case 'og':
+        // Facebook/OG: 1200x630 (1.91:1) + thumbs; also generate Twitter variants from the same upload
+        $sizes = [
+          'og' => ['width' => 1200, 'height' => 630, 'fit' => 'cover'],
+          'og_thumb' => ['width' => 600, 'height' => 315, 'fit' => 'cover'],
+          'thumbnail' => ['width' => 300, 'height' => 157, 'fit' => 'cover'],
+          // Twitter large (derived)
+          'twitter' => ['width' => 1200, 'height' => 600, 'fit' => 'cover'],
+          'twitter_half' => ['width' => 600, 'height' => 300, 'fit' => 'cover'],
+        ];
         break;
 
       default:

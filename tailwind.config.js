@@ -8,7 +8,7 @@ export default {
         './resources/**/*.tsx',
         './resources/**/*.vue',
     ],
-    darkMode: 'class', // Используем классы для управления темой
+    darkMode: false, // Отключен темный режим
     theme: {
         extend: {
             colors: {

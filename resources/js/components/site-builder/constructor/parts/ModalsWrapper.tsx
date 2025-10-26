@@ -1,3 +1,4 @@
+import type { Widget } from '@/lib/api/widgets-system';
 import React from 'react';
 import type { WidgetData, WidgetPosition } from '../../types';
 import { WidgetEditModal } from '../WidgetEditModal';
@@ -15,7 +16,8 @@ interface ModalsWrapperProps {
     onCloseSelect: () => void;
     onSelectWidget: (widget: any) => Promise<void>;
     selectedPositionName: string;
-    widgets: WidgetData[];
+    widgets: Widget[];
+    loadingWidgets: boolean;
     onMoveWidget: (widgetId: string, positionSlug: string) => Promise<void>;
 }
 
@@ -32,6 +34,7 @@ export const ModalsWrapper: React.FC<ModalsWrapperProps> = ({
     onSelectWidget,
     selectedPositionName,
     widgets,
+    loadingWidgets,
     onMoveWidget,
 }) => {
     return (
@@ -55,8 +58,9 @@ export const ModalsWrapper: React.FC<ModalsWrapperProps> = ({
                 isOpen={isWidgetSelectModalOpen}
                 onClose={onCloseSelect}
                 onSelectWidget={onSelectWidget}
-                widgets={widgets as any}
+                widgets={widgets}
                 positionName={selectedPositionName}
+                loading={loadingWidgets}
             />
         </>
     );

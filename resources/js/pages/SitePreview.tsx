@@ -1,178 +1,40 @@
 import { WidgetDisplay } from '@/components/site-builder/constructor/WidgetDisplay';
+import type {
+    WidgetPosition as SharedWidgetPosition,
+    WidgetData,
+} from '@/components/site-builder/types';
 import { widgetsSystemApi } from '@/lib/api/index';
 import { Head } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
+import '../../css/site-preview.scss';
 
 interface Site {
     id: number;
     name: string;
     slug: string;
     description?: string;
-    template: string;
-    widgets_config: Array<{
-        id: string;
-        name: string;
-        widget_slug: string;
-        config: Record<string, unknown>;
-        settings: Record<string, unknown>;
-        position_name: string;
-        position_slug?: string;
-        order: number;
-        is_active: boolean;
-        is_visible: boolean;
-        widget?: {
-            id: number;
-            name: string;
-            widget_slug: string;
-        };
-        position?: {
-            id: number;
-            name: string;
-            slug: string;
-            area: string;
-        };
-        // Нормализованные данные
-        configs?: Array<{
-            config_key: string;
-            config_value: string;
-            config_type: string;
-        }>;
-        hero_slides?: Array<{
-            id: number;
-            title: string;
-            subtitle?: string;
-            description?: string;
-            button_text?: string;
-            button_link?: string;
-            button_link_type: string;
-            button_open_in_new_tab: boolean;
-            background_image?: string;
-            overlay_color?: string;
-            overlay_opacity?: number;
-            overlay_gradient?: string;
-            overlay_gradient_intensity?: number;
-            overlay_style?: string;
-            sort_order: number;
-            is_active: boolean;
-        }>;
-        form_fields?: Array<{
-            id: number;
-            field_name: string;
-            field_type: string;
-            field_label?: string;
-            field_placeholder?: string;
-            field_help_text?: string;
-            field_required: boolean;
-            field_options?: any;
-            field_validation?: any;
-            field_styling?: any;
-            field_order: number;
-            is_active: boolean;
-        }>;
-        menu_items?: Array<{
-            id: number;
-            item_id: string;
-            title: string;
-            url: string;
-            type: string;
-            open_in_new_tab: boolean;
-            sort_order: number;
-            is_active: boolean;
-        }>;
-        gallery_images?: Array<{
-            id: number;
-            image_url: string;
-            alt_text?: string;
-            title?: string;
-            description?: string;
-            sort_order: number;
-            is_active: boolean;
-        }>;
-        donation_settings?: {
-            id: number;
-            title?: string;
-            description?: string;
-            min_amount?: number;
-            max_amount?: number;
-            suggested_amounts?: number[];
-            currency: string;
-            show_amount_input: boolean;
-            show_anonymous_option: boolean;
-            button_text: string;
-            success_message?: string;
-            payment_methods?: any;
-        };
-        region_rating_settings?: {
-            id: number;
-            items_per_page: number;
-            title?: string;
-            description?: string;
-            sort_by: string;
-            sort_direction: string;
-            show_rating: boolean;
-            show_donations_count: boolean;
-            show_progress_bar: boolean;
-            display_options?: any;
-        };
-        donations_list_settings?: {
-            id: number;
-            items_per_page: number;
-            title?: string;
-            description?: string;
-            sort_by: string;
-            sort_direction: string;
-            show_amount: boolean;
-            show_donor_name: boolean;
-            show_date: boolean;
-            show_message: boolean;
-            show_anonymous: boolean;
-            display_options?: any;
-        };
-        referral_leaderboard_settings?: {
-            id: number;
-            items_per_page: number;
-            title?: string;
-            description?: string;
-            sort_by: string;
-            sort_direction: string;
-            show_rank: boolean;
-            show_referrals_count: boolean;
-            show_total_donations: boolean;
-            show_avatar: boolean;
-            display_options?: any;
-        };
-        image_settings?: {
-            id: number;
-            image_url: string;
-            alt_text?: string;
-            title?: string;
-            description?: string;
-            link_url?: string;
-            link_type: string;
-            open_in_new_tab: boolean;
-            alignment: string;
-            width?: string;
-            height?: string;
-            styling?: any;
-        };
-    }>;
+    template: string; // slug
+    widgets_config: WidgetData[];
     seo_config: Record<string, unknown>;
 }
 
-interface WidgetPosition {
-    id: number;
-    name: string;
-    slug: string;
-    area: string;
-}
+type WidgetPosition = SharedWidgetPosition;
 
 interface SitePreviewProps {
     site: Site;
+    positions?: WidgetPosition[];
 }
 
-const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
-    const [positions, setPositions] = useState<WidgetPosition[]>([]);
-    const [loading, setLoading] = useState(true);
+const SitePreview: React.FC<SitePreviewProps> = ({
+    site,
+    positions: ssrPositions,
+}) => {
+    const [positions, setPositions] = useState<WidgetPosition[]>(
+        ssrPositions || [],
+    );
+    const [loading, setLoading] = useState(
+        !(ssrPositions && ssrPositions.length > 0),
+    );
 
     // Логируем данные сайта
     console.log('SitePreview - Site data:', site);
@@ -189,17 +51,13 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
             is_visible: widget.is_visible,
             config: widget.config,
             hero_slides: widget.hero_slides,
-            slider_slides: (widget as any).slider_slides,
+            slider_slides: widget.slider_slides,
         });
 
         // Детально логируем config для hero и slider виджетов
         if (widget.widget_slug === 'hero' || widget.widget_slug === 'slider') {
             console.log(`SitePreview - ${widget.widget_slug} config details:`, {
-                config_keys: Object.keys(widget.config),
-                has_hero_slides_in_config: 'hero_slides' in widget.config,
-                has_slider_slides_in_config: 'slider_slides' in widget.config,
-                hero_slides_in_config: widget.config.hero_slides,
-                slider_slides_in_config: widget.config.slider_slides,
+                config_keys: Object.keys(widget.config || {}),
                 full_config: widget.config,
             });
         }
@@ -207,13 +65,14 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
 
     // Загружаем позиции виджетов
     useEffect(() => {
+        if (ssrPositions && ssrPositions.length > 0) {
+            return;
+        }
         const loadPositions = async () => {
             try {
                 setLoading(true);
-                const templateId = (site.template as any)?.id || 1;
                 const positionsData =
-                    await widgetsSystemApi.getWidgetPositions(templateId);
-
+                    await widgetsSystemApi.getWidgetPositions();
                 if (positionsData.success) {
                     setPositions(positionsData.data || []);
                 }
@@ -223,9 +82,8 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
                 setLoading(false);
             }
         };
-
         loadPositions();
-    }, [site.template]);
+    }, [ssrPositions]);
 
     if (loading) {
         return (
@@ -263,11 +121,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
                 className={`site-position site-position--${position.slug}`}
             >
                 <div className="container mx-auto px-4">
-                    {positionWidgets.length === 0 ? (
-                        <div className="py-8 text-center text-gray-500">
-                            <p>Нет виджетов в позиции "{position.name}"</p>
-                        </div>
-                    ) : (
+                    {positionWidgets.length > 0 && (
                         <div className="space-y-4">
                             {positionWidgets
                                 .filter(
@@ -293,14 +147,68 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
         );
     };
 
+    // SEO
+    const seo = (site.seo_config || {}) as Record<string, unknown>;
+    const getString = (value: unknown): string | undefined =>
+        typeof value === 'string' && value.trim() !== '' ? value : undefined;
+    const getBoolean = (value: unknown): boolean | undefined => {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+            const v = value.toLowerCase();
+            if (v === 'true') return true;
+            if (v === 'false') return false;
+        }
+        return undefined;
+    };
+    const pageTitle = getString(seo['title']) ?? site.name;
+    const metaDescription =
+        getString(seo['description']) ?? site.description ?? '';
+    const metaKeywords: string | undefined = getString(seo['keywords']);
+    const canonicalUrl: string | undefined =
+        getString(seo['canonical_url']) ?? getString(seo['slug_url']);
+    const ogImage: string | undefined =
+        getString(seo['og_image']) ?? getString(seo['image']);
+    const noindex = Boolean(getBoolean(seo['noindex']));
+
     return (
         <>
             <Head>
-                <title>{site.name}</title>
-                <meta name="description" content={site.description || ''} />
+                <title>{pageTitle}</title>
+                <meta name="description" content={metaDescription} />
                 <meta
                     name="viewport"
                     content="width=device-width, initial-scale=1"
+                />
+                {metaKeywords && (
+                    <meta name="keywords" content={metaKeywords} />
+                )}
+                {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+                {noindex && <meta name="robots" content="noindex,nofollow" />}
+                {/* Open Graph */}
+                <meta property="og:type" content="website" />
+                <meta property="og:title" content={pageTitle} />
+                <meta property="og:description" content={metaDescription} />
+                {canonicalUrl && (
+                    <meta property="og:url" content={canonicalUrl} />
+                )}
+                {ogImage && <meta property="og:image" content={ogImage} />}
+                {/* Twitter */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={pageTitle} />
+                <meta name="twitter:description" content={metaDescription} />
+                {ogImage && <meta name="twitter:image" content={ogImage} />}
+                {/* JSON-LD */}
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            '@context': 'https://schema.org',
+                            '@type': 'WebSite',
+                            name: pageTitle,
+                            description: metaDescription,
+                            url: canonicalUrl,
+                        }),
+                    }}
                 />
             </Head>
 
@@ -465,50 +373,6 @@ const SitePreview: React.FC<SitePreviewProps> = ({ site }) => {
                     })()}
                 </footer>
             </div>
-
-            <style>{`
-                .site-preview {
-                    min-height: 100vh;
-                    font-family:
-                        system-ui,
-                        -apple-system,
-                        sans-serif;
-                }
-
-                .site-header {
-                    background: #fff;
-                    border-bottom: 1px solid #e5e7eb;
-                }
-
-                .site-hero {
-                    background: #f9fafb;
-                }
-
-                .site-main {
-                    background: #fff;
-                }
-
-                .site-footer {
-                    background: #1f2937;
-                    color: #fff;
-                    margin-top: auto;
-                }
-
-                .widget-container {
-                    margin-bottom: 1rem;
-                }
-
-                .widget-container:last-child {
-                    margin-bottom: 0;
-                }
-
-                /* Адаптивность */
-                @media (max-width: 1024px) {
-                    .grid-cols-1.lg\\:grid-cols-4 {
-                        grid-template-columns: 1fr;
-                    }
-                }
-            `}</style>
         </>
     );
 };

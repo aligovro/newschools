@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Site;
 use App\Models\SitePage;
 use App\Models\Domain;
-use App\Services\SliderService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Resources\OrganizationSiteResource;
@@ -13,13 +12,6 @@ use App\Http\Resources\SitePageResource;
 
 class PublicSiteController extends Controller
 {
-  protected $sliderService;
-
-  public function __construct(SliderService $sliderService)
-  {
-    $this->sliderService = $sliderService;
-  }
-
   /**
    * Отображение сайта организации по домену
    */

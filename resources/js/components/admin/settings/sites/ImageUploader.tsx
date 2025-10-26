@@ -12,8 +12,8 @@ import { widgetImageService } from '../../../../services/WidgetImageService';
 const DEBUG_CROP = false;
 
 interface ImageUploaderProps {
-    onImageUpload: (file: File, croppedImage?: string) => void;
-    onImageCrop: (croppedImage: string) => void;
+    onImageUpload: (file: File, serverUrl?: string) => void;
+    onImageCrop?: (croppedImage: string) => void;
     onImageDelete?: () => void;
     maxSize?: number;
     acceptedTypes?: string[];
@@ -152,7 +152,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
                 // Если включена серверная загрузка
                 if (enableServerUpload && widgetSlug) {
-                    if (aspectRatio) {
+                    if (aspectRatio && onImageCrop) {
                         // Не грузим оригинал, сначала открываем кроп модалку и после кропа грузим сжатый файл
                         const reader = new FileReader();
                         reader.addEventListener('load', () => {
@@ -213,8 +213,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                         setImgSrc(src);
                         setOriginalSrc(src);
 
-                        // Если нужно обрезание, показываем модальное окно
-                        if (aspectRatio) {
+                        // Если нужно обрезание и есть обработчик кропа, показываем модальное окно
+                        if (aspectRatio && onImageCrop) {
                             setShowCropModal(true);
                         }
 
@@ -229,6 +229,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             maxSize,
             aspectRatio,
             onImageUpload,
+            onImageCrop,
             enableServerUpload,
             widgetSlug,
             imageType,
@@ -373,7 +374,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     };
 
     const handleCropComplete = useCallback(async () => {
-        if (!completedCrop || !imgSrc) return;
+        if (!completedCrop || !imgSrc || !onImageCrop) return;
 
         const image = new Image();
         image.crossOrigin = 'anonymous';
@@ -608,7 +609,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                             {/* Показываем кнопку редактирования только для растровых изображений */}
                             {previewUrl &&
                                 !previewUrl.includes('.svg') &&
-                                !existingImageUrl?.includes('.svg') && (
+                                !existingImageUrl?.includes('.svg') &&
+                                onImageCrop && (
                                     <button
                                         type="button"
                                         className="image-uploader__edit-button px-3 py-1 text-sm"
@@ -632,7 +634,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 </div>
             )}
 
-            {showCropModal && (
+            {showCropModal && onImageCrop && (
                 <div
                     className="image-uploader__modal"
                     onClick={handleCancelCrop}

@@ -73,6 +73,13 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         null,
     );
 
+    const handleSetPendingConfig = useCallback(
+        (config: WidgetConfig | null) => {
+            setPendingConfig(config);
+        },
+        [],
+    );
+
     // Синхронизация формы с виджетом
     useEffect(() => {
         if (widget) {
@@ -88,9 +95,13 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 is_active: widget.is_active,
                 is_visible: widget.is_visible,
             });
-            setPendingConfig(config);
+
+            // Устанавливаем pendingConfig только если он еще не установлен
+            if (_pendingConfig === null) {
+                handleSetPendingConfig(config);
+            }
         }
-    }, [widget]);
+    }, [widget, _pendingConfig, handleSetPendingConfig]);
 
     // Мемоизированная функция сохранения
     const handleSave = useCallback(async () => {
@@ -139,7 +150,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <TextWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -149,7 +160,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <HtmlWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -159,7 +170,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <HeroWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -169,7 +180,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <SliderWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -179,7 +190,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <MenuWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -189,7 +200,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <ImageWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -198,7 +209,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <AuthMenuWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -208,7 +219,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <FormWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                         siteId={siteId}
                     />
                 );
@@ -219,7 +230,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <DonationWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -229,7 +240,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <RegionRatingWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -239,7 +250,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <DonationsListWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -249,7 +260,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <ReferralLeaderboardWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
-                        onConfigUpdate={setPendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
                     />
                 );
             }
@@ -257,17 +268,17 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             default:
                 return null;
         }
-    }, [widget, siteId]);
+    }, [widget, siteId, _pendingConfig, handleSetPendingConfig]);
 
     const renderStandardFields = useMemo(
         () => (
             <StandardWidgetFields
                 formData={formData}
                 onInputChange={handleInputChange}
-                onConfigUpdate={setPendingConfig}
+                onConfigUpdate={handleSetPendingConfig}
             />
         ),
-        [formData, handleInputChange],
+        [formData, handleInputChange, handleSetPendingConfig],
     );
 
     const hasCustomEditor = useMemo(

@@ -20,6 +20,11 @@ interface PositionsRendererProps {
     onAddWidgetToPosition: (positionSlug: string) => void;
     onMoveSidebarLeft: () => void;
     onMoveSidebarRight: () => void;
+    onMoveWidgetOrder: (
+        widgetId: string,
+        positionSlug: string,
+        order: number,
+    ) => Promise<void>;
 }
 
 export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
@@ -37,6 +42,7 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
     onAddWidgetToPosition,
     onMoveSidebarLeft,
     onMoveSidebarRight,
+    onMoveWidgetOrder,
 }) => {
     const renderZone = (position: WidgetPosition) => (
         <PositionDropZone
@@ -55,6 +61,7 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
             onMoveSidebarLeft={onMoveSidebarLeft}
             onMoveSidebarRight={onMoveSidebarRight}
             sidebarPosition={sidebarPosition}
+            onMoveWidgetOrder={onMoveWidgetOrder}
         />
     );
 

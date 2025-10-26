@@ -183,6 +183,33 @@ class SiteWidgetResource extends JsonResource
             ];
         }
 
+        // Inject image settings if present
+        if ($this->relationLoaded('imageSettings') && $this->imageSettings) {
+            $imageSettings = $this->imageSettings;
+            $imageData = [
+                'image' => $imageSettings->image_url,
+                'altText' => $imageSettings->alt_text,
+                'caption' => $imageSettings->description,
+                'alignment' => $imageSettings->alignment,
+                'size' => $imageSettings->width ? 'custom' : 'medium',
+                'linkUrl' => $imageSettings->link_url,
+                'linkType' => $imageSettings->link_type,
+                'openInNewTab' => $imageSettings->open_in_new_tab,
+            ];
+
+            // Добавляем в нормализованную конфигурацию
+            $normalizedConfig = array_merge($normalizedConfig, $imageData);
+
+            // Добавляем в configs для совместимости
+            foreach ($imageData as $key => $value) {
+                $configsArray[] = [
+                    'config_key' => $key,
+                    'config_value' => is_bool($value) ? ($value ? '1' : '0') : (string) $value,
+                    'config_type' => is_bool($value) ? 'boolean' : 'string',
+                ];
+            }
+        }
+
         return [
             'id' => (string) $this->id,
             'widget_id' => $this->widget_id,

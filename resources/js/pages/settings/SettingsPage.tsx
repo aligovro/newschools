@@ -39,13 +39,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface SettingsPageProps {
     globalSettings?: any;
-    mainSiteSettings?: any;
     userSettings?: any;
 }
 
 export default function SettingsPage({
     globalSettings,
-    mainSiteSettings,
     userSettings,
 }: SettingsPageProps) {
     const settingsCategories = [
@@ -66,17 +64,17 @@ export default function SettingsPage({
         },
         {
             id: 'main-site',
-            title: 'Настройки главного сайта',
-            description: 'Основные настройки, SEO, контакты и аналитика',
+            title: 'Конструктор главного сайта',
+            description: 'Редактирование и настройка главного сайта',
             icon: Globe,
-            href: '/dashboard/admin/main-site-settings',
+            href: '/dashboard/main-site/builder',
             color: 'bg-green-500',
             status: 'active',
             features: [
-                'Основные настройки',
+                'Конструктор сайта',
+                'Управление виджетами',
+                'Настройка дизайна',
                 'SEO оптимизация',
-                'Контактная информация',
-                'Аналитика и коды',
             ],
         },
         {
@@ -340,7 +338,9 @@ export default function SettingsPage({
                                         className="group-hover:bg-primary/90 w-full"
                                     >
                                         <Link href={category.href}>
-                                            Перейти к настройкам
+                                            {category.id === 'main-site'
+                                                ? 'Открыть конструктор'
+                                                : 'Перейти к настройкам'}
                                             <ChevronRight className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>
@@ -436,10 +436,10 @@ export default function SettingsPage({
                                 <div className="h-2 w-2 rounded-full bg-green-500" />
                                 <div className="flex-1">
                                     <div className="font-medium">
-                                        Настроен главный сайт
+                                        Обновлен конструктор главного сайта
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                        SEO, контакты и аналитика
+                                        Виджеты, дизайн и SEO настройки
                                     </div>
                                 </div>
                                 <div className="text-sm text-muted-foreground">

@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { MoveDown, MoveUp, Plus, Trash2 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
-type LinkType = 'internal' | 'external';
+type LinkType = 'internal' | 'external' | 'anchor';
 
 type AlignmentType = 'start' | 'center' | 'end' | 'between';
 
@@ -21,8 +21,9 @@ interface MenuItem {
     id: string;
     title: string;
     url: string;
-    type: LinkType; // internal|external
+    type: LinkType; // internal|external|anchor
     newTab?: boolean; // open in new tab for external
+    anchor?: string; // anchor ID or class for anchor type
 }
 
 interface MenuWidgetConfig {
@@ -521,10 +522,55 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
                                                                         <SelectItem value="external">
                                                                             Внешняя
                                                                         </SelectItem>
+                                                                        <SelectItem value="anchor">
+                                                                            Якорная
+                                                                            ссылка
+                                                                        </SelectItem>
                                                                     </SelectContent>
                                                                 </Select>
                                                             </div>
                                                         </div>
+
+                                                        {item.type ===
+                                                            'anchor' && (
+                                                            <div className="mt-2">
+                                                                <Label
+                                                                    htmlFor={`anchor-${item.id}`}
+                                                                >
+                                                                    Якорь (ID
+                                                                    или класс)
+                                                                </Label>
+                                                                <Input
+                                                                    id={`anchor-${item.id}`}
+                                                                    value={
+                                                                        item.anchor ||
+                                                                        ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        updateItem(
+                                                                            item.id,
+                                                                            {
+                                                                                anchor: e
+                                                                                    .target
+                                                                                    .value,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                    placeholder="например: #section1 или .my-section"
+                                                                />
+                                                                <p className="mt-1 text-sm text-gray-500">
+                                                                    Укажите ID
+                                                                    (с #) или
+                                                                    класс (с .)
+                                                                    элемента, к
+                                                                    которому
+                                                                    нужно
+                                                                    прокрутить
+                                                                </p>
+                                                            </div>
+                                                        )}
 
                                                         {item.type ===
                                                             'external' && (
@@ -582,19 +628,47 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
                 </div>
             )}
             <nav className="flex items-center space-x-4">
-                {(items || []).map((item) => (
-                    <a
-                        key={item.id}
-                        href={item.url}
-                        className="text-blue-600 hover:text-blue-800"
-                        style={textStyle}
-                        {...(item.type === 'external' && item.newTab
-                            ? { target: '_blank', rel: 'noopener noreferrer' }
-                            : {})}
-                    >
-                        {item.title}
-                    </a>
-                ))}
+                {(items || []).map((item) => {
+                    const handleAnchorClick = (
+                        e: React.MouseEvent<HTMLAnchorElement>,
+                    ) => {
+                        if (item.type === 'anchor' && item.anchor) {
+                            e.preventDefault();
+                            const target = item.anchor.startsWith('#')
+                                ? document.querySelector(item.anchor)
+                                : document.querySelector(
+                                      `.${item.anchor.replace(/^\./, '')}`,
+                                  );
+
+                            if (target) {
+                                target.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'start',
+                                });
+                            } else {
+                                console.warn(`Якорь не найден: ${item.anchor}`);
+                            }
+                        }
+                    };
+
+                    return (
+                        <a
+                            key={item.id}
+                            href={item.type === 'anchor' ? '#' : item.url}
+                            className="text-blue-600 hover:text-blue-800"
+                            style={textStyle}
+                            onClick={handleAnchorClick}
+                            {...(item.type === 'external' && item.newTab
+                                ? {
+                                      target: '_blank',
+                                      rel: 'noopener noreferrer',
+                                  }
+                                : {})}
+                        >
+                            {item.title}
+                        </a>
+                    );
+                })}
             </nav>
         </div>
     );
