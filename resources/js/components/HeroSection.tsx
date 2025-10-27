@@ -2,11 +2,14 @@ import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface Terminology {
-    site_name: string;
-    site_description: string;
-    org_plural: string;
-    org_genitive: string;
-    support_action: string;
+    organization?: {
+        plural_nominative: string;
+        singular_nominative: string;
+        plural_genitive: string;
+    };
+    actions?: {
+        support: string;
+    };
 }
 
 interface HeroSectionProps {
@@ -94,7 +97,7 @@ export default function HeroSection({ terminology }: HeroSectionProps) {
                                         onChange={(e) =>
                                             setSearchQuery(e.target.value)
                                         }
-                                        placeholder="Поиск по названию, адресу организации..."
+                                        placeholder={`Поиск по названию, адресу ${terminology.organization?.singular_nominative?.toLowerCase() || 'организации'}...`}
                                         className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 pr-12 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <button
@@ -121,8 +124,9 @@ export default function HeroSection({ terminology }: HeroSectionProps) {
 
                         {/* Main Heading */}
                         <h1 className="mb-6 text-4xl font-bold text-gray-900 md:text-6xl">
-                            {terminology.support_action}{' '}
-                            {terminology.org_plural.toLowerCase()}
+                            {terminology.actions?.support || 'Поддержать'}{' '}
+                            {terminology.organization?.plural_nominative?.toLowerCase() ||
+                                'организации'}
                             <br />
                             <span className="text-blue-600">
                                 — укрепляй будущее
@@ -132,8 +136,10 @@ export default function HeroSection({ terminology }: HeroSectionProps) {
                         {/* Subtitle */}
                         <p className="mx-auto mb-8 max-w-2xl text-xl text-gray-600">
                             Подписывайся на{' '}
-                            {terminology.org_plural.toLowerCase()}, поддерживай
-                            их финансирование, отслеживай прогресс сборов
+                            {terminology.organization?.plural_nominative?.toLowerCase() ||
+                                'организации'}
+                            , поддерживай их финансирование, отслеживай прогресс
+                            сборов
                         </p>
 
                         {/* CTA Buttons */}
@@ -142,7 +148,9 @@ export default function HeroSection({ terminology }: HeroSectionProps) {
                                 href="/organizations"
                                 className="rounded-lg bg-blue-600 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-700"
                             >
-                                {terminology.org_plural} города
+                                {terminology.organization?.plural_nominative ||
+                                    'Организации'}{' '}
+                                города
                             </Link>
                             <Link
                                 href="/projects"

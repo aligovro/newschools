@@ -181,7 +181,7 @@ export default function SiteManagementPage({
                     <div>
                         <h1 className="text-3xl font-bold">Сайты</h1>
                         <p className="text-muted-foreground">
-                            Управление всеми сайтами организаций
+                            Управление всеми сайтами
                         </p>
                     </div>
                     <Button>

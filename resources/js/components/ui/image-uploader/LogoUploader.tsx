@@ -25,7 +25,7 @@ export interface LogoUploaderProps {
     className?: string;
     disabled?: boolean;
     maxSize?: number;
-    aspectRatio?: number;
+    aspectRatio?: number | null; // null/undefined => свободная рамка
     showCropControls?: boolean;
     onUpload?: (file: File) => Promise<string>;
     error?: string;
@@ -39,7 +39,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
     className,
     disabled = false,
     maxSize = 5 * 1024 * 1024, // 5MB
-    aspectRatio = 1, // Квадрат по умолчанию
+    aspectRatio = null,
     showCropControls = true,
     onUpload,
     error,
@@ -165,6 +165,8 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
         }, {} as Record<string, string[]>),
         multiple: false,
         disabled,
+        noClick: true,
+        noKeyboard: true,
     });
 
     // Обработка выбора файла через input
@@ -327,6 +329,11 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
                     disabled && 'logo-uploader__dropzone--disabled',
                     error && 'logo-uploader__dropzone--error'
                 )}
+                onClick={() => {
+                    if (!disabled) {
+                        fileInputRef.current?.click();
+                    }
+                }}
             >
                 <input {...getInputProps()} />
                 <input
@@ -361,12 +368,16 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
                             )}
                         </div>
 
-                        <div className="logo-uploader__preview-actions">
+                        <div
+                            className="logo-uploader__preview-actions"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                        >
                             {!isSvgFile(value as File) && (
                                 <button
                                     type="button"
                                     className="logo-uploader__action"
-                                    onClick={handleEdit}
+                                    onClick={(e) => { e.stopPropagation(); handleEdit(); }}
                                     title="Редактировать"
                                 >
                                     <Edit className="w-4 h-4" />
@@ -376,7 +387,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
                             <button
                                 type="button"
                                 className="logo-uploader__action"
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                                 title="Заменить"
                             >
                                 <Upload className="w-4 h-4" />
@@ -385,7 +396,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
                             <button
                                 type="button"
                                 className="logo-uploader__action logo-uploader__action--delete"
-                                onClick={handleReset}
+                                onClick={(e) => { e.stopPropagation(); handleReset(); }}
                                 title="Удалить"
                             >
                                 <X className="w-4 h-4" />

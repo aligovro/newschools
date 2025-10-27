@@ -2,11 +2,13 @@ import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface Terminology {
-    site_name: string;
-    site_description: string;
-    org_plural: string;
-    org_genitive: string;
-    support_action: string;
+    organization?: {
+        plural_nominative: string;
+        singular_nominative: string;
+    };
+    actions?: {
+        support: string;
+    };
 }
 
 interface HeaderProps {
@@ -36,10 +38,10 @@ export default function Header({ auth, terminology }: HeaderProps) {
                         </div>
                         <div className="hidden sm:block">
                             <div className="text-xl font-bold text-gray-900">
-                                {terminology.site_name}
+                                Новые Школы
                             </div>
                             <div className="text-sm text-gray-500">
-                                {terminology.site_description}
+                                Поддерживай образование
                             </div>
                         </div>
                     </Link>
@@ -50,7 +52,8 @@ export default function Header({ auth, terminology }: HeaderProps) {
                             href="/organizations"
                             className="text-gray-700 transition-colors hover:text-blue-600"
                         >
-                            {terminology.org_plural}
+                            {terminology.organization?.plural_nominative ||
+                                'Организации'}
                         </Link>
                         <Link
                             href="/projects"
@@ -109,7 +112,9 @@ export default function Header({ auth, terminology }: HeaderProps) {
                             href="/organizations/create"
                             className="hidden rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700 sm:block"
                         >
-                            Добавить организацию
+                            Добавить{' '}
+                            {terminology.organization?.singular_nominative?.toLowerCase() ||
+                                'организацию'}
                         </Link>
 
                         {/* Mobile Menu Button */}
@@ -145,7 +150,8 @@ export default function Header({ auth, terminology }: HeaderProps) {
                                 className="text-gray-700 transition-colors hover:text-blue-600"
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
-                                {terminology.org_plural}
+                                {terminology.organization?.plural_nominative ||
+                                    'Организации'}
                             </Link>
                             <Link
                                 href="/projects"
@@ -180,7 +186,9 @@ export default function Header({ auth, terminology }: HeaderProps) {
                                 className="rounded-lg bg-green-600 px-4 py-2 text-center text-white transition-colors hover:bg-green-700"
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
-                                Добавить организацию
+                                Добавить{' '}
+                                {terminology.organization?.singular_nominative?.toLowerCase() ||
+                                    'организацию'}
                             </Link>
                         </nav>
                     </div>

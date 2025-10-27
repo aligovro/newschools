@@ -1,6 +1,19 @@
 import { useState } from 'react';
 
-export default function SubscribeSection() {
+interface Terminology {
+    organization?: {
+        plural_nominative: string;
+        singular_nominative: string;
+    };
+}
+
+interface SubscribeSectionProps {
+    terminology: Terminology;
+}
+
+export default function SubscribeSection({
+    terminology,
+}: SubscribeSectionProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRegion, setSelectedRegion] = useState('Все регионы');
 
@@ -59,11 +72,15 @@ export default function SubscribeSection() {
                     {/* Content */}
                     <div>
                         <h2 className="mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
-                            Подпишись на постоянную поддержку своей организации
+                            Подпишись на постоянную поддержку своей{' '}
+                            {terminology.organization?.singular_nominative?.toLowerCase() ||
+                                'организации'}
                         </h2>
                         <p className="mb-8 text-xl text-gray-600">
                             Подписка поможет закрывать регулярные нужды
-                            организации и реализовывать проекты
+                            {terminology.organization?.singular_nominative?.toLowerCase() ||
+                                'организации'}{' '}
+                            и реализовывать проекты
                         </p>
 
                         {/* Search Form */}
@@ -109,7 +126,7 @@ export default function SubscribeSection() {
                                         onChange={(e) =>
                                             setSearchQuery(e.target.value)
                                         }
-                                        placeholder="Поиск по названию, адресу организации..."
+                                        placeholder={`Поиск по названию, адресу ${terminology.organization?.singular_nominative?.toLowerCase() || 'организации'}...`}
                                         className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 pr-12 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <button
@@ -137,7 +154,9 @@ export default function SubscribeSection() {
                         {/* Popular Organizations */}
                         <div>
                             <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                                Популярные организации
+                                Популярные{' '}
+                                {terminology.organization?.plural_nominative ||
+                                    'Организации'}
                             </h3>
                             <div className="space-y-3">
                                 {popularOrganizations.map((org) => (

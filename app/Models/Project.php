@@ -37,6 +37,7 @@ class Project extends Model
         'views_count',
         'donations_count',
         'seo_settings',
+        'payment_settings',
     ];
 
     protected $casts = [
@@ -50,6 +51,7 @@ class Project extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'featured' => 'boolean',
+        'payment_settings' => 'array',
     ];
 
     // Связи

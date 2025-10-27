@@ -4,6 +4,7 @@ namespace App\Services\Payment;
 
 use App\Models\PaymentMethod;
 use InvalidArgumentException;
+use Illuminate\Support\Facades\Log;
 
 class PaymentGatewayFactory
 {
@@ -56,7 +57,7 @@ class PaymentGatewayFactory
                 $gateways[] = self::create($paymentMethod);
             } catch (\Exception $e) {
                 // Логируем ошибку, но не прерываем выполнение
-                \Log::error("Failed to create gateway for payment method {$paymentMethod->slug}: " . $e->getMessage());
+                Log::error("Failed to create gateway for payment method {$paymentMethod->slug}: " . $e->getMessage());
             }
         }
 

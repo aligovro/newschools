@@ -1,6 +1,17 @@
 import { Link } from '@inertiajs/react';
 
-export default function Footer() {
+interface Terminology {
+    organization?: {
+        plural_nominative: string;
+        plural_genitive: string;
+    };
+}
+
+interface FooterProps {
+    terminology: Terminology;
+}
+
+export default function Footer({ terminology }: FooterProps) {
     return (
         <footer className="bg-gray-900 text-white">
             <div className="container mx-auto px-4 py-12">
@@ -26,7 +37,9 @@ export default function Footer() {
                             </div>
                         </Link>
                         <p className="mb-6 text-sm text-gray-400">
-                            Платформа для поддержки образовательных организаций
+                            Платформа для поддержки образовательных{' '}
+                            {terminology.organization?.plural_genitive ||
+                                'организаций'}{' '}
                             и реализации социально значимых проектов.
                         </p>
                         <div className="flex space-x-4">
@@ -92,7 +105,10 @@ export default function Footer() {
                                     href="/organizations"
                                     className="text-gray-400 transition-colors hover:text-white"
                                 >
-                                    Организации города
+                                    {terminology.organization
+                                        ?.plural_nominative ||
+                                        'Организации'}{' '}
+                                    города
                                 </Link>
                             </li>
                             <li>
@@ -100,7 +116,9 @@ export default function Footer() {
                                     href="/projects"
                                     className="text-gray-400 transition-colors hover:text-white"
                                 >
-                                    Проекты организаций
+                                    Проекты{' '}
+                                    {terminology.organization
+                                        ?.plural_genitive || 'организаций'}
                                 </Link>
                             </li>
                             <li>
