@@ -10,6 +10,7 @@ import {
     Globe,
     Menu,
     Settings,
+    Target,
     Users,
 } from 'lucide-react';
 
@@ -131,6 +132,13 @@ export default function OrganizationAdminDashboard({
             href: `/dashboard/organization/${organization.id}/admin/sliders`,
             icon: Eye,
             color: 'bg-teal-500',
+        },
+        {
+            title: 'Проекты',
+            description: 'Управление проектами организации',
+            href: `/dashboard/organization/${organization.id}/admin/projects`,
+            icon: Target,
+            color: 'bg-amber-500',
         },
     ];
 

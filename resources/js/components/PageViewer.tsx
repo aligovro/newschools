@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import React from 'react';
 import PageNavigation from './PageNavigation';
 
@@ -50,6 +50,11 @@ const PageViewer: React.FC<PageViewerProps> = ({
     page,
     navigationPages = [],
 }) => {
+    const { props } = usePage();
+    const terminology = (props as any).terminology || {
+        organization: { singular_nominative: 'Организация' },
+    };
+
     const renderContent = () => {
         if (!page.content) {
             return (
@@ -119,7 +124,7 @@ const PageViewer: React.FC<PageViewerProps> = ({
                 <meta property="og:url" content={page.url} />
             </Head>
 
-            <div className="bg-background min-h-screen">
+            <div className="min-h-screen bg-background">
                 {/* Header */}
                 <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 border-b backdrop-blur">
                     <div className="container mx-auto px-4 py-4">
@@ -137,7 +142,7 @@ const PageViewer: React.FC<PageViewerProps> = ({
                                         {organization.name}
                                     </h1>
                                     {organization.description && (
-                                        <p className="text-muted-foreground text-sm">
+                                        <p className="text-sm text-muted-foreground">
                                             {organization.description}
                                         </p>
                                     )}
@@ -171,7 +176,7 @@ const PageViewer: React.FC<PageViewerProps> = ({
                                 {/* Breadcrumbs */}
                                 {page.breadcrumbs &&
                                     page.breadcrumbs.length > 1 && (
-                                        <nav className="text-muted-foreground mb-6 flex items-center space-x-2 text-sm">
+                                        <nav className="mb-6 flex items-center space-x-2 text-sm text-muted-foreground">
                                             {page.breadcrumbs.map(
                                                 (breadcrumb, index) => (
                                                     <div
@@ -185,7 +190,7 @@ const PageViewer: React.FC<PageViewerProps> = ({
                                                         page.breadcrumbs
                                                             .length -
                                                             1 ? (
-                                                            <span className="text-foreground font-medium">
+                                                            <span className="font-medium text-foreground">
                                                                 {
                                                                     breadcrumb.title
                                                                 }
@@ -225,7 +230,7 @@ const PageViewer: React.FC<PageViewerProps> = ({
                                         {page.title}
                                     </h1>
                                     {page.excerpt && (
-                                        <p className="text-muted-foreground text-xl leading-relaxed">
+                                        <p className="text-xl leading-relaxed text-muted-foreground">
                                             {page.excerpt}
                                         </p>
                                     )}
@@ -240,10 +245,13 @@ const PageViewer: React.FC<PageViewerProps> = ({
 
                                 {/* Page Footer */}
                                 <div className="mt-8 border-t pt-8">
-                                    <div className="text-muted-foreground flex items-center justify-between text-sm">
+                                    <div className="flex items-center justify-between text-sm text-muted-foreground">
                                         <div>
                                             <p>
-                                                Организация: {organization.name}
+                                                {terminology.organization
+                                                    ?.singular_nominative ||
+                                                    'Организация'}
+                                                : {organization.name}
                                             </p>
                                             {page.published_at && (
                                                 <p>
@@ -274,7 +282,7 @@ const PageViewer: React.FC<PageViewerProps> = ({
                 {/* Footer */}
                 <footer className="bg-muted/50 mt-16 border-t">
                     <div className="container mx-auto px-4 py-8">
-                        <div className="text-muted-foreground text-center">
+                        <div className="text-center text-muted-foreground">
                             <p>
                                 &copy; {new Date().getFullYear()}{' '}
                                 {organization.name}. Все права защищены.

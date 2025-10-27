@@ -1,7 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ImageUpload } from '@/components/ui/image-upload';
+import LogoUploader from '@/components/ui/image-uploader/LogoUploader';
+import MultiImageUploader, {
+    UploadedImage,
+} from '@/components/ui/image-uploader/MultiImageUploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RegionSelect } from '@/components/ui/region-select';
@@ -17,7 +20,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Building2, Save, Settings, Upload } from 'lucide-react';
+import { ArrowLeft, Building2, Save, Settings } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -100,12 +103,24 @@ export default function OrganizationEditPage({
     const [settlements, setSettlements] = useState<Settlement[]>(
         referenceData.settlements,
     );
-    const [logoPreview, setLogoPreview] = useState<string | null>(
-        organization.logo || null,
+    const [logoValue, setLogoValue] = useState<string | File | null>(
+        organization.logo ? `/storage/${organization.logo}` : null,
     );
-    const [imagesPreview, setImagesPreview] = useState<string[]>([]);
+    const [galleryImages, setGalleryImages] = useState<UploadedImage[]>(
+        Array.isArray((organization as any).images)
+            ? ((organization as any).images as string[]).map((path, idx) => ({
+                  id: `${idx}`,
+                  url: `/storage/${path}`,
+                  file: undefined,
+                  name: path.split('/').pop() || `image-${idx + 1}.jpg`,
+                  size: 0,
+                  type: 'image/*',
+                  status: 'success',
+              }))
+            : [],
+    );
 
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, post, transform, processing, errors } = useForm({
         // Основные данные
         name: organization.name,
         slug: organization.slug,
@@ -130,6 +145,7 @@ export default function OrganizationEditPage({
         // Медиа
         logo: null as File | null,
         images: [] as File[],
+        existing_images: (organization as any).images || [],
 
         // Дополнительные данные
         founded_at: organization.founded_at || null,
@@ -167,11 +183,9 @@ export default function OrganizationEditPage({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Отладочная информация
-        console.log('Form data:', data);
-
-        // Отправляем через Inertia.js напрямую
-        put(`/dashboard/organizations/${organization.id}`, {
+        transform((form) => ({ ...form, _method: 'PUT' }));
+        post(`/dashboard/organizations/${organization.id}`, {
+            forceFormData: true,
             onSuccess: () => {
                 window.location.href = '/dashboard/organizations';
             },
@@ -181,17 +195,25 @@ export default function OrganizationEditPage({
         });
     };
 
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setData('logo', file);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setLogoPreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+    // Синхронизация логотипа и галереи в useForm
+    useEffect(() => {
+        setData('logo', logoValue instanceof File ? logoValue : null);
+    }, [logoValue, setData]);
+
+    useEffect(() => {
+        const existing = galleryImages
+            .filter((img) => !img.file)
+            .map((img) =>
+                img.url.startsWith('/storage/')
+                    ? img.url.replace('/storage/', '')
+                    : img.url,
+            );
+        const files = galleryImages
+            .filter((img) => img.file)
+            .map((img) => img.file!) as File[];
+        setData('existing_images', existing);
+        setData('images', files);
+    }, [galleryImages, setData]);
 
     const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -660,31 +682,18 @@ export default function OrganizationEditPage({
                                 <CardContent className="space-y-4">
                                     <div>
                                         <Label>Логотип организации</Label>
-                                        <ImageUpload
-                                            type="organization-logo"
-                                            currentImage={
-                                                organization.logo
-                                                    ? `/storage/${organization.logo}`
-                                                    : undefined
+                                        <LogoUploader
+                                            value={logoValue}
+                                            onChange={(file) =>
+                                                setLogoValue(file)
                                             }
-                                            onUpload={(result) => {
-                                                setData(
-                                                    'logo',
-                                                    result.filename,
-                                                );
-                                                setLogoPreview(result.url);
-                                            }}
-                                            onError={(error) => {
-                                                console.error(
-                                                    'Upload error:',
-                                                    error,
-                                                );
-                                            }}
-                                            onRemove={() => {
-                                                setData('logo', null);
-                                                setLogoPreview(null);
-                                            }}
-                                            maxSize={10}
+                                            label="Логотип"
+                                            maxSize={10 * 1024 * 1024}
+                                            aspectRatio={null}
+                                            showCropControls={true}
+                                            onUpload={async (file) =>
+                                                URL.createObjectURL(file)
+                                            }
                                         />
                                         {errors.logo && (
                                             <p className="mt-1 text-sm text-red-600">
@@ -694,44 +703,19 @@ export default function OrganizationEditPage({
                                     </div>
 
                                     <div>
-                                        <Label htmlFor="images">
-                                            Изображения
-                                        </Label>
-                                        <div className="mt-1">
-                                            <Input
-                                                id="images"
-                                                type="file"
-                                                accept="image/*"
-                                                multiple
-                                                onChange={handleImagesChange}
-                                                className="hidden"
-                                            />
-                                            <label
-                                                htmlFor="images"
-                                                className="flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400"
-                                            >
-                                                <div className="text-center">
-                                                    <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                                                    <p className="mt-2 text-sm text-gray-500">
-                                                        Загрузить изображения
-                                                    </p>
-                                                </div>
-                                            </label>
-                                        </div>
-                                        {imagesPreview.length > 0 && (
-                                            <div className="mt-2 grid grid-cols-2 gap-2">
-                                                {imagesPreview.map(
-                                                    (preview, index) => (
-                                                        <img
-                                                            key={index}
-                                                            src={preview}
-                                                            alt={`Preview ${index + 1}`}
-                                                            className="h-16 w-full rounded object-cover"
-                                                        />
-                                                    ),
-                                                )}
-                                            </div>
-                                        )}
+                                        <Label>Галерея</Label>
+                                        <MultiImageUploader
+                                            images={galleryImages}
+                                            onChange={setGalleryImages}
+                                            maxFiles={20}
+                                            maxSize={10 * 1024 * 1024}
+                                            enableSorting
+                                            enableDeletion
+                                            showPreview
+                                            showFileInfo
+                                            layout="grid"
+                                            previewSize="md"
+                                        />
                                         {errors.images && (
                                             <p className="mt-1 text-sm text-red-600">
                                                 {errors.images}

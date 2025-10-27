@@ -84,17 +84,25 @@ class OrganizationController extends Controller
         $perPage = min($request->get('per_page', 15), 100); // Ограничиваем максимум 100
         $organizations = $query->paginate($perPage);
 
+        // Получаем базовую терминологию
+        /** @var \App\Services\GlobalSettingsService $settings */
+        $settings = app(\App\Services\GlobalSettingsService::class);
+        $baseTerminology = $settings->getTerminology();
+
+        // Добавляем специфичные для страницы поля
+        $terminology = array_merge($baseTerminology, [
+            'page_title' => __t('organizations_page_title'),
+            'page_description' => __t('organizations_page_description'),
+            'create_button' => __t('create_organization'),
+            'total_count' => __t('total_organizations'),
+            'no_organizations' => __t('no_organizations'),
+        ]);
+
         return Inertia::render('organizations/OrganizationManagementPage', [
             // Provide paginator payload serialized via Resource to ensure consistent structure in Inertia
             'organizations' => InertiaResource::paginate($organizations, OrganizationResource::class),
             'filters' => $request->only(['search', 'type', 'status', 'region_id', 'sort_by', 'sort_direction', 'per_page']),
-            'terminology' => [
-                'page_title' => __t('organizations_page_title'),
-                'page_description' => __t('organizations_page_description'),
-                'create_button' => __t('create_organization'),
-                'total_count' => __t('total_organizations'),
-                'no_organizations' => __t('no_organizations'),
-            ],
+            'terminology' => $terminology,
         ]);
     }
 
@@ -199,6 +207,27 @@ class OrganizationController extends Controller
         $updateData['is_public'] = $updateData['is_public'] === '1' || $updateData['is_public'] === true;
 
         $organization->update($updateData);
+
+        // Обрабатываем галерею: сохраняем порядок существующих + добавляем новые
+        $finalImages = [];
+        $existingFromRequest = $request->input('existing_images', []);
+        $hasExistingKey = $request->has('existing_images');
+
+        if (is_array($existingFromRequest)) {
+            $finalImages = array_map(function ($path) {
+                return ltrim(str_replace('/storage/', '', $path), '/');
+            }, $existingFromRequest);
+        }
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $finalImages[] = $image->store('organizations/images', 'public');
+            }
+        }
+
+        if ($hasExistingKey || $request->hasFile('images')) {
+            $organization->update(['images' => $finalImages]);
+        }
 
         return redirect()->route('organizations.index')->with('success', 'Организация успешно обновлена');
     }

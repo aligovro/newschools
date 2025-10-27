@@ -3,6 +3,7 @@ export { apiClient } from '../api';
 export { adminApi } from './admin';
 export { formsApi } from './forms';
 export { organizationsApi } from './organizations';
+export { projectsApi } from './projects';
 export { sitesApi } from './sites';
 export { widgetImagesApi } from './widget-images';
 export { widgetsApi } from './widgets';

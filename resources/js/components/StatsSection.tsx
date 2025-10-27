@@ -5,11 +5,23 @@ interface StatsData {
     totalProjects: number;
 }
 
-interface StatsSectionProps {
-    stats: StatsData;
+interface Terminology {
+    organization?: {
+        plural_nominative: string;
+        singular_nominative: string;
+        plural_genitive: string;
+    };
 }
 
-export default function StatsSection({ stats }: StatsSectionProps) {
+interface StatsSectionProps {
+    stats: StatsData;
+    terminology: Terminology;
+}
+
+export default function StatsSection({
+    stats,
+    terminology,
+}: StatsSectionProps) {
     const formatNumber = (num: number): string => {
         if (num >= 1000000) {
             return `${(num / 1000000).toFixed(1)}M`;
@@ -47,7 +59,7 @@ export default function StatsSection({ stats }: StatsSectionProps) {
                 </svg>
             ),
             value: formatNumber(stats.totalUsers),
-            label: 'Поддерживают свои организации',
+            label: `Поддерживают свои ${terminology.organization?.plural_nominative?.toLowerCase() || 'организации'}`,
             description: 'активных пользователей',
         },
         {
@@ -87,7 +99,7 @@ export default function StatsSection({ stats }: StatsSectionProps) {
                 </svg>
             ),
             value: stats.totalProjects.toString(),
-            label: 'Реализовали пользователи организаций',
+            label: `Реализовали пользователи ${terminology.organization?.plural_genitive || 'организаций'}`,
             description: 'успешных проектов',
         },
     ];

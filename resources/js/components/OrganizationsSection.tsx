@@ -13,11 +13,11 @@ interface Organization {
 }
 
 interface Terminology {
-    site_name: string;
-    site_description: string;
-    org_plural: string;
-    org_genitive: string;
-    support_action: string;
+    organization?: {
+        plural_nominative: string;
+        singular_nominative: string;
+        plural_genitive: string;
+    };
 }
 
 interface OrganizationsSectionProps {
@@ -35,11 +35,15 @@ export default function OrganizationsSection({
                 {/* Section Header */}
                 <div className="mb-12 text-center">
                     <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
-                        {terminology.org_plural} города
+                        {terminology.organization?.plural_nominative ||
+                            'Организации'}{' '}
+                        города
                     </h2>
                     <p className="mx-auto max-w-2xl text-xl text-gray-600">
-                        Выберите {terminology.org_plural.toLowerCase()}, которую
-                        хотите поддержать
+                        Выберите{' '}
+                        {terminology.organization?.plural_nominative?.toLowerCase() ||
+                            'организацию'}
+                        , которую хотите поддержать
                     </p>
                 </div>
 
@@ -66,7 +70,9 @@ export default function OrganizationsSection({
                         href="/organizations"
                         className="inline-flex items-center font-semibold text-blue-600 hover:text-blue-700"
                     >
-                        Все {terminology.org_plural.toLowerCase()}
+                        Все{' '}
+                        {terminology.organization?.plural_nominative?.toLowerCase() ||
+                            'организации'}
                         <svg
                             className="ml-2 h-4 w-4"
                             fill="none"

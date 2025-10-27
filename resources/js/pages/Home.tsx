@@ -46,11 +46,14 @@ interface Project {
 }
 
 interface Terminology {
-    site_name: string;
-    site_description: string;
-    org_plural: string;
-    org_genitive: string;
-    support_action: string;
+    organization?: {
+        plural_nominative: string;
+        singular_nominative: string;
+        plural_genitive: string;
+    };
+    actions?: {
+        support: string;
+    };
 }
 
 interface SeoData {
@@ -142,8 +145,7 @@ export default function Home({
                     {JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'WebSite',
-                        name:
-                            terminology.site_name || 'Платформа поддержки школ',
+                        name: 'Новые Школы',
                         description: seo.description,
                         url:
                             typeof window !== 'undefined'
@@ -178,16 +180,22 @@ export default function Home({
                         <HeroSection terminology={terminology} />
                     )}
 
-                    <StatsSection stats={stats} />
+                    <StatsSection stats={stats} terminology={terminology} />
 
                     <OrganizationsSection
                         organizations={popularOrganizations}
                         terminology={terminology}
                     />
 
-                    <TopRegionsSection regions={topRegions} />
+                    <TopRegionsSection
+                        regions={topRegions}
+                        terminology={terminology}
+                    />
 
-                    <ProjectsSection projects={activeProjects} />
+                    <ProjectsSection
+                        projects={activeProjects}
+                        terminology={terminology}
+                    />
 
                     {/* Контентные слайдеры */}
                     {contentSliders.length > 0 && (
@@ -197,10 +205,10 @@ export default function Home({
                         />
                     )}
 
-                    <SubscribeSection />
+                    <SubscribeSection terminology={terminology} />
                 </main>
 
-                <Footer />
+                <Footer terminology={terminology} />
             </div>
         </>
     );

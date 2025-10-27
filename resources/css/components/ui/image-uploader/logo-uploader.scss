@@ -249,7 +249,7 @@
         width: 32rem;
         background-color: var(--color-background);
         border-radius: 0.75rem;
-        overflow: hidden;
+        overflow-y: auto;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
 

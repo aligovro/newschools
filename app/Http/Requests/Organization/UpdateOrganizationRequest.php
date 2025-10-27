@@ -31,6 +31,12 @@ class UpdateOrganizationRequest extends FormRequest
       'founded_at' => ['nullable', 'date'],
       'is_public' => ['boolean'],
       'logo' => ['sometimes'],
+      // Галерея изображений (новые файлы)
+      'images' => ['nullable', 'array', 'max:20'],
+      'images.*' => ['file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
+      // Существующие изображения (строки путей) для сохранения порядка
+      'existing_images' => ['nullable', 'array'],
+      'existing_images.*' => ['string'],
     ];
   }
 }

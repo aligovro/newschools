@@ -13,6 +13,7 @@ use App\Http\Controllers\OrganizationAdminController;
 use App\Http\Controllers\OrganizationCreationController;
 use App\Http\Controllers\SiteConstructorController;
 use App\Http\Controllers\OrganizationSiteController;
+use App\Http\Controllers\ProjectController;
 
 Route::get('/', [MainSiteController::class, 'index'])->name('home');
 
@@ -55,7 +56,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/organizations/{organization}/create-site', [OrganizationCreationController::class, 'createSite'])->name('organizations.create-site');
         Route::post('/organizations/{organization}/sites', [OrganizationCreationController::class, 'storeSite'])->name('organizations.store-site');
 
+        // Projects management (all projects for super admin)
+        Route::get('/projects', [ProjectController::class, 'all'])->name('projects.index');
 
+        // Projects management (organization projects)
+        Route::get('/organizations/{organization}/projects', [ProjectController::class, 'index'])->name('organizations.projects.index');
+        Route::get('/organizations/{organization}/projects/create', [ProjectController::class, 'create'])->name('organizations.projects.create');
+        Route::post('/organizations/{organization}/projects', [ProjectController::class, 'store'])->name('organizations.projects.store');
+        Route::get('/organizations/{organization}/projects/{project}', [ProjectController::class, 'show'])->name('organizations.projects.show');
+        Route::get('/organizations/{organization}/projects/{project}/edit', [ProjectController::class, 'edit'])->name('organizations.projects.edit');
+        Route::put('/organizations/{organization}/projects/{project}', [ProjectController::class, 'update'])->name('organizations.projects.update');
+        Route::delete('/organizations/{organization}/projects/{project}', [ProjectController::class, 'destroy'])->name('organizations.projects.destroy');
+        Route::post('/organizations/{organization}/projects/check-slug', [ProjectController::class, 'checkSlug'])->name('organizations.projects.check-slug');
 
         // Image upload routes
         Route::post('/api/upload/organization-logo', [App\Http\Controllers\ImageUploadController::class, 'uploadOrganizationLogo'])->name('api.upload.organization-logo');
@@ -193,6 +205,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/sites/{site}/pages/{page}', [OrganizationSiteController::class, 'destroyPage'])->name('sites.destroy-page');
             Route::patch('/sites/{site}/pages/{page}/publish', [OrganizationSiteController::class, 'publishPage'])->name('sites.publish-page');
             Route::patch('/sites/{site}/pages/{page}/unpublish', [OrganizationSiteController::class, 'unpublishPage'])->name('sites.unpublish-page');
+
+            // Projects management (интегрировано в панель админа организации)
+            Route::prefix('projects')->name('projects.')->group(function () {
+                Route::get('/', [ProjectController::class, 'index'])->name('index');
+                Route::get('/create', [ProjectController::class, 'create'])->name('create');
+                Route::post('/', [ProjectController::class, 'store'])->name('store');
+                Route::get('/{project}', [ProjectController::class, 'show'])->name('show');
+                Route::get('/{project}/edit', [ProjectController::class, 'edit'])->name('edit');
+                Route::put('/{project}', [ProjectController::class, 'update'])->name('update');
+                Route::delete('/{project}', [ProjectController::class, 'destroy'])->name('destroy');
+                Route::post('/check-slug', [ProjectController::class, 'checkSlug'])->name('check-slug');
+            });
         });
 
         // Sites management
@@ -318,7 +342,9 @@ Route::prefix('api/sites/{id}')->middleware('auth')->group(function () {
         ->name('sites.preview');
 });
 
-// Public site routes (catch-all for organization domains) - должен быть в самом конце
-Route::get('/{path?}', [App\Http\Controllers\PublicSiteController::class, 'show'])
-    ->where('path', '.*')
-    ->name('public.site');
+// Project configuration routes
+Route::prefix('api/projects/{id}')->middleware('auth')->group(function () {
+    // Платежные настройки проекта
+    Route::post('/settings/payments', [App\Http\Controllers\Api\ProjectController::class, 'savePaymentSettings'])
+        ->name('projects.save-payment-settings');
+});

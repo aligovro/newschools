@@ -13,11 +13,22 @@ interface Project {
     image?: string;
 }
 
-interface ProjectsSectionProps {
-    projects: Project[];
+interface Terminology {
+    organization?: {
+        plural_nominative: string;
+        plural_genitive: string;
+    };
 }
 
-export default function ProjectsSection({ projects }: ProjectsSectionProps) {
+interface ProjectsSectionProps {
+    projects: Project[];
+    terminology: Terminology;
+}
+
+export default function ProjectsSection({
+    projects,
+    terminology,
+}: ProjectsSectionProps) {
     return (
         <section className="bg-gray-50 py-16">
             <div className="container mx-auto px-4">
@@ -25,7 +36,9 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
                 <div className="mb-12 flex flex-col md:flex-row md:items-center md:justify-between">
                     <div>
                         <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
-                            Проекты организаций
+                            Проекты{' '}
+                            {terminology.organization?.plural_genitive ||
+                                'организаций'}
                         </h2>
                         <p className="max-w-2xl text-xl text-gray-600">
                             Активные проекты, требующие поддержки
@@ -83,8 +96,10 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
                             Пока нет активных проектов
                         </h3>
                         <p className="mb-6 text-gray-600">
-                            Новые проекты появятся здесь, когда организации их
-                            создадут
+                            Новые проекты появятся здесь, когда{' '}
+                            {terminology.organization?.plural_nominative?.toLowerCase() ||
+                                'организации'}{' '}
+                            их создадут
                         </p>
                         <Link
                             href="/projects/create"

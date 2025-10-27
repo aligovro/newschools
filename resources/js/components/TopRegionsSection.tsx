@@ -4,11 +4,22 @@ interface Region {
     organizations_count: number;
 }
 
-interface TopRegionsSectionProps {
-    regions: Region[];
+interface Terminology {
+    organization?: {
+        plural_nominative: string;
+        plural_genitive: string;
+    };
 }
 
-export default function TopRegionsSection({ regions }: TopRegionsSectionProps) {
+interface TopRegionsSectionProps {
+    regions: Region[];
+    terminology: Terminology;
+}
+
+export default function TopRegionsSection({
+    regions,
+    terminology,
+}: TopRegionsSectionProps) {
     const formatCurrency = (amount: number): string => {
         return new Intl.NumberFormat('ru-RU', {
             style: 'currency',
@@ -28,7 +39,8 @@ export default function TopRegionsSection({ regions }: TopRegionsSectionProps) {
                     </h2>
                     <p className="mx-auto max-w-2xl text-xl text-gray-600">
                         Регионы с наибольшим объемом поддержки образовательных
-                        организаций
+                        {terminology.organization?.plural_genitive ||
+                            'организаций'}
                     </p>
                 </div>
 
@@ -42,7 +54,9 @@ export default function TopRegionsSection({ regions }: TopRegionsSectionProps) {
                                         Регион
                                     </th>
                                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                                        Организации
+                                        {terminology.organization
+                                            ?.plural_nominative ||
+                                            'Организации'}
                                     </th>
                                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                                         Поддержка
@@ -75,7 +89,9 @@ export default function TopRegionsSection({ regions }: TopRegionsSectionProps) {
                                                 <span className="font-semibold">
                                                     {region.organizations_count}
                                                 </span>{' '}
-                                                организаций
+                                                {terminology.organization
+                                                    ?.plural_genitive ||
+                                                    'организаций'}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
