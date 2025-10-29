@@ -1,5 +1,6 @@
 import { getOrganizationId } from '@/utils/widgetHelpers';
 import React from 'react';
+import { AlumniStatsWidget } from '../AlumniStatsWidget';
 import { AuthMenuWidget } from '../AuthMenuWidget';
 import { DonationWidget } from '../DonationWidget';
 import { DonationsListWidget } from '../DonationsListWidget';
@@ -532,6 +533,21 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
             onConfigChange={onConfigChange}
         />
     ),
+
+    // Статистика выпускников
+    alumni_stats: ({ widget }) => {
+        const cfg = widget.config || {};
+        return (
+            <AlumniStatsWidget
+                config={{
+                    organization_id: cfg.organization_id as number,
+                    title: cfg.title as string,
+                    showIcons: cfg.showIcons as boolean,
+                }}
+                styling={cfg.styling as Record<string, any>}
+            />
+        );
+    },
 };
 
 /**

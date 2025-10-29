@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 interface BasicSettingsData {
     name: string;
     description: string;
+    favicon?: string;
 }
 
 interface UseBasicSettingsReturn {

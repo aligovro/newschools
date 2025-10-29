@@ -197,6 +197,7 @@ export const HeroSlideEditor: React.FC<HeroSlideEditorProps> = ({
                             slideId={slide.id}
                             enableServerUpload={true}
                             existingImageUrl={slide.backgroundImage || ''}
+                            hidePreview={true}
                         />
                         <ImagePreview
                             slide={slide}

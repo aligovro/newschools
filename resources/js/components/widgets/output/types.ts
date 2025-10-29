@@ -27,12 +27,14 @@ export interface WidgetOutputProps {
 export interface HeroOutputConfig {
     type?: 'single' | 'slider';
     height?: string;
-    animation?: 'fade' | 'slide' | 'zoom';
+    animation?: 'fade' | 'slide' | 'zoom' | 'flip' | 'cube';
     autoplay?: boolean;
     autoplayDelay?: number;
+    loop?: boolean;
     showDots?: boolean;
     showArrows?: boolean;
     slides?: HeroSlide[];
+    hero_slides?: HeroSlide[];
     singleSlide?: HeroSlide;
     css_class?: string;
     styling?: Record<string, unknown>;
@@ -52,6 +54,8 @@ export interface HeroSlide {
     overlayColor?: string;
     overlayGradient?: 'none' | 'left' | 'right' | 'top' | 'bottom' | 'center';
     overlayGradientIntensity?: number;
+    sortOrder?: number;
+    isActive?: boolean;
 }
 
 // Text widget types
@@ -79,6 +83,9 @@ export interface ImageOutputConfig {
     caption?: string;
     alignment?: 'left' | 'center' | 'right';
     size?: 'small' | 'medium' | 'large' | 'full';
+    linkUrl?: string;
+    linkType?: 'internal' | 'external';
+    openInNewTab?: boolean;
 }
 
 // Gallery widget types
@@ -128,6 +135,8 @@ export interface ProjectsOutputConfig {
     showImage?: boolean;
     animation?: 'none' | 'fade' | 'slide' | 'zoom';
     hoverEffect?: 'none' | 'lift' | 'shadow' | 'scale';
+    organization_id?: number;
+    showHeaderActions?: boolean;
 }
 
 // Contact widget types

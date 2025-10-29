@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import React from 'react';
 import { ImageOutputConfig, WidgetOutputProps } from './types';
 
@@ -14,6 +15,9 @@ export const ImageOutput: React.FC<WidgetOutputProps> = ({
         caption = '',
         alignment = 'center',
         size = 'medium',
+        linkUrl = '',
+        linkType = 'internal',
+        openInNewTab = false,
     } = config;
 
     if (!image) {
@@ -78,17 +82,39 @@ export const ImageOutput: React.FC<WidgetOutputProps> = ({
         }
     };
 
+    const imageElement = (
+        <img
+            src={safeImage}
+            alt={altText}
+            className="h-auto w-full rounded-lg object-cover"
+            loading="lazy"
+        />
+    );
+
+    const wrappedImage = linkUrl ? (
+        linkType === 'external' ? (
+            <a
+                href={linkUrl}
+                target={openInNewTab ? '_blank' : undefined}
+                rel={openInNewTab ? 'noopener noreferrer' : undefined}
+            >
+                {imageElement}
+            </a>
+        ) : (
+            <Link href={linkUrl} target={openInNewTab ? '_blank' : undefined}>
+                {imageElement}
+            </Link>
+        )
+    ) : (
+        imageElement
+    );
+
     return (
         <div className={`image-output ${className || ''}`} style={style}>
             <div
                 className={`${getSizeClasses(size)} ${getAlignmentClasses(alignment)}`}
             >
-                <img
-                    src={safeImage}
-                    alt={altText}
-                    className="h-auto w-full rounded-lg object-cover"
-                    loading="lazy"
-                />
+                {wrappedImage}
                 {caption && (
                     <p className="mt-2 text-center text-sm text-gray-600">
                         {caption}

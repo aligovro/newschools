@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
     Autoplay,
     EffectCards,
@@ -244,16 +244,6 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
     const config = widget.config as SliderOutputConfig;
     const [currentSlide, setCurrentSlide] = useState(0);
     const [totalSlides, setTotalSlides] = useState(0);
-
-    // Отладка изменений currentSlide
-    useEffect(() => {
-        console.log(
-            'currentSlide updated to:',
-            currentSlide,
-            'totalSlides:',
-            totalSlides,
-        );
-    }, [currentSlide, totalSlides]);
     const swiperRef = useRef<any>(null);
 
     // Создаем уникальный ID для этого слайдера
@@ -393,73 +383,26 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
     })();
     const singleSlide = config.singleSlide;
 
-    // Логируем данные slider виджета
-    console.log('SliderOutput - Widget data:', {
-        widget_id: widget.id,
-        widget_name: widget.name,
-        config,
-        configs: widget.configs,
-        slider_slides: (widget as any).slider_slides,
-        slides_from_config: (widget as any).slides_from_config,
-        final_slides: slides,
-    });
-
-    // Логируем настройки слайдера
-    console.log('SliderOutput - Slider settings:', {
-        widget_id: widget.id,
-        sliderId,
-        type,
-        layout,
-        slidesPerView,
-        height,
-        animation,
-        autoplay,
-        autoplayDelay,
-        loop,
-        showDots,
-        showArrows,
-        showProgress,
-        spaceBetween,
-        css_class,
-        styling,
-        slides_count: slides.length,
-        final_settings_source: widget.configs ? 'configs' : 'config',
-    });
-
     // Get slides from widget data or config
     const currentSlides = useMemo(() => {
-        console.log(
-            'Getting slides - slider_slides:',
-            (widget as any).slider_slides?.length,
-            'config slides:',
-            slides?.length,
-        );
-
         // Try to get slides from widget data first
         if (
             (widget as any).slider_slides &&
             (widget as any).slider_slides.length > 0
         ) {
-            console.log(
-                'Using slider_slides:',
-                (widget as any).slider_slides.length,
-            );
             return (widget as any).slider_slides;
         }
 
         // Fallback to config slides
         if (slides && slides.length > 0) {
-            console.log('Using config slides:', slides.length);
             return slides;
         }
 
         // If single slide is provided, convert to array
         if (singleSlide) {
-            console.log('Using single slide');
             return [singleSlide];
         }
 
-        console.log('No slides found, returning empty array');
         return [];
     }, [widget, slides, singleSlide]);
 
@@ -519,31 +462,10 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
             // Добавляем обработчики событий для прогресс-бара
             on: {
                 init: function (swiper: any) {
-                    console.log(
-                        'Swiper initialized with',
-                        swiper.slides.length,
-                        'slides, realIndex:',
-                        swiper.realIndex,
-                        'loop:',
-                        swiper.params.loop,
-                        'slidesPerView:',
-                        swiper.params.slidesPerView,
-                    );
                     // Сохраняем реальное количество слайдов из Swiper
                     setTotalSlides(swiper.slides.length);
                 },
                 slideChange: function (swiper: any) {
-                    console.log(
-                        'Slide changed:',
-                        'activeIndex:',
-                        swiper.activeIndex,
-                        'realIndex:',
-                        swiper.realIndex,
-                        'Total slides:',
-                        swiper.slides.length,
-                        'Current state:',
-                        currentSlide,
-                    );
                     // Используем realIndex для loop режима
                     setCurrentSlide(swiper.realIndex);
                 },
@@ -611,20 +533,6 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
         } else {
             config.slidesPerView = 1;
         }
-
-        // Логируем финальную конфигурацию Swiper
-        console.log('SliderOutput - Swiper config:', {
-            slidesPerView: config.slidesPerView,
-            spaceBetween: config.spaceBetween,
-            effect: config.effect,
-            layout,
-            breakpoints: config.breakpoints,
-            navigation: config.navigation,
-            pagination: config.pagination,
-            showArrows,
-            showDots,
-            showProgress,
-        });
 
         return config;
     }, [
@@ -777,15 +685,6 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
                     height: height || '400px', // Применяем высоту к Swiper
                 }}
                 onSlideChange={(swiper) => {
-                    console.log(
-                        'Swiper onSlideChange:',
-                        'activeIndex:',
-                        swiper.activeIndex,
-                        'realIndex:',
-                        swiper.realIndex,
-                        'totalSlides:',
-                        swiper.slides.length,
-                    );
                     setCurrentSlide(swiper.realIndex);
                     setTotalSlides(swiper.slides.length);
                 }}
@@ -838,9 +737,6 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
                                 // Простой расчет: используем реальные данные из Swiper
                                 const progress =
                                     ((currentSlide + 1) / totalSlides) * 100;
-                                console.log(
-                                    `Simple progress: ${currentSlide + 1}/${totalSlides} = ${progress.toFixed(1)}%`,
-                                );
                                 return `${Math.min(progress, 100)}%`;
                             })(),
                             transition: 'width 0.3s ease',

@@ -26,6 +26,7 @@ import { isCustomWidget } from '@/utils/widgetHelpers';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { WidgetData } from '../types';
 import { StandardWidgetFields } from './components/StandardWidgetFields';
+import { AlumniStatsWidgetModal } from './modals/AlumniStatsWidgetModal';
 import { AuthMenuWidgetModal } from './modals/AuthMenuWidgetModal';
 import { DonationWidgetModal } from './modals/DonationWidgetModal';
 import { DonationsListWidgetModal } from './modals/DonationsListWidgetModal';
@@ -34,6 +35,7 @@ import { HeroWidgetModal } from './modals/HeroWidgetModal';
 import { HtmlWidgetModal } from './modals/HtmlWidgetModal';
 import { ImageWidgetModal } from './modals/ImageWidgetModal';
 import { MenuWidgetModal } from './modals/MenuWidgetModal';
+import { ProjectsWidgetModal } from './modals/ProjectsWidgetModal';
 import { ReferralLeaderboardWidgetModal } from './modals/ReferralLeaderboardWidgetModal';
 import { RegionRatingWidgetModal } from './modals/RegionRatingWidgetModal';
 import { SliderWidgetModal } from './modals/SliderWidgetModal';
@@ -72,6 +74,8 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
     const [_pendingConfig, setPendingConfig] = useState<WidgetConfig | null>(
         null,
     );
+    const [savingError, setSavingError] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     const handleSetPendingConfig = useCallback(
         (config: WidgetConfig | null) => {
@@ -106,6 +110,10 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
     // Мемоизированная функция сохранения
     const handleSave = useCallback(async () => {
         if (!widget) return;
+        if (isSaving) return; // Предотвращаем двойное сохранение
+
+        setIsSaving(true);
+        setSavingError(null);
 
         try {
             // Сначала сохраняем конфигурацию, если есть изменения
@@ -128,10 +136,39 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             onClose();
         } catch (error) {
             console.error('Error saving widget:', error);
-            // Показываем пользователю ошибку
-            alert('Ошибка при сохранении виджета. Попробуйте еще раз.');
+
+            // Получаем сообщение об ошибке
+            const unknownError = error as {
+                response?: { data?: { message?: string; errors?: string[] } };
+                message?: string;
+            };
+            const errorMessage =
+                unknownError?.response?.data?.message ||
+                unknownError?.message ||
+                'Ошибка при сохранении виджета. Попробуйте еще раз.';
+
+            // Получаем ошибки валидации
+            const validationErrors = unknownError?.response?.data?.errors || [];
+
+            // Формируем полное сообщение об ошибке
+            const fullErrorMessage =
+                validationErrors.length > 0
+                    ? validationErrors.join('\n')
+                    : errorMessage;
+
+            setSavingError(fullErrorMessage);
+        } finally {
+            setIsSaving(false);
         }
-    }, [widget, formData, _pendingConfig, onSaveConfig, onSave, onClose]);
+    }, [
+        widget,
+        formData,
+        _pendingConfig,
+        onSaveConfig,
+        onSave,
+        onClose,
+        isSaving,
+    ]);
 
     // Мемоизированная функция изменения полей
     const handleInputChange = useCallback((field: string, value: unknown) => {
@@ -255,9 +292,29 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 );
             }
 
+            case 'projects': {
+                return (
+                    <ProjectsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
             case 'referral_leaderboard': {
                 return (
                     <ReferralLeaderboardWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'alumni_stats': {
+                return (
+                    <AlumniStatsWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
                         onConfigUpdate={handleSetPendingConfig}
@@ -316,6 +373,14 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     </button>
                 </div>
 
+                {/* Показываем ошибки валидации */}
+                {savingError && (
+                    <div className="mx-4 mb-3 rounded-md bg-red-50 p-3 text-sm text-red-800">
+                        <div className="font-semibold">Ошибка сохранения:</div>
+                        <div className="whitespace-pre-wrap">{savingError}</div>
+                    </div>
+                )}
+
                 <div className="max-h-[70vh] min-h-0 flex-1 space-y-4 overflow-y-auto pb-4 pr-1">
                     {positions.length > 0 && (
                         <div>
@@ -372,7 +437,9 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                     <Button variant="outline" onClick={onClose}>
                         Отмена
                     </Button>
-                    <Button onClick={handleSave}>Сохранить</Button>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving ? 'Сохранение...' : 'Сохранить'}
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>

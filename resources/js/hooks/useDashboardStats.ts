@@ -40,6 +40,7 @@ export const useDashboardStats = () => {
             global_settings: string;
             global_settings_description: string;
         };
+        favicon?: string;
     }>();
 
     // Получаем статистику из props (передается с сервера)
@@ -73,6 +74,7 @@ export const useDashboardStats = () => {
     return {
         stats,
         terminology,
+        favicon: props.favicon,
         isLoading: false, // Данные уже загружены на сервере
         error: null,
         refreshStats: () => {

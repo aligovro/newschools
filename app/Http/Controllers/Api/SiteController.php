@@ -12,6 +12,7 @@ use App\Services\SiteSeoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
@@ -31,18 +32,34 @@ class SiteController extends Controller
     $request->validate([
       'name' => 'required|string|max:255',
       'description' => 'nullable|string|max:1000',
+      'favicon' => 'nullable|string|max:500',
     ]);
 
     try {
       $site = $this->getSite($id);
 
-      $site->update([
+      $updateData = [
         'name' => $request->name,
         'description' => $request->description,
-      ]);
+      ];
+
+      // Добавляем favicon если он был передан
+      if ($request->has('favicon')) {
+        $updateData['favicon'] = $request->favicon;
+      }
+
+      $site->update($updateData);
 
       // Автогенерация SEO, если ранее не заполнено — через сервис
       $this->siteSeoService->ensureSeoDefaults($site);
+
+      // Сбрасываем кеш виджетов после изменения настроек
+      Cache::forget("site_widgets_config_{$site->id}");
+
+      // Если это главный сайт и была изменена фавиконка, очищаем кеш фавиконки
+      if ($request->has('favicon') && $site->site_type === 'main') {
+        Cache::forget('main_site_favicon');
+      }
 
       return response()->json([
         'success' => true,
@@ -312,6 +329,9 @@ class SiteController extends Controller
 
       // Данные уже мигрированы в syncConfig выше
 
+      // Сбрасываем кеш виджетов после добавления
+      Cache::forget("site_widgets_config_{$site->id}");
+
       // Загружаем связанные данные для корректного ответа
       $siteWidget->load([
         'configs',
@@ -375,16 +395,6 @@ class SiteController extends Controller
 
       // Валидируем конфигурацию виджета
       if ($request->has('config')) {
-        Log::info('SiteController::updateWidget - Received config', [
-          'widget_id' => $siteWidget->id,
-          'widget_slug' => $siteWidget->widget_slug,
-          'config_keys' => array_keys($request->config),
-          'has_slides' => isset($request->config['slides']),
-          'slides_count' => isset($request->config['slides']) ? count($request->config['slides']) : 0,
-          'slides_data' => isset($request->config['slides']) ? $request->config['slides'] : null,
-          'full_config' => $request->config,
-        ]);
-
         $validationErrors = $this->widgetService->validateWidgetConfig(
           $request->config,
           $siteWidget->widget_slug
@@ -404,26 +414,11 @@ class SiteController extends Controller
           $siteWidget->widget_slug
         );
 
-        Log::info('SiteController::updateWidget - Processed config', [
-          'widget_id' => $siteWidget->id,
-          'processed_config_keys' => array_keys($processedConfig),
-          'has_slides' => isset($processedConfig['slides']),
-          'slides_count' => isset($processedConfig['slides']) ? count($processedConfig['slides']) : 0,
-          'processed_slides_data' => isset($processedConfig['slides']) ? $processedConfig['slides'] : null,
-          'full_processed_config' => $processedConfig,
-        ]);
-
         // Очищаем старые изображения
         $this->widgetService->cleanupOldImages($oldConfig, $processedConfig, $siteWidget->widget_slug);
 
         // Синхронизируем конфигурацию с нормализованными данными
         $siteWidget->syncConfig($processedConfig);
-
-        Log::info('SiteController::updateWidget - After syncConfig', [
-          'widget_id' => $siteWidget->id,
-          'hero_slides_count' => $siteWidget->heroSlides()->count(),
-          'hero_slides_data' => $siteWidget->heroSlides()->get()->toArray(),
-        ]);
       }
 
       // Обновляем виджет в нормализованных таблицах
@@ -495,6 +490,9 @@ class SiteController extends Controller
 
       // Удаляем сам виджет
       $siteWidget->delete();
+
+      // Сбрасываем кеш виджетов после удаления
+      Cache::forget("site_widgets_config_{$site->id}");
 
       return back()->with('success', 'Виджет успешно удален');
     } catch (\Exception $e) {
@@ -587,6 +585,9 @@ class SiteController extends Controller
         ]);
       });
 
+      // Сбрасываем кеш виджетов после перемещения
+      Cache::forget("site_widgets_config_{$site->id}");
+
       // Грузим связи и отдаем JSON
       $siteWidget->load([
         'configs',
@@ -642,6 +643,7 @@ class SiteController extends Controller
       $widgets = \App\Models\SiteWidget::with([
         'configs',
         'heroSlides',
+        'sliderSlides',
         'formFields',
         'menuItems',
         'galleryImages',
@@ -732,6 +734,9 @@ class SiteController extends Controller
           }
         }
       }
+
+      // Очищаем кеш виджетов сайта после сохранения
+      Cache::forget("site_widgets_config_{$site->id}");
 
       return response()->json([
         'success' => true,

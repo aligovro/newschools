@@ -16,6 +16,7 @@ interface HeroSettingsProps {
     animation: 'fade' | 'slide' | 'zoom';
     autoplay: boolean;
     autoplayDelay: number;
+    loop: boolean;
     showDots: boolean;
     showArrows: boolean;
     css_class?: string;
@@ -24,6 +25,7 @@ interface HeroSettingsProps {
     onAnimationChange: (animation: 'fade' | 'slide' | 'zoom') => void;
     onAutoplayChange: (autoplay: boolean) => void;
     onAutoplayDelayChange: (delay: number) => void;
+    onLoopChange: (loop: boolean) => void;
     onShowDotsChange: (show: boolean) => void;
     onShowArrowsChange: (show: boolean) => void;
     onCssClassChange: (css_class: string) => void;
@@ -35,6 +37,7 @@ export const HeroSettings: React.FC<HeroSettingsProps> = ({
     animation,
     autoplay,
     autoplayDelay,
+    loop,
     showDots,
     showArrows,
     css_class,
@@ -43,6 +46,7 @@ export const HeroSettings: React.FC<HeroSettingsProps> = ({
     onAnimationChange,
     onAutoplayChange,
     onAutoplayDelayChange,
+    onLoopChange,
     onShowDotsChange,
     onShowArrowsChange,
     onCssClassChange,
@@ -127,6 +131,15 @@ export const HeroSettings: React.FC<HeroSettingsProps> = ({
                                 onCheckedChange={onAutoplayChange}
                             />
                             <Label htmlFor="autoplay">Автопрокрутка</Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                id="loop"
+                                checked={loop}
+                                onCheckedChange={onLoopChange}
+                            />
+                            <Label htmlFor="loop">Зацикливание</Label>
                         </div>
 
                         <div className="flex items-center space-x-2">

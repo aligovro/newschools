@@ -13,9 +13,13 @@ interface Site {
     name: string;
     slug: string;
     description?: string;
+    favicon?: string;
     template: string; // slug
     widgets_config: WidgetData[];
     seo_config: Record<string, unknown>;
+    layout_config?: {
+        sidebar_position?: 'left' | 'right';
+    };
 }
 
 type WidgetPosition = SharedWidgetPosition;
@@ -35,33 +39,6 @@ const SitePreview: React.FC<SitePreviewProps> = ({
     const [loading, setLoading] = useState(
         !(ssrPositions && ssrPositions.length > 0),
     );
-
-    // Логируем данные сайта
-    console.log('SitePreview - Site data:', site);
-    console.log('SitePreview - Widgets config:', site.widgets_config);
-
-    // Логируем каждый виджет
-    site.widgets_config.forEach((widget, index) => {
-        console.log(`SitePreview - Widget ${index}:`, {
-            id: widget.id,
-            name: widget.name,
-            widget_slug: widget.widget_slug,
-            position_slug: widget.position_slug,
-            is_active: widget.is_active,
-            is_visible: widget.is_visible,
-            config: widget.config,
-            hero_slides: widget.hero_slides,
-            slider_slides: widget.slider_slides,
-        });
-
-        // Детально логируем config для hero и slider виджетов
-        if (widget.widget_slug === 'hero' || widget.widget_slug === 'slider') {
-            console.log(`SitePreview - ${widget.widget_slug} config details:`, {
-                config_keys: Object.keys(widget.config || {}),
-                full_config: widget.config,
-            });
-        }
-    });
 
     // Загружаем позиции виджетов
     useEffect(() => {
@@ -100,20 +77,6 @@ const SitePreview: React.FC<SitePreviewProps> = ({
         const positionWidgets = widgets
             .filter((widget) => widget.position_slug === position.slug)
             .sort((a, b) => a.order - b.order);
-
-        // Логируем данные позиции
-        console.log(`SitePreview - renderPosition for ${position.slug}:`, {
-            position_slug: position.slug,
-            position_name: position.name,
-            widgets_in_position: positionWidgets.length,
-            widgets: positionWidgets.map((w) => ({
-                id: w.id,
-                name: w.name,
-                widget_slug: w.widget_slug,
-                is_active: w.is_active,
-                is_visible: w.is_visible,
-            })),
-        });
 
         return (
             <div
@@ -174,6 +137,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
         <>
             <Head>
                 <title>{pageTitle}</title>
+                {site.favicon ? <link rel="icon" href={site.favicon} /> : null}
                 <meta name="description" content={metaDescription} />
                 <meta
                     name="viewport"
@@ -285,45 +249,104 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                 {/* Main Content */}
                 <main className="site-main">
                     <div className="container mx-auto px-4 py-8">
-                        <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-                            {/* Sidebar */}
-                            {positions
-                                .filter((p) => p.area === 'sidebar')
-                                .map((position) => (
-                                    <aside
-                                        key={position.id}
-                                        className="lg:col-span-1"
-                                    >
-                                        {renderPosition(
-                                            position,
-                                            site.widgets_config,
-                                        )}
-                                    </aside>
-                                ))}
+                        {(() => {
+                            // Проверяем есть ли виджеты в сайдбаре
+                            const sidebarPositions = positions.filter(
+                                (p) => p.area === 'sidebar',
+                            );
 
-                            {/* Content */}
-                            <div
-                                className={
-                                    positions.some((p) => p.area === 'sidebar')
-                                        ? 'lg:col-span-3'
-                                        : 'lg:col-span-4'
-                                }
-                            >
-                                {positions
-                                    .filter((p) => p.area === 'content')
-                                    .map((position) => (
-                                        <div
-                                            key={position.id}
-                                            className="site-content"
-                                        >
-                                            {renderPosition(
-                                                position,
-                                                site.widgets_config,
-                                            )}
-                                        </div>
-                                    ))}
-                            </div>
-                        </div>
+                            const hasSidebarWidgets = sidebarPositions.some(
+                                (position) =>
+                                    site.widgets_config.some(
+                                        (widget) =>
+                                            widget.position_slug ===
+                                                position.slug &&
+                                            widget.is_active &&
+                                            widget.is_visible,
+                                    ),
+                            );
+
+                            // Получаем позицию сайдбара
+                            const sidebarPosition =
+                                site.layout_config?.sidebar_position || 'right';
+
+                            // Если нет виджетов в сайдбаре, рендерим только content
+                            if (!hasSidebarWidgets) {
+                                return (
+                                    <div className="grid grid-cols-1 gap-8">
+                                        {positions
+                                            .filter((p) => p.area === 'content')
+                                            .map((position) => (
+                                                <div
+                                                    key={position.id}
+                                                    className="site-content"
+                                                >
+                                                    {renderPosition(
+                                                        position,
+                                                        site.widgets_config,
+                                                    )}
+                                                </div>
+                                            ))}
+                                    </div>
+                                );
+                            }
+
+                            // Рендерим с сайдбаром
+                            return (
+                                <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+                                    {/* Sidebar */}
+                                    {sidebarPosition === 'left' &&
+                                        sidebarPositions.map((position) => (
+                                            <aside
+                                                key={position.id}
+                                                className="lg:col-span-1"
+                                            >
+                                                {renderPosition(
+                                                    position,
+                                                    site.widgets_config,
+                                                )}
+                                            </aside>
+                                        ))}
+
+                                    {/* Content */}
+                                    <div
+                                        className={
+                                            hasSidebarWidgets
+                                                ? 'lg:col-span-3'
+                                                : 'lg:col-span-4'
+                                        }
+                                    >
+                                        {positions
+                                            .filter((p) => p.area === 'content')
+                                            .map((position) => (
+                                                <div
+                                                    key={position.id}
+                                                    className="site-content"
+                                                >
+                                                    {renderPosition(
+                                                        position,
+                                                        site.widgets_config,
+                                                    )}
+                                                </div>
+                                            ))}
+                                    </div>
+
+                                    {/* Sidebar справа */}
+                                    {sidebarPosition === 'right' &&
+                                        sidebarPositions.map((position) => (
+                                            <aside
+                                                key={position.id}
+                                                className="lg:col-span-1"
+                                            >
+                                                {renderPosition(
+                                                    position,
+                                                    site.widgets_config,
+                                                )}
+                                            </aside>
+                                        ))}
+                                </div>
+                            );
+                        })()}
                     </div>
                 </main>
 

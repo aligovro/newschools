@@ -214,6 +214,7 @@ export const useSiteBuilderState = ({
                 await updateWidget(updatedWidget.id, updatedWidget);
             } catch (error) {
                 console.error('Error saving widget:', error);
+                throw error; // Пробрасываем ошибку дальше
             }
         },
         [updateWidget],

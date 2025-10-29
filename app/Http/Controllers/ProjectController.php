@@ -4,20 +4,46 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Project\StoreProjectRequest;
 use App\Http\Requests\Project\UpdateProjectRequest;
+use App\Http\Requests\Project\UpdateProjectStagesRequest;
 use App\Http\Resources\ProjectResource;
 use App\Models\Project;
 use App\Models\Organization;
+use App\Models\ProjectStage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use App\Services\Projects\ProjectStageService;
 
 class ProjectController extends Controller
 {
-    public function __construct()
+    public function __construct(private ProjectStageService $stageService)
     {
         $this->middleware('auth');
+    }
+
+    /**
+     * Обновить только этапы проекта (отдельная вкладка)
+     */
+    public function updateStages(UpdateProjectStagesRequest $request, Organization $organization, Project $project)
+    {
+        Log::info('Update stages request all data:', $request->all());
+        Log::info('All uploaded files:', array_keys($request->allFiles()));
+
+        try {
+            // Обновляем/добавляем этапы без тотального удаления медиа
+            $this->stageService->saveStagesFromRequest($project, $request);
+
+            return redirect()->route('organizations.projects.edit', [$organization, $project])
+                ->with('success', 'Этапы успешно сохранены');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Ошибка сохранения этапов: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     /**
@@ -38,8 +64,12 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request, Organization $organization)
     {
-
         try {
+            // Логируем данные этапов для отладки
+            if ($request->filled('stages')) {
+                Log::info('Stages data received:', ['stages' => $request->stages]);
+            }
+
             $data = $request->except(['image', 'gallery', 'organization_id']);
 
             // Автоматически генерируем slug, если не указан
@@ -88,6 +118,11 @@ class ProjectController extends Controller
             // Создаем проект
             $project = Project::create($data);
 
+            // Создаем этапы (если пришли вместе с проектом)
+            if ($request->filled('stages') && is_array($request->stages)) {
+                $this->stageService->saveStagesFromRequest($project, $request);
+            }
+
             // Обрабатываем загрузку изображения
             if ($request->hasFile('image')) {
                 $imagePath = $request->file('image')->store('projects/images', 'public');
@@ -103,8 +138,8 @@ class ProjectController extends Controller
                 $project->update(['gallery' => $galleryPaths]);
             }
 
-            return redirect()->route('organizations.projects.index', $organization)
-                ->with('success', 'Проект успешно создан');
+            return redirect()->route('organizations.projects.edit', [$organization, $project])
+                ->with('success', 'Проект успешно создан. Теперь вы можете добавить этапы.');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Ошибка создания проекта: ' . $e->getMessage())
@@ -323,8 +358,20 @@ class ProjectController extends Controller
             'media' => function ($query) {
                 $query->select('id', 'mediaable_id', 'type', 'file_path')
                     ->where('type', 'image');
+            },
+            'stages' => function ($query) {
+                $query->orderBy('order');
             }
         ]);
+
+        // Если у проекта есть этапы, пересчитываем общую сумму из этапов
+        if ($project->has_stages && $project->stages->isNotEmpty()) {
+            $project->target_amount = $project->stages->sum('target_amount');
+            $project->collected_amount = $project->stages->sum('collected_amount');
+
+            // Автоматически управляем статусами этапов
+            $this->updateStageStatuses($project);
+        }
 
         // Увеличиваем счетчик просмотров
         $project->increment('views_count');
@@ -349,6 +396,17 @@ class ProjectController extends Controller
     public function edit(Organization $organization, Project $project)
     {
         $categories = $organization->type_config['categories'] ?? [];
+
+        // Загружаем этапы проекта
+        $project->load(['stages' => function ($query) {
+            $query->orderBy('order');
+        }]);
+
+        // Добавляем accessor для target_amount_rubles в каждый этап
+        $project->stages = $project->stages->map(function ($stage) {
+            $stage->target_amount_rubles = $stage->target_amount / 100;
+            return $stage;
+        });
 
         return Inertia::render('projects/EditProject', [
             'organization' => $organization->only(['id', 'name', 'slug']),
@@ -400,6 +458,11 @@ class ProjectController extends Controller
             // Обновляем проект
             $project->update($data);
 
+            // Обновляем этапы (если пришли вместе с проектом)
+            if ($request->filled('stages') && is_array($request->stages)) {
+                $this->stageService->saveStagesFromRequest($project, $request);
+            }
+
             // Обрабатываем загрузку нового изображения
             if ($request->hasFile('image')) {
                 // Удаляем старое изображение
@@ -433,7 +496,7 @@ class ProjectController extends Controller
                 $project->update(['gallery' => $finalGallery]);
             }
 
-            return redirect()->route('organizations.projects.index', $organization)
+            return redirect()->route('organizations.projects.edit', [$organization, $project])
                 ->with('success', 'Проект успешно обновлен');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -495,5 +558,37 @@ class ProjectController extends Controller
             'available' => $available,
             'message' => $available ? 'Slug доступен' : 'Slug уже используется'
         ]);
+    }
+
+    /**
+     * Автоматически управляет статусами этапов проекта
+     */
+    private function updateStageStatuses(Project $project): void
+    {
+        if (!$project->has_stages || $project->stages->isEmpty()) {
+            return;
+        }
+
+        $stages = $project->stages->sortBy('order');
+        $hasActiveStage = false;
+
+        foreach ($stages as $index => $stage) {
+            // Проверяем, завершен ли этап
+            if ($stage->collected_amount >= $stage->target_amount && $stage->status !== 'completed') {
+                $stage->update(['status' => 'completed']);
+            }
+
+            // Определяем, какой этап должен быть активным
+            if (!$hasActiveStage && $stage->collected_amount < $stage->target_amount && $stage->status !== 'completed') {
+                if ($stage->status !== 'active') {
+                    $stage->update(['status' => 'active']);
+                }
+                $hasActiveStage = true;
+            } elseif ($hasActiveStage && $stage->status === 'active') {
+                $stage->update(['status' => 'pending']);
+            } elseif ($stage->status !== 'completed' && !$hasActiveStage) {
+                $stage->update(['status' => 'pending']);
+            }
+        }
     }
 }

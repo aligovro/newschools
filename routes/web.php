@@ -16,11 +16,17 @@ use App\Http\Controllers\OrganizationSiteController;
 use App\Http\Controllers\ProjectController;
 
 Route::get('/', [MainSiteController::class, 'index'])->name('home');
+Route::get('/organizations', [MainSiteController::class, 'organizations'])->name('main-site.organizations');
+Route::get('/organization/{slug}', [MainSiteController::class, 'organization'])->name('main-site.organization');
+Route::get('/projects', [MainSiteController::class, 'projects'])->name('main-site.projects');
+Route::get('/project/{slug}', [MainSiteController::class, 'project'])->name('main-site.project');
 
-// Public organization routes
-Route::get('/organizations', [App\Http\Controllers\PublicOrganizationController::class, 'index'])->name('organizations.index');
-Route::get('/organizations/{organization}', [App\Http\Controllers\PublicOrganizationController::class, 'show'])->name('organizations.show');
-Route::get('/api/organizations/{organization}', [App\Http\Controllers\PublicOrganizationController::class, 'api'])->name('organizations.api');
+// Legacy public organization routes (deprecated)
+Route::prefix('old-api')->group(function () {
+    Route::get('/organizations', [App\Http\Controllers\PublicOrganizationController::class, 'index'])->name('organizations.index');
+    Route::get('/organizations/{organization}', [App\Http\Controllers\PublicOrganizationController::class, 'show'])->name('organizations.show');
+    Route::get('/api/organizations/{organization}', [App\Http\Controllers\PublicOrganizationController::class, 'api'])->name('organizations.api');
+});
 Route::get('/api/organization-types', [App\Http\Controllers\PublicOrganizationController::class, 'types'])->name('organizations.types');
 Route::get('/api/regions', [App\Http\Controllers\PublicOrganizationController::class, 'regions'])->name('organizations.regions');
 
@@ -66,6 +72,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/organizations/{organization}/projects/{project}', [ProjectController::class, 'show'])->name('organizations.projects.show');
         Route::get('/organizations/{organization}/projects/{project}/edit', [ProjectController::class, 'edit'])->name('organizations.projects.edit');
         Route::put('/organizations/{organization}/projects/{project}', [ProjectController::class, 'update'])->name('organizations.projects.update');
+        Route::post('/organizations/{organization}/projects/{project}/stages', [ProjectController::class, 'updateStages'])->name('organizations.projects.stages.save');
         Route::delete('/organizations/{organization}/projects/{project}', [ProjectController::class, 'destroy'])->name('organizations.projects.destroy');
         Route::post('/organizations/{organization}/projects/check-slug', [ProjectController::class, 'checkSlug'])->name('organizations.projects.check-slug');
 

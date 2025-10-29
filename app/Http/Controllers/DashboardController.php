@@ -59,9 +59,18 @@ class DashboardController extends Controller
       'global_settings_description' => 'Управление терминологией и настройками системы',
     ]);
 
+    // Получаем фавиконку главного сайта
+    $mainSite = \App\Models\Site::where('site_type', 'main')
+      ->where('status', \App\Enums\SiteStatus::Published)
+      ->where('is_public', true)
+      ->first();
+
+    $favicon = $mainSite ? $mainSite->getFaviconUrlAttribute() : null;
+
     return Inertia::render('Dashboard', [
       'stats' => $stats,
       'terminology' => $terminology,
+      'favicon' => $favicon,
     ]);
   }
 }

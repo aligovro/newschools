@@ -131,6 +131,7 @@ const HeroSlider: React.FC<{
     animation: 'fade' | 'slide' | 'zoom' | 'flip' | 'cube';
     autoplay: boolean;
     autoplayDelay: number;
+    loop: boolean;
     showDots: boolean;
     showArrows: boolean;
     getGradientStyle: (
@@ -140,16 +141,19 @@ const HeroSlider: React.FC<{
         intensity: number,
     ) => string;
     css_class?: string;
+    widgetId: string | number;
 }> = ({
     slides,
     height,
     animation,
     autoplay,
     autoplayDelay,
+    loop,
     showDots,
     showArrows,
     getGradientStyle,
     css_class,
+    widgetId,
 }) => {
     // Swiper modules configuration
     const swiperModules = useMemo(() => {
@@ -172,12 +176,26 @@ const HeroSlider: React.FC<{
         return modules;
     }, [autoplay, animation]);
 
+    // Уникальные классы навигации/пагинации для нескольких слайдеров на странице
+    const navigationNextClass = useMemo(
+        () => `swiper-button-next-${widgetId}`,
+        [widgetId],
+    );
+    const navigationPrevClass = useMemo(
+        () => `swiper-button-prev-${widgetId}`,
+        [widgetId],
+    );
+    const paginationClass = useMemo(
+        () => `swiper-pagination-${widgetId}`,
+        [widgetId],
+    );
+
     // Swiper configuration
     const swiperConfig = useMemo(() => {
         const config: Record<string, any> = {
             modules: swiperModules,
             spaceBetween: 0,
-            loop: false,
+            loop: loop || false,
             autoplay: autoplay
                 ? {
                       delay: autoplayDelay || 5000,
@@ -186,14 +204,15 @@ const HeroSlider: React.FC<{
                 : false,
             navigation: showArrows
                 ? {
-                      nextEl: '.swiper-button-next',
-                      prevEl: '.swiper-button-prev',
+                      nextEl: `.${navigationNextClass}`,
+                      prevEl: `.${navigationPrevClass}`,
                   }
                 : false,
             pagination: showDots
                 ? {
                       clickable: true,
-                      dynamicBullets: true,
+                      dynamicBullets: false,
+                      el: `.${paginationClass}`,
                   }
                 : false,
         };
@@ -227,9 +246,13 @@ const HeroSlider: React.FC<{
         swiperModules,
         autoplay,
         autoplayDelay,
+        loop,
         showArrows,
         showDots,
         animation,
+        navigationNextClass,
+        navigationPrevClass,
+        paginationClass,
     ]);
 
     if (slides.length === 0) return null;
@@ -238,14 +261,115 @@ const HeroSlider: React.FC<{
         <div
             className={`hero-slider relative ${css_class || ''}`}
             style={{
-                height: height || '600px', // Применяем высоту к контейнеру
+                height: height || '600px',
             }}
         >
+            {/* Добавляем CSS стили для стрелок навигации */}
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
+                    .${navigationNextClass},
+                    .${navigationPrevClass} {
+                        color: #333;
+                        background: white;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        z-index: 100;
+                        position: absolute;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 0.2s ease;
+                        opacity: 1;
+                        visibility: visible;
+                    }
+                    .${navigationPrevClass} {
+                        left: 15px;
+                    }
+                    .${navigationNextClass} {
+                        right: 15px;
+                    }
+                    .${navigationNextClass}:after,
+                    .${navigationPrevClass}:after {
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: #333;
+                        content: '';
+                    }
+                    .${navigationNextClass}:after {
+                        content: '›';
+                    }
+                    .${navigationPrevClass}:after {
+                        content: '‹';
+                    }
+                    .${navigationNextClass}:hover,
+                    .${navigationPrevClass}:hover {
+                        background: #f5f5f5;
+                        transform: translateY(-50%) scale(1.05);
+                    }
+                    .${paginationClass} {
+                        position: absolute;
+                        bottom: 20px;
+                        left: 50% !important;
+                        transform: translateX(-50%);
+                        z-index: 100;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        background: rgba(255, 255, 255, 0.9);
+                        padding: 8px 12px;
+                        border-radius: 20px;
+                        width: auto;
+                        min-width: 60px;
+                        max-width: 200px;
+                        opacity: 1;
+                        visibility: visible;
+                        flex-wrap: nowrap;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-align: center;
+                    }
+                    .${paginationClass} .swiper-pagination-bullet {
+                        background: rgba(0, 0, 0, 0.3);
+                        width: 8px;
+                        height: 8px;
+                        margin: 0 4px;
+                        border-radius: 50%;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        opacity: 0.6;
+                        display: inline-block;
+                        flex-shrink: 0;
+                    }
+                    .${paginationClass} .swiper-pagination-bullet:hover {
+                        background: rgba(0, 0, 0, 0.5);
+                        opacity: 1;
+                    }
+                    .${paginationClass} .swiper-pagination-bullet-active {
+                        background: #333;
+                        opacity: 1;
+                        transform: scale(1.2);
+                    }
+                    .${paginationClass} .swiper-pagination-bullet {
+                        position: static !important;
+                        left: auto !important;
+                        right: auto !important;
+                        transform: none !important;
+                        margin: 0 4px !important;
+                        display: inline-block !important;
+                    }
+                `,
+                }}
+            />
             <Swiper
                 {...swiperConfig}
                 className="h-full"
                 style={{
-                    height: height || '600px', // Применяем высоту к Swiper
+                    height: height || '600px',
                 }}
             >
                 {slides.map((slide) => (
@@ -258,7 +382,14 @@ const HeroSlider: React.FC<{
                         />
                     </SwiperSlide>
                 ))}
+                {showArrows && (
+                    <>
+                        <div className={navigationPrevClass}></div>
+                        <div className={navigationNextClass}></div>
+                    </>
+                )}
             </Swiper>
+            {showDots && <div className={paginationClass}></div>}
         </div>
     );
 };
@@ -271,22 +402,13 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
 }) => {
     const config = widget.config as HeroOutputConfig;
 
-    // Логируем данные hero виджета (временно отключено)
-    // console.log('HeroOutput - Widget data:', {
-    //     widget_id: widget.id,
-    //     widget_name: widget.name,
-    //     config,
-    //     hero_slides: (widget as any).hero_slides,
-    //     slides_from_config: config.slides,
-    //     singleSlide: config.singleSlide,
-    // });
-
     const {
         type = 'single',
         height = '600px',
         animation = 'fade',
         autoplay = true,
         autoplayDelay = 5000,
+        loop = false,
         showDots = true,
         showArrows = true,
         slides = [],
@@ -340,16 +462,17 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
 
     // Get slides from widget data or config
     const currentSlides = useMemo(() => {
-        // Try to get slides from widget data first
+        // Try to get slides from widget.hero_slides first
         if (
             (widget as any).hero_slides &&
+            Array.isArray((widget as any).hero_slides) &&
             (widget as any).hero_slides.length > 0
         ) {
             return (widget as any).hero_slides;
         }
 
-        // Fallback to config slides
-        if (slides && slides.length > 0) {
+        // Fallback to config.slides
+        if (slides && Array.isArray(slides) && slides.length > 0) {
             return slides;
         }
 
@@ -372,10 +495,12 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
                     animation={animation}
                     autoplay={autoplay}
                     autoplayDelay={autoplayDelay}
+                    loop={loop}
                     showDots={showDots}
                     showArrows={showArrows}
                     getGradientStyle={getGradientStyle}
                     css_class={css_class}
+                    widgetId={widget.id}
                 />
             ) : (
                 <HeroSlideRenderer

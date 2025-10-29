@@ -95,6 +95,34 @@ class ProjectResource extends JsonResource
         return OrganizationMediaResource::collection($this->media);
       }),
 
+      // Этапы проекта
+      'has_stages' => $this->has_stages ?? false,
+      'stages' => $this->whenLoaded('stages', function () {
+        return $this->stages->map(function ($stage) {
+          return [
+            'id' => $stage->id,
+            'title' => $stage->title,
+            'description' => $stage->description,
+            'image' => $stage->image ? asset('storage/' . $stage->image) : null,
+            'gallery' => $stage->gallery ? collect($stage->gallery)->map(fn($item) => asset('storage/' . $item))->toArray() : [],
+            'target_amount' => $stage->target_amount,
+            'target_amount_rubles' => $stage->target_amount_rubles,
+            'collected_amount' => $stage->collected_amount,
+            'collected_amount_rubles' => $stage->collected_amount_rubles,
+            'progress_percentage' => $stage->progress_percentage,
+            'formatted_target_amount' => number_format($stage->target_amount_rubles, 0, '.', ' ') . ' ₽',
+            'formatted_collected_amount' => number_format($stage->collected_amount_rubles, 0, '.', ' ') . ' ₽',
+            'status' => $stage->status ?? 'pending',
+            'is_completed' => $stage->is_completed,
+            'is_active' => $stage->is_active,
+            'is_pending' => $stage->is_pending,
+            'start_date' => $stage->start_date?->format('Y-m-d'),
+            'end_date' => $stage->end_date?->format('Y-m-d'),
+            'order' => $stage->order,
+          ];
+        });
+      }),
+
       // Timestamps
       'created_at' => $this->created_at?->toISOString(),
       'updated_at' => $this->updated_at?->toISOString(),

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Domain;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +21,7 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
             'organization_id' => 'nullable|exists:organizations,id',
-            'site_id' => 'nullable|exists:organization_sites,id',
+            'role' => 'nullable|string|max:50',
         ]);
 
         if ($validator->fails()) {
@@ -33,16 +35,37 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'organization_id' => $request->organization_id,
-            'site_id' => $request->site_id,
             'is_active' => true,
         ]);
+
+        // Определяем организацию для привязки
+        $organizationId = $request->input('organization_id');
+        if (!$organizationId) {
+            $organizationId = $this->resolveOrganizationIdFromHost($request);
+        }
+
+        // Если регистрация идет на домене организации — добавляем связь в organization_users
+        if ($organizationId) {
+            /** @var Organization|null $organization */
+            $organization = Organization::find($organizationId);
+            if ($organization) {
+                $organization->users()->syncWithoutDetaching([
+                    $user->id => [
+                        'role' => $request->input('role', 'member'),
+                        'status' => 'active',
+                        'permissions' => null,
+                        'joined_at' => now(),
+                        'last_active_at' => now(),
+                    ],
+                ]);
+            }
+        }
 
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([
             'token' => $token,
-            'user' => $user,
+            'user' => $user->load(['roles', 'permissions', 'organizations']),
         ], 201);
     }
 
@@ -70,7 +93,7 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user' => $user,
+            'user' => $user->load(['roles', 'permissions', 'organizations']),
         ]);
     }
 
@@ -86,6 +109,47 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user());
+        /** @var User|null $user */
+        $user = $request->user();
+        if (!$user) {
+            // Fallback to web guard (for /api/public/session-user)
+            $user = Auth::guard('web')->user();
+        }
+        if (!$user) {
+            return response()->json(null);
+        }
+        $userWith = User::query()
+            ->with(['roles', 'permissions', 'organizations'])
+            ->find($user->id);
+        return response()->json($userWith);
+    }
+
+    /**
+     * Выход из web-сессии (public API с web middleware)
+     */
+    public function webLogout(Request $request): JsonResponse
+    {
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return response()->json(['success' => true]);
+    }
+    /**
+     * Определить организацию по текущему хосту
+     */
+    private function resolveOrganizationIdFromHost(Request $request): ?int
+    {
+        $host = strtolower($request->getHost());
+        if (!$host) {
+            return null;
+        }
+
+        $domain = Domain::query()
+            ->where('custom_domain', $host)
+            ->orWhere('domain', $host)
+            ->orWhere('subdomain', $host)
+            ->first();
+
+        return $domain?->organization_id;
     }
 }

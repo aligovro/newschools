@@ -1,3 +1,4 @@
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -5,6 +6,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +39,10 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
 
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+    const [sessionUser, setSessionUser] = useState<Record<
+        string,
+        unknown
+    > | null>(null);
 
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
@@ -64,21 +75,55 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         };
     }, [clearAuthError]);
 
-    const handleLogin = async (e: React.FormEvent) => {
+    // Гидратация из web-сессии, если нет токена/Redux авторизации
+    useEffect(() => {
+        const needSessionFetch =
+            !isAuthenticated && !localStorage.getItem('token');
+        if (!needSessionFetch) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch('/api/public/session-user', {
+                    credentials: 'include',
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!cancelled) setSessionUser(data || null);
+            } catch {
+                // ignore
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated]);
+
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!loginEmail || !loginPassword) return;
-        const res = await login({ email: loginEmail, password: loginPassword });
-        if ((res as any).type?.endsWith('/fulfilled')) {
+        type WithType = { type?: string };
+        const res = (await login({
+            email: loginEmail,
+            password: loginPassword,
+        })) as unknown as WithType;
+        if (res.type?.endsWith('/fulfilled')) {
             setIsLoginOpen(false);
             setLoginEmail('');
             setLoginPassword('');
         }
     };
 
-    const handleRegister = async (e: React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!regName || !regEmail || !regPassword || !regPassword2) return;
-        const payload: any = {
+        const payload: {
+            name: string;
+            email: string;
+            password: string;
+            password_confirmation: string;
+            organization_id?: number;
+            site_id?: number;
+        } = {
             name: regName,
             email: regEmail,
             password: regPassword,
@@ -87,8 +132,9 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         if (organizationId) payload.organization_id = organizationId;
         if (siteId) payload.site_id = siteId;
 
-        const res = await register(payload);
-        if ((res as any).type?.endsWith('/fulfilled')) {
+        type WithType = { type?: string };
+        const res = (await register(payload)) as unknown as WithType;
+        if (res.type?.endsWith('/fulfilled')) {
             setIsRegisterOpen(false);
             setRegName('');
             setRegEmail('');
@@ -97,9 +143,43 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         }
     };
 
+    const handleLogout = async () => {
+        if (isAuthenticated) {
+            await logout();
+        } else {
+            try {
+                await fetch('/api/public/session-logout', {
+                    method: 'POST',
+                    credentials: 'include',
+                });
+            } catch {
+                // ignore
+            }
+            setSessionUser(null);
+        }
+    };
+
+    const effectiveUser =
+        (user as unknown as Record<string, unknown>) || sessionUser;
+    const effectiveIsAuthenticated = isAuthenticated || Boolean(sessionUser);
+    const displayName =
+        (effectiveUser?.name as string) ||
+        (effectiveUser?.email as string) ||
+        'Пользователь';
+    const initial = (displayName[0] || '?').toUpperCase();
+    const rawRoles = (effectiveUser as Record<string, unknown>)
+        ?.roles as unknown;
+    const roles = Array.isArray(rawRoles)
+        ? (rawRoles as Array<{ name: string }>)
+              .map((r) => r?.name)
+              .filter(Boolean)
+        : [];
+    const isSuperAdmin = roles.includes('super_admin');
+    const isOrgAdmin = roles.includes('organization_admin');
+
     return (
         <div className="flex items-center gap-2">
-            {!isAuthenticated ? (
+            {!effectiveIsAuthenticated ? (
                 <>
                     <Button
                         size="sm"
@@ -256,16 +336,46 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                     </Dialog>
                 </>
             ) : (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-700">{user?.name}</span>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => logout()}
-                    >
-                        Выйти
-                    </Button>
-                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-2 rounded-md border px-2 py-1 hover:bg-gray-50">
+                            <Avatar className="h-6 w-6">
+                                <AvatarFallback>{initial}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm text-gray-800">
+                                {displayName}
+                            </span>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[220px]">
+                        {isSuperAdmin && (
+                            <DropdownMenuItem asChild>
+                                <a href="/dashboard">Панель управления</a>
+                            </DropdownMenuItem>
+                        )}
+                        {isOrgAdmin && (
+                            <DropdownMenuItem asChild>
+                                <a href="/organization/admin">
+                                    Админка организации
+                                </a>
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem asChild>
+                            <a href="/profile">Профиль</a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <a href="/settings">Настройки</a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full text-left"
+                            >
+                                Выйти
+                            </button>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             )}
         </div>
     );

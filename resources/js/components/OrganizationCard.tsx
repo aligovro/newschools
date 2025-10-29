@@ -3,8 +3,9 @@ import { Link } from '@inertiajs/react';
 interface Organization {
     id: number;
     name: string;
-    description: string;
-    address: string;
+    slug?: string;
+    description?: string;
+    address?: string;
     image?: string;
     projects_count: number;
     donations_total: number;
@@ -38,7 +39,10 @@ export default function OrganizationCard({
 
     return (
         <div className="overflow-hidden rounded-xl bg-white shadow-lg transition-shadow duration-300 hover:shadow-xl">
-            <Link href={`/organizations/${organization.id}`} className="block">
+            <Link
+                href={`/organization/${organization.slug || organization.id}`}
+                className="block"
+            >
                 {/* Organization Image */}
                 <div className="relative h-48 bg-gradient-to-br from-blue-400 to-purple-500">
                     {organization.image ? (
@@ -60,9 +64,11 @@ export default function OrganizationCard({
                 <div className="p-6">
                     {/* Organization Info */}
                     <div className="mb-4">
-                        <div className="mb-1 text-sm text-gray-500">
-                            {organization.address}
-                        </div>
+                        {organization.address && (
+                            <div className="mb-1 text-sm text-gray-500">
+                                {organization.address}
+                            </div>
+                        )}
                         <h3 className="mb-2 text-xl font-bold text-gray-900">
                             {organization.name}
                         </h3>

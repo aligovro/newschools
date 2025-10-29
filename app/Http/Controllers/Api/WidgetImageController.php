@@ -158,8 +158,20 @@ class WidgetImageController extends Controller
 
     $processed = $this->imageService->processAndSave($file, $directory, $sizes);
 
+    // Для favicon возвращаем первый thumbnail (32x32), а не оригинал
+    // Для SVG файлов возвращаем оригинал, так как thumbnails пустые
+    $mainUrl = $this->imageService->getImageUrl($processed['original']);
+    if ($widgetSlug === 'favicon' && !empty($processed['thumbnails'])) {
+      // Возвращаем первый thumbnail (favicon_32)
+      $firstThumbnail = reset($processed['thumbnails']);
+      if ($firstThumbnail) {
+        $mainUrl = $this->imageService->getImageUrl($firstThumbnail);
+      }
+    }
+    // SVG файлы уже обработаны как оригинал в ImageProcessingService
+
     return [
-      'url' => $this->imageService->getImageUrl($processed['original']),
+      'url' => $mainUrl,
       'thumbnails' => array_map(
         fn($path) => $this->imageService->getImageUrl($path),
         $processed['thumbnails']
@@ -209,6 +221,16 @@ class WidgetImageController extends Controller
           // Twitter large (derived)
           'twitter' => ['width' => 1200, 'height' => 600, 'fit' => 'cover'],
           'twitter_half' => ['width' => 600, 'height' => 300, 'fit' => 'cover'],
+        ];
+        break;
+
+      case 'favicon':
+        // Favicon: стандартные размеры для различных устройств
+        $sizes = [
+          'favicon_16' => ['width' => 16, 'height' => 16, 'fit' => 'contain'],
+          'favicon_32' => ['width' => 32, 'height' => 32, 'fit' => 'contain'],
+          'favicon_48' => ['width' => 48, 'height' => 48, 'fit' => 'contain'],
+          'apple-touch-icon' => ['width' => 180, 'height' => 180, 'fit' => 'contain'],
         ];
         break;
 

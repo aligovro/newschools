@@ -105,7 +105,11 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
     };
 
     // Проверка является ли файл SVG
-    const isSvgFile = (file: File) => file.type === 'image/svg+xml';
+    const isSvgFile = (file: File | string | null | undefined) => {
+        if (!file) return false;
+        if (typeof file === 'string') return file.includes('.svg');
+        return file.type === 'image/svg+xml';
+    };
 
     // Обработка загрузки файла
     const handleFileUpload = useCallback(async (file: File) => {

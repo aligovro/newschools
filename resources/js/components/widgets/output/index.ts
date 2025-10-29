@@ -1,6 +1,8 @@
 // Widget Output Components
 // These are optimized, read-only components for displaying widgets on live sites and in preview
 
+export { AlumniStatsOutput } from './AlumniStatsOutput';
+export { AuthMenuOutput } from './AuthMenuOutput';
 export { ContactOutput } from './ContactOutput';
 export { DonationOutput } from './DonationOutput';
 export { DonationsListOutput } from './DonationsListOutput';
