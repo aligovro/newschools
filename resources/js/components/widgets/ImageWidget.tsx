@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { getConfigValue, WidgetConfig } from '@/utils/getConfigValue';
+import { Link } from '@inertiajs/react';
 import React from 'react';
 
 interface ImageWidgetProps {
@@ -12,6 +13,9 @@ interface ImageWidgetProps {
     // Поддержка configs для нормализованных данных
     configs?: WidgetConfig[];
     styling?: Record<string, any>;
+    linkUrl?: string;
+    linkType?: 'internal' | 'external';
+    openInNewTab?: boolean;
 }
 
 export const ImageWidget: React.FC<ImageWidgetProps> = ({
@@ -23,6 +27,9 @@ export const ImageWidget: React.FC<ImageWidgetProps> = ({
     className,
     configs,
     styling,
+    linkUrl,
+    linkType = 'internal',
+    openInNewTab = false,
 }) => {
     // Извлекаем значения из configs если они переданы
     const configImage = configs
@@ -38,6 +45,15 @@ export const ImageWidget: React.FC<ImageWidgetProps> = ({
         ? getConfigValue(configs, 'alignment', alignment)
         : alignment;
     const configSize = configs ? getConfigValue(configs, 'size', size) : size;
+    const configLinkUrl = configs
+        ? getConfigValue(configs, 'linkUrl', linkUrl)
+        : linkUrl;
+    const configLinkType = configs
+        ? getConfigValue(configs, 'linkType', linkType)
+        : linkType;
+    const configOpenInNewTab = configs
+        ? getConfigValue(configs, 'openInNewTab', openInNewTab)
+        : openInNewTab;
 
     // Если нет изображения, не рендерим ничего
     if (!configImage) {
@@ -56,6 +72,40 @@ export const ImageWidget: React.FC<ImageWidgetProps> = ({
         right: 'ml-auto mx-0',
     };
 
+    const imageElement = (
+        <img
+            src={configImage}
+            alt={configAltText}
+            className={cn(
+                'rounded-lg shadow-md',
+                configSize === 'full'
+                    ? 'h-auto w-full'
+                    : 'h-auto w-full object-cover',
+            )}
+        />
+    );
+
+    const wrappedImage = configLinkUrl ? (
+        configLinkType === 'external' ? (
+            <a
+                href={String(configLinkUrl)}
+                target={configOpenInNewTab ? '_blank' : undefined}
+                rel={configOpenInNewTab ? 'noopener noreferrer' : undefined}
+            >
+                {imageElement}
+            </a>
+        ) : (
+            <Link
+                href={String(configLinkUrl)}
+                target={configOpenInNewTab ? '_blank' : undefined}
+            >
+                {imageElement}
+            </Link>
+        )
+    ) : (
+        imageElement
+    );
+
     return (
         <figure
             className={cn(
@@ -68,16 +118,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = ({
             )}
             style={styling}
         >
-            <img
-                src={configImage}
-                alt={configAltText}
-                className={cn(
-                    'rounded-lg shadow-md',
-                    configSize === 'full'
-                        ? 'h-auto w-full'
-                        : 'h-auto w-full object-cover',
-                )}
-            />
+            {wrappedImage}
             {configCaption && (
                 <figcaption className="mt-2 text-center text-sm text-gray-600">
                     {configCaption}

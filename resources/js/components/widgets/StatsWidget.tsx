@@ -53,6 +53,9 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
     const configAnimation = configs
         ? getConfigValue(configs, 'animation', animation)
         : animation;
+
+    // Проверяем наличие статистики
+    const hasStats = Array.isArray(configStats) && configStats.length > 0;
     const gridCols = {
         1: 'grid-cols-1',
         2: 'grid-cols-2',
@@ -131,6 +134,26 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
         }
         return value;
     };
+
+    // Если нет статистики, показываем заглушку
+    if (!hasStats) {
+        return (
+            <section className={cn('py-8', className)} style={containerStyle}>
+                <div className="container mx-auto px-4">
+                    {configTitle && (
+                        <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
+                            {configTitle}
+                        </h2>
+                    )}
+                    <div className="flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
+                        <span className="text-gray-500">
+                            Статистика не настроена
+                        </span>
+                    </div>
+                </div>
+            </section>
+        );
+    }
 
     if (configLayout === 'list') {
         return (

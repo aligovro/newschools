@@ -24,6 +24,7 @@ interface ImageUploaderProps {
     slideId?: string;
     enableServerUpload?: boolean;
     existingImageUrl?: string;
+    hidePreview?: boolean;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -45,6 +46,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     slideId,
     enableServerUpload = false,
     existingImageUrl,
+    hidePreview = false,
 }) => {
     const [imgSrc, setImgSrc] = useState<string>('');
     const [originalSrc, setOriginalSrc] = useState<string>('');
@@ -54,7 +56,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     const [rotate, setRotate] = useState(0);
     const [lockAspect, setLockAspect] = useState<boolean>(!!aspectRatio);
     const [showCropModal, setShowCropModal] = useState(false);
-    const [hasCroppedImage, setHasCroppedImage] = useState(false);
+    const [_hasCroppedImage, setHasCroppedImage] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -102,6 +104,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 console.log('url:', existingImageUrl);
                 console.groupEnd();
             }
+        } else {
+            // Сбрасываем состояния, когда изображение удалено
+            setImgSrc('');
+            setHasCroppedImage(false);
+            setPreviewUrl('');
+            setOriginalSrc('');
         }
     }, [existingImageUrl]);
 
@@ -150,9 +158,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     console.groupEnd();
                 }
 
+                // Проверяем, является ли файл SVG
+                const isSvg =
+                    file.type === 'image/svg+xml' || file.name.endsWith('.svg');
+
                 // Если включена серверная загрузка
                 if (enableServerUpload && widgetSlug) {
-                    if (aspectRatio && onImageCrop) {
+                    if (aspectRatio && onImageCrop && !isSvg) {
                         // Не грузим оригинал, сначала открываем кроп модалку и после кропа грузим сжатый файл
                         const reader = new FileReader();
                         reader.addEventListener('load', () => {
@@ -181,6 +193,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                                 onImageUpload(file, result.data.url);
                                 setOriginalSrc(result.data.url);
                                 setPreviewUrl(result.data.url);
+
+                                // Для SVG вызываем onImageCrop напрямую, так как кроп не нужен
+                                if (isSvg && onImageCrop) {
+                                    onImageCrop(result.data.url);
+                                }
+
                                 if (DEBUG_CROP) {
                                     console.groupCollapsed(
                                         '[Uploader] upload original success',
@@ -213,8 +231,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                         setImgSrc(src);
                         setOriginalSrc(src);
 
-                        // Если нужно обрезание и есть обработчик кропа, показываем модальное окно
-                        if (aspectRatio && onImageCrop) {
+                        // Для SVG вызываем onImageCrop напрямую, так как кроп не нужен
+                        if (isSvg && onImageCrop) {
+                            onImageCrop(src);
+                        }
+                        // Если нужно обрезание и есть обработчик кропа, показываем модальное окно (только для не-SVG)
+                        else if (aspectRatio && onImageCrop) {
                             setShowCropModal(true);
                         }
 
@@ -510,7 +532,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     const handleEditImage = () => {
         if (imgSrc) {
-            setShowCropModal(true);
+            // Проверяем, является ли изображение SVG
+            const isSvg =
+                typeof imgSrc === 'string' &&
+                (imgSrc.includes('.svg') ||
+                    imgSrc.startsWith('data:image/svg+xml'));
+            // Не открываем модальное окно обрезки для SVG
+            if (!isSvg) {
+                setShowCropModal(true);
+            }
         }
     };
 
@@ -592,7 +622,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             )}
 
             {/* Отображение загруженного изображения */}
-            {hasImage && (
+            {hasImage && !hidePreview && (
                 <div className="image-uploader__preview">
                     <div className="flex items-start gap-3">
                         <img

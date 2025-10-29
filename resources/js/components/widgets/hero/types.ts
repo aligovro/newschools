@@ -20,6 +20,7 @@ export interface HeroConfig {
     animation?: 'fade' | 'slide' | 'zoom';
     autoplay?: boolean;
     autoplayDelay?: number;
+    loop?: boolean;
     showDots?: boolean;
     showArrows?: boolean;
     slides?: HeroSlide[];

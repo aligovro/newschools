@@ -80,13 +80,15 @@ const getQuickActions = (terminology: any) => [
 ];
 
 export default function Dashboard() {
-    const { stats, terminology, isLoading, error, refreshStats } =
+    const { stats, terminology, isLoading, error, refreshStats, favicon } =
         useDashboardStats();
 
     if (isLoading) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
-                <Head title={terminology.dashboard_title} />
+                <Head title={terminology.dashboard_title}>
+                    {favicon && <link rel="icon" href={favicon} />}
+                </Head>
                 <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
                     <div className="flex min-h-64 items-center justify-center">
                         <div className="text-center">
@@ -104,7 +106,9 @@ export default function Dashboard() {
     if (error) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
-                <Head title={terminology.dashboard_title} />
+                <Head title={terminology.dashboard_title}>
+                    {favicon && <link rel="icon" href={favicon} />}
+                </Head>
                 <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
                     <div className="flex min-h-64 items-center justify-center">
                         <div className="text-center">
@@ -128,7 +132,9 @@ export default function Dashboard() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Админ-панель" />
+            <Head title="Админ-панель">
+                {favicon && <link rel="icon" href={favicon} />}
+            </Head>
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
                 {/* Заголовок */}
                 <div className="flex items-center justify-between">

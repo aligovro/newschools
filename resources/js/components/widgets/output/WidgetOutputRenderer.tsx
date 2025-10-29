@@ -2,6 +2,8 @@ import React, { memo } from 'react';
 import { WidgetOutputProps } from './types';
 
 // Import all output components
+import { AlumniStatsOutput } from './AlumniStatsOutput';
+import { AuthMenuOutput } from './AuthMenuOutput';
 import { ContactOutput } from './ContactOutput';
 import { DonationOutput } from './DonationOutput';
 import { DonationsListOutput } from './DonationsListOutput';
@@ -25,9 +27,11 @@ const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
     image: ImageOutput,
     gallery: GalleryOutput,
     stats: StatsOutput,
+    alumni_stats: AlumniStatsOutput,
     projects: ProjectsOutput,
     contact: ContactOutput,
     menu: MenuOutput,
+    auth_menu: AuthMenuOutput,
     form: FormOutput,
     donation: DonationOutput,
     donations_list: DonationsListOutput,
@@ -60,17 +64,6 @@ export const WidgetOutputRenderer: React.FC<WidgetOutputProps> = memo(
         // Get the appropriate output component
         const widgetSlug = (widget as any).widget_slug;
         const OutputComponent = outputRegistry[widgetSlug] || DefaultOutput;
-
-        // Логируем данные виджета в рендерере
-        console.log('WidgetOutputRenderer - Rendering widget:', {
-            widget_slug: widgetSlug,
-            widget_name: widget.name,
-            widget_id: widget.id,
-            hasOutputComponent: !!outputRegistry[widgetSlug],
-            config: widget.config,
-            hero_slides: (widget as any).hero_slides,
-            slider_slides: (widget as any).slider_slides,
-        });
 
         // Apply universal styling if present in config.styling
         const styling = (widget.config?.styling || {}) as any;

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class SiteWidget extends Model
 {
@@ -469,45 +470,70 @@ class SiteWidget extends Model
     // Добавляем нормализованные данные в зависимости от типа виджета
     switch ($this->widget_slug) {
       case 'hero':
-        $baseData['slides'] = $this->heroSlides->map(function ($slide) {
+        $heroSlides = $this->heroSlides->map(function ($slide) {
+          $backgroundImage = '';
+          if ($slide->background_image) {
+            if (str_starts_with($slide->background_image, 'http')) {
+              $backgroundImage = $slide->background_image;
+            } elseif (str_starts_with($slide->background_image, '/storage/')) {
+              $backgroundImage = $slide->background_image;
+            } else {
+              $backgroundImage = '/storage/' . $slide->background_image;
+            }
+          }
+
           return [
-            'id' => $slide->id,
+            'id' => (string) $slide->id,
             'title' => $slide->title,
             'subtitle' => $slide->subtitle,
             'description' => $slide->description,
             'buttonText' => $slide->button_text,
             'buttonLink' => $slide->button_link,
             'buttonLinkType' => $slide->button_link_type,
-            'buttonOpenInNewTab' => $slide->button_open_in_new_tab,
-            'backgroundImage' => $slide->background_image,
+            'buttonOpenInNewTab' => (bool) $slide->button_open_in_new_tab,
+            'backgroundImage' => $backgroundImage,
             'overlayColor' => $slide->overlay_color,
             'overlayOpacity' => $slide->overlay_opacity,
             'overlayGradient' => $slide->overlay_gradient,
             'overlayGradientIntensity' => $slide->overlay_gradient_intensity,
-            'overlayStyle' => $slide->overlay_style,
           ];
         })->toArray();
+        $baseData['slides'] = $heroSlides;
+        $baseData['hero_slides'] = $heroSlides;
         break;
 
       case 'slider':
-        $baseData['slider_slides'] = $this->sliderSlides->map(function ($slide) {
+        $sliderSlides = $this->sliderSlides->map(function ($slide) {
+          $backgroundImage = '';
+          if ($slide->background_image) {
+            if (str_starts_with($slide->background_image, 'http')) {
+              $backgroundImage = $slide->background_image;
+            } elseif (str_starts_with($slide->background_image, '/storage/')) {
+              $backgroundImage = $slide->background_image;
+            } else {
+              $backgroundImage = '/storage/' . $slide->background_image;
+            }
+          }
+
           return [
-            'id' => $slide->id,
+            'id' => (string) $slide->id,
             'title' => $slide->title,
             'subtitle' => $slide->subtitle,
             'description' => $slide->description,
             'buttonText' => $slide->button_text,
             'buttonLink' => $slide->button_link,
             'buttonLinkType' => $slide->button_link_type,
-            'buttonOpenInNewTab' => $slide->button_open_in_new_tab,
-            'backgroundImage' => $slide->background_image,
+            'buttonOpenInNewTab' => (bool) $slide->button_open_in_new_tab,
+            'backgroundImage' => $backgroundImage,
             'overlayColor' => $slide->overlay_color,
             'overlayOpacity' => $slide->overlay_opacity,
             'overlayGradient' => $slide->overlay_gradient,
             'overlayGradientIntensity' => $slide->overlay_gradient_intensity,
-            'overlayStyle' => $slide->overlay_style,
+            'sortOrder' => $slide->sort_order,
+            'isActive' => (bool) $slide->is_active,
           ];
         })->toArray();
+        $baseData['slider_slides'] = $sliderSlides;
         break;
 
       case 'form':
@@ -660,6 +686,11 @@ class SiteWidget extends Model
       'widget_id' => $this->id,
       'configs_created' => count($config),
     ]);
+
+    // Очищаем кеш виджетов для этого сайта
+    if ($this->site_id) {
+      Cache::forget("site_widgets_config_{$this->site_id}");
+    }
   }
 
   /**

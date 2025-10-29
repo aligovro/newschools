@@ -139,14 +139,28 @@ export const useWidgets = (
                 } else {
                     console.error('useWidgets: updateWidget failed', {
                         message: data.message,
+                        errors: data.errors,
                     });
                     setErrors([
                         data.message || 'Ошибка при обновлении виджета',
                     ]);
+                    // Пробрасываем ошибку дальше с полной информацией
+                    const errorToThrow = new Error(
+                        data.message || 'Ошибка при обновлении виджета',
+                    ) as any;
+                    errorToThrow.response = {
+                        data: {
+                            message: data.message,
+                            errors: data.errors || [],
+                        },
+                    };
+                    throw errorToThrow;
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Ошибка при обновлении виджета:', error);
                 setErrors(['Ошибка при обновлении виджета']);
+                // Пробрасываем ошибку дальше
+                throw error;
             } finally {
                 setIsLoading(false);
             }

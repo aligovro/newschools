@@ -11,6 +11,7 @@ interface SettingsContentProps {
         name: string;
         slug: string;
         description?: string;
+        favicon?: string;
         theme_config?: Record<string, unknown>;
         seo_config?: Record<string, unknown>;
         custom_settings?: Record<string, unknown>;
@@ -27,6 +28,7 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                         initialSettings={{
                             name: site.name,
                             description: site.description || '',
+                            favicon: (site as any).favicon || '',
                         }}
                     />
 

@@ -5,7 +5,11 @@ export const sitesApi = {
     // Сохранение основных настроек сайта
     saveBasicSettings: (
         siteId: number,
-        settings: { name: string; description?: string },
+        settings: {
+            name: string;
+            description?: string;
+            favicon?: string;
+        },
     ): Promise<{ success: boolean; message?: string }> =>
         apiClient
             .post<{

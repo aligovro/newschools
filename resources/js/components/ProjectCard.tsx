@@ -3,12 +3,19 @@ import { Link } from '@inertiajs/react';
 interface Project {
     id: number;
     title: string;
-    description: string;
-    target_amount: number;
-    collected_amount: number;
+    slug?: string;
+    description?: string;
+    target_amount_rubles?: number;
+    target_amount?: number;
+    collected_amount_rubles?: number;
+    collected_amount?: number;
     progress_percentage: number;
-    organization_name: string;
-    organization_address: string;
+    organization?: {
+        name: string;
+        slug?: string;
+    };
+    organization_name?: string;
+    organization_address?: string;
     image?: string;
 }
 
@@ -26,9 +33,20 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         }).format(amount);
     };
 
+    const targetAmount =
+        project.target_amount_rubles ?? project.target_amount ?? 0;
+    const collectedAmount =
+        project.collected_amount_rubles ?? project.collected_amount ?? 0;
+    const projectUrl = project.slug
+        ? `/project/${project.slug}`
+        : `/project/${project.id}`;
+    const organizationName =
+        project.organization?.name ?? project.organization_name ?? '';
+    const organizationAddress = project.organization_address ?? '';
+
     return (
         <div className="overflow-hidden rounded-xl bg-white shadow-lg transition-shadow duration-300 hover:shadow-xl">
-            <Link href={`/projects/${project.id}`} className="block">
+            <Link href={projectUrl} className="block">
                 {/* Project Image */}
                 <div className="relative h-48 bg-gradient-to-br from-green-400 to-blue-500">
                     {project.image ? (
@@ -58,12 +76,16 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                                 {project.description}
                             </p>
                         )}
-                        <div className="text-sm text-gray-500">
-                            {project.organization_name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                            {project.organization_address}
-                        </div>
+                        {organizationName && (
+                            <div className="text-sm text-gray-500">
+                                {organizationName}
+                            </div>
+                        )}
+                        {organizationAddress && (
+                            <div className="text-sm text-gray-500">
+                                {organizationAddress}
+                            </div>
+                        )}
                     </div>
 
                     {/* Progress Section */}
@@ -74,10 +96,10 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                         </div>
                         <div className="mb-2 flex justify-between font-semibold">
                             <span className="text-gray-900">
-                                {formatCurrency(project.target_amount)}
+                                {formatCurrency(targetAmount)}
                             </span>
                             <span className="text-green-600">
-                                {formatCurrency(project.collected_amount)}
+                                {formatCurrency(collectedAmount)}
                             </span>
                         </div>
 
@@ -94,9 +116,13 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
                     {/* Action Button */}
                     <div className="flex items-center justify-between">
-                        <button className="rounded-lg bg-green-600 px-6 py-2 font-medium text-white transition-colors hover:bg-green-700">
+                        <Link
+                            href={projectUrl}
+                            className="rounded-lg bg-green-600 px-6 py-2 font-medium text-white transition-colors hover:bg-green-700"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             Поддержать
-                        </button>
+                        </Link>
                         <div className="text-sm text-gray-500">
                             {project.progress_percentage}%
                         </div>

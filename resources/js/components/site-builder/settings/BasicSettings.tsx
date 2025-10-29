@@ -1,3 +1,4 @@
+import ImageUploader from '@/components/admin/settings/sites/ImageUploader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,13 +13,18 @@ interface BasicSettingsProps {
     initialSettings: {
         name: string;
         description: string;
+        favicon?: string;
     };
 }
 
 export const BasicSettings: React.FC<BasicSettingsProps> = React.memo(
     ({ siteId, initialSettings }) => {
         const { settings, isLoading, errors, updateSetting, saveSettings } =
-            useBasicSettings(siteId, initialSettings);
+            useBasicSettings(siteId, {
+                name: initialSettings.name,
+                description: initialSettings.description,
+                favicon: initialSettings.favicon || '',
+            });
 
         return (
             <Card>
@@ -71,6 +77,55 @@ export const BasicSettings: React.FC<BasicSettingsProps> = React.memo(
                             placeholder="Введите описание сайта"
                             rows={3}
                         />
+                    </div>
+
+                    <div>
+                        <Label>Иконка сайта (Favicon)</Label>
+                        <p className="mb-2 text-sm text-gray-500">
+                            Загрузите иконку для сайта. Рекомендуемый размер:
+                            32x32 пикселя
+                        </p>
+                        <ImageUploader
+                            onImageUpload={(file, serverUrl) => {
+                                // Используем URL с сервера, если есть, иначе blob URL
+                                if (serverUrl) {
+                                    updateSetting('favicon', serverUrl);
+                                } else {
+                                    const blobUrl = URL.createObjectURL(file);
+                                    updateSetting('favicon', blobUrl);
+                                }
+                            }}
+                            onImageCrop={(url) => {
+                                updateSetting('favicon', url);
+                            }}
+                            onImageDelete={() => {
+                                updateSetting('favicon', '');
+                            }}
+                            className="mt-2"
+                            widgetSlug="favicon"
+                            imageType="image"
+                            enableServerUpload={true}
+                            existingImageUrl={settings.favicon}
+                            hidePreview={true}
+                        />
+                        {settings.favicon && (
+                            <div className="mt-2 flex items-center gap-2">
+                                <img
+                                    src={settings.favicon}
+                                    alt="Favicon"
+                                    className="h-8 w-8 rounded"
+                                />
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        updateSetting('favicon', '');
+                                    }}
+                                >
+                                    Удалить
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>

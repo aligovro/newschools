@@ -31,9 +31,11 @@ export const isCustomWidget = (slug: string): boolean => {
         'auth_menu',
         'image',
         'donation',
+        'projects',
         'region_rating',
         'donations_list',
         'referral_leaderboard',
+        'alumni_stats',
         'html',
     ];
     return customWidgets.includes(slug);

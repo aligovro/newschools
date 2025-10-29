@@ -1,3 +1,4 @@
+export { AlumniStatsWidget } from './AlumniStatsWidget';
 export { DonationsListWidget } from './DonationsListWidget';
 export { DonationWidget } from './DonationWidget';
 export { FormWidget } from './FormWidget';

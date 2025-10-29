@@ -57,6 +57,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                 'autoplayDelay',
                 config.autoplayDelay || 5000,
             ),
+            loop: getConfigValue(configs, 'loop', config.loop || false),
             showDots: getConfigValue(
                 configs,
                 'showDots',
@@ -180,6 +181,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
         animation = 'fade',
         autoplay = true,
         autoplayDelay = 5000,
+        loop = false,
         showDots = true,
         showArrows = true,
         slides = [],
@@ -252,6 +254,10 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
 
     const handleAutoplayDelayChange = (newDelay: number) => {
         setLocalConfig((prev) => ({ ...prev, autoplayDelay: newDelay }));
+    };
+
+    const handleLoopChange = (newLoop: boolean) => {
+        setLocalConfig((prev) => ({ ...prev, loop: newLoop }));
     };
 
     const handleShowDotsChange = (newShow: boolean) => {
@@ -437,6 +443,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                                                 animation={animation}
                                                 autoplay={autoplay}
                                                 autoplayDelay={autoplayDelay}
+                                                loop={loop}
                                                 showDots={showDots}
                                                 showArrows={showArrows}
                                                 css_class={
@@ -455,6 +462,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                                                 onAutoplayDelayChange={
                                                     handleAutoplayDelayChange
                                                 }
+                                                onLoopChange={handleLoopChange}
                                                 onShowDotsChange={
                                                     handleShowDotsChange
                                                 }
