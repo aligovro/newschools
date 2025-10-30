@@ -105,27 +105,49 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                     <PaymentSettings
                         siteId={site.id}
                         initialSettings={{
+                            // Новый источник: site.payment_settings
                             gateway:
+                                (site as any)?.payment_settings?.gateway ??
                                 (site.custom_settings as any)?.payments
-                                    ?.gateway ?? 'yookassa',
+                                    ?.gateway ??
+                                'yookassa',
+                            enabled_gateways:
+                                (site as any)?.payment_settings
+                                    ?.enabled_gateways ??
+                                (site.custom_settings as any)?.payments
+                                    ?.enabled_gateways,
                             credentials:
+                                (site as any)?.payment_settings?.credentials ??
                                 (site.custom_settings as any)?.payments
-                                    ?.credentials ?? {},
+                                    ?.credentials ??
+                                {},
                             options:
+                                (site as any)?.payment_settings?.options ??
                                 (site.custom_settings as any)?.payments
-                                    ?.options ?? {},
+                                    ?.options ??
+                                {},
                             donation_min_amount:
+                                (site as any)?.payment_settings
+                                    ?.donation_min_amount ??
                                 (site.custom_settings as any)?.payments
-                                    ?.donation_min_amount ?? 100,
+                                    ?.donation_min_amount ??
+                                100,
                             donation_max_amount:
+                                (site as any)?.payment_settings
+                                    ?.donation_max_amount ??
                                 (site.custom_settings as any)?.payments
-                                    ?.donation_max_amount ?? 0,
+                                    ?.donation_max_amount ??
+                                0,
                             currency:
+                                (site as any)?.payment_settings?.currency ??
                                 (site.custom_settings as any)?.payments
-                                    ?.currency ?? 'RUB',
+                                    ?.currency ??
+                                'RUB',
                             test_mode:
+                                (site as any)?.payment_settings?.test_mode ??
                                 (site.custom_settings as any)?.payments
-                                    ?.test_mode ?? true,
+                                    ?.test_mode ??
+                                true,
                         }}
                     />
                 </div>

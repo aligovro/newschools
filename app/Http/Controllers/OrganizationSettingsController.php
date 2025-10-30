@@ -11,279 +11,304 @@ use Inertia\Inertia;
 
 class OrganizationSettingsController extends Controller
 {
-  protected OrganizationSettingsService $settingsService;
+    protected OrganizationSettingsService $settingsService;
 
-  public function __construct(OrganizationSettingsService $settingsService)
-  {
-    $this->settingsService = $settingsService;
-  }
-
-  /**
-   * Показать настройки организации
-   */
-  public function index(Organization $organization)
-  {
-    $this->authorize('manage', $organization);
-
-    $settings = $this->settingsService->getSettings($organization);
-    $organizationTypes = $this->settingsService->getOrganizationTypes();
-
-    return Inertia::render('organization/admin/settings/SettingsPage', [
-      'organization' => (new OrganizationResource($organization))->toArray(request()),
-      'settings' => $settings,
-      'organizationTypes' => $organizationTypes,
-    ]);
-  }
-
-  /**
-   * Обновить общие настройки
-   */
-  public function updateGeneral(Request $request, Organization $organization)
-  {
-    $this->authorize('manage', $organization);
-
-    $validator = Validator::make($request->all(), [
-      'theme' => 'required|string|in:default,modern,classic,minimal',
-      'primary_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
-      'secondary_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
-      'accent_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
-      'font_family' => 'required|string|in:Inter,Roboto,Open Sans,Lato,Source Sans Pro',
-      'dark_mode' => 'boolean',
-    ]);
-
-    if ($validator->fails()) {
-      return redirect()->back()
-        ->withErrors($validator)
-        ->withInput();
+    public function __construct(OrganizationSettingsService $settingsService)
+    {
+        $this->settingsService = $settingsService;
     }
 
-    $this->settingsService->updateSettings($organization, $request->only([
-      'theme',
-      'primary_color',
-      'secondary_color',
-      'accent_color',
-      'font_family',
-      'dark_mode'
-    ]));
+    /**
+     * Показать настройки организации
+     */
+    public function index(Organization $organization)
+    {
+        $this->authorize('manage', $organization);
 
-    return redirect()->back()->with('success', 'Общие настройки обновлены');
-  }
+        $settings = $this->settingsService->getSettings($organization);
+        $organizationTypes = $this->settingsService->getOrganizationTypes();
 
-  /**
-   * Обновить настройки сайта
-   */
-  public function updateSiteSettings(Request $request, Organization $organization)
-  {
-    $this->authorize('manage', $organization);
-
-    $validator = Validator::make($request->all(), [
-      'layout_config' => 'array',
-      'advanced_layout_config' => 'array',
-      'maintenance_mode' => 'boolean',
-      'maintenance_message' => 'nullable|string|max:500',
-    ]);
-
-    if ($validator->fails()) {
-      return redirect()->back()
-        ->withErrors($validator)
-        ->withInput();
+        return Inertia::render('organization/admin/settings/SettingsPage', [
+            'organization' => (new OrganizationResource($organization))->toArray(request()),
+            'settings' => $settings,
+            'organizationTypes' => $organizationTypes,
+        ]);
     }
 
-    $this->settingsService->updateSettings($organization, $request->only([
-      'layout_config',
-      'advanced_layout_config',
-      'maintenance_mode',
-      'maintenance_message'
-    ]));
+    /**
+     * Обновить общие настройки
+     */
+    public function updateGeneral(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
 
-    return redirect()->back()->with('success', 'Настройки сайта обновлены');
-  }
+        $validator = Validator::make($request->all(), [
+            'theme' => 'required|string|in:default,modern,classic,minimal',
+            'primary_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'secondary_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'accent_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'font_family' => 'required|string|in:Inter,Roboto,Open Sans,Lato,Source Sans Pro',
+            'dark_mode' => 'boolean',
+        ]);
 
-  /**
-   * Обновить настройки платежей
-   */
-  public function updatePaymentSettings(Request $request, Organization $organization)
-  {
-    $this->authorize('manage', $organization);
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-    $validator = Validator::make($request->all(), [
-      'payment_settings.enabled_methods' => 'array',
-      'payment_settings.min_amount' => 'integer|min:1',
-      'payment_settings.max_amount' => 'integer|min:1',
-      'payment_settings.currency' => 'string|in:RUB,USD,EUR',
-      'payment_settings.auto_approve' => 'boolean',
-      'payment_settings.commission_percentage' => 'numeric|min:0|max:100',
-      'payment_settings.test_mode' => 'boolean',
-    ]);
+        $this->settingsService->updateSettings($organization, $request->only([
+            'theme',
+            'primary_color',
+            'secondary_color',
+            'accent_color',
+            'font_family',
+            'dark_mode'
+        ]));
 
-    if ($validator->fails()) {
-      return redirect()->back()
-        ->withErrors($validator)
-        ->withInput();
+        return redirect()->back()->with('success', 'Общие настройки обновлены');
     }
 
-    $paymentSettings = $request->get('payment_settings', []);
-    $this->settingsService->updateSettings($organization, [
-      'payment_settings' => $paymentSettings
-    ]);
+    /**
+     * Обновить настройки сайта
+     */
+    public function updateSiteSettings(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
 
-    return redirect()->back()->with('success', 'Настройки платежей обновлены');
-  }
+        $validator = Validator::make($request->all(), [
+            'layout_config' => 'array',
+            'advanced_layout_config' => 'array',
+            'maintenance_mode' => 'boolean',
+            'maintenance_message' => 'nullable|string|max:500',
+        ]);
 
-  /**
-   * Обновить настройки уведомлений
-   */
-  public function updateNotificationSettings(Request $request, Organization $organization)
-  {
-    $this->authorize('manage', $organization);
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-    $validator = Validator::make($request->all(), [
-      'notification_settings.email_notifications' => 'boolean',
-      'notification_settings.telegram_notifications' => 'boolean',
-      'notification_settings.donation_notifications' => 'boolean',
-      'notification_settings.member_registration_notifications' => 'boolean',
-      'notification_settings.project_update_notifications' => 'boolean',
-      'notification_settings.news_notifications' => 'boolean',
-      'notification_settings.sms_notifications' => 'boolean',
-      'notification_settings.push_notifications' => 'boolean',
-    ]);
+        $this->settingsService->updateSettings($organization, $request->only([
+            'layout_config',
+            'advanced_layout_config',
+            'maintenance_mode',
+            'maintenance_message'
+        ]));
 
-    if ($validator->fails()) {
-      return redirect()->back()
-        ->withErrors($validator)
-        ->withInput();
+        return redirect()->back()->with('success', 'Настройки сайта обновлены');
     }
 
-    $notificationSettings = $request->get('notification_settings', []);
-    $this->settingsService->updateSettings($organization, [
-      'notification_settings' => $notificationSettings
-    ]);
+    /**
+     * Обновить настройки платежей
+     */
+    public function updatePaymentSettings(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
 
-    return redirect()->back()->with('success', 'Настройки уведомлений обновлены');
-  }
+        $validator = Validator::make($request->all(), [
+            // Новый унифицированный формат
+            'payment_settings.enabled_gateways' => 'array',
+            'payment_settings.enabled_gateways.*' => 'in:yookassa,tinkoff,sbp',
+            'payment_settings.credentials' => 'array',
+            'payment_settings.credentials.yookassa' => 'array',
+            'payment_settings.credentials.tinkoff' => 'array',
+            'payment_settings.credentials.sbp' => 'array',
+            'payment_settings.donation_min_amount' => 'integer|min:0',
+            'payment_settings.donation_max_amount' => 'integer|min:0',
+            'payment_settings.currency' => 'string|in:RUB,USD,EUR',
+            'payment_settings.test_mode' => 'boolean',
 
-  /**
-   * Обновить настройки интеграций
-   */
-  public function updateIntegrationSettings(Request $request, Organization $organization)
-  {
-    $this->authorize('manage', $organization);
+            // Легаси формат (для обратной совместимости)
+            'payment_settings.enabled_methods' => 'array',
+            'payment_settings.min_amount' => 'integer|min:0',
+            'payment_settings.max_amount' => 'integer|min:0',
+            'payment_settings.auto_approve' => 'boolean',
+            'payment_settings.commission_percentage' => 'numeric|min:0|max:100',
+        ]);
 
-    $validator = Validator::make($request->all(), [
-      'integration_settings.yookassa_test_mode' => 'boolean',
-      'integration_settings.telegram_bot_token' => 'nullable|string',
-      'integration_settings.telegram_chat_id' => 'nullable|string',
-      'analytics_settings.google_analytics_id' => 'nullable|string',
-      'analytics_settings.yandex_metrica_id' => 'nullable|string',
-      'analytics_settings.facebook_pixel_id' => 'nullable|string',
-    ]);
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-    if ($validator->fails()) {
-      return redirect()->back()
-        ->withErrors($validator)
-        ->withInput();
+        $paymentSettings = $request->get('payment_settings', []);
+        // Нормализация к единому формату
+        if (isset($paymentSettings['enabled_methods']) && !isset($paymentSettings['enabled_gateways'])) {
+            $paymentSettings['enabled_gateways'] = $paymentSettings['enabled_methods'];
+            unset($paymentSettings['enabled_methods']);
+        }
+        if (isset($paymentSettings['min_amount']) && !isset($paymentSettings['donation_min_amount'])) {
+            $paymentSettings['donation_min_amount'] = (int) $paymentSettings['min_amount'];
+            unset($paymentSettings['min_amount']);
+        }
+        if (isset($paymentSettings['max_amount']) && !isset($paymentSettings['donation_max_amount'])) {
+            $paymentSettings['donation_max_amount'] = (int) $paymentSettings['max_amount'];
+            unset($paymentSettings['max_amount']);
+        }
+
+        $this->settingsService->updateSettings($organization, [
+            'payment_settings' => $paymentSettings
+        ]);
+
+        return redirect()->back()->with('success', 'Настройки платежей обновлены');
     }
 
-    $integrationSettings = $request->get('integration_settings', []);
-    $analyticsSettings = $request->get('analytics_settings', []);
+    /**
+     * Обновить настройки уведомлений
+     */
+    public function updateNotificationSettings(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
 
-    $this->settingsService->updateSettings($organization, [
-      'integration_settings' => $integrationSettings,
-      'analytics_settings' => $analyticsSettings,
-    ]);
+        $validator = Validator::make($request->all(), [
+            'notification_settings.email_notifications' => 'boolean',
+            'notification_settings.telegram_notifications' => 'boolean',
+            'notification_settings.donation_notifications' => 'boolean',
+            'notification_settings.member_registration_notifications' => 'boolean',
+            'notification_settings.project_update_notifications' => 'boolean',
+            'notification_settings.news_notifications' => 'boolean',
+            'notification_settings.sms_notifications' => 'boolean',
+            'notification_settings.push_notifications' => 'boolean',
+        ]);
 
-    return redirect()->back()->with('success', 'Настройки интеграций обновлены');
-  }
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-  /**
-   * Тестировать Telegram бота
-   */
-  public function testTelegramBot(Request $request, Organization $organization)
-  {
-    $this->authorize('manage', $organization);
+        $notificationSettings = $request->get('notification_settings', []);
+        $this->settingsService->updateSettings($organization, [
+            'notification_settings' => $notificationSettings
+        ]);
 
-    $validator = Validator::make($request->all(), [
-      'telegram_bot_token' => 'required|string',
-      'telegram_chat_id' => 'required|string',
-    ]);
-
-    if ($validator->fails()) {
-      return response()->json([
-        'success' => false,
-        'message' => 'Неверные данные для тестирования',
-        'errors' => $validator->errors()
-      ], 422);
+        return redirect()->back()->with('success', 'Настройки уведомлений обновлены');
     }
 
-    // Здесь должна быть логика тестирования Telegram бота
-    // Пока возвращаем успешный результат
-    return response()->json([
-      'success' => true,
-      'message' => 'Telegram бот успешно протестирован'
-    ]);
-  }
+    /**
+     * Обновить настройки интеграций
+     */
+    public function updateIntegrationSettings(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
 
-  /**
-   * Экспортировать настройки
-   */
-  public function exportSettings(Organization $organization)
-  {
-    $this->authorize('manage', $organization);
+        $validator = Validator::make($request->all(), [
+            'integration_settings.yookassa_test_mode' => 'boolean',
+            'integration_settings.telegram_bot_token' => 'nullable|string',
+            'integration_settings.telegram_chat_id' => 'nullable|string',
+            'analytics_settings.google_analytics_id' => 'nullable|string',
+            'analytics_settings.yandex_metrica_id' => 'nullable|string',
+            'analytics_settings.facebook_pixel_id' => 'nullable|string',
+        ]);
 
-    $settings = $this->settingsService->getSettings($organization);
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-    $filename = "organization_settings_{$organization->slug}_" . date('Y-m-d_H-i-s') . '.json';
+        $integrationSettings = $request->get('integration_settings', []);
+        $analyticsSettings = $request->get('analytics_settings', []);
 
-    return response()->json($settings)
-      ->header('Content-Disposition', "attachment; filename={$filename}")
-      ->header('Content-Type', 'application/json');
-  }
+        $this->settingsService->updateSettings($organization, [
+            'integration_settings' => $integrationSettings,
+            'analytics_settings' => $analyticsSettings,
+        ]);
 
-  /**
-   * Импортировать настройки
-   */
-  public function importSettings(Request $request, Organization $organization)
-  {
-    $this->authorize('manage', $organization);
-
-    $validator = Validator::make($request->all(), [
-      'settings_file' => 'required|file|mimes:json|max:1024',
-    ]);
-
-    if ($validator->fails()) {
-      return redirect()->back()
-        ->withErrors($validator)
-        ->withInput();
+        return redirect()->back()->with('success', 'Настройки интеграций обновлены');
     }
 
-    $file = $request->file('settings_file');
-    $content = file_get_contents($file->getPathname());
-    $settings = json_decode($content, true);
+    /**
+     * Тестировать Telegram бота
+     */
+    public function testTelegramBot(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
 
-    if (!$settings || !is_array($settings)) {
-      return redirect()->back()
-        ->with('error', 'Неверный формат файла настроек');
+        $validator = Validator::make($request->all(), [
+            'telegram_bot_token' => 'required|string',
+            'telegram_chat_id' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Неверные данные для тестирования',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Здесь должна быть логика тестирования Telegram бота
+        // Пока возвращаем успешный результат
+        return response()->json([
+            'success' => true,
+            'message' => 'Telegram бот успешно протестирован'
+        ]);
     }
 
-    // Валидируем импортируемые настройки
-    $this->settingsService->updateSettings($organization, $settings);
+    /**
+     * Экспортировать настройки
+     */
+    public function exportSettings(Organization $organization)
+    {
+        $this->authorize('manage', $organization);
 
-    return redirect()->back()->with('success', 'Настройки успешно импортированы');
-  }
+        $settings = $this->settingsService->getSettings($organization);
 
-  /**
-   * Сбросить настройки к значениям по умолчанию
-   */
-  public function resetToDefaults(Organization $organization)
-  {
-    $this->authorize('manage', $organization);
+        $filename = "organization_settings_{$organization->slug}_" . date('Y-m-d_H-i-s') . '.json';
 
-    // Удаляем текущие настройки
-    $organization->settings()->delete();
+        return response()->json($settings)
+            ->header('Content-Disposition', "attachment; filename={$filename}")
+            ->header('Content-Type', 'application/json');
+    }
 
-    // Очищаем кеш
-    $this->settingsService->clearCache($organization);
+    /**
+     * Импортировать настройки
+     */
+    public function importSettings(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
 
-    return redirect()->back()->with('success', 'Настройки сброшены к значениям по умолчанию');
-  }
+        $validator = Validator::make($request->all(), [
+            'settings_file' => 'required|file|mimes:json|max:1024',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $file = $request->file('settings_file');
+        $content = file_get_contents($file->getPathname());
+        $settings = json_decode($content, true);
+
+        if (!$settings || !is_array($settings)) {
+            return redirect()->back()
+                ->with('error', 'Неверный формат файла настроек');
+        }
+
+        // Валидируем импортируемые настройки
+        $this->settingsService->updateSettings($organization, $settings);
+
+        return redirect()->back()->with('success', 'Настройки успешно импортированы');
+    }
+
+    /**
+     * Сбросить настройки к значениям по умолчанию
+     */
+    public function resetToDefaults(Organization $organization)
+    {
+        $this->authorize('manage', $organization);
+
+        // Удаляем текущие настройки
+        $organization->settings()->delete();
+
+        // Очищаем кеш
+        $this->settingsService->clearCache($organization);
+
+        return redirect()->back()->with('success', 'Настройки сброшены к значениям по умолчанию');
+    }
 }

@@ -41,6 +41,7 @@ export interface Project {
 
 export interface PaymentSettings {
     gateway?: 'sbp' | 'yookassa' | 'tinkoff';
+    enabled_gateways?: Array<'sbp' | 'yookassa' | 'tinkoff'>;
     credentials?: Record<string, string>;
     options?: Record<string, unknown>;
     donation_min_amount?: number;

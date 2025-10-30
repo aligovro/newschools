@@ -127,19 +127,23 @@ class OrganizationController extends Controller
                 ['value' => 'kindergarten', 'label' => 'Детский сад', 'description' => 'Дошкольное образовательное учреждение'],
                 ['value' => 'other', 'label' => 'Другое', 'description' => 'Иной тип организации'],
             ],
-            // Загружаем только первые 20 регионов для начальной загрузки
-            'regions' => \App\Models\Region::select('id', 'name', 'code')->orderBy('name')->limit(20)->get(),
+            // Загружаем только первые 20 регионов для начальной загрузки (с координатами)
+            'regions' => \App\Models\Region::select('id', 'name', 'code', 'latitude', 'longitude')->orderBy('name')->limit(20)->get(),
             'cities' => $organization->region ?
-                \App\Models\City::where('region_id', $organization->region->id)->select('id', 'name', 'region_id')->orderBy('name')->get() :
+                \App\Models\City::where('region_id', $organization->region->id)->select('id', 'name', 'region_id', 'latitude', 'longitude')->orderBy('name')->get() :
                 [],
             'settlements' => $organization->city ?
                 \App\Models\Settlement::where('city_id', $organization->city->id)->select('id', 'name', 'city_id')->orderBy('name')->get() :
                 [],
         ];
 
+        // Готовим настройки организации (для предзаполнения платежных настроек и т.п.)
+        $orgSettings = app(\App\Services\OrganizationSettingsService::class)->getSettings($organization);
+
         return Inertia::render('organizations/OrganizationEditPage', [
             'organization' => (new OrganizationResource($organization))->toArray(request()),
             'referenceData' => $referenceData,
+            'organizationSettings' => $orgSettings,
         ]);
     }
 
@@ -187,9 +191,12 @@ class OrganizationController extends Controller
             'website',
             'region_id',
             'city_id',
-            'settlement_id',
             'founded_at',
-            'is_public'
+            'is_public',
+            'admin_user_id',
+            'latitude',
+            'longitude',
+            'city_name'
         ]);
 
         // Обрабатываем логотип (может быть файлом или путем)
@@ -205,6 +212,30 @@ class OrganizationController extends Controller
 
         // Преобразуем is_public в boolean
         $updateData['is_public'] = $updateData['is_public'] === '1' || $updateData['is_public'] === true;
+
+        // Преобразуем latitude и longitude в числа (если переданы)
+        if (isset($updateData['latitude']) && $updateData['latitude'] !== null && $updateData['latitude'] !== '') {
+            $updateData['latitude'] = (float) $updateData['latitude'];
+        } else {
+            $updateData['latitude'] = null;
+        }
+        if (isset($updateData['longitude']) && $updateData['longitude'] !== null && $updateData['longitude'] !== '') {
+            $updateData['longitude'] = (float) $updateData['longitude'];
+        } else {
+            $updateData['longitude'] = null;
+        }
+
+        // Очищаем пустые строки для city_name
+        if (isset($updateData['city_name']) && $updateData['city_name'] === '') {
+            unset($updateData['city_name']);
+        }
+
+        // Преобразуем admin_user_id в число или null
+        if (isset($updateData['admin_user_id']) && $updateData['admin_user_id'] !== null && $updateData['admin_user_id'] !== '') {
+            $updateData['admin_user_id'] = (int) $updateData['admin_user_id'];
+        } else {
+            $updateData['admin_user_id'] = null;
+        }
 
         $organization->update($updateData);
 
@@ -229,7 +260,39 @@ class OrganizationController extends Controller
             $organization->update(['images' => $finalImages]);
         }
 
-        return redirect()->route('organizations.index')->with('success', 'Организация успешно обновлена');
+        // Сохраняем платежные настройки, если пришли из формы организации
+        $paymentSettingsRaw = $request->input('payment_settings');
+        if ($paymentSettingsRaw) {
+            // Если пришло как JSON строка (из FormData) - парсим
+            if (is_string($paymentSettingsRaw)) {
+                $paymentSettings = json_decode($paymentSettingsRaw, true);
+            } else {
+                $paymentSettings = $paymentSettingsRaw;
+            }
+
+            if (is_array($paymentSettings)) {
+                // Нормализация легаси ключей к единому формату
+                if (isset($paymentSettings['enabled_methods']) && !isset($paymentSettings['enabled_gateways'])) {
+                    $paymentSettings['enabled_gateways'] = $paymentSettings['enabled_methods'];
+                    unset($paymentSettings['enabled_methods']);
+                }
+                if (isset($paymentSettings['min_amount']) && !isset($paymentSettings['donation_min_amount'])) {
+                    $paymentSettings['donation_min_amount'] = (int) $paymentSettings['min_amount'];
+                    unset($paymentSettings['min_amount']);
+                }
+                if (isset($paymentSettings['max_amount']) && !isset($paymentSettings['donation_max_amount'])) {
+                    $paymentSettings['donation_max_amount'] = (int) $paymentSettings['max_amount'];
+                    unset($paymentSettings['max_amount']);
+                }
+
+                app(\App\Services\OrganizationSettingsService::class)->updateSettings($organization, [
+                    'payment_settings' => $paymentSettings,
+                ]);
+            }
+        }
+
+        // Редирект обратно на страницу редактирования с сообщением об успехе
+        return redirect()->route('organizations.edit', $organization)->with('success', 'Организация успешно обновлена');
     }
 
     public function destroy(Organization $organization)

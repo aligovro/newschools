@@ -176,11 +176,17 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
             }
 
             // Загружаем методы оплаты
-            const paymentMethods =
+            const methods =
                 await widgetsSystemApi.getDonationWidgetPaymentMethods(
                     organizationId,
                 );
-            setPaymentMethods(paymentMethods || []);
+            setPaymentMethods(methods || []);
+            // Устанавливаем метод оплаты по умолчанию — первый доступный
+            if ((methods || []).length > 0) {
+                setSelectedPaymentMethod(
+                    (prev) => prev || String(methods[0].id),
+                );
+            }
         } catch (err: unknown) {
             console.error('Error loading widget data:', err);
             setError('Ошибка загрузки данных виджета');
@@ -363,6 +369,373 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         gradient:
             'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white',
     }[button_style];
+
+    // Утилита: метаданные способов оплаты для отображения
+    const getPaymentMeta = (m: ApiPaymentMethod) => {
+        const slug = (m.type || m.name || '').toLowerCase();
+        if (slug.includes('sbp') || slug === 'sbp' || slug.includes('qr')) {
+            return {
+                title: 'По QR коду через СБП',
+                description: 'Через приложение вашего банка',
+                icon: <QrCode className="h-5 w-5 text-gray-400" />,
+            };
+        }
+        if (slug.includes('sber')) {
+            return {
+                title: 'Оплата через SberPay',
+                description: 'В приложении банка',
+                icon: <Smartphone className="h-5 w-5 text-gray-400" />,
+            };
+        }
+        if (
+            slug.includes('tinkoff') ||
+            slug.includes('tpay') ||
+            slug.includes('t-pay')
+        ) {
+            return {
+                title: 'Оплата через T‑Pay',
+                description: 'В приложении банка',
+                icon: <Smartphone className="h-5 w-5 text-gray-400" />,
+            };
+        }
+        // default: банковская карта
+        return {
+            title: 'Банковской картой',
+            description: 'Visa, Mastercard, МИР и другие',
+            icon: <CreditCard className="h-5 w-5 text-gray-400" />,
+        };
+    };
+
+    // Рендер публичной версии (используем и в предпросмотре)
+    const renderPublic = () => {
+    return (
+        <div
+            className={`donation-widget ${borderRadiusClass} ${shadowClass} border bg-white`}
+        >
+            <div className="p-6">
+                {/* Заголовок */}
+                <div className="mb-6 text-center">
+                    <h3 className="mb-2 text-2xl font-bold">{title}</h3>
+                    {description && (
+                            <p className="text-sm text-gray-600">
+                                {description}
+                            </p>
+                    )}
+                </div>
+
+                {/* Прогресс сбора */}
+                {show_progress && fundraiser && (
+                    <div className="mb-6 space-y-2">
+                        {show_target_amount && (
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">
+                                    Необходимо
+                                </span>
+                                <span className="font-semibold">
+                                    {fundraiser.target_amount.toLocaleString(
+                                        'ru-RU',
+                                    )}{' '}
+                                    {CURRENCY_SYMBOLS[currency]}
+                                </span>
+                            </div>
+                        )}
+                        {show_collected_amount && (
+                            <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                        Собрали
+                                    </span>
+                                <span className="font-semibold text-green-600">
+                                    {fundraiser.collected_amount.toLocaleString(
+                                        'ru-RU',
+                                    )}{' '}
+                                    {CURRENCY_SYMBOLS[currency]}
+                                </span>
+                            </div>
+                        )}
+                        <Progress
+                            value={fundraiser.progress_percentage}
+                            className="h-2"
+                        />
+                    </div>
+                )}
+
+                {/* Форма пожертвования */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Имя донора */}
+                    {!isAnonymous && require_name && (
+                        <div>
+                            <Label htmlFor="donor_name">Ваше имя</Label>
+                            <Input
+                                id="donor_name"
+                                value={donorName}
+                                    onChange={(e) =>
+                                        setDonorName(e.target.value)
+                                    }
+                                placeholder="Александр"
+                                required={require_name}
+                            />
+                        </div>
+                    )}
+
+                    {/* Анонимное пожертвование */}
+                    {allow_anonymous && (
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="is_anonymous"
+                                checked={isAnonymous}
+                                onCheckedChange={(checked) =>
+                                    setIsAnonymous(checked as boolean)
+                                }
+                            />
+                                <Label
+                                    htmlFor="is_anonymous"
+                                    className="text-sm"
+                                >
+                                Анонимное пожертвование
+                            </Label>
+                        </div>
+                    )}
+
+                    {/* Сумма */}
+                    <div>
+                        <Label htmlFor="amount">Сумма</Label>
+                        <Input
+                            id="amount"
+                            type="number"
+                            value={amount}
+                            onChange={(e) =>
+                                setAmount(parseInt(e.target.value) || 0)
+                            }
+                            min={localConfig.min_amount || 1}
+                            max={localConfig.max_amount || undefined}
+                            required
+                        />
+                    </div>
+
+                    {/* Предустановленные суммы */}
+                    <div className="grid grid-cols-4 gap-2">
+                        {preset_amounts.map((presetAmount) => (
+                            <button
+                                key={presetAmount}
+                                type="button"
+                                onClick={() => setAmount(presetAmount)}
+                                className={`px-4 py-2 ${borderRadiusClass} border transition-colors ${
+                                    amount === presetAmount
+                                        ? 'border-blue-600 bg-blue-600 text-white'
+                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                }`}
+                            >
+                                {presetAmount} {CURRENCY_SYMBOLS[currency]}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Регулярные платежи */}
+                    {allow_recurring && (
+                        <div className="space-y-3 border-t pt-4">
+                            <div className="flex gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsRecurring(false)}
+                                    className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
+                                        !isRecurring
+                                            ? 'border-blue-600 bg-blue-600 text-white'
+                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    Единоразово
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsRecurring(true)}
+                                    className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
+                                        isRecurring
+                                            ? 'border-blue-600 bg-blue-600 text-white'
+                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    Регулярно
+                                </button>
+                            </div>
+
+                            {isRecurring && (
+                                <>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {recurring_periods.map((period) => (
+                                            <button
+                                                key={period}
+                                                type="button"
+                                                onClick={() =>
+                                                    setRecurringPeriod(
+                                                        period as
+                                                            | 'daily'
+                                                            | 'weekly'
+                                                            | 'monthly',
+                                                    )
+                                                }
+                                                className={`px-3 py-2 text-sm ${borderRadiusClass} border transition-colors ${
+                                                        recurringPeriod ===
+                                                        period
+                                                        ? 'border-blue-600 bg-blue-600 text-white'
+                                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {
+                                                    RECURRING_PERIOD_LABELS[
+                                                        period as keyof typeof RECURRING_PERIOD_LABELS
+                                                    ]
+                                                }
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox
+                                            id="agreed_to_recurring"
+                                            checked={agreedToRecurring}
+                                            onCheckedChange={(checked) =>
+                                                setAgreedToRecurring(
+                                                    checked as boolean,
+                                                )
+                                            }
+                                            required={isRecurring}
+                                        />
+                                        <Label
+                                            htmlFor="agreed_to_recurring"
+                                            className="text-xs text-gray-600"
+                                        >
+                                                Я согласен на подписку на
+                                                платежи на сумму {amount}{' '}
+                                            {CURRENCY_SYMBOLS[currency]}.
+                                            Подписка будет списываться{' '}
+                                            {
+                                                RECURRING_PERIOD_LABELS[
+                                                    recurringPeriod
+                                                ]
+                                            }
+                                        </Label>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                        {/* Способы оплаты - чекбоксы с иконками, одиночный выбор */}
+                    <div className="border-t pt-4">
+                        <Label className="mb-3 block">Способ оплаты</Label>
+                        <div className="space-y-2">
+                            {paymentMethods.length > 0 ? (
+                                    paymentMethods.map((method) => {
+                                        const meta = getPaymentMeta(method);
+                                        const checked =
+                                            selectedPaymentMethod ===
+                                            method.id.toString();
+                                        return (
+                                    <label
+                                        key={method.id}
+                                        className={`flex items-center gap-3 border p-3 ${borderRadiusClass} cursor-pointer transition-colors ${
+                                                    checked
+                                                ? 'border-blue-600 bg-blue-50'
+                                                : 'border-gray-300 bg-white hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <input
+                                                    type="checkbox"
+                                                    role="checkbox"
+                                                    aria-checked={checked}
+                                                    checked={checked}
+                                                    onChange={() =>
+                                                setSelectedPaymentMethod(
+                                                            method.id.toString(),
+                                                )
+                                            }
+                                            className="text-blue-600"
+                                        />
+                                        <div className="flex-1">
+                                            <div className="font-medium">
+                                                        {meta.title}
+                                            </div>
+                                                <div className="text-xs text-gray-600">
+                                                        {meta.description}
+                                                </div>
+                                        </div>
+                                                {meta.icon}
+                                    </label>
+                                        );
+                                    })
+                            ) : (
+                                <div className="py-4 text-center text-gray-500">
+                                    Загрузка способов оплаты...
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Политика */}
+                    <div className="flex items-start space-x-2 border-t pt-4">
+                        <Checkbox
+                            id="agreed_to_policy"
+                            checked={agreedToPolicy}
+                            onCheckedChange={(checked) =>
+                                setAgreedToPolicy(checked as boolean)
+                            }
+                            required
+                        />
+                        <Label
+                            htmlFor="agreed_to_policy"
+                            className="text-xs text-gray-600"
+                        >
+                            Принимаю{' '}
+                            <a
+                                href="/policy/"
+                                target="_blank"
+                                className="text-blue-600 underline"
+                            >
+                                условия обработки
+                            </a>{' '}
+                            персональных данных
+                        </Label>
+                    </div>
+
+                        {/* Сообщения */}
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                    {success && (
+                        <Alert>
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <AlertDescription className="text-green-600">
+                                {success}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                        {/* Кнопка */}
+                    <button
+                        type="submit"
+                        disabled={isProcessing}
+                        className={`w-full px-6 py-3 ${borderRadiusClass} ${buttonStyleClass} flex items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                        {isProcessing ? (
+                            <>
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                                Обработка...
+                            </>
+                        ) : (
+                            <>
+                                <Heart className="h-5 w-5" />
+                                {button_text}
+                            </>
+                        )}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+    };
 
     // Режим редактирования
     if (isEditable) {
@@ -586,26 +959,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                             <h4 className="mb-4 text-sm font-semibold text-gray-700">
                                 Предварительный просмотр
                             </h4>
-                            <div
-                                className={`${borderRadiusClass} ${shadowClass} border bg-white p-6`}
-                            >
-                                <div className="text-center">
-                                    <h3 className="mb-2 text-2xl font-bold">
-                                        {title}
-                                    </h3>
-                                    {description && (
-                                        <p className="mb-4 text-gray-600">
-                                            {description}
-                                        </p>
-                                    )}
-                                    <div
-                                        className={`mt-4 ${buttonStyleClass} px-6 py-3 ${borderRadiusClass} inline-flex items-center gap-2`}
-                                    >
-                                        <Heart className="h-5 w-5" />
-                                        {button_text}
-                                    </div>
-                                </div>
-                            </div>
+                            {renderPublic()}
                         </div>
                     </CardContent>
                 </Card>
@@ -614,331 +968,5 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     }
 
     // Режим публичного отображения
-    return (
-        <div
-            className={`donation-widget ${borderRadiusClass} ${shadowClass} border bg-white`}
-        >
-            <div className="p-6">
-                {/* Заголовок */}
-                <div className="mb-6 text-center">
-                    <h3 className="mb-2 text-2xl font-bold">{title}</h3>
-                    {description && (
-                        <p className="text-sm text-gray-600">{description}</p>
-                    )}
-                </div>
-
-                {/* Прогресс сбора */}
-                {show_progress && fundraiser && (
-                    <div className="mb-6 space-y-2">
-                        {show_target_amount && (
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">
-                                    Необходимо
-                                </span>
-                                <span className="font-semibold">
-                                    {fundraiser.target_amount.toLocaleString(
-                                        'ru-RU',
-                                    )}{' '}
-                                    {CURRENCY_SYMBOLS[currency]}
-                                </span>
-                            </div>
-                        )}
-                        {show_collected_amount && (
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Собрали</span>
-                                <span className="font-semibold text-green-600">
-                                    {fundraiser.collected_amount.toLocaleString(
-                                        'ru-RU',
-                                    )}{' '}
-                                    {CURRENCY_SYMBOLS[currency]}
-                                </span>
-                            </div>
-                        )}
-                        <Progress
-                            value={fundraiser.progress_percentage}
-                            className="h-2"
-                        />
-                    </div>
-                )}
-
-                {/* Форма пожертвования */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Имя донора */}
-                    {!isAnonymous && require_name && (
-                        <div>
-                            <Label htmlFor="donor_name">Ваше имя</Label>
-                            <Input
-                                id="donor_name"
-                                value={donorName}
-                                onChange={(e) => setDonorName(e.target.value)}
-                                placeholder="Александр"
-                                required={require_name}
-                            />
-                        </div>
-                    )}
-
-                    {/* Анонимное пожертвование */}
-                    {allow_anonymous && (
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="is_anonymous"
-                                checked={isAnonymous}
-                                onCheckedChange={(checked) =>
-                                    setIsAnonymous(checked as boolean)
-                                }
-                            />
-                            <Label htmlFor="is_anonymous" className="text-sm">
-                                Анонимное пожертвование
-                            </Label>
-                        </div>
-                    )}
-
-                    {/* Сумма */}
-                    <div>
-                        <Label htmlFor="amount">Сумма</Label>
-                        <Input
-                            id="amount"
-                            type="number"
-                            value={amount}
-                            onChange={(e) =>
-                                setAmount(parseInt(e.target.value) || 0)
-                            }
-                            min={localConfig.min_amount || 1}
-                            max={localConfig.max_amount || undefined}
-                            required
-                        />
-                    </div>
-
-                    {/* Предустановленные суммы */}
-                    <div className="grid grid-cols-4 gap-2">
-                        {preset_amounts.map((presetAmount) => (
-                            <button
-                                key={presetAmount}
-                                type="button"
-                                onClick={() => setAmount(presetAmount)}
-                                className={`px-4 py-2 ${borderRadiusClass} border transition-colors ${
-                                    amount === presetAmount
-                                        ? 'border-blue-600 bg-blue-600 text-white'
-                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                }`}
-                            >
-                                {presetAmount} {CURRENCY_SYMBOLS[currency]}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Регулярные платежи */}
-                    {allow_recurring && (
-                        <div className="space-y-3 border-t pt-4">
-                            <div className="flex gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsRecurring(false)}
-                                    className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
-                                        !isRecurring
-                                            ? 'border-blue-600 bg-blue-600 text-white'
-                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    Единоразово
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsRecurring(true)}
-                                    className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
-                                        isRecurring
-                                            ? 'border-blue-600 bg-blue-600 text-white'
-                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    Регулярно
-                                </button>
-                            </div>
-
-                            {isRecurring && (
-                                <>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {recurring_periods.map((period) => (
-                                            <button
-                                                key={period}
-                                                type="button"
-                                                onClick={() =>
-                                                    setRecurringPeriod(
-                                                        period as
-                                                            | 'daily'
-                                                            | 'weekly'
-                                                            | 'monthly',
-                                                    )
-                                                }
-                                                className={`px-3 py-2 text-sm ${borderRadiusClass} border transition-colors ${
-                                                    recurringPeriod === period
-                                                        ? 'border-blue-600 bg-blue-600 text-white'
-                                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                                }`}
-                                            >
-                                                {
-                                                    RECURRING_PERIOD_LABELS[
-                                                        period as keyof typeof RECURRING_PERIOD_LABELS
-                                                    ]
-                                                }
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    <div className="flex items-start space-x-2">
-                                        <Checkbox
-                                            id="agreed_to_recurring"
-                                            checked={agreedToRecurring}
-                                            onCheckedChange={(checked) =>
-                                                setAgreedToRecurring(
-                                                    checked as boolean,
-                                                )
-                                            }
-                                            required={isRecurring}
-                                        />
-                                        <Label
-                                            htmlFor="agreed_to_recurring"
-                                            className="text-xs text-gray-600"
-                                        >
-                                            Я согласен на подписку на платежи на
-                                            сумму {amount}{' '}
-                                            {CURRENCY_SYMBOLS[currency]}.
-                                            Подписка будет списываться{' '}
-                                            {
-                                                RECURRING_PERIOD_LABELS[
-                                                    recurringPeriod
-                                                ]
-                                            }
-                                        </Label>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Способы оплаты */}
-                    <div className="border-t pt-4">
-                        <Label className="mb-3 block">Способ оплаты</Label>
-                        <div className="space-y-2">
-                            {paymentMethods.length > 0 ? (
-                                paymentMethods.map((method) => (
-                                    <label
-                                        key={method.id}
-                                        className={`flex items-center gap-3 border p-3 ${borderRadiusClass} cursor-pointer transition-colors ${
-                                            selectedPaymentMethod ===
-                                            method.id.toString()
-                                                ? 'border-blue-600 bg-blue-50'
-                                                : 'border-gray-300 bg-white hover:bg-gray-50'
-                                        }`}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="payment_method"
-                                            value={method.id.toString()}
-                                            checked={
-                                                selectedPaymentMethod ===
-                                                method.id.toString()
-                                            }
-                                            onChange={(e) =>
-                                                setSelectedPaymentMethod(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="text-blue-600"
-                                        />
-                                        <div className="flex-1">
-                                            <div className="font-medium">
-                                                {method.name}
-                                            </div>
-                                            {method.name && (
-                                                <div className="text-xs text-gray-600">
-                                                    {method.name}
-                                                </div>
-                                            )}
-                                        </div>
-                                        {method.name === 'sbp' && (
-                                            <QrCode className="h-5 w-5 text-gray-400" />
-                                        )}
-                                        {(method.name === 'yookassa' ||
-                                            method.name === 'tinkoff') && (
-                                            <CreditCard className="h-5 w-5 text-gray-400" />
-                                        )}
-                                        {method.name === 'sberpay' && (
-                                            <Smartphone className="h-5 w-5 text-gray-400" />
-                                        )}
-                                    </label>
-                                ))
-                            ) : (
-                                <div className="py-4 text-center text-gray-500">
-                                    Загрузка способов оплаты...
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Политика */}
-                    <div className="flex items-start space-x-2 border-t pt-4">
-                        <Checkbox
-                            id="agreed_to_policy"
-                            checked={agreedToPolicy}
-                            onCheckedChange={(checked) =>
-                                setAgreedToPolicy(checked as boolean)
-                            }
-                            required
-                        />
-                        <Label
-                            htmlFor="agreed_to_policy"
-                            className="text-xs text-gray-600"
-                        >
-                            Принимаю{' '}
-                            <a
-                                href="/policy/"
-                                target="_blank"
-                                className="text-blue-600 underline"
-                            >
-                                условия обработки
-                            </a>{' '}
-                            персональных данных
-                        </Label>
-                    </div>
-
-                    {/* Сообщения об ошибках и успехе */}
-                    {error && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-
-                    {success && (
-                        <Alert>
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            <AlertDescription className="text-green-600">
-                                {success}
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
-                    {/* Кнопка отправки */}
-                    <button
-                        type="submit"
-                        disabled={isProcessing}
-                        className={`w-full px-6 py-3 ${borderRadiusClass} ${buttonStyleClass} flex items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50`}
-                    >
-                        {isProcessing ? (
-                            <>
-                                <Loader2 className="h-5 w-5 animate-spin" />
-                                Обработка...
-                            </>
-                        ) : (
-                            <>
-                                <Heart className="h-5 w-5" />
-                                {button_text}
-                            </>
-                        )}
-                    </button>
-                </form>
-            </div>
-        </div>
-    );
+    return renderPublic();
 };

@@ -22,10 +22,14 @@ class OrganizationResource extends JsonResource
       'status' => $this->status,
       'is_public' => (bool) $this->is_public,
       'logo' => $this->logo,
+      'images' => $this->images ?? [],
       'address' => $this->address,
       'phone' => $this->phone,
       'email' => $this->email,
       'website' => $this->website,
+      'admin_user_id' => $this->admin_user_id,
+      'latitude' => $this->latitude,
+      'longitude' => $this->longitude,
       'created_at' => optional($this->created_at)->toISOString(),
       'updated_at' => optional($this->updated_at)->toISOString(),
 
@@ -39,12 +43,16 @@ class OrganizationResource extends JsonResource
         return [
           'id' => $this->region->id,
           'name' => $this->region->name,
+          'latitude' => $this->region->latitude,
+          'longitude' => $this->region->longitude,
         ];
       }),
       'city' => $this->whenLoaded('city', function () {
         return [
           'id' => $this->city->id,
           'name' => $this->city->name,
+          'latitude' => $this->city->latitude,
+          'longitude' => $this->city->longitude,
         ];
       }),
       'settlement' => $this->whenLoaded('settlement', function () {

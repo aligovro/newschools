@@ -168,6 +168,13 @@ export default function ProjectForm({
             if (raw && typeof raw === 'object') {
                 return {
                     gateway: raw.gateway ?? 'yookassa',
+                    enabled_gateways: (Array.isArray(raw.enabled_gateways)
+                        ? (raw.enabled_gateways as string[])
+                        : raw.gateway
+                          ? [raw.gateway as string]
+                          : ['yookassa']) as Array<
+                        'yookassa' | 'tinkoff' | 'sbp'
+                    >,
                     credentials: raw.credentials ?? {},
                     options: raw.options ?? {},
                     donation_min_amount: Number(raw.donation_min_amount) || 100,
@@ -299,6 +306,9 @@ export default function ProjectForm({
                 paymentSettings.donation_max_amount ?? 0,
             ),
             currency: (paymentSettings.currency || 'RUB').toUpperCase(),
+            enabled_gateways: (
+                paymentSettings.enabled_gateways || ['yookassa']
+            ).filter((g) => ['yookassa', 'tinkoff', 'sbp'].includes(String(g))),
         } as const;
 
         console.log(

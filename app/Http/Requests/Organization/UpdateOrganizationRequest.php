@@ -28,6 +28,7 @@ class UpdateOrganizationRequest extends FormRequest
       'region_id' => ['nullable', 'exists:regions,id'],
       'city_id' => ['nullable', 'exists:cities,id'],
       'settlement_id' => ['nullable', 'exists:settlements,id'],
+      'admin_user_id' => ['nullable', 'exists:users,id'],
       'founded_at' => ['nullable', 'date'],
       'is_public' => ['boolean'],
       'logo' => ['sometimes'],
