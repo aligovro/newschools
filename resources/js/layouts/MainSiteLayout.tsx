@@ -1,8 +1,8 @@
-import { WidgetDisplay } from '@/components/site-builder/constructor/WidgetDisplay';
+import { WidgetDisplay } from '@/components/dashboard/site-builder/constructor/WidgetDisplay';
 import type {
     WidgetData,
     WidgetPosition,
-} from '@/components/site-builder/types';
+} from '@/components/dashboard/site-builder/types';
 import { Head } from '@inertiajs/react';
 import React, { ReactNode } from 'react';
 import '../../css/site-preview.scss';

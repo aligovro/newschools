@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class OrganizationCreationController extends Controller
@@ -56,6 +57,13 @@ class OrganizationCreationController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info('[OrgCreate] Request meta', [
+            'method' => $request->method(),
+            'content_type' => $request->header('Content-Type'),
+            'files_count' => count($request->allFiles()),
+            'file_keys' => array_keys($request->allFiles()),
+        ]);
+        Log::info('[OrgCreate] Request all (raw)', $request->all());
         $validator = Validator::make($request->all(), [
             // Основные данные
             'name' => 'required|string|max:255',
@@ -84,22 +92,20 @@ class OrganizationCreationController extends Controller
             'images.*' => 'file|image|mimes:jpeg,png,jpg,webp|max:2048',
 
             // Дополнительные данные
-            'contacts' => 'nullable|array',
-            'features' => 'nullable|array',
             'founded_at' => 'nullable|date',
             'is_public' => 'nullable|boolean',
 
             // Администратор
             'admin_user_id' => 'nullable|exists:users,id',
 
-            // Настройки по умолчанию
-            'create_gallery' => 'nullable|boolean',
-            'create_slider' => 'nullable|boolean',
+            // Опционально: создание сайта
             'create_site' => 'nullable|boolean',
-            'site_template' => 'nullable|string|in:default,modern,classic',
         ]);
 
         if ($validator->fails()) {
+            Log::warning('[OrgCreate] Validation failed', [
+                'errors' => $validator->errors()->toArray(),
+            ]);
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
@@ -108,6 +114,7 @@ class OrganizationCreationController extends Controller
         try {
             // Получаем данные запроса
             $data = $request->except(['admin_user_id', 'create_gallery', 'create_slider', 'create_site', 'site_template']);
+            Log::info('[OrgCreate] Data after except (pre-files)', $data);
 
             // Обрабатываем загрузку логотипа
             if ($request->hasFile('logo')) {
@@ -122,8 +129,9 @@ class OrganizationCreationController extends Controller
                     $imagePath = $image->store('organizations/images', 'public');
                     $imagePaths[] = $imagePath;
                 }
-                $data['images'] = json_encode($imagePaths);
+                $data['images'] = $imagePaths;
             }
+            Log::info('[OrgCreate] Data before create', $data);
 
             // Получаем пользователя-администратора
             $adminUser = null;
@@ -133,6 +141,42 @@ class OrganizationCreationController extends Controller
 
             // Создаем организацию
             $organization = $this->creationService->createOrganization($data, $adminUser);
+            Log::info('[OrgCreate] Organization created', [
+                'organization_id' => $organization?->id,
+            ]);
+
+            // Сохраняем платежные настройки, если переданы
+            $paymentSettingsRaw = $request->get('payment_settings');
+            Log::info('[OrgCreate] payment_settings raw', ['value' => $paymentSettingsRaw]);
+            if (!empty($paymentSettingsRaw)) {
+                $paymentSettings = is_array($paymentSettingsRaw)
+                    ? $paymentSettingsRaw
+                    : (is_string($paymentSettingsRaw)
+                        ? json_decode($paymentSettingsRaw, true)
+                        : []);
+
+                if (is_array($paymentSettings)) {
+                    // Нормализуем легаси ключи к единому формату
+                    if (isset($paymentSettings['enabled_methods']) && !isset($paymentSettings['enabled_gateways'])) {
+                        $paymentSettings['enabled_gateways'] = $paymentSettings['enabled_methods'];
+                        unset($paymentSettings['enabled_methods']);
+                    }
+                    if (isset($paymentSettings['min_amount']) && !isset($paymentSettings['donation_min_amount'])) {
+                        $paymentSettings['donation_min_amount'] = (int) $paymentSettings['min_amount'];
+                        unset($paymentSettings['min_amount']);
+                    }
+                    if (isset($paymentSettings['max_amount']) && !isset($paymentSettings['donation_max_amount'])) {
+                        $paymentSettings['donation_max_amount'] = (int) $paymentSettings['max_amount'];
+                        unset($paymentSettings['max_amount']);
+                    }
+
+                    Log::info('[OrgCreate] payment_settings normalized', $paymentSettings);
+                    $this->settingsService->updateSettings($organization, [
+                        'payment_settings' => $paymentSettings,
+                    ]);
+                    Log::info('[OrgCreate] payment_settings saved');
+                }
+            }
 
             // Создаем сайт если запрошено
             if ($request->boolean('create_site')) {
@@ -150,10 +194,14 @@ class OrganizationCreationController extends Controller
             // Очищаем кеш справочных данных
             Cache::forget('organization_creation_reference_data');
 
-            return redirect()->route('organizations.show', $organization)
+            Log::info('[OrgCreate] Redirecting to organizations.edit', ['id' => $organization->id]);
+            return redirect()
+                ->route('organizations.edit', ['organization' => $organization->id])
                 ->with('success', 'Организация успешно создана');
         } catch (\Exception $e) {
+            Log::error('[OrgCreate] Exception', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return redirect()->back()
+                ->withErrors(['general' => 'Ошибка создания организации: ' . $e->getMessage()])
                 ->with('error', 'Ошибка создания организации: ' . $e->getMessage())
                 ->withInput();
         }

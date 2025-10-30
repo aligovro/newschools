@@ -240,6 +240,10 @@ Route::prefix('public')->group(function () {
       ] : null,
     ]);
   });
+
+  // Публичные API для работы с городами
+  Route::get('/cities', [PublicOrganizationController::class, 'cities']);
+  Route::get('/cities/detect', [PublicOrganizationController::class, 'detectCity']);
 });
 
 /*

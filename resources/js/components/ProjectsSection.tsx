@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import ProjectCard from './ProjectCard';
+import ProjectCard from './projects/ProjectCard';
 
 interface Project {
     id: number;

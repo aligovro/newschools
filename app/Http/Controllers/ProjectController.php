@@ -112,6 +112,11 @@ class ProjectController extends Controller
                 if (array_key_exists('currency', $payment) && is_string($payment['currency'])) {
                     $payment['currency'] = strtoupper(substr($payment['currency'], 0, 3));
                 }
+                // Разрешаем множественные шлюзы
+                if (array_key_exists('enabled_gateways', $payment) && is_array($payment['enabled_gateways'])) {
+                    $allowed = ['yookassa', 'tinkoff', 'sbp'];
+                    $payment['enabled_gateways'] = array_values(array_intersect($allowed, $payment['enabled_gateways']));
+                }
                 $data['payment_settings'] = $payment;
             }
 
@@ -448,6 +453,10 @@ class ProjectController extends Controller
                     }
                     if (array_key_exists('currency', $payment) && is_string($payment['currency'])) {
                         $payment['currency'] = strtoupper(substr($payment['currency'], 0, 3));
+                    }
+                    if (array_key_exists('enabled_gateways', $payment) && is_array($payment['enabled_gateways'])) {
+                        $allowed = ['yookassa', 'tinkoff', 'sbp'];
+                        $payment['enabled_gateways'] = array_values(array_intersect($allowed, $payment['enabled_gateways']));
                     }
                     $data['payment_settings'] = $payment;
                 }

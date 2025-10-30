@@ -23,7 +23,9 @@ import {
     Save,
     Settings,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import CitySelector from '@/components/main-site/CitySelector';
+import { fetchPublicCities } from '@/lib/api/public';
 
 interface GlobalSettingsPageProps {
     settings: {
@@ -105,6 +107,11 @@ export default function GlobalSettingsPage({
 }: GlobalSettingsPageProps) {
     const [activeTab, setActiveTab] = useState('terminology');
     const [previewData, setPreviewData] = useState<any>(null);
+    const [selectedDefaultCity, setSelectedDefaultCity] = useState<{
+        id: number;
+        name: string;
+        region?: { name: string };
+    } | null>(null);
 
     // Форма для терминологии
     const terminologyForm = useForm({
@@ -172,6 +179,45 @@ export default function GlobalSettingsPage({
     const systemConfigForm = useForm({
         system_settings: settings.system_settings || {},
     });
+
+    // Инициализация выбранного города по умолчанию из текущих настроек
+    useEffect(() => {
+        const init = async () => {
+            const name = (systemConfigForm.data.system_settings as any)
+                ?.default_city_fallback as string | undefined;
+            if (name && name.trim() !== '') {
+                try {
+                    const results = await fetchPublicCities({ search: name });
+                    const byExact = results.find(
+                        (c) => c.name.toLowerCase() === name.toLowerCase(),
+                    );
+                    const byIncludes =
+                        byExact ||
+                        results.find((c) =>
+                            c.name
+                                .toLowerCase()
+                                .includes(name.toLowerCase()),
+                        );
+                    if (byIncludes) {
+                        setSelectedDefaultCity(byIncludes as any);
+                    }
+                } catch {}
+            }
+        };
+        init();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleDefaultCityChange = (
+        city: { id: number; name: string; region?: { name: string } } | null,
+    ) => {
+        setSelectedDefaultCity(city);
+        systemConfigForm.setData('system_settings', {
+            ...systemConfigForm.data.system_settings,
+            default_city_id: city?.id ?? '',
+            default_city_fallback: city?.name ?? '',
+        });
+    };
 
     // Форма для интеграций (ключи Яндекс.Карт)
     const integrationsForm = useForm({
@@ -1172,62 +1218,23 @@ export default function GlobalSettingsPage({
                                             />
                                         </div>
                                         {/* Город по умолчанию для карты */}
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <Label htmlFor="default_city_id">
-                                                    ID города по умолчанию
-                                                </Label>
-                                                <Input
-                                                    id="default_city_id"
-                                                    value={
-                                                        (systemConfigForm.data
-                                                            .system_settings
-                                                            .default_city_id as any) ||
-                                                        ''
-                                                    }
-                                                    onChange={(e) =>
-                                                        systemConfigForm.setData(
-                                                            'system_settings',
-                                                            {
-                                                                ...systemConfigForm
-                                                                    .data
-                                                                    .system_settings,
-                                                                default_city_id:
-                                                                    e.target
-                                                                        .value,
-                                                            },
-                                                        )
-                                                    }
-                                                    placeholder="Например: 213"
+                                        <div className="space-y-2">
+                                            <Label>Город по умолчанию</Label>
+                                            <p className="text-sm text-muted-foreground">
+                                                Выберите город из списка вместо ручного ввода ID/названия
+                                            </p>
+                                            <div className="flex items-center gap-3">
+                                                <CitySelector
+                                                    value={selectedDefaultCity}
+                                                    onChange={handleDefaultCityChange}
+                                                    defaultCityName={(systemConfigForm.data.system_settings as any)?.default_city_fallback || 'Казань'}
+                                                    detectOnMount={false}
                                                 />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="default_city_fallback">
-                                                    Название города по умолчанию
-                                                </Label>
-                                                <Input
-                                                    id="default_city_fallback"
-                                                    value={
-                                                        (systemConfigForm.data
-                                                            .system_settings
-                                                            .default_city_fallback as any) ||
-                                                        ''
-                                                    }
-                                                    onChange={(e) =>
-                                                        systemConfigForm.setData(
-                                                            'system_settings',
-                                                            {
-                                                                ...systemConfigForm
-                                                                    .data
-                                                                    .system_settings,
-                                                                default_city_fallback:
-                                                                    e.target
-                                                                        .value,
-                                                            },
-                                                        )
-                                                    }
-                                                    placeholder="Например: Москва"
-                                                />
+                                                {selectedDefaultCity && (
+                                                    <span className="text-sm text-muted-foreground">
+                                                        ID: {selectedDefaultCity.id}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

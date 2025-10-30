@@ -1,8 +1,8 @@
-import { WidgetDisplay } from '@/components/site-builder/constructor/WidgetDisplay';
+import { WidgetDisplay } from '@/components/dashboard/site-builder/constructor/WidgetDisplay';
 import type {
     WidgetPosition as SharedWidgetPosition,
     WidgetData,
-} from '@/components/site-builder/types';
+} from '@/components/dashboard/site-builder/types';
 import { widgetsSystemApi } from '@/lib/api/index';
 import { Head } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';

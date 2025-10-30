@@ -1,4 +1,4 @@
-import ProjectCard from '@/components/ProjectCard';
+import ProjectCard from '@/components/projects/ProjectCard';
 import MainSiteLayout from '@/layouts/MainSiteLayout';
 import { Link } from '@inertiajs/react';
 

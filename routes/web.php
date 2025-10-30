@@ -355,3 +355,6 @@ Route::prefix('api/projects/{id}')->middleware('auth')->group(function () {
     Route::post('/settings/payments', [App\Http\Controllers\Api\ProjectController::class, 'savePaymentSettings'])
         ->name('projects.save-payment-settings');
 });
+
+Route::get('/dashboard/api/regions/{id}', [\App\Http\Controllers\RegionController::class, 'show']);
+Route::get('/dashboard/api/cities/{id}', [\App\Http\Controllers\CityController::class, 'show']);

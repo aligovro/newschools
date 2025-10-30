@@ -1,5 +1,5 @@
-import { SiteBuilder } from '@/components/site-builder/constructor/SiteBuilder';
-import { SettingsContent } from '@/components/site-builder/layout';
+import { SiteBuilder } from '@/components/dashboard/site-builder/constructor/SiteBuilder';
+import { SettingsContent } from '@/components/dashboard/site-builder/layout';
 import SlugGenerator from '@/components/SlugGenerator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

@@ -1,4 +1,4 @@
-import ProjectCard from '@/components/ProjectCard';
+import ProjectCard from '@/components/projects/ProjectCard';
 import MainSiteLayout from '@/layouts/MainSiteLayout';
 import { Link } from '@inertiajs/react';
 
@@ -55,7 +55,7 @@ export default function OrganizationShow({
                                 <img
                                     src={organization.logo}
                                     alt={organization.name}
-                                    className="h-24 w-24 rounded-lg object-cover"
+                                    className="h-32 w-32 rounded-lg object-cover shadow-md"
                                 />
                             )}
                             <div className="flex-1">

@@ -33,23 +33,18 @@ class OrganizationCreationService
             // Создаем основную организацию
             $organization = $this->createMainOrganization($data);
 
-            // Создаем настройки организации
-            $this->createOrganizationSettings($organization);
+            // Создаем настройки и SEO, если их нет (модель также может создать их в событии created)
+            if (!$organization->settings()->exists()) {
+                $this->createOrganizationSettings($organization);
+            }
+            if (!$organization->seo()->exists()) {
+                $this->createOrganizationSeo($organization);
+            }
 
-            // Создаем SEO настройки
-            $this->createOrganizationSeo($organization);
+            // Пропускаем автосоздание галереи и слайдера при создании
+            // (создание медиа перенесено в явные действия администратора)
 
-            // Создаем галлерею по умолчанию
-            $this->createDefaultGallery($organization);
-
-            // Создаем слайдер по умолчанию
-            $this->createDefaultSlider($organization);
-
-            // Создаем главную страницу
-            $this->createHomepage($organization);
-
-            // Создаем базовое меню
-            $this->createDefaultMenu($organization);
+            // Пропускаем автосоздание главной страницы и меню (нет связанных отношений pages/menus)
 
             // Добавляем администратора если указан
             if ($adminUser) {
@@ -62,7 +57,7 @@ class OrganizationCreationService
             // Отправляем событие о создании организации
             Event::dispatch(new OrganizationCreated($organization));
 
-            return $organization->load(['settings', 'seo', 'media', 'sliders', 'homepage', 'menus']);
+            return $organization->load(['settings', 'seo']);
         });
     }
 
@@ -92,6 +87,10 @@ class OrganizationCreationService
         // Получаем настройки по умолчанию из глобальных настроек
         $defaultSettings = $this->globalSettings->getDefaultOrganizationSettings();
 
+        // Не дублируем, если уже есть
+        if ($organization->settings()->exists()) {
+            return;
+        }
         $organization->settings()->create([
             'theme' => $defaultSettings['organization']['theme'] ?? 'default',
             'primary_color' => $defaultSettings['organization']['primary_color'] ?? '#3B82F6',
@@ -126,6 +125,10 @@ class OrganizationCreationService
      */
     private function createOrganizationSeo(Organization $organization): void
     {
+        // Не дублируем, если уже есть
+        if ($organization->seo()->exists()) {
+            return;
+        }
         $organization->seo()->create([
             'meta_title' => $organization->name,
             'meta_description' => $organization->description ?? "Официальный сайт {$organization->name}",
