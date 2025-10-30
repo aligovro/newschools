@@ -1,8 +1,8 @@
-import ProjectForm from '@/components/projects/ProjectForm';
+import ProjectForm from '@/components/dashboard/pages/projects/ProjectForm/ProjectForm';
 import type {
     Organization,
     Project,
-} from '@/components/projects/ProjectForm/types';
+} from '@/components/dashboard/pages/projects/ProjectForm/types';
 
 interface Props {
     organization: Organization;

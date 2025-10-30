@@ -1,4 +1,4 @@
-import UserManagement from '@/components/admin/users/users/UserManagement';
+import UserManagement from '@/components/dashboard/users/users/UserManagement';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';

@@ -1,4 +1,4 @@
-import OrganizationForm from '@/components/organizations/OrganizationForm';
+import OrganizationForm from '@/components/dashboard/pages/organizations/OrganizationForm';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';

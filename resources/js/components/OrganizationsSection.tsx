@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import OrganizationCard from './OrganizationCard';
+import OrganizationCard from './organizations/OrganizationCard';
 
 interface Organization {
     id: number;

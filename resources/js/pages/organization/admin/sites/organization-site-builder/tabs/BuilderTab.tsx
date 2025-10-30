@@ -1,4 +1,4 @@
-import { SiteBuilder } from '@/components/site-builder/constructor/SiteBuilder';
+import { SiteBuilder } from '@/components/dashboard/site-builder/constructor/SiteBuilder';
 import { memo } from 'react';
 import type { OrganizationSite, SiteWidget } from '../types';
 

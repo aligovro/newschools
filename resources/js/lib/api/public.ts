@@ -1,7 +1,31 @@
-export async function fetchMapsConfig() {
+export interface MapsConfig {
+    yandexMapApiKey?: string | null;
+    yandexSuggestApiKey?: string | null;
+    defaultCityId?: number | null;
+    defaultCityFallback?: string | null;
+}
+
+export async function fetchMapsConfig(): Promise<MapsConfig> {
     const res = await fetch('/api/public/maps-config');
     if (!res.ok) throw new Error('Failed to load maps config');
     return res.json();
+}
+
+// Cached loader to avoid duplicate requests
+let mapsConfigCache: MapsConfig | null = null;
+let mapsConfigPromise: Promise<MapsConfig> | null = null;
+export function getMapsConfigCached(): Promise<MapsConfig> {
+    if (mapsConfigCache) return Promise.resolve(mapsConfigCache);
+    if (mapsConfigPromise) return mapsConfigPromise;
+    mapsConfigPromise = fetchMapsConfig()
+        .then((cfg: MapsConfig) => {
+            mapsConfigCache = cfg;
+            return cfg;
+        })
+        .finally(() => {
+            mapsConfigPromise = null;
+        });
+    return mapsConfigPromise;
 }
 
 export async function resolveCityByName(name: string) {
@@ -85,4 +109,16 @@ export async function detectCityByGeolocation(): Promise<{
             { timeout: 5000 },
         );
     });
+}
+
+export async function fetchRegionById(id: number) {
+    const res = await fetch(`/dashboard/api/regions/${id}`);
+    if (!res.ok) throw new Error('Failed to load region');
+    return await res.json();
+}
+
+export async function fetchCityById(id: number) {
+    const res = await fetch(`/dashboard/api/cities/${id}`);
+    if (!res.ok) throw new Error('Failed to load city');
+    return await res.json();
 }

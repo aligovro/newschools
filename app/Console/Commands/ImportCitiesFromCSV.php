@@ -69,6 +69,7 @@ class ImportCitiesFromCSV extends Command
             $this->info('Найдено строк: ' . count($lines));
 
             $imported = 0;
+            $updated = 0;
             $skipped = 0;
             $errors = 0;
 
@@ -83,18 +84,27 @@ class ImportCitiesFromCSV extends Command
                 try {
                     $row = str_getcsv($line);
 
-                    if (count($row) < 12) {
+                    // Проверяем, что в строке достаточно данных
+                    // CSV формат: city,population,lat,lon,region_name,region_name_ao,region_iso_code,federal_district,okato,oktmo,kladr_id,fias_id,place_id
+                    if (count($row) < 8) {
                         $skipped++;
                         continue;
                     }
 
-                    $cityName = $row[0];
-                    $population = isset($row[1]) && is_numeric($row[1]) ? (float) $row[1] : null;
-                    $latitude = isset($row[2]) && is_numeric($row[2]) ? (float) $row[2] : null;
-                    $longitude = isset($row[3]) && is_numeric($row[3]) ? (float) $row[3] : null;
-                    $regionName = $row[4] ?? null;
-                    $regionIsoCode = $row[6] ?? null;
-                    $federalDistrictName = $row[7] ?? null;
+                    // Парсим данные из CSV
+                    $cityName = $row[0] ?? null;
+                    $population = isset($row[1]) && $row[1] !== '' && is_numeric($row[1]) ? (float) $row[1] : null;
+                    $latitude = isset($row[2]) && $row[2] !== '' && is_numeric($row[2]) ? (float) $row[2] : null;
+                    $longitude = isset($row[3]) && $row[3] !== '' && is_numeric($row[3]) ? (float) $row[3] : null;
+                    $regionName = isset($row[4]) && $row[4] !== '' ? $row[4] : null;
+                    $regionNameAO = isset($row[5]) && $row[5] !== '' ? $row[5] : null;
+                    $regionIsoCode = isset($row[6]) && $row[6] !== '' ? $row[6] : null;
+                    $federalDistrictName = isset($row[7]) && $row[7] !== '' ? $row[7] : null;
+                    $okato = isset($row[8]) && $row[8] !== '' ? $row[8] : null;
+                    $oktmo = isset($row[9]) && $row[9] !== '' ? $row[9] : null;
+                    $kladrId = isset($row[10]) && $row[10] !== '' ? $row[10] : null;
+                    $fiasId = isset($row[11]) && $row[11] !== '' ? $row[11] : null;
+                    $placeId = isset($row[12]) && $row[12] !== '' ? $row[12] : null;
 
                     if (empty($cityName)) {
                         $skipped++;
@@ -123,34 +133,52 @@ class ImportCitiesFromCSV extends Command
                         ->where('name', $cityName)
                         ->first();
 
-                    if ($existingCity) {
-                        $skipped++;
-                        continue;
-                    }
-
                     // Определяем тип города
                     $type = $this->determineCityType($cityName);
 
                     // Определяем статус
                     $status = $this->determineCityStatus($cityName, $region);
 
-                    // Создаем город
-                    City::create([
-                        'region_id' => $region->id,
-                        'name' => $cityName,
-                        'slug' => $this->generateSlug($region, $cityName),
-                        'code' => null,
-                        'type' => $type,
-                        'status' => $status,
-                        'latitude' => $latitude,
-                        'longitude' => $longitude,
-                        'population' => $population ? (int) ($population * 1000) : null,
-                        'area' => null,
-                        'founded_year' => null,
-                        'is_active' => true,
-                    ]);
+                    // Конвертируем население из тысяч в единицы (если указано)
+                    $populationValue = null;
+                    if ($population !== null) {
+                        // Если значение большое (>= 1000), считаем что это уже в единицах
+                        // Если маленькое (< 1000), умножаем на 1000
+                        $populationValue = $population >= 1000 ? (int) $population : (int) ($population * 1000);
+                    }
 
-                    $imported++;
+                    // Используем OKATO код для поля code, если доступен
+                    $code = $okato ?? null;
+
+                    if ($existingCity) {
+                        // Обновляем существующий город данными из CSV
+                        $existingCity->update([
+                            'code' => $code ?? $existingCity->code,
+                            'latitude' => $latitude ?? $existingCity->latitude,
+                            'longitude' => $longitude ?? $existingCity->longitude,
+                            'population' => $populationValue ?? $existingCity->population,
+                            'type' => $type,
+                            'status' => $status,
+                        ]);
+                        $updated++;
+                    } else {
+                        // Создаем новый город с полными данными
+                        City::create([
+                            'region_id' => $region->id,
+                            'name' => $cityName,
+                            'slug' => $this->generateSlug($region, $cityName),
+                            'code' => $code,
+                            'type' => $type,
+                            'status' => $status,
+                            'latitude' => $latitude,
+                            'longitude' => $longitude,
+                            'population' => $populationValue,
+                            'area' => null,
+                            'founded_year' => null,
+                            'is_active' => true,
+                        ]);
+                        $imported++;
+                    }
 
                     if ($imported % 100 === 0) {
                         $this->info("Импортировано {$imported} городов...");
@@ -164,8 +192,9 @@ class ImportCitiesFromCSV extends Command
             }
 
             $this->info("\nИмпорт завершен!");
-            $this->info("Добавлено городов: {$imported}");
-            $this->info("Пропущено дубликатов: {$skipped}");
+            $this->info("Добавлено новых городов: {$imported}");
+            $this->info("Обновлено существующих городов: {$updated}");
+            $this->info("Пропущено строк: {$skipped}");
             $this->info("Ошибок: {$errors}");
             $this->info("Всего городов в БД: " . City::count());
 
