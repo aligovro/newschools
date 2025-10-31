@@ -14,10 +14,11 @@ import { ImageOutput } from './ImageOutput';
 import { MenuOutput } from './MenuOutput';
 import { ProjectsOutput } from './ProjectsOutput';
 import { ReferralLeaderboardOutput } from './ReferralLeaderboardOutput';
-import { RegionRatingOutput } from './RegionRatingOutput';
+import { CitySupportersOutput } from './CitySupportersOutput';
 import { SliderOutput } from './SliderOutput';
 import { StatsOutput } from './StatsOutput';
 import { TextOutput } from './TextOutput';
+import { CityOrganizationsOutput } from './CityOrganizationsOutput';
 
 // Registry of output components
 const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
@@ -35,8 +36,9 @@ const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
     form: FormOutput,
     donation: DonationOutput,
     donations_list: DonationsListOutput,
-    region_rating: RegionRatingOutput,
+    city_supporters: CitySupportersOutput,
     referral_leaderboard: ReferralLeaderboardOutput,
+    city_organizations: CityOrganizationsOutput,
 };
 
 // Default output component for unknown widgets

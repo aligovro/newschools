@@ -9,6 +9,20 @@
 @import 'components/notification';
 
 // Компоненты
+.btn-accent {
+    background: $accent-gradient;
+    color: #ffffff;
+    transition: all $transition-normal;
+
+    &:hover {
+        filter: brightness(0.95);
+    }
+}
+
+.bg-accent-gradient {
+    background: $accent-gradient;
+}
+
 .custom-button {
     @include button-reset;
     background: linear-gradient(45deg, $primary-color, $secondary-color);

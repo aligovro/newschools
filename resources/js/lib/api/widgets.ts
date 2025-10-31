@@ -97,4 +97,81 @@ export const widgetsApi = {
                 PaginatedResponse<Donation>
             >(`/organizations/${organizationId}/donations`, { params })
             .then((response) => response.data),
+
+    // Получение топа поддерживающих городов
+    getCitySupporters: (
+        organizationId: number,
+        params: {
+            page?: number;
+            per_page?: number;
+            search?: string;
+            sort_by?: 'amount' | 'supporters' | 'schools' | 'name';
+            sort_order?: 'asc' | 'desc';
+        } = {},
+    ): Promise<
+        PaginatedResponse<{
+            id: number;
+            name: string;
+            region_name?: string;
+            schools_count: number;
+            supporters_count: number;
+            donation_count: number;
+            total_amount: number;
+            alumni_count?: number | null;
+            subscriptions_count?: number | null;
+        }>
+    > =>
+        apiClient
+            .get<
+                PaginatedResponse<{
+                    id: number;
+                    name: string;
+                    region_name?: string;
+                    schools_count: number;
+                    supporters_count: number;
+                    donation_count: number;
+                    total_amount: number;
+                    alumni_count?: number | null;
+                    subscriptions_count?: number | null;
+                }>
+            >(`/organizations/${organizationId}/city-supporters`, { params })
+            .then((response) => response.data),
+
+    // Публичный топ поддерживающих городов (без организации)
+    getCitySupportersPublic: (
+        params: {
+            page?: number;
+            per_page?: number;
+            search?: string;
+            sort_by?: 'amount' | 'supporters' | 'schools' | 'name';
+            sort_order?: 'asc' | 'desc';
+        } = {},
+    ): Promise<
+        PaginatedResponse<{
+            id: number;
+            name: string;
+            region_name?: string;
+            schools_count: number;
+            supporters_count: number;
+            donation_count: number;
+            total_amount: number;
+            alumni_count?: number | null;
+            subscriptions_count?: number | null;
+        }>
+    > =>
+        apiClient
+            .get<
+                PaginatedResponse<{
+                    id: number;
+                    name: string;
+                    region_name?: string;
+                    schools_count: number;
+                    supporters_count: number;
+                    donation_count: number;
+                    total_amount: number;
+                    alumni_count?: number | null;
+                    subscriptions_count?: number | null;
+                }>
+            >(`/public/city-supporters`, { params })
+            .then((response) => response.data),
 };

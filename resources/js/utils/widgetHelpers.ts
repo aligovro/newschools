@@ -32,11 +32,12 @@ export const isCustomWidget = (slug: string): boolean => {
         'image',
         'donation',
         'projects',
-        'region_rating',
+        'city_supporters',
         'donations_list',
         'referral_leaderboard',
         'alumni_stats',
         'html',
+        'city_organizations',
     ];
     return customWidgets.includes(slug);
 };
@@ -55,7 +56,8 @@ export type WidgetSlug =
     | 'slider'
     | 'form'
     | 'donation'
-    | 'region_rating'
+    | 'city_supporters'
     | 'donations_list'
     | 'referral_leaderboard'
-    | 'html';
+    | 'html'
+    | 'city_organizations';

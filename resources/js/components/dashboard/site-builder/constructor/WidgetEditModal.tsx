@@ -37,8 +37,9 @@ import { HtmlWidgetModal } from './modals/HtmlWidgetModal';
 import { ImageWidgetModal } from './modals/ImageWidgetModal';
 import { MenuWidgetModal } from './modals/MenuWidgetModal';
 import { ProjectsWidgetModal } from './modals/ProjectsWidgetModal';
+import { CityOrganizationsWidgetModal } from './modals/CityOrganizationsWidgetModal';
 import { ReferralLeaderboardWidgetModal } from './modals/ReferralLeaderboardWidgetModal';
-import { RegionRatingWidgetModal } from './modals/RegionRatingWidgetModal';
+import { CitySupportersWidgetModal } from './modals/CitySupportersWidgetModal';
 import { SliderWidgetModal } from './modals/SliderWidgetModal';
 import { TextWidgetModal } from './modals/TextWidgetModal';
 
@@ -273,9 +274,9 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 );
             }
 
-            case 'region_rating': {
+            case 'city_supporters': {
                 return (
-                    <RegionRatingWidgetModal
+                    <CitySupportersWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
                         onConfigUpdate={handleSetPendingConfig}
@@ -316,6 +317,16 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             case 'alumni_stats': {
                 return (
                     <AlumniStatsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'city_organizations': {
+                return (
+                    <CityOrganizationsWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
                         onConfigUpdate={handleSetPendingConfig}

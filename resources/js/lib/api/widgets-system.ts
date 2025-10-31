@@ -143,10 +143,20 @@ export const widgetsSystemApi = {
         organizationId: number,
     ): Promise<PaymentMethod[]> =>
         apiClient
-            .get<
-                PaymentMethod[]
-            >(`/organizations/${organizationId}/donation-widget/payment-methods`)
-            .then((response) => response.data),
+            .get<{
+                success: boolean;
+                data: PaymentMethod[];
+            }>(`/organizations/${organizationId}/donation-widget/payment-methods`)
+            .then((response) => response.data.data),
+
+    // Публичные методы оплаты (без организации)
+    getDonationWidgetPaymentMethodsPublic: (): Promise<PaymentMethod[]> =>
+        apiClient
+            .get<{
+                success: boolean;
+                data: PaymentMethod[];
+            }>(`/public/payment-methods`)
+            .then((response) => response.data.data),
 
     // Отправка пожертвования
     submitDonation: (

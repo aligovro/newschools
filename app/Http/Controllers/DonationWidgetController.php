@@ -286,6 +286,31 @@ class DonationWidgetController extends Controller
     }
 
     /**
+     * Публичные методы оплаты (для главного сайта, без организации)
+     */
+    public function getPaymentMethodsPublic()
+    {
+        $methods = PaymentMethod::active()->ordered()->get()->map(function ($method) {
+            return [
+                'id' => $method->id,
+                'name' => $method->name,
+                'slug' => $method->slug,
+                'icon' => $method->icon,
+                'description' => $method->description,
+                'min_amount' => $method->min_amount,
+                'max_amount' => $method->max_amount,
+                'min_amount_rubles' => $method->min_amount / 100,
+                'max_amount_rubles' => $method->max_amount > 0 ? $method->max_amount / 100 : null,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $methods,
+        ]);
+    }
+
+    /**
      * Получение списка сборов средств организации
      */
     public function getFundraisers(Organization $organization)
