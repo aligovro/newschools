@@ -10,6 +10,7 @@ use App\Support\InertiaResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class PublicOrganizationController extends Controller
 {
@@ -67,6 +68,94 @@ class PublicOrganizationController extends Controller
             'organizations' => InertiaResource::paginate($organizations, OrganizationResource::class),
             'filters' => $request->only(['search', 'type', 'region', 'city_id', 'bbox', 'sort_by', 'sort_direction']),
         ]);
+    }
+
+    /**
+     * Публичный API: список организаций (JSON)
+     */
+    public function apiIndex(Request $request): JsonResponse
+    {
+        $query = Organization::query()
+            ->with(['region:id,name', 'city:id,name'])
+            ->where('status', 'active')
+            ->where('is_public', true)
+            ->withCount([
+                'members as members_count',
+                'projects as projects_count',
+            ])
+            ->withSum('donations as donations_total', 'amount');
+
+        if ($request->filled('search')) {
+            $search = $request->string('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->string('type'));
+        }
+
+        if ($request->filled('region_id')) {
+            $query->where('region_id', (int) $request->get('region_id'));
+        }
+
+        if ($request->filled('city_id')) {
+            $query->where('city_id', (int) $request->get('city_id'));
+        }
+
+        // Сортировка
+        $allowedSort = ['created_at', 'name', 'donations_total'];
+        $sortBy = in_array($request->get('order_by'), $allowedSort, true)
+            ? $request->get('order_by')
+            : 'created_at';
+        $sortDirection = strtolower((string) $request->get('order_direction')) === 'asc' ? 'asc' : 'desc';
+
+        // Для сортировки по сумме пожертвований нужна агрегатная колонка
+        if ($sortBy === 'donations_total') {
+            // withSum уже добавил donations_total, можно сортировать по ней
+            $query->orderBy('donations_total', $sortDirection);
+        } else {
+            $query->orderBy($sortBy, $sortDirection);
+        }
+
+        $limit = min(max((int) $request->get('limit', 12), 1), 100);
+        $items = $query->limit($limit)->get([
+            'id', 'name', 'slug', 'description', 'type', 'status', 'is_public', 'logo', 'images', 'address', 'region_id', 'city_id', 'created_at'
+        ]);
+
+        // Приводим к плоскому JSON для фронта
+        $result = $items->map(function ($org) {
+            // Приоритет: logo, затем первая из галереи
+            $rawImage = $org->logo;
+            if (!$rawImage && !empty($org->images) && is_array($org->images) && count($org->images) > 0) {
+                $rawImage = $org->images[0];
+            }
+            $imageUrl = $rawImage ? (str_starts_with($rawImage, 'http') ? $rawImage : Storage::url($rawImage)) : null;
+            $logoUrl = $org->logo ? (str_starts_with($org->logo, 'http') ? $org->logo : Storage::url($org->logo)) : null;
+            return [
+                'id' => $org->id,
+                'name' => $org->name,
+                'slug' => $org->slug,
+                'description' => $org->description,
+                'address' => $org->address,
+                'logo' => $logoUrl,
+                'image' => $imageUrl,
+                'type' => $org->type,
+                'status' => $org->status,
+                'is_public' => (bool) $org->is_public,
+                'city' => $org->city ? ['name' => $org->city->name] : null,
+                'region' => $org->region ? ['name' => $org->region->name] : null,
+                'members_count' => (int) ($org->members_count ?? 0),
+                'projects_count' => (int) ($org->projects_count ?? 0),
+                'donations_total' => (int) ($org->donations_total ?? 0),
+                'donations_collected' => (int) ($org->donations_total ?? 0),
+            ];
+        });
+
+        return response()->json(['data' => $result]);
     }
 
     /**

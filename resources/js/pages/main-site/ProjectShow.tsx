@@ -145,7 +145,7 @@ export default function ProjectShow({
                             <div className="mt-4">
                                 <a
                                     href="#donate"
-                                    className="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-white transition-colors hover:bg-green-700"
+                                    className="btn-accent inline-flex items-center justify-center rounded-lg px-6 py-3 text-white"
                                 >
                                     Помочь проекту
                                 </a>

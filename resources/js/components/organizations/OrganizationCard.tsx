@@ -184,7 +184,7 @@ export default function OrganizationCard({
 
                 {/* Action Button */}
                 <button
-                    className="block w-full rounded-lg bg-blue-600 px-6 py-3 text-center font-medium text-white transition-colors hover:bg-blue-700"
+                    className="btn-accent block w-full rounded-lg px-6 py-3 text-center font-medium text-white"
                     onClick={(e) => {
                         e.stopPropagation();
                         router.visit(organizationUrl);

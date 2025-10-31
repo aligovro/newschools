@@ -2,7 +2,6 @@ import { getOrganizationId } from '@/utils/widgetHelpers';
 import React from 'react';
 import { AlumniStatsWidget } from '../AlumniStatsWidget';
 import { AuthMenuWidget } from '../AuthMenuWidget';
-import { DonationWidget } from '../DonationWidget';
 import { DonationsListWidget } from '../DonationsListWidget';
 import { FormWidget } from '../FormWidget';
 import { GalleryWidget } from '../GalleryWidget';
@@ -12,7 +11,6 @@ import { ImageWidget } from '../ImageWidget';
 import { MenuWidget } from '../MenuWidget';
 import { ProjectsWidget } from '../ProjectsWidget';
 import { ReferralLeaderboardWidget } from '../ReferralLeaderboardWidget';
-import { RegionRatingWidget } from '../RegionRatingWidget';
 import { StatsWidget } from '../StatsWidget';
 import { SliderWidget } from '../slider';
 
@@ -465,36 +463,30 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         );
     },
 
-    // Виджет пожертвований
-    donation: ({ widget, isEditable, autoExpandSettings, onSave }) => (
-        <DonationWidget
-            config={widget.config || {}}
-            isEditable={isEditable}
-            autoExpandSettings={autoExpandSettings}
-            onSave={onSave}
-            widgetId={widget.id}
-            organizationId={getOrganizationId(widget.config)}
-        />
-    ),
+    // Виджет пожертвований — в конструкторе показываем плейсхолдер
+    donation: ({ widget }) => {
+        const title = (widget.name && widget.name.trim()) || 'Пожертвования';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">donation</div>
+            </div>
+        );
+    },
 
-    // Виджет рейтинга регионов
-    region_rating: ({
-        widget,
-        isEditable,
-        autoExpandSettings,
-        onSave,
-        onConfigChange,
-    }) => (
-        <RegionRatingWidget
-            config={widget.config || {}}
-            isEditable={isEditable}
-            autoExpandSettings={autoExpandSettings}
-            onSave={onSave}
-            widgetId={widget.id}
-            organizationId={getOrganizationId(widget.config)}
-            onConfigChange={onConfigChange}
-        />
-    ),
+    // Топ поддерживающих городов — в конструкторе показываем плейсхолдер
+    city_supporters: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) || 'Топ поддерживающих городов';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">
+                    city_supporters
+                </div>
+            </div>
+        );
+    },
 
     // Виджет списка пожертвований
     donations_list: ({
@@ -546,6 +538,20 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                 }}
                 styling={cfg.styling as Record<string, any>}
             />
+        );
+    },
+
+    // Школы города (слайдер организаций)
+    city_organizations: ({ widget }) => {
+        // В конструкторе показываем простой плейсхолдер с названием виджета
+        const title = (widget.name && widget.name.trim()) || 'Школы города';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">
+                    city_organizations
+                </div>
+            </div>
         );
     },
 };

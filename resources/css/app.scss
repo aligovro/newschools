@@ -33,11 +33,23 @@
     :root {
         --sidebar-width: 15rem;
         --sidebar-width-icon: 3rem;
+        /* Accent gradient for main site buttons */
+        --accent-gradient: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
     }
 }
 
 /* Import custom colors after Tailwind */
 @import '_colors';
+
+/* Override specific Tailwind utility values */
+@layer utilities {
+    .bg-blue-600 {
+        background-color: #456cff;
+    }
+    .bg-blue-600:hover {
+        background-color: #365bff;
+    }
+}
 
 /* Custom styles */
 @import 'custom';

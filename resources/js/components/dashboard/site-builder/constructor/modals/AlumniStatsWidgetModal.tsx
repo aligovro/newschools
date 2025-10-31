@@ -213,7 +213,7 @@ export const AlumniStatsWidgetModal: React.FC<AlumniStatsWidgetModalProps> = ({
                                         enableServerUpload={true}
                                         existingImageUrl={column.icon}
                                         widgetSlug="alumni_stats"
-                                        imageType={`column_${index}`}
+                                        imageType="image"
                                     />
                                 </div>
                             </div>

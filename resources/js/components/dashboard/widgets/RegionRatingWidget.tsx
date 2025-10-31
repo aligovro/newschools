@@ -74,7 +74,7 @@ const CURRENCY_SYMBOLS = {
 const SORT_OPTIONS = [
     { value: 'amount', label: 'По сумме пожертвований' },
     { value: 'count', label: 'По количеству пожертвований' },
-    { value: 'name', label: 'По названию региона' },
+    { value: 'name', label: 'По названию города' },
 ];
 
 const LAYOUT_OPTIONS = [
@@ -227,7 +227,7 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
     };
 
     const {
-        title = 'Топ поддержавших регионов',
+        title = 'Топ поддерживающих городов',
         subtitle,
         show_regions_count = true,
         show_donation_count = true,
@@ -266,7 +266,7 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
                         <div className="mb-4 flex items-center justify-between">
                             <h3 className="flex items-center gap-2 text-lg font-semibold">
                                 <MapPin className="h-5 w-5 text-blue-500" />
-                                Виджет рейтинга регионов
+                                Топ поддерживающих городов
                             </h3>
                             <button
                                 onClick={() =>
@@ -301,7 +301,7 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
                                                     title: e.target.value,
                                                 })
                                             }
-                                            placeholder="Топ поддержавших регионов"
+                                            placeholder="Топ поддерживающих городов"
                                         />
                                     </div>
 
@@ -317,7 +317,7 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
                                                     subtitle: e.target.value,
                                                 })
                                             }
-                                            placeholder="Регионы с наибольшим количеством пожертвований"
+                                            placeholder="Города с наибольшей поддержкой"
                                         />
                                     </div>
 
@@ -448,7 +448,7 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
                                             }
                                         />
                                         <Label htmlFor="show_regions_count">
-                                            Показывать количество регионов
+                                            Показывать количество городов
                                         </Label>
                                     </div>
 
@@ -609,7 +609,7 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
                     )}
                     {show_regions_count && regions.length > 0 && (
                         <p className="text-sm text-gray-500">
-                            Показано {regions.length} регионов
+                            Показано {regions.length} городов
                         </p>
                     )}
                 </div>
@@ -620,7 +620,7 @@ export const RegionRatingWidget: React.FC<RegionRatingWidgetProps> = ({
                         {show_search && (
                             <div className="relative">
                                 <Input
-                                    placeholder="Поиск по регионам..."
+                                    placeholder="Поиск по городам..."
                                     value={searchQuery}
                                     onChange={(e) =>
                                         setSearchQuery(e.target.value)

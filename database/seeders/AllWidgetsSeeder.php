@@ -103,12 +103,12 @@ class AllWidgetsSeeder extends Seeder
                 'sort_order' => 12,
             ],
             [
-                'name' => 'Рейтинг регионов',
-                'widget_slug' => 'region_rating',
-                'description' => 'Рейтинг регионов по пожертвованиям с поиском и фильтрацией',
-                'icon' => '🗺️',
+                'name' => 'Топ поддерживающих городов',
+                'widget_slug' => 'city_supporters',
+                'description' => 'Топ городов: школы, поддержавшие люди, сумма поддержки',
+                'icon' => '🏙️',
                 'category' => 'content',
-                'component_name' => 'RegionRatingWidget',
+                'component_name' => 'CitySupportersWidget',
                 'is_active' => true,
                 'sort_order' => 13,
             ],
@@ -143,6 +143,18 @@ class AllWidgetsSeeder extends Seeder
                 'icon' => '👥',
                 'category' => 'content',
                 'component_name' => 'ReferralLeaderboardWidget',
+                'is_active' => true,
+                'sort_order' => 16,
+            ],
+
+            // ШКОЛЫ ГОРОДА (слайдер)
+            [
+                'name' => 'Школы города',
+                'widget_slug' => 'city_organizations',
+                'description' => 'Слайдер карточек школ выбранного города',
+                'icon' => '🏫',
+                'category' => 'content',
+                'component_name' => 'OrganizationsSliderWidget',
                 'is_active' => true,
                 'sort_order' => 16,
             ],
@@ -212,7 +224,7 @@ class AllWidgetsSeeder extends Seeder
         $this->command->info('  🌐 HTML блок');
         $this->command->info('  🚀 Проекты');
         $this->command->info('  📊 Статистика');
-        $this->command->info('  🗺️ Рейтинг регионов - рейтинг по пожертвованиям');
+        $this->command->info('  🏙️ Топ поддерживающих городов');
         $this->command->info('  💰 Список пожертвований - последние поступления');
         $this->command->info('  🎓 Статистика выпускников - три колонки с показателями');
         $this->command->info('  👥 Рейтинг по приглашениям - лидерборд');

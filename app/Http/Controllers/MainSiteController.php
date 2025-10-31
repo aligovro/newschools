@@ -129,10 +129,15 @@ class MainSiteController extends Controller
 
     // Форматируем данные организаций для отображения
     $organizations->getCollection()->transform(function ($org) {
-      $org->logo = $org->logo ? '/storage/' . $org->logo : null;
-      $org->image = !empty($org->images) && is_array($org->images) && count($org->images) > 0
-        ? '/storage/' . $org->images[0]
-        : null;
+      $org->logo = $org->logo ? '/storage/' . ltrim($org->logo, '/') : null;
+      // Приоритет: logo, затем первая из галереи
+      if (!empty($org->logo)) {
+        $org->image = $org->logo;
+      } elseif (!empty($org->images) && is_array($org->images) && count($org->images) > 0) {
+        $org->image = '/storage/' . ltrim($org->images[0], '/');
+      } else {
+        $org->image = null;
+      }
       // Убеждаемся что координаты доступны
       $org->latitude = $org->latitude;
       $org->longitude = $org->longitude;

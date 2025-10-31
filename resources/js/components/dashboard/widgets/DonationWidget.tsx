@@ -151,41 +151,47 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     }, [autoExpandSettings, isEditable]);
 
     const loadWidgetData = React.useCallback(async () => {
-        if (!organizationId) return;
-
         setIsLoading(true);
         setError(null);
 
         try {
-            // Загружаем данные виджета (включая терминологию)
-            const widgetData = await widgetsSystemApi.getDonationWidgetData(
-                organizationId,
-                { fundraiser_id: localConfig.fundraiser_id },
-            );
-
-            // Устанавливаем терминологию
-            if (widgetData.terminology) {
-                setTerminology(
-                    widgetData.terminology as unknown as Terminology,
-                );
-            }
-
-            // Устанавливаем fundraiser если есть
-            if (widgetData.fundraiser) {
-                setFundraiser(widgetData.fundraiser as unknown as Fundraiser);
-            }
-
-            // Загружаем методы оплаты
-            const methods =
-                await widgetsSystemApi.getDonationWidgetPaymentMethods(
+            if (organizationId) {
+                // Данные в контексте организации
+                const widgetData = await widgetsSystemApi.getDonationWidgetData(
                     organizationId,
+                    { fundraiser_id: localConfig.fundraiser_id },
                 );
-            setPaymentMethods(methods || []);
-            // Устанавливаем метод оплаты по умолчанию — первый доступный
-            if ((methods || []).length > 0) {
-                setSelectedPaymentMethod(
-                    (prev) => prev || String(methods[0].id),
-                );
+
+                if (widgetData.terminology) {
+                    setTerminology(
+                        widgetData.terminology as unknown as Terminology,
+                    );
+                }
+
+                if (widgetData.fundraiser) {
+                    setFundraiser(widgetData.fundraiser as unknown as Fundraiser);
+                }
+
+                const methods =
+                    await widgetsSystemApi.getDonationWidgetPaymentMethods(
+                        organizationId,
+                    );
+                setPaymentMethods(methods || []);
+                if ((methods || []).length > 0) {
+                    setSelectedPaymentMethod(
+                        (prev) => prev || String(methods[0].id),
+                    );
+                }
+            } else {
+                // Главный сайт: публичные методы оплаты (без организации)
+                const methods =
+                    await widgetsSystemApi.getDonationWidgetPaymentMethodsPublic();
+                setPaymentMethods(methods || []);
+                if ((methods || []).length > 0) {
+                    setSelectedPaymentMethod(
+                        (prev) => prev || String(methods[0].id),
+                    );
+                }
             }
         } catch (err: unknown) {
             console.error('Error loading widget data:', err);
@@ -197,10 +203,10 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
     // Загрузка данных виджета
     useEffect(() => {
-        if (!isEditable && organizationId) {
+        if (!isEditable) {
             loadWidgetData();
         }
-    }, [isEditable, organizationId, loadWidgetData]);
+    }, [isEditable, loadWidgetData]);
 
     // Автоматическое сохранение конфигурации при изменении (с debounce)
     useEffect(() => {
@@ -268,7 +274,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
         try {
             if (!organizationId) {
-                setError('Не указан ID организации');
+                setError('Пожертвования доступны на страницах организаций');
                 return;
             }
 
@@ -372,7 +378,8 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
     // Утилита: метаданные способов оплаты для отображения
     const getPaymentMeta = (m: ApiPaymentMethod) => {
-        const slug = (m.type || m.name || '').toLowerCase();
+        const rawSlug = (m as unknown as { slug?: string }).slug;
+        const slug = (rawSlug || m.type || m.name || '').toLowerCase();
         if (slug.includes('sbp') || slug === 'sbp' || slug.includes('qr')) {
             return {
                 title: 'По QR коду через СБП',
@@ -400,7 +407,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         }
         // default: банковская карта
         return {
-            title: 'Банковской картой',
+            title: m.name || 'Банковской картой',
             description: 'Visa, Mastercard, МИР и другие',
             icon: <CreditCard className="h-5 w-5 text-gray-400" />,
         };
@@ -625,7 +632,25 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                         <Label className="mb-3 block">Способ оплаты</Label>
                         <div className="space-y-2">
                             {paymentMethods.length > 0 ? (
-                                    paymentMethods.map((method) => {
+                                // Убираем дубликаты по slug (или по name, если slug отсутствует)
+                                paymentMethods
+                                    .filter((m, idx, arr) => {
+                                        const slug = (
+                                            (m as unknown as { slug?: string })
+                                                .slug || m.name
+                                        )?.toLowerCase();
+                                        return (
+                                            arr.findIndex((x) => {
+                                                const s = (
+                                                    (x as unknown as {
+                                                        slug?: string;
+                                                    }).slug || x.name
+                                                )?.toLowerCase();
+                                                return s === slug;
+                                            }) === idx
+                                        );
+                                    })
+                                    .map((method) => {
                                         const meta = getPaymentMeta(method);
                                         const checked =
                                             selectedPaymentMethod ===
@@ -717,7 +742,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                     <button
                         type="submit"
                         disabled={isProcessing}
-                        className={`w-full px-6 py-3 ${borderRadiusClass} ${buttonStyleClass} flex items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50`}
+                        className={`btn-accent w-full px-6 py-3 ${borderRadiusClass} flex items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50`}
                     >
                         {isProcessing ? (
                             <>

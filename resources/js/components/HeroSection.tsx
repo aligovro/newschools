@@ -146,7 +146,7 @@ export default function HeroSection({ terminology }: HeroSectionProps) {
                         <div className="flex flex-col justify-center gap-4 sm:flex-row">
                             <Link
                                 href="/organizations"
-                                className="rounded-lg bg-blue-600 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-700"
+                                className="btn-accent rounded-lg px-8 py-4 text-lg font-semibold text-white"
                             >
                                 {terminology.organization?.plural_nominative ||
                                     'Организации'}{' '}
@@ -154,7 +154,7 @@ export default function HeroSection({ terminology }: HeroSectionProps) {
                             </Link>
                             <Link
                                 href="/projects"
-                                className="rounded-lg border-2 border-blue-600 px-8 py-4 text-lg font-semibold text-blue-600 transition-colors hover:bg-blue-50"
+                                className="btn-accent rounded-lg px-8 py-4 text-lg font-semibold text-white"
                             >
                                 Все проекты
                             </Link>

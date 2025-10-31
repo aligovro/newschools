@@ -224,7 +224,7 @@ export const AlumniStatsWidget: React.FC<AlumniStatsWidgetProps> = ({
                     {statsItems.map((item, index) => (
                         <div
                             key={index}
-                            className="rounded-lg bg-white p-6 text-center shadow-md"
+                            className="rounded-lg bg-white p-6 text-center"
                         >
                             {showIcons && (
                                 <div className="mb-4 flex justify-center text-blue-600">
