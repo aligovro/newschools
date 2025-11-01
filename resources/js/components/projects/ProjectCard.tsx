@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 interface Project {
     id: number;
@@ -45,8 +45,19 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     const organizationAddress = project.organization_address ?? '';
 
     return (
-        <div className="overflow-hidden rounded-xl bg-white shadow-lg transition-shadow duration-300 hover:shadow-xl">
-            <Link href={projectUrl} className="block">
+        <div
+            className="overflow-hidden rounded-xl bg-white shadow-lg transition-shadow duration-300 hover:shadow-xl"
+            role="link"
+            tabIndex={0}
+            onClick={() => router.visit(projectUrl)}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.visit(projectUrl);
+                }
+            }}
+        >
+            <div className="block">
                 {/* Project Image */}
                 <div className="relative h-48 bg-gradient-to-br from-green-400 to-blue-500">
                     {project.image ? (
@@ -128,7 +139,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                         </div>
                     </div>
                 </div>
-            </Link>
+            </div>
         </div>
     );
 }

@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import type { WidgetData, WidgetPosition } from '../../types';
 import { DraggableWidget } from './DraggableWidget';
+import { Settings } from 'lucide-react';
 
 interface Props {
     position: WidgetPosition;
@@ -28,6 +29,7 @@ interface Props {
         positionSlug: string,
         order: number,
     ) => Promise<void>;
+    onEditPosition: () => void;
 }
 
 export const PositionDropZone: React.FC<Props> = ({
@@ -46,6 +48,7 @@ export const PositionDropZone: React.FC<Props> = ({
     onMoveSidebarRight,
     sidebarPosition,
     onMoveWidgetOrder,
+    onEditPosition,
 }) => {
     useEffect(() => {}, [position]);
 
@@ -128,53 +131,15 @@ export const PositionDropZone: React.FC<Props> = ({
                         {position.name}
                     </h3>
                     <div className="flex items-center space-x-2">
-                        {isHeaderOrFooter && (
-                            <div className="layout-controls flex items-center gap-2">
-                                <select
-                                    className="rounded border px-2 py-1 text-sm"
-                                    value={
-                                        (position.layout_config as any)
-                                            ?.width || 'full'
-                                    }
-                                    onChange={async (e) => {
-                                        const width = e.target.value;
-                                        await widgetsSystemApi.updatePositionLayout(
-                                            position.id,
-                                            {
-                                                ...(position.layout_config ||
-                                                    {}),
-                                                width,
-                                            },
-                                        );
-                                    }}
-                                >
-                                    <option value="full">Полная ширина</option>
-                                    <option value="boxed">Ограниченная</option>
-                                </select>
-                                <select
-                                    className="rounded border px-2 py-1 text-sm"
-                                    value={
-                                        (position.layout_config as any)
-                                            ?.alignment || 'center'
-                                    }
-                                    onChange={async (e) => {
-                                        const alignment = e.target.value;
-                                        await widgetsSystemApi.updatePositionLayout(
-                                            position.id,
-                                            {
-                                                ...(position.layout_config ||
-                                                    {}),
-                                                alignment,
-                                            },
-                                        );
-                                    }}
-                                >
-                                    <option value="left">Слева</option>
-                                    <option value="center">По центру</option>
-                                    <option value="right">Справа</option>
-                                </select>
-                            </div>
-                        )}
+                        <button
+                            type="button"
+                            className="inline-flex items-center gap-1 rounded border px-2 py-1 text-sm hover:bg-gray-50"
+                            title="Настройки позиции"
+                            onClick={onEditPosition}
+                        >
+                            <Settings size={16} />
+                            <span>Настройки</span>
+                        </button>
                         <span className="text-sm text-gray-500">
                             {positionWidgets.length} виджетов
                         </span>

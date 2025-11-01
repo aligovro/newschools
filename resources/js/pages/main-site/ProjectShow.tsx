@@ -1,4 +1,4 @@
-import MainSiteLayout from '@/layouts/MainSiteLayout';
+import MainLayout from '@/layouts/MainLayout';
 import { Link } from '@inertiajs/react';
 
 interface Organization {
@@ -51,18 +51,21 @@ interface Project {
 interface ProjectShowProps {
     site: any;
     positions: any[];
+    position_settings?: any[];
     project: Project;
 }
 
 export default function ProjectShow({
     site,
     positions,
+    position_settings = [],
     project,
 }: ProjectShowProps) {
     return (
-        <MainSiteLayout
+        <MainLayout
             site={site}
             positions={positions}
+            position_settings={position_settings}
             pageTitle={project.title}
             pageDescription={project.short_description}
         >
@@ -298,6 +301,6 @@ export default function ProjectShow({
                     </div>
                 </article>
             </div>
-        </MainSiteLayout>
+        </MainLayout>
     );
 }

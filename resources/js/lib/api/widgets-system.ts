@@ -42,6 +42,36 @@ export interface WidgetPositionsResponse {
     message?: string;
 }
 
+export interface PositionVisibilityRules {
+    mode?: 'all' | 'include' | 'exclude';
+    routes?: string[]; // keys like home, projects, organization_show, etc.
+    pages?: Array<{ id: number; slug: string } | number | string>;
+}
+
+export interface SitePositionSettingDTO {
+    id: number;
+    site_id: number;
+    position_id?: number | null;
+    position_slug: string;
+    visibility_rules?: PositionVisibilityRules;
+    layout_overrides?: Record<string, unknown>;
+}
+
+export interface PositionSettingsResponse {
+    success: boolean;
+    data: {
+        position?: WidgetPosition | null;
+        settings?: SitePositionSettingDTO | null;
+    };
+    message?: string;
+}
+
+export interface SimpleSuccessResponse<T> {
+    success: boolean;
+    data: T;
+    message?: string;
+}
+
 export interface PaymentMethod {
     id: number;
     name: string;
@@ -113,7 +143,9 @@ export const widgetsSystemApi = {
             .put<{
                 success: boolean;
                 data: WidgetPosition;
-            }>(`/widgets/positions/${positionId}/layout`, { layout_config: layoutConfig })
+            }>(`/widgets/positions/${positionId}/layout`, {
+                layout_config: layoutConfig,
+            })
             .then((response) => response.data),
 
     // Получение методов оплаты для виджета пожертвований
@@ -146,7 +178,9 @@ export const widgetsSystemApi = {
             .get<{
                 success: boolean;
                 data: PaymentMethod[];
-            }>(`/organizations/${organizationId}/donation-widget/payment-methods`)
+            }>(
+                `/organizations/${organizationId}/donation-widget/payment-methods`,
+            )
             .then((response) => response.data.data),
 
     // Публичные методы оплаты (без организации)
@@ -168,5 +202,60 @@ export const widgetsSystemApi = {
                 `/organizations/${organizationId}/donation-widget/donate`,
                 donationData,
             )
+            .then((response) => response.data),
+
+    // ПОЛУЧЕНИЕ/СОХРАНЕНИЕ НАСТРОЕК ПОЗИЦИИ ДЛЯ САЙТА
+    getPositionSettings: (
+        siteId: number,
+        positionSlug: string,
+    ): Promise<PositionSettingsResponse> =>
+        apiClient
+            .get<PositionSettingsResponse>(
+                `/dashboard/sites/${siteId}/positions/${positionSlug}/settings`,
+            )
+            .then((response) => response.data),
+
+    savePositionSettings: (
+        siteId: number,
+        positionSlug: string,
+        payload: {
+            visibility?: PositionVisibilityRules;
+            layout?: Record<string, unknown>;
+        },
+    ): Promise<SimpleSuccessResponse<SitePositionSettingDTO>> =>
+        apiClient
+            .put<
+                SimpleSuccessResponse<SitePositionSettingDTO>
+            >(`/dashboard/sites/${siteId}/positions/${positionSlug}/settings`, payload)
+            .then((response) => response.data),
+
+    getPositionRoutes: (
+        siteId: number,
+    ): Promise<
+        SimpleSuccessResponse<
+            Array<{ key: string; label: string; pattern: string }>
+        >
+    > =>
+        apiClient
+            .get<
+                SimpleSuccessResponse<
+                    Array<{ key: string; label: string; pattern: string }>
+                >
+            >(`/dashboard/sites/${siteId}/positions/routes`)
+            .then((response) => response.data),
+
+    getSitePages: (
+        siteId: number,
+    ): Promise<
+        SimpleSuccessResponse<
+            Array<{ id: number; title: string; slug: string }>
+        >
+    > =>
+        apiClient
+            .get<
+                SimpleSuccessResponse<
+                    Array<{ id: number; title: string; slug: string }>
+                >
+            >(`/dashboard/sites/${siteId}/positions/pages`)
             .then((response) => response.data),
 };

@@ -554,6 +554,35 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
             </div>
         );
     },
+
+    // Блок подписки на школы (только для главного сайта) — в конструкторе показываем плейсхолдер
+    subscribe_block: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) || 'Блок подписки на школы';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">
+                    subscribe_block
+                </div>
+            </div>
+        );
+    },
+
+    // Блок добавления организации (только для главного сайта) — в конструкторе показываем плейсхолдер
+    add_organization_block: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) ||
+            'Блок добавления организации';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">
+                    add_organization_block
+                </div>
+            </div>
+        );
+    },
 };
 
 /**

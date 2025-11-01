@@ -7,7 +7,7 @@ import { Head } from '@inertiajs/react';
 import React, { ReactNode } from 'react';
 import '../../css/site-preview.scss';
 
-interface MainSiteLayoutProps {
+interface MainLayoutProps {
     site: {
         id: number;
         name: string;
@@ -21,7 +21,7 @@ interface MainSiteLayoutProps {
     positions: WidgetPosition[];
     position_settings?: Array<{
         position_slug: string;
-        visibility_rules?: Record<string, any>;
+        visibility_rules?: PositionVisibilityRules;
         layout_overrides?: Record<string, unknown>;
     }>;
     children?: ReactNode;
@@ -29,7 +29,13 @@ interface MainSiteLayoutProps {
     pageDescription?: string;
 }
 
-const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
+type PositionVisibilityRules = {
+    mode?: 'all' | 'include' | 'exclude';
+    routes?: string[];
+    pages?: unknown[];
+};
+
+const MainLayout: React.FC<MainLayoutProps> = ({
     site,
     positions,
     position_settings = [],
@@ -37,11 +43,15 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
     pageTitle,
     pageDescription,
 }) => {
+    const MemoWidgetDisplay = React.useMemo(
+        () => React.memo(WidgetDisplay),
+        [],
+    );
     const settingsBySlug = React.useMemo(() => {
         const map: Record<
             string,
             {
-                visibility_rules?: any;
+                visibility_rules?: PositionVisibilityRules;
                 layout_overrides?: Record<string, unknown>;
             }
         > = {};
@@ -81,27 +91,79 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
     const getLayoutFor = (
         position: WidgetPosition,
     ): { width: string; alignment: string } => {
-        const base = (position.layout_config || {}) as Record<string, any>;
+        const base = (position.layout_config || {}) as Record<string, unknown>;
         const override = (settingsBySlug[position.slug]?.layout_overrides ||
-            {}) as Record<string, any>;
+            {}) as Record<string, unknown>;
         return {
             width:
-                (override.width as string) || (base.width as string) || 'full',
+                (override['width'] as string) ||
+                (base['width'] as string) ||
+                'full',
             alignment:
-                (override.alignment as string) ||
-                (base.alignment as string) ||
+                (override['alignment'] as string) ||
+                (base['alignment'] as string) ||
                 'center',
         };
     };
 
+    // Precompute widgets grouped by position with filtering/sorting
+    const widgetsByPosition = React.useMemo(() => {
+        const map: Record<string, WidgetData[]> = {};
+        (site.widgets_config || []).forEach((w) => {
+            if (!map[w.position_slug]) map[w.position_slug] = [];
+            map[w.position_slug].push(w);
+        });
+        Object.keys(map).forEach((slug) => {
+            map[slug] = map[slug]
+                .filter((w) => w.is_active && w.is_visible)
+                .sort((a, b) => a.order - b.order);
+        });
+        return map;
+    }, [site.widgets_config]);
+
+    // Precompute positions by areas to avoid repeated filtering
+    const positionsByArea = React.useMemo(() => {
+        const headerColSlugs = [
+            'header-col-1',
+            'header-col-2',
+            'header-col-3',
+            'header-col-4',
+        ];
+        const footerColSlugs = [
+            'footer-col-1',
+            'footer-col-2',
+            'footer-col-3',
+            'footer-col-4',
+        ];
+        return {
+            headerCols: positions.filter(
+                (p) => p.area === 'header' && headerColSlugs.includes(p.slug),
+            ),
+            headerFull:
+                positions.find(
+                    (p) => p.area === 'header' && p.slug === 'header',
+                ) || null,
+            headerAll: positions.filter((p) => p.area === 'header'),
+            hero: positions.filter(
+                (p) => p.area === 'hero' || p.slug === 'hero',
+            ),
+            sidebar: positions.filter((p) => p.area === 'sidebar'),
+            content: positions.filter((p) => p.area === 'content'),
+            footerCols: positions.filter(
+                (p) => p.area === 'footer' && footerColSlugs.includes(p.slug),
+            ),
+            footerOther: positions.filter(
+                (p) => p.area === 'footer' && !footerColSlugs.includes(p.slug),
+            ),
+        };
+    }, [positions]);
+
     const renderPosition = (
         position: WidgetPosition,
-        widgets: WidgetData[],
+        _widgets: WidgetData[],
     ) => {
         if (!shouldShowPosition(position)) return null;
-        const positionWidgets = widgets
-            .filter((widget) => widget.position_slug === position.slug)
-            .sort((a, b) => a.order - b.order);
+        const positionWidgets = widgetsByPosition[position.slug] || [];
 
         const layout = getLayoutFor(position);
         const containerClass =
@@ -121,23 +183,18 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                 <div className={`${containerClass} ${alignClass}`}>
                     {positionWidgets.length > 0 && (
                         <div className="space-y-4">
-                            {positionWidgets
-                                .filter(
-                                    (widget) =>
-                                        widget.is_active && widget.is_visible,
-                                )
-                                .map((widget) => (
-                                    <div
-                                        key={widget.id}
-                                        className="widget-container"
-                                    >
-                                        <WidgetDisplay
-                                            widget={widget}
-                                            isEditable={false}
-                                            useOutputRenderer={true}
-                                        />
-                                    </div>
-                                ))}
+                            {positionWidgets.map((widget) => (
+                                <div
+                                    key={widget.id}
+                                    className="widget-container"
+                                >
+                                    <MemoWidgetDisplay
+                                        widget={widget}
+                                        isEditable={false}
+                                        useOutputRenderer={true}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -197,20 +254,8 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                 {/* Header: четыре колонки (header-col-1..4) */}
                 <header className="site-header">
                     {(() => {
-                        const headerColSlugs = [
-                            'header-col-1',
-                            'header-col-2',
-                            'header-col-3',
-                            'header-col-4',
-                        ];
-                        const headerCols = positions.filter(
-                            (p) =>
-                                p.area === 'header' &&
-                                headerColSlugs.includes(p.slug),
-                        );
-                        const headerFull = positions.find(
-                            (p) => p.area === 'header' && p.slug === 'header',
-                        );
+                        const { headerCols, headerFull, headerAll } =
+                            positionsByArea;
 
                         return (
                             <div className="space-y-6">
@@ -238,16 +283,14 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                                 )}
                                 {!headerFull && headerCols.length === 0 && (
                                     <div>
-                                        {positions
-                                            .filter((p) => p.area === 'header')
-                                            .map((p) => (
-                                                <div key={p.id}>
-                                                    {renderPosition(
-                                                        p,
-                                                        site.widgets_config,
-                                                    )}
-                                                </div>
-                                            ))}
+                                        {headerAll.map((p) => (
+                                            <div key={p.id}>
+                                                {renderPosition(
+                                                    p,
+                                                    site.widgets_config,
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -255,21 +298,17 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                     })()}
                 </header>
 
-                {positions
-                    .filter((p) => p.area === 'hero' || p.slug === 'hero')
-                    .map((position) => (
-                        <section key={position.id} className="site-hero">
-                            {renderPosition(position, site.widgets_config)}
-                        </section>
-                    ))}
+                {positionsByArea.hero.map((position) => (
+                    <section key={position.id} className="site-hero">
+                        {renderPosition(position, site.widgets_config)}
+                    </section>
+                ))}
 
                 {/* Main Content */}
                 <main className="site-main">
                     <div className="container mx-auto px-4 py-8">
                         {(() => {
-                            const sidebarPositions = positions.filter(
-                                (p) => p.area === 'sidebar',
-                            );
+                            const sidebarPositions = positionsByArea.sidebar;
                             const hasSidebarWidgets = sidebarPositions.some(
                                 (position) =>
                                     site.widgets_config.some(
@@ -281,14 +320,14 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                                     ),
                             );
 
-                            const sidebarLeft = false; // can be extended from site.layout_config
+                            const sidebarLeft = false;
 
                             if (!hasSidebarWidgets) {
                                 return (
                                     <div className="grid grid-cols-1 gap-8">
-                                        {positions
-                                            .filter((p) => p.area === 'content')
-                                            .map((position) => (
+                                        {children}
+                                        {positionsByArea.content.map(
+                                            (position) => (
                                                 <div
                                                     key={position.id}
                                                     className="site-content"
@@ -298,8 +337,8 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                                                         site.widgets_config,
                                                     )}
                                                 </div>
-                                            ))}
-                                        {children}
+                                            ),
+                                        )}
                                     </div>
                                 );
                             }
@@ -320,9 +359,9 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                                         ))}
 
                                     <div className="lg:col-span-3">
-                                        {positions
-                                            .filter((p) => p.area === 'content')
-                                            .map((position) => (
+                                        {children}
+                                        {positionsByArea.content.map(
+                                            (position) => (
                                                 <div
                                                     key={position.id}
                                                     className="site-content"
@@ -332,8 +371,8 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                                                         site.widgets_config,
                                                     )}
                                                 </div>
-                                            ))}
-                                        {children}
+                                            ),
+                                        )}
                                     </div>
 
                                     {!sidebarLeft &&
@@ -357,22 +396,7 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                 {/* Footer: четыре колонки (footer-col-1..4) */}
                 <footer className="site-footer">
                     {(() => {
-                        const footerColSlugs = [
-                            'footer-col-1',
-                            'footer-col-2',
-                            'footer-col-3',
-                            'footer-col-4',
-                        ];
-                        const footerCols = positions.filter(
-                            (p) =>
-                                p.area === 'footer' &&
-                                footerColSlugs.includes(p.slug),
-                        );
-                        const otherFooter = positions.filter(
-                            (p) =>
-                                p.area === 'footer' &&
-                                !footerColSlugs.includes(p.slug),
-                        );
+                        const { footerCols, footerOther } = positionsByArea;
 
                         return (
                             <div className="space-y-6">
@@ -390,7 +414,7 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
                                         </div>
                                     </div>
                                 )}
-                                {otherFooter.map((p) => (
+                                {footerOther.map((p) => (
                                     <div key={p.id}>
                                         {renderPosition(p, site.widgets_config)}
                                     </div>
@@ -404,4 +428,4 @@ const MainSiteLayout: React.FC<MainSiteLayoutProps> = ({
     );
 };
 
-export default MainSiteLayout;
+export default MainLayout;

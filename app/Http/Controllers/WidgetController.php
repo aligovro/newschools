@@ -283,9 +283,10 @@ class WidgetController extends Controller
   /**
    * Получить виджеты для позиции
    */
-  public function getWidgetsForPosition(WidgetPosition $position): JsonResponse
+  public function getWidgetsForPosition(Request $request, WidgetPosition $position): JsonResponse
   {
-    $widgets = $position->getAvailableWidgets();
+    $siteType = $request->get('site_type');
+    $widgets = $position->getAvailableWidgets($siteType);
 
     return response()->json([
       'widgets' => $widgets,

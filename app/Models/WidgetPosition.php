@@ -91,18 +91,17 @@ class WidgetPosition extends Model
     return in_array($widgetSlug, $allowedWidgets);
   }
 
-  public function getAvailableWidgets()
+  public function getAvailableWidgets(?string $siteType = null)
   {
     $allowedSlugs = $this->allowed_widgets ?? [];
 
-    if (empty($allowedSlugs)) {
-      return Widget::active()->ordered()->get();
+    $query = Widget::active()->forSiteType($siteType);
+
+    if (!empty($allowedSlugs)) {
+      $query->whereIn('widget_slug', $allowedSlugs);
     }
 
-    return Widget::active()
-      ->whereIn('slug', $allowedSlugs)
-      ->ordered()
-      ->get();
+    return $query->ordered()->get();
   }
 
   public function getAreaDisplayName(): string

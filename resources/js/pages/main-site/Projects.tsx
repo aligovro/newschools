@@ -1,5 +1,5 @@
 import ProjectCard from '@/components/projects/ProjectCard';
-import MainSiteLayout from '@/layouts/MainSiteLayout';
+import MainLayout from '@/layouts/MainLayout';
 import { Link } from '@inertiajs/react';
 
 interface Organization {
@@ -25,6 +25,7 @@ interface Project {
 interface ProjectsPageProps {
     site: any;
     positions: any[];
+    position_settings?: any[];
     projects: {
         data: Project[];
         current_page: number;
@@ -39,13 +40,15 @@ interface ProjectsPageProps {
 export default function Projects({
     site,
     positions,
+    position_settings = [],
     projects,
     filters,
 }: ProjectsPageProps) {
     return (
-        <MainSiteLayout
+        <MainLayout
             site={site}
             positions={positions}
+            position_settings={position_settings}
             pageTitle="Проекты"
             pageDescription="Список всех проектов"
         >
@@ -62,12 +65,7 @@ export default function Projects({
                 {projects.data.length > 0 ? (
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {projects.data.map((project) => (
-                            <Link
-                                key={project.id}
-                                href={`/project/${project.slug}`}
-                            >
-                                <ProjectCard project={project} />
-                            </Link>
+                            <ProjectCard key={project.id} project={project} />
                         ))}
                     </div>
                 ) : (
@@ -97,6 +95,6 @@ export default function Projects({
                     </div>
                 )}
             </div>
-        </MainSiteLayout>
+        </MainLayout>
     );
 }

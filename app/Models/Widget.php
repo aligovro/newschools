@@ -23,12 +23,14 @@ class Widget extends Model
     'css_classes',
     'js_script',
     'is_active',
+    'allowed_site_types',
     'sort_order',
   ];
 
   protected $casts = [
     'fields_config' => 'array',
     'settings_config' => 'array',
+    'allowed_site_types' => 'array',
     'is_active' => 'boolean',
   ];
 
@@ -53,6 +55,45 @@ class Widget extends Model
   public function scopeOrdered($query)
   {
     return $query->orderBy('sort_order')->orderBy('name');
+  }
+
+  /**
+   * Фильтрация виджетов по типу сайта
+   * @param string|null $siteType Тип сайта: 'main' или 'organization'. Если null, возвращаются виджеты для всех типов
+   */
+  public function scopeForSiteType($query, ?string $siteType)
+  {
+    return $query->where(function ($q) use ($siteType) {
+      // Виджеты без ограничений (allowed_site_types = null или [])
+      $q->whereNull('allowed_site_types')
+        ->orWhereJsonLength('allowed_site_types', 0);
+      
+      // Или виджеты, которые разрешены для данного типа сайта
+      if ($siteType) {
+        $q->orWhereJsonContains('allowed_site_types', $siteType);
+      }
+    });
+  }
+
+  /**
+   * Проверка, доступен ли виджет для данного типа сайта
+   */
+  public function isAvailableForSiteType(?string $siteType): bool
+  {
+    $allowedTypes = $this->allowed_site_types;
+    
+    // Если ограничений нет, виджет доступен для всех
+    if (empty($allowedTypes)) {
+      return true;
+    }
+    
+    // Если тип сайта не указан, виджет доступен только если нет ограничений
+    if (!$siteType) {
+      return false;
+    }
+    
+    // Проверяем, есть ли тип сайта в списке разрешенных
+    return in_array($siteType, $allowedTypes, true);
   }
 
   // Методы

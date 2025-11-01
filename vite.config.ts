@@ -40,6 +40,7 @@ export default defineConfig({
             '@/routes': path.resolve(__dirname, 'resources/js/routes'),
             '@/lib': path.resolve(__dirname, 'resources/js/lib'),
             '@/store': path.resolve(__dirname, 'resources/js/store'),
+            '@css': path.resolve(__dirname, 'resources/css'),
         },
     },
 });

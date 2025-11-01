@@ -180,9 +180,9 @@ class Organization extends Model
     return $query->where('region_id', $regionId);
   }
 
-  public function scopeByCity($query, $city)
+  public function scopeByCity($query, $cityId)
   {
-    return $query->where('city', $city);
+    return $query->where('city_id', $cityId);
   }
 
   public function scopeByType($query, $type)
