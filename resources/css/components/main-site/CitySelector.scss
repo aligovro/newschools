@@ -1,0 +1,23 @@
+// Стили для компонента CitySelector
+.city-selector {
+    // Компонент использует в основном Tailwind классы
+    // Дополнительные стили можно добавить здесь при необходимости
+}
+
+.city-selector__dropdown {
+    z-index: 20;
+}
+
+.city-selector__overlay {
+    z-index: 10;
+}
+
+.city-selector__city-item {
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &--selected {
+        background-color: #eff6ff;
+        color: #2563eb;
+    }
+}
+

@@ -1,5 +1,5 @@
 import ProjectCard from '@/components/projects/ProjectCard';
-import MainSiteLayout from '@/layouts/MainSiteLayout';
+import MainLayout from '@/layouts/MainLayout';
 import { Link } from '@inertiajs/react';
 
 interface Project {
@@ -32,18 +32,21 @@ interface Organization {
 interface OrganizationShowProps {
     site: any;
     positions: any[];
+    position_settings?: any[];
     organization: Organization;
 }
 
 export default function OrganizationShow({
     site,
     positions,
+    position_settings = [],
     organization,
 }: OrganizationShowProps) {
     return (
-        <MainSiteLayout
+        <MainLayout
             site={site}
             positions={positions}
+            position_settings={position_settings}
             pageTitle={organization.name}
             pageDescription={organization.description}
         >
@@ -87,17 +90,12 @@ export default function OrganizationShow({
                         </h2>
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {organization.projects.map((project) => (
-                                <Link
-                                    key={project.id}
-                                    href={`/project/${project.slug}`}
-                                >
-                                    <ProjectCard project={project} />
-                                </Link>
+                                <ProjectCard key={project.id} project={project} />
                             ))}
                         </div>
                     </div>
                 )}
             </div>
-        </MainSiteLayout>
+        </MainLayout>
     );
 }

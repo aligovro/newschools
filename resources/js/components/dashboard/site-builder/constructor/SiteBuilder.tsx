@@ -8,6 +8,7 @@ import {
     useSiteBuilderState,
 } from './';
 import { DragDropProvider } from './DragDropProvider';
+import { PositionSettingsModal } from './modals/PositionSettingsModal';
 
 interface SiteBuilderProps {
     className?: string;
@@ -68,6 +69,15 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
         initialWidgets,
         onWidgetsChange,
     });
+
+    const [positionForSettings, setPositionForSettings] = React.useState<{
+        id: number;
+        name: string;
+        slug: string;
+        area: string;
+        layout_config?: Record<string, unknown>;
+    } | null>(null);
+    const [positionSettingsOpen, setPositionSettingsOpen] = React.useState(false);
 
     return (
         <DragDropProvider>
@@ -133,6 +143,10 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                                     onMoveSidebarLeft={moveSidebarLeft}
                                     onMoveSidebarRight={moveSidebarRight}
                                     onMoveWidgetOrder={onMoveWidgetOrder}
+                                    onEditPosition={(p) => {
+                                        setPositionForSettings(p);
+                                        setPositionSettingsOpen(true);
+                                    }}
                                 />
                             </div>
                         )}
@@ -163,6 +177,14 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                 loadingWidgets={loadingAvailableWidgets}
                 onMoveWidget={onMoveWidget}
             />
+            {positionForSettings && (
+                <PositionSettingsModal
+                    open={positionSettingsOpen}
+                    onClose={() => setPositionSettingsOpen(false)}
+                    siteId={siteId}
+                    position={positionForSettings}
+                />
+            )}
         </DragDropProvider>
     );
 };

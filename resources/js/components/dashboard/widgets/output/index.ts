@@ -16,6 +16,8 @@ export { ReferralLeaderboardOutput } from './ReferralLeaderboardOutput';
 export { CitySupportersOutput } from './CitySupportersOutput';
 export { SliderOutput } from './SliderOutput';
 export { StatsOutput } from './StatsOutput';
+export { SubscribeBlockOutput } from './SubscribeBlockOutput';
+export { AddOrganizationBlockOutput } from './AddOrganizationBlockOutput';
 export { TextOutput } from './TextOutput';
 
 // Main output renderer

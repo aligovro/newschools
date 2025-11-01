@@ -2,7 +2,7 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import CitySelector from '@/components/main-site/CitySelector';
 import { MapMarker } from '@/components/maps/YandexMap';
 import { useDefaultCity } from '@/hooks/useDefaultCity';
-import MainSiteLayout from '@/layouts/MainSiteLayout';
+import MainLayout from '@/layouts/MainLayout';
 import { router } from '@inertiajs/react';
 import { List, MapPin, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -47,6 +47,7 @@ interface OrganizationsPageProps {
         seo_config?: Record<string, unknown>;
     };
     positions: any[];
+    position_settings?: any[];
     organizations: {
         data: OrganizationData[];
         current_page: number;
@@ -62,6 +63,7 @@ interface OrganizationsPageProps {
 export default function Organizations({
     site,
     positions,
+    position_settings = [],
     organizations,
     filters,
 }: OrganizationsPageProps) {
@@ -204,9 +206,10 @@ export default function Organizations({
 
     if (!defaultCityLoaded) {
         return (
-            <MainSiteLayout
+            <MainLayout
                 site={site}
                 positions={positions}
+                position_settings={position_settings}
                 pageTitle="Загрузка..."
                 pageDescription="Список всех организаций"
             >
@@ -231,7 +234,7 @@ export default function Organizations({
                         </div>
                     </div>
                 </div>
-            </MainSiteLayout>
+            </MainLayout>
         );
     }
 
@@ -252,9 +255,10 @@ export default function Organizations({
     };
 
     return (
-        <MainSiteLayout
+        <MainLayout
             site={site}
             positions={positions}
+            position_settings={position_settings}
             pageTitle={pageTitle}
             pageDescription="Список всех организаций"
         >
@@ -340,6 +344,6 @@ export default function Organizations({
                     <MapTab mapMarkers={mapMarkers} mapCenter={mapCenter} />
                 )}
             </div>
-        </MainSiteLayout>
+        </MainLayout>
     );
 }

@@ -74,3 +74,8 @@
 
 /* Home page components */
 @import 'components/home.css';
+
+/* Main site components */
+@import 'components/main-site/AddOrganizationBlock.scss';
+@import 'components/main-site/SubscribeBlock.scss';
+@import 'components/main-site/CitySelector.scss';

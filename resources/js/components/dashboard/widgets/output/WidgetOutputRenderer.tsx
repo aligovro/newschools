@@ -17,6 +17,8 @@ import { ReferralLeaderboardOutput } from './ReferralLeaderboardOutput';
 import { CitySupportersOutput } from './CitySupportersOutput';
 import { SliderOutput } from './SliderOutput';
 import { StatsOutput } from './StatsOutput';
+import { SubscribeBlockOutput } from './SubscribeBlockOutput';
+import { AddOrganizationBlockOutput } from './AddOrganizationBlockOutput';
 import { TextOutput } from './TextOutput';
 import { CityOrganizationsOutput } from './CityOrganizationsOutput';
 
@@ -39,6 +41,8 @@ const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
     city_supporters: CitySupportersOutput,
     referral_leaderboard: ReferralLeaderboardOutput,
     city_organizations: CityOrganizationsOutput,
+    subscribe_block: SubscribeBlockOutput,
+    add_organization_block: AddOrganizationBlockOutput,
 };
 
 // Default output component for unknown widgets

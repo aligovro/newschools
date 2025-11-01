@@ -8,6 +8,8 @@ use App\Models\WidgetPosition;
 use App\Models\SiteTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
+use App\Models\Site;
 
 class WidgetController extends Controller
 {
@@ -124,6 +126,21 @@ class WidgetController extends Controller
         $position->layout_config = $layout;
         $position->save();
 
+        // Сбрасываем кеш позиций по соответствующим шаблонам
+        $templateSlugs = [];
+        if ($position->template_id) {
+            $template = SiteTemplate::find($position->template_id);
+            if ($template && $template->slug) {
+                $templateSlugs[] = $template->slug;
+            }
+        } else {
+            // Глобальная позиция: инвалидируем кеш для всех используемых шаблонов
+            $templateSlugs = Site::query()->distinct()->pluck('template')->filter()->values()->all();
+        }
+        foreach ($templateSlugs as $slug) {
+            Cache::forget("site_positions_{$slug}");
+        }
+
         return response()->json([
             'success' => true,
             'data' => $position,
@@ -136,7 +153,8 @@ class WidgetController extends Controller
     public function forPosition(Request $request, $positionId): JsonResponse
     {
         $position = WidgetPosition::findOrFail($positionId);
-        $widgets = $position->getAvailableWidgets();
+        $siteType = $request->get('site_type');
+        $widgets = $position->getAvailableWidgets($siteType);
 
         return response()->json([
             'success' => true,

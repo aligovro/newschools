@@ -292,6 +292,15 @@ class SiteController extends Controller
         try {
             $site = $this->getSite($site);
             $widget = Widget::where('widget_slug', $request->widget_slug)->firstOrFail();
+            
+            // Проверяем доступность виджета для типа сайта
+            if (!$widget->isAvailableForSiteType($site->site_type)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Виджет недоступен для данного типа сайта',
+                ], 403);
+            }
+            
             $position = WidgetPosition::where('slug', $request->position_slug)->firstOrFail();
 
             // Валидируем конфигурацию виджета
@@ -640,6 +649,132 @@ class SiteController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка при получении превью: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Получить настройки позиции для сайта
+     */
+    public function getPositionSettings(Request $request, $site, string $positionSlug): JsonResponse
+    {
+        try {
+            $siteModel = $this->getSite($site);
+
+            $position = \App\Models\WidgetPosition::where('slug', $positionSlug)->first();
+
+            $settings = \App\Models\SitePositionSetting::where('site_id', $siteModel->id)
+                ->where('position_slug', $positionSlug)
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'position' => $position,
+                    'settings' => $settings,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при получении настроек позиции: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Сохранить настройки позиции для сайта
+     */
+    public function savePositionSettings(Request $request, $site, string $positionSlug): JsonResponse
+    {
+        $request->validate([
+            'visibility' => 'nullable|array',
+            'layout' => 'nullable|array',
+        ]);
+
+        try {
+            $siteModel = $this->getSite($site);
+
+            $position = \App\Models\WidgetPosition::where('slug', $positionSlug)->first();
+
+            $settings = \App\Models\SitePositionSetting::updateOrCreate(
+                [
+                    'site_id' => $siteModel->id,
+                    'position_slug' => $positionSlug,
+                ],
+                [
+                    'position_id' => $position?->id,
+                    'visibility_rules' => $request->input('visibility', []),
+                    'layout_overrides' => $request->input('layout', []),
+                ]
+            );
+
+            // Сбрасываем кеш вывода для этого сайта/шаблона
+            Cache::forget("site_widgets_config_{$siteModel->id}");
+            if (!empty($siteModel->template)) {
+                Cache::forget("site_positions_{$siteModel->template}");
+            }
+            Cache::forget("site_position_settings_{$siteModel->id}");
+
+            return response()->json([
+                'success' => true,
+                'data' => $settings,
+                'message' => 'Настройки позиции сохранены',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении настроек позиции: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Доступные публичные маршруты основного сайта (для выбора видимости)
+     */
+    public function getAvailablePublicRoutes(Request $request, $site): JsonResponse
+    {
+        try {
+            // Можно адаптировать по типу сайта, пока фиксированный список для главного сайта
+            $routes = [
+                ['key' => 'home', 'label' => 'Главная', 'pattern' => '/'],
+                ['key' => 'organizations', 'label' => 'Школы (список)', 'pattern' => '/organizations'],
+                ['key' => 'organization_show', 'label' => 'Школа (страница)', 'pattern' => '/organization/*'],
+                ['key' => 'projects', 'label' => 'Проекты (список)', 'pattern' => '/projects'],
+                ['key' => 'project_show', 'label' => 'Проект (страница)', 'pattern' => '/project/*'],
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $routes,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при получении маршрутов: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Опубликованные страницы сайта
+     */
+    public function getSitePages(Request $request, $site): JsonResponse
+    {
+        try {
+            $siteModel = $this->getSite($site);
+            $pages = $siteModel->publishedPages()
+                ->orderBy('sort_order')
+                ->get(['id', 'title', 'slug']);
+
+            return response()->json([
+                'success' => true,
+                'data' => $pages,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при получении страниц: ' . $e->getMessage(),
             ], 500);
         }
     }

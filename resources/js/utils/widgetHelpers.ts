@@ -38,6 +38,8 @@ export const isCustomWidget = (slug: string): boolean => {
         'alumni_stats',
         'html',
         'city_organizations',
+        'subscribe_block',
+        'add_organization_block',
     ];
     return customWidgets.includes(slug);
 };

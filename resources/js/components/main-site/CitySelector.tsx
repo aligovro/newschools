@@ -1,5 +1,6 @@
 import { useDefaultCity } from '@/hooks/useDefaultCity';
 import { detectCityByGeolocation, fetchPublicCities } from '@/lib/api/public';
+import '@css/components/main-site/CitySelector.scss';
 import { ChevronDown, Loader2, MapPin } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -130,7 +131,7 @@ export default function CitySelector({
     };
 
     return (
-        <div className="relative">
+        <div className="city-selector relative">
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
@@ -161,10 +162,10 @@ export default function CitySelector({
             {isOpen && (
                 <>
                     <div
-                        className="fixed inset-0 z-10"
+                        className="city-selector__overlay fixed inset-0 z-10"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="absolute left-0 top-full z-20 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-lg">
+                    <div className="city-selector__dropdown absolute left-0 top-full z-20 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-lg">
                         <div className="p-3">
                             <input
                                 type="text"
@@ -220,9 +221,9 @@ export default function CitySelector({
                                                     onClick={() =>
                                                         handleSelectCity(city)
                                                     }
-                                                    className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${
+                                                    className={`city-selector__city-item w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${
                                                         value?.id === city.id
-                                                            ? 'bg-blue-50 text-blue-600'
+                                                            ? 'city-selector__city-item--selected bg-blue-50 text-blue-600'
                                                             : 'text-gray-900'
                                                     }`}
                                                 >

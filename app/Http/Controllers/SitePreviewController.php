@@ -42,6 +42,10 @@ class SitePreviewController extends Controller
                 return $query->get();
             });
 
+            $positionSettings = Cache::remember("site_position_settings_{$site->id}", 300, function () use ($site) {
+                return \App\Models\SitePositionSetting::where('site_id', $site->id)->get();
+            });
+
             Log::info('SitePreviewController::preview - widgets config:', [
                 'site_id' => $site->id,
                 'widgets_count' => count($widgetsConfig),
@@ -59,6 +63,7 @@ class SitePreviewController extends Controller
                     'seo_config' => $site->seo_config ?? [],
                 ],
                 'positions' => $positions,
+                'position_settings' => $positionSettings,
             ]);
         } catch (\Exception $e) {
             abort(404, 'Сайт не найден');

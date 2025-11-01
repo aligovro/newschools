@@ -1,0 +1,60 @@
+// Стили для компонента AddOrganizationBlock
+.add-organization-block {
+    min-height: 344px;
+}
+
+.add-organization-block__title {
+    font-family: var(--font-family, Montserrat, sans-serif);
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 120%;
+    background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.add-organization-block__subtitle {
+    font-family: var(--font-family, Montserrat, sans-serif);
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 120%;
+    background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.add-organization-block__description {
+    font-family: var(--font-family, Montserrat, sans-serif);
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 140%;
+    letter-spacing: -0.02em;
+    color: #1a1a1a;
+}
+
+.add-organization-block__label {
+    font-family: var(--font-family, Montserrat, sans-serif);
+}
+
+.add-organization-block__input {
+    height: 60px;
+    font-family: var(--font-family, Montserrat, sans-serif);
+}
+
+.add-organization-block__city-selector-wrapper {
+    height: 60px;
+}
+
+.add-organization-block__map-button {
+    height: 34px;
+    width: 164px;
+    font-family: var(--font-family, Montserrat, sans-serif);
+    z-index: 10;
+}
+
+.add-organization-block__submit-button {
+    height: 60px;
+    font-family: var(--font-family, Montserrat, sans-serif);
+}

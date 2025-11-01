@@ -41,6 +41,8 @@ import { CityOrganizationsWidgetModal } from './modals/CityOrganizationsWidgetMo
 import { ReferralLeaderboardWidgetModal } from './modals/ReferralLeaderboardWidgetModal';
 import { CitySupportersWidgetModal } from './modals/CitySupportersWidgetModal';
 import { SliderWidgetModal } from './modals/SliderWidgetModal';
+import { SubscribeBlockWidgetModal } from './modals/SubscribeBlockWidgetModal';
+import { AddOrganizationBlockWidgetModal } from './modals/AddOrganizationBlockWidgetModal';
 import { TextWidgetModal } from './modals/TextWidgetModal';
 
 interface WidgetEditModalProps {
@@ -294,6 +296,26 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 );
             }
 
+            case 'subscribe_block': {
+                return (
+                    <SubscribeBlockWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'add_organization_block': {
+                return (
+                    <AddOrganizationBlockWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
             case 'projects': {
                 return (
                     <ProjectsWidgetModal
@@ -335,6 +357,14 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             }
 
             default:
+                // Отладка: логируем неизвестный виджет
+                if (widget.widget_slug) {
+                    console.warn(
+                        'Unknown widget slug in WidgetEditModal:',
+                        widget.widget_slug,
+                        widget,
+                    );
+                }
                 return null;
         }
     }, [widget, siteId, _pendingConfig, handleSetPendingConfig]);

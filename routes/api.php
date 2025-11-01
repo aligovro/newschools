@@ -152,6 +152,12 @@ Route::prefix('dashboard/sites/{site}')->middleware(['web', 'auth', 'verified'])
     Route::put('/widgets/{widgetId}', [SiteController::class, 'updateWidget']);
     Route::delete('/widgets/{widgetId}', [SiteController::class, 'deleteWidget']);
     Route::post('/widgets/{widgetId}/move', [SiteController::class, 'moveWidget']);
+
+    // Позиции: настройки отображения и макета для конкретного сайта
+    Route::get('/positions/{positionSlug}/settings', [SiteController::class, 'getPositionSettings']);
+    Route::put('/positions/{positionSlug}/settings', [SiteController::class, 'savePositionSettings']);
+    Route::get('/positions/routes', [SiteController::class, 'getAvailablePublicRoutes']);
+    Route::get('/positions/pages', [SiteController::class, 'getSitePages']);
 });
 
 // API для сохранения конфигурации сайта
@@ -251,6 +257,9 @@ Route::prefix('public')->group(function () {
 
     // Топ поддерживающих городов (публично, для главного сайта)
     Route::get('/city-supporters', [CitySupportersController::class, 'getTopCitiesPublic']);
+
+    // Предложение новой школы (публичный доступ)
+    Route::post('/suggest-school', [App\Http\Controllers\Api\Public\SuggestedSchoolController::class, 'suggest']);
 });
 
 /*
