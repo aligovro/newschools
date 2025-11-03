@@ -283,7 +283,7 @@ export const ProjectsOutput: React.FC<WidgetOutputProps> = ({
                         {title || 'Проекты школ'}
                     </h2>
                     {showHeaderActions && (
-                        <a
+                        <Link
                             href={
                                 organization_id
                                     ? `/organizations/${organization_id}/projects`
@@ -292,7 +292,7 @@ export const ProjectsOutput: React.FC<WidgetOutputProps> = ({
                             className="text-sm font-medium text-blue-600 hover:text-blue-800"
                         >
                             Все проекты
-                        </a>
+                        </Link>
                     )}
                 </div>
             )}

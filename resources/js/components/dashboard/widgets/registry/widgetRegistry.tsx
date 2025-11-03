@@ -1,3 +1,6 @@
+import type { WidgetData } from '@/components/dashboard/site-builder/types';
+import type { StylingConfig } from '@/components/dashboard/widgets/common/StylingPanel';
+import { getConfigValue } from '@/utils/getConfigValue';
 import { getOrganizationId } from '@/utils/widgetHelpers';
 import React from 'react';
 import { AlumniStatsWidget } from '../AlumniStatsWidget';
@@ -22,25 +25,22 @@ interface StatItem {
     color?: string;
 }
 
-interface WidgetData {
-    id: string;
-    widget_id: number;
-    name: string;
-    widget_slug: string;
-    config: Record<string, unknown>;
-    configs: Array<{
-        config_key: string;
-        config_value: string;
-        config_type: string;
-    }>;
-    settings: Record<string, unknown>;
-    is_active: boolean;
-    is_visible: boolean;
-    order: number;
-    position_name: string;
-    position_slug: string;
+interface ConfigItem {
+    config_key: string;
+    config_value: string;
+    config_type: string;
+}
+
+interface Project {
+    id: number;
+    title: string;
+    description: string;
+    image?: string;
+    target_amount: number;
+    current_amount: number;
+    status: 'active' | 'completed' | 'paused';
     created_at: string;
-    updated_at?: string;
+    deadline?: string;
 }
 
 interface WidgetRenderProps {
@@ -55,6 +55,43 @@ interface WidgetRenderProps {
 type WidgetRenderer = (props: WidgetRenderProps) => React.ReactNode;
 
 /**
+ * Утилитарная функция для конвертации configs в config объект
+ */
+const convertConfigsToConfig = (
+    configs: ConfigItem[],
+): Record<string, unknown> => {
+    if (!configs || configs.length === 0) return {};
+    const config: Record<string, unknown> = {};
+    configs.forEach((item) => {
+        let value: unknown = item.config_value;
+        switch (item.config_type) {
+            case 'number':
+                value = parseFloat(item.config_value);
+                break;
+            case 'boolean':
+                value =
+                    item.config_value === '1' || item.config_value === 'true';
+                break;
+            case 'json':
+                try {
+                    value = JSON.parse(item.config_value);
+                } catch {
+                    console.warn(
+                        'Failed to parse JSON config:',
+                        item.config_key,
+                        item.config_value,
+                    );
+                }
+                break;
+            default:
+                break;
+        }
+        config[item.config_key] = value;
+    });
+    return config;
+};
+
+/**
  * Реестр виджетов с их рендерерами
  */
 export const widgetRegistry: Record<string, WidgetRenderer> = {
@@ -66,6 +103,7 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         onSave,
         onConfigChange,
     }) => {
+        const styling = widget.config?.styling as StylingConfig | undefined;
         return (
             <HeroWidget
                 config={widget.config || {}}
@@ -75,7 +113,7 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                 widgetId={widget.id}
                 onConfigChange={onConfigChange}
                 configs={widget.configs}
-                styling={widget.config?.styling}
+                styling={styling}
                 hero_slides={widget.hero_slides}
             />
         );
@@ -89,6 +127,9 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         onSave,
         onConfigChange,
     }) => {
+        const styling = widget.config?.styling as
+            | Record<string, unknown>
+            | undefined;
         return (
             <SliderWidget
                 config={widget.config || {}}
@@ -98,48 +139,14 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                 widgetId={widget.id}
                 onConfigChange={onConfigChange}
                 configs={widget.configs}
-                styling={widget.config?.styling}
+                styling={styling}
                 slider_slides={widget.slider_slides}
             />
         );
     },
 
     // Текстовый виджет
-    text: ({ widget, isEditable, autoExpandSettings, onSave }) => {
-        // Утилитарная функция для работы с configs
-        const convertConfigsToConfig = (
-            configs: any[],
-        ): Record<string, unknown> => {
-            if (!configs || configs.length === 0) return {};
-            const config: any = {};
-            configs.forEach((item) => {
-                let value = item.config_value;
-                switch (item.config_type) {
-                    case 'number':
-                        value = parseFloat(value);
-                        break;
-                    case 'boolean':
-                        value = value === '1' || value === 'true';
-                        break;
-                    case 'json':
-                        try {
-                            value = JSON.parse(value);
-                        } catch (e) {
-                            console.warn(
-                                'Failed to parse JSON config:',
-                                item.config_key,
-                                value,
-                            );
-                        }
-                        break;
-                    default:
-                        break;
-                }
-                config[item.config_key] = value;
-            });
-            return config;
-        };
-
+    text: ({ widget }) => {
         // Функция для форматирования текста
         const formatTextContent = (text: string): string => {
             if (!text) return '';
@@ -189,9 +196,12 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
             ? convertConfigsToConfig(widget.configs)
             : widget.config || {};
 
+        const title = cfg.title as string | undefined;
+        const content = cfg.content as string | undefined;
+
         return (
             <div className="text-widget-container">
-                {cfg.title && (
+                {title && (
                     <h3
                         className="text-widget-title mb-3"
                         style={{
@@ -209,14 +219,14 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                                     | 'right') || 'left',
                         }}
                     >
-                        {cfg.title as string}
+                        {title}
                     </h3>
                 )}
-                {cfg.content && (
+                {content && (
                     <div
                         className="text-widget-content"
                         dangerouslySetInnerHTML={{
-                            __html: formatTextContent(cfg.content as string),
+                            __html: formatTextContent(content),
                         }}
                         style={{
                             color: (cfg.textColor as string) || '#333',
@@ -254,41 +264,7 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     },
 
     // HTML виджет
-    html: ({ widget, isEditable, autoExpandSettings, onSave }) => {
-        // Утилитарная функция для работы с configs
-        const convertConfigsToConfig = (
-            configs: any[],
-        ): Record<string, unknown> => {
-            if (!configs || configs.length === 0) return {};
-            const config: any = {};
-            configs.forEach((item) => {
-                let value = item.config_value;
-                switch (item.config_type) {
-                    case 'number':
-                        value = parseFloat(value);
-                        break;
-                    case 'boolean':
-                        value = value === '1' || value === 'true';
-                        break;
-                    case 'json':
-                        try {
-                            value = JSON.parse(value);
-                        } catch (e) {
-                            console.warn(
-                                'Failed to parse JSON config:',
-                                item.config_key,
-                                value,
-                            );
-                        }
-                        break;
-                    default:
-                        break;
-                }
-                config[item.config_key] = value;
-            });
-            return config;
-        };
-
+    html: ({ widget }) => {
         const cfg = widget.configs
             ? convertConfigsToConfig(widget.configs)
             : widget.config || {};
@@ -319,11 +295,9 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         return (
             <GalleryWidget
                 images={(cfg.images as string[]) || []}
-                columns={cfg.columns as number}
-                showCaptions={cfg.showCaptions as boolean}
-                lightbox={cfg.lightbox as boolean}
-                configs={widget.configs}
-                styling={cfg.styling as Record<string, any>}
+                columns={(cfg.columns as number) || 3}
+                showCaptions={(cfg.showCaptions as boolean) || false}
+                lightbox={(cfg.lightbox as boolean) || false}
             />
         );
     },
@@ -331,18 +305,18 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     // Статистика
     stats: ({ widget }) => {
         const cfg = widget.config || {};
+        const styling = cfg.styling as StylingConfig | undefined;
         return (
             <StatsWidget
-                title={cfg.title as string}
-                stats={cfg.stats as StatItem[]}
-                columns={cfg.columns as number}
+                title={(cfg.title as string) || ''}
+                stats={(cfg.stats as StatItem[]) || []}
+                columns={(cfg.columns as number) || 3}
                 layout={cfg.layout as 'grid' | 'list' | 'carousel' | undefined}
-                showIcons={cfg.showIcons as boolean}
+                showIcons={(cfg.showIcons as boolean) || false}
                 animation={
                     cfg.animation as 'none' | 'count-up' | 'fade-in' | undefined
                 }
-                configs={widget.configs}
-                styling={cfg.styling as Record<string, any>}
+                styling={styling}
             />
         );
     },
@@ -352,13 +326,13 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         const cfg = widget.config || {};
         return (
             <ProjectsWidget
-                title={cfg.title as string}
-                projects={cfg.projects as any}
-                limit={cfg.limit as number}
-                columns={cfg.columns as number}
-                showDescription={cfg.showDescription as boolean}
-                showProgress={cfg.showProgress as boolean}
-                showImage={cfg.showImage as boolean}
+                title={(cfg.title as string) || ''}
+                projects={(cfg.projects as Project[]) || []}
+                limit={(cfg.limit as number) || 6}
+                columns={(cfg.columns as number) || 3}
+                showDescription={(cfg.showDescription as boolean) || false}
+                showProgress={(cfg.showProgress as boolean) || false}
+                showImage={(cfg.showImage as boolean) || false}
                 animation={
                     cfg.animation as
                         | 'none'
@@ -375,8 +349,6 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                         | 'scale'
                         | undefined
                 }
-                configs={widget.configs}
-                styling={cfg.styling as Record<string, any>}
             />
         );
     },
@@ -384,7 +356,8 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     // Изображение
     image: ({ widget }) => {
         const cfg = widget.config || {};
-        const imageUrl = cfg.image as string;
+        const imageUrl = cfg.image as string | undefined;
+        const styling = cfg.styling as StylingConfig | undefined;
 
         // Если нет изображения, не рендерим виджет
         if (!imageUrl) {
@@ -394,8 +367,8 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         return (
             <ImageWidget
                 image={imageUrl}
-                altText={cfg.altText as string}
-                caption={cfg.caption as string}
+                altText={(cfg.altText as string) || ''}
+                caption={(cfg.caption as string) || ''}
                 alignment={
                     cfg.alignment as 'left' | 'center' | 'right' | undefined
                 }
@@ -407,56 +380,86 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                         | 'full'
                         | undefined
                 }
-                configs={widget.configs}
-                styling={cfg.styling as Record<string, any>}
+                styling={styling}
             />
         );
     },
 
     // Меню (универсальное - для любой позиции)
-    menu: ({ widget, isEditable, onConfigChange }) => (
-        <MenuWidget
-            configs={widget.configs}
-            isEditable={isEditable}
-            onConfigChange={onConfigChange}
-        />
-    ),
+    menu: ({ widget, isEditable, onConfigChange }) => {
+        // Если редактируемый режим, показываем полный виджет
+        if (isEditable) {
+            return (
+                <MenuWidget
+                    configs={widget.configs}
+                    isEditable={isEditable}
+                    onConfigChange={onConfigChange}
+                />
+            );
+        }
+
+        // В режиме просмотра показываем только названия пунктов через запятую
+        const items = getConfigValue(widget.configs, 'items', []) as Array<{
+            title: string;
+        }>;
+        const menuTitles = items
+            .map((item) => item.title)
+            .filter(Boolean)
+            .join(', ');
+
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-sm font-bold text-gray-800">
+                    {menuTitles || 'Меню'}
+                </div>
+                <div className="mt-1 text-sm text-gray-500">menu</div>
+            </div>
+        );
+    },
 
     // Меню авторизации (модальные окна входа/регистрации)
-    auth_menu: ({ widget, isEditable, onConfigChange }) => (
-        <AuthMenuWidget
-            config={{
-                ...(widget.config as any),
-                site_id: (widget.config as any)?.site_id,
-            }}
-            isEditable={isEditable}
-            onConfigChange={onConfigChange}
-        />
-    ),
+    auth_menu: ({ widget, isEditable, onConfigChange }) => {
+        const config = widget.config as Record<string, unknown>;
+        return (
+            <AuthMenuWidget
+                config={{
+                    ...config,
+                    site_id: config.site_id as number | undefined,
+                }}
+                isEditable={isEditable}
+                onConfigChange={onConfigChange}
+            />
+        );
+    },
 
     // Форма
     form: ({ widget, isEditable, onSave: _onSave, onConfigChange, siteId }) => {
         const cfg = widget.config || {};
         const formWidget = {
-            id: typeof widget.id === 'string' ? parseInt(widget.id) : widget.id,
+            id:
+                typeof widget.id === 'string'
+                    ? parseInt(widget.id, 10)
+                    : Number(widget.id),
             site_id: (cfg.site_id as number) || siteId || 1,
             name: widget.name,
             widget_slug: widget.widget_slug as 'form',
-            description: cfg.description,
-            settings: cfg.settings || {},
-            styling: cfg.styling || {},
-            actions: (cfg.actions as any[]) || [],
+            description: cfg.description as string | undefined,
+            settings: (cfg.settings as Record<string, unknown>) || {},
+            styling: (cfg.styling as StylingConfig) || {},
+            actions: (cfg.actions as unknown[]) || [],
             is_active: widget.is_active,
             is_visible: widget.is_visible,
             sort_order: widget.order,
-            fields: (cfg.fields as any[]) || [],
+            fields: (cfg.fields as unknown[]) || [],
             created_at: widget.created_at,
             updated_at: widget.updated_at,
         };
 
         return (
             <FormWidget
-                widget={formWidget as any}
+                widget={
+                    formWidget as Parameters<typeof FormWidget>[0]['widget']
+                }
                 isEditable={isEditable}
                 onConfigChange={onConfigChange}
             />
@@ -529,14 +532,15 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     // Статистика выпускников
     alumni_stats: ({ widget }) => {
         const cfg = widget.config || {};
+        const styling = cfg.styling as Record<string, unknown> | undefined;
         return (
             <AlumniStatsWidget
                 config={{
-                    organization_id: cfg.organization_id as number,
-                    title: cfg.title as string,
-                    showIcons: cfg.showIcons as boolean,
+                    organization_id: (cfg.organization_id as number) || 0,
+                    title: (cfg.title as string) || '',
+                    showIcons: (cfg.showIcons as boolean) || false,
                 }}
-                styling={cfg.styling as Record<string, any>}
+                styling={styling}
             />
         );
     },

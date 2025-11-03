@@ -18,8 +18,7 @@ use App\Http\Controllers\DonationsListController;
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\OrganizationCreationController;
 use App\Http\Controllers\PublicOrganizationController;
-use App\Services\GlobalSettingsService;
-use App\Models\City;
+use App\Http\Controllers\Api\Public\PublicApiController;
 use App\Http\Controllers\Api\AuthController;
 
 // Получение текущего пользователя для API
@@ -206,17 +205,7 @@ Route::prefix('public')->group(function () {
     Route::middleware(['web'])->post('/session-logout', [AuthController::class, 'webLogout']);
     Route::middleware(['web'])->get('/session-logout', [AuthController::class, 'webLogout']);
     // Конфиг карт: ключи и город по умолчанию
-    Route::get('/maps-config', function (GlobalSettingsService $settingsService) {
-        $settings = $settingsService->getSettings();
-        $integrations = $settings->integration_settings ?? [];
-        $system = $settings->system_settings ?? [];
-        return response()->json([
-            'yandexMapApiKey' => $integrations['yandex_map_apikey'] ?? null,
-            'yandexSuggestApiKey' => $integrations['yandex_suggest_apikey'] ?? null,
-            'defaultCityId' => $system['default_city_id'] ?? null,
-            'defaultCityFallback' => $system['default_city_fallback'] ?? 'Москва',
-        ]);
-    });
+    Route::get('/maps-config', [PublicApiController::class, 'getMapsConfig']);
 
     // Список публичных организаций (JSON)
     Route::get('/organizations', [PublicOrganizationController::class, 'apiIndex']);
@@ -228,25 +217,7 @@ Route::prefix('public')->group(function () {
     Route::get('/alumni-stats', [AlumniStatsController::class, 'index']);
 
     // Резолвинг города по названию (после геокодинга)
-    Route::get('/cities/resolve', function (Request $request) {
-        $name = trim((string) $request->get('name', ''));
-        if ($name === '') {
-            return response()->json(['error' => 'Empty name'], 422);
-        }
-        $city = City::where('name', 'like', $name)
-            ->orWhere('name', 'like', "%$name%")
-            ->orderByRaw("CASE WHEN name = ? THEN 0 ELSE 1 END", [$name])
-            ->first();
-        return response()->json([
-            'city' => $city ? [
-                'id' => $city->id,
-                'name' => $city->name,
-                'region_id' => $city->region_id,
-                'latitude' => $city->latitude,
-                'longitude' => $city->longitude,
-            ] : null,
-        ]);
-    });
+    Route::get('/cities/resolve', [PublicApiController::class, 'resolveCity']);
 
     // Публичные API для работы с городами
     Route::get('/cities', [PublicOrganizationController::class, 'cities']);

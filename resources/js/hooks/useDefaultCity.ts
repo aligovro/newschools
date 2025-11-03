@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react';
 interface DefaultCity {
     id?: number;
     name: string;
+    region?: {
+        id: number;
+        name: string;
+    };
     loaded: boolean;
 }
 
@@ -22,6 +26,7 @@ export function useDefaultCity(): DefaultCity {
                 setState({
                     id: cfg?.defaultCityId || undefined,
                     name: cfg?.defaultCityFallback || 'Казань',
+                    region: cfg?.defaultCityRegion || undefined,
                     loaded: true,
                 });
             })

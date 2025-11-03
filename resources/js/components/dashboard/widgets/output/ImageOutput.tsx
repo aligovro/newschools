@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import React from 'react';
+import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
 import { ImageOutputConfig, WidgetOutputProps } from './types';
 
 export const ImageOutput: React.FC<WidgetOutputProps> = ({
@@ -92,7 +93,7 @@ export const ImageOutput: React.FC<WidgetOutputProps> = ({
     );
 
     const wrappedImage = linkUrl ? (
-        linkType === 'external' ? (
+        linkType === 'external' || !isInternalLink(linkUrl) ? (
             <a
                 href={linkUrl}
                 target={openInNewTab ? '_blank' : undefined}
@@ -101,7 +102,10 @@ export const ImageOutput: React.FC<WidgetOutputProps> = ({
                 {imageElement}
             </a>
         ) : (
-            <Link href={linkUrl} target={openInNewTab ? '_blank' : undefined}>
+            <Link
+                href={normalizeInternalUrl(linkUrl)}
+                target={openInNewTab ? '_blank' : undefined}
+            >
                 {imageElement}
             </Link>
         )

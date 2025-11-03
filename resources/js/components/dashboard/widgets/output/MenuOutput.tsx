@@ -1,4 +1,6 @@
+import { Link } from '@inertiajs/react';
 import React, { useState } from 'react';
+import { isInternalLink } from '@/lib/linkUtils';
 import { MenuItem, MenuOutputConfig, WidgetOutputProps } from './types';
 
 export const MenuOutput: React.FC<WidgetOutputProps> = ({
@@ -54,18 +56,20 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
 
     const renderMenuItem = (item: MenuItem, level = 0) => {
         const hasChildren = item.children && item.children.length > 0;
-        const isExternal = item.target === '_blank';
+        const isExternal = item.target === '_blank' || !isInternalLink(item.url);
+        const linkClassName =
+            'menu-link block rounded-md px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-blue-600';
 
         return (
             <li key={item.id} className={`menu-item menu-item--level-${level}`}>
-                <a
-                    href={item.url}
-                    target={item.target}
-                    rel={isExternal ? 'noopener noreferrer' : undefined}
-                    className="menu-link block rounded-md px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-blue-600"
-                >
-                    {item.title}
-                    {isExternal && (
+                {isExternal ? (
+                    <a
+                        href={item.url}
+                        target={item.target}
+                        rel="noopener noreferrer"
+                        className={linkClassName}
+                    >
+                        {item.title}
                         <svg
                             className="ml-1 inline h-3 w-3"
                             fill="none"
@@ -79,8 +83,15 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
                                 d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                             />
                         </svg>
-                    )}
-                </a>
+                    </a>
+                ) : (
+                    <Link
+                        href={item.url}
+                        className={linkClassName}
+                    >
+                        {item.title}
+                    </Link>
+                )}
                 {hasChildren && (
                     <ul className="submenu ml-4 mt-2 space-y-1">
                         {item.children!.map((child) =>

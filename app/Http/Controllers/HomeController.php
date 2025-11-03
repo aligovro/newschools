@@ -29,20 +29,22 @@ class HomeController extends Controller
 
         // Получаем настройки главного сайта
         $mainSite = Site::where('site_type', 'main')->first();
+        $seoConfig = $mainSite ? ($mainSite->seo_config ?? []) : [];
         $mainSiteSettings = $mainSite ? [
             'site_name' => $mainSite->name,
             'site_description' => $mainSite->description,
-            'meta_title' => $mainSite->seo_config['meta_title'] ?? null,
-            'meta_description' => $mainSite->seo_config['meta_description'] ?? null,
-            'meta_keywords' => $mainSite->seo_config['meta_keywords'] ?? null,
-            'og_title' => $mainSite->seo_config['og_title'] ?? null,
-            'og_description' => $mainSite->seo_config['og_description'] ?? null,
-            'og_type' => $mainSite->seo_config['og_type'] ?? null,
-            'og_image' => $mainSite->seo_config['og_image'] ?? null,
-            'twitter_card' => $mainSite->seo_config['twitter_card'] ?? null,
-            'twitter_title' => $mainSite->seo_config['twitter_title'] ?? null,
-            'twitter_description' => $mainSite->seo_config['twitter_description'] ?? null,
-            'twitter_image' => $mainSite->seo_config['twitter_image'] ?? null,
+            // Поддержка разных вариантов ключей для обратной совместимости
+            'meta_title' => $seoConfig['seo_title'] ?? $seoConfig['meta_title'] ?? null,
+            'meta_description' => $seoConfig['seo_description'] ?? $seoConfig['meta_description'] ?? null,
+            'meta_keywords' => $seoConfig['seo_keywords'] ?? $seoConfig['meta_keywords'] ?? null,
+            'og_title' => $seoConfig['og_title'] ?? null,
+            'og_description' => $seoConfig['og_description'] ?? null,
+            'og_type' => $seoConfig['og_type'] ?? null,
+            'og_image' => $seoConfig['og_image'] ?? null,
+            'twitter_card' => $seoConfig['twitter_card'] ?? null,
+            'twitter_title' => $seoConfig['twitter_title'] ?? null,
+            'twitter_description' => $seoConfig['twitter_description'] ?? null,
+            'twitter_image' => $seoConfig['twitter_image'] ?? null,
         ] : [
             'site_name' => 'Платформа поддержки школ',
             'site_description' => 'Поддерживай школы города — укрепляй будущее. Подписывайся на организации, поддерживай их финансирование, отслеживай прогресс сборов.',

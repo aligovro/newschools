@@ -17,6 +17,9 @@ interface MainLayoutProps {
         template: string;
         widgets_config: WidgetData[];
         seo_config?: Record<string, unknown>;
+        layout_config?: {
+            sidebar_position?: 'left' | 'right';
+        };
     };
     positions: WidgetPosition[];
     position_settings?: Array<{
@@ -207,47 +210,78 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     const getString = (value: unknown): string | undefined =>
         typeof value === 'string' && value.trim() !== '' ? value : undefined;
 
-    const metaTitle = pageTitle || getString(seo['title']) || site.name;
+    // Поддержка разных вариантов ключей для обратной совместимости
+    const seoTitle =
+        getString(seo['seo_title']) ||
+        getString(seo['meta_title']) ||
+        getString(seo['title']);
+    const seoDescription =
+        getString(seo['seo_description']) ||
+        getString(seo['meta_description']) ||
+        getString(seo['description']);
+    const seoKeywords =
+        getString(seo['seo_keywords']) ||
+        getString(seo['meta_keywords']) ||
+        getString(seo['keywords']);
+
+    // Title: приоритет pageTitle > seo_title из настроек > site.name
+    const metaTitle = pageTitle || seoTitle || site.name;
+
+    // Description: приоритет pageDescription > seo_description из настроек > site.description
     const metaDescription =
-        pageDescription ||
-        getString(seo['description']) ||
-        site.description ||
-        '';
-    const metaKeywords: string | undefined = getString(seo['keywords']);
+        pageDescription || seoDescription || site.description || '';
+
+    // Canonical URL
     const canonicalUrl: string | undefined =
         getString(seo['canonical_url']) ||
         getString(seo['slug_url']) ||
         (typeof window !== 'undefined' ? window.location.href : undefined);
-    const ogImage: string | undefined =
-        getString(seo['og_image']) || getString(seo['image']);
+
+    // Open Graph данные
+    const ogTitle = getString(seo['og_title']) || seoTitle || metaTitle;
+    const ogDescription =
+        getString(seo['og_description']) || seoDescription || metaDescription;
+    const ogType = getString(seo['og_type']) || 'website';
+    const ogImage =
+        getString(seo['og_image']) || getString(seo['image']) || undefined;
+
+    // Twitter данные
+    const twitterCard = getString(seo['twitter_card']) || 'summary_large_image';
+    const twitterTitle =
+        getString(seo['twitter_title']) || ogTitle || metaTitle;
+    const twitterDescription =
+        getString(seo['twitter_description']) ||
+        ogDescription ||
+        metaDescription;
+    const twitterImage =
+        getString(seo['twitter_image']) || ogImage || undefined;
 
     return (
         <>
-            <Head>
-                <title>{metaTitle}</title>
+            <Head title={metaTitle}>
                 {site.favicon ? <link rel="icon" href={site.favicon} /> : null}
                 <meta name="description" content={metaDescription} />
                 <meta
                     name="viewport"
                     content="width=device-width, initial-scale=1"
                 />
-                {metaKeywords && (
-                    <meta name="keywords" content={metaKeywords} />
-                )}
+                {seoKeywords && <meta name="keywords" content={seoKeywords} />}
                 {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
                 {/* Open Graph */}
-                <meta property="og:type" content="website" />
-                <meta property="og:title" content={metaTitle} />
-                <meta property="og:description" content={metaDescription} />
+                <meta property="og:type" content={ogType} />
+                <meta property="og:title" content={ogTitle} />
+                <meta property="og:description" content={ogDescription} />
                 {canonicalUrl && (
                     <meta property="og:url" content={canonicalUrl} />
                 )}
                 {ogImage && <meta property="og:image" content={ogImage} />}
                 {/* Twitter */}
-                <meta name="twitter:card" content="summary_large_image" />
-                <meta name="twitter:title" content={metaTitle} />
-                <meta name="twitter:description" content={metaDescription} />
-                {ogImage && <meta name="twitter:image" content={ogImage} />}
+                <meta name="twitter:card" content={twitterCard} />
+                <meta name="twitter:title" content={twitterTitle} />
+                <meta name="twitter:description" content={twitterDescription} />
+                {twitterImage && (
+                    <meta name="twitter:image" content={twitterImage} />
+                )}
             </Head>
 
             <div className="site-preview">
@@ -309,18 +343,24 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                     <div className="container mx-auto px-4 py-8">
                         {(() => {
                             const sidebarPositions = positionsByArea.sidebar;
-                            const hasSidebarWidgets = sidebarPositions.some(
-                                (position) =>
-                                    site.widgets_config.some(
-                                        (widget) =>
-                                            widget.position_slug ===
-                                                position.slug &&
-                                            widget.is_active &&
-                                            widget.is_visible,
-                                    ),
-                            );
 
-                            const sidebarLeft = false;
+                            // Проверяем, есть ли видимые виджеты в видимых позициях сайдбара
+                            const visibleSidebarPositions =
+                                sidebarPositions.filter((position) =>
+                                    shouldShowPosition(position),
+                                );
+
+                            const hasSidebarWidgets =
+                                visibleSidebarPositions.some((position) => {
+                                    const positionWidgets =
+                                        widgetsByPosition[position.slug] || [];
+                                    return positionWidgets.length > 0;
+                                });
+
+                            // Получаем позицию сайдбара из layout_config
+                            const sidebarPosition =
+                                site.layout_config?.sidebar_position || 'right';
+                            const sidebarLeft = sidebarPosition === 'left';
 
                             if (!hasSidebarWidgets) {
                                 return (
@@ -346,17 +386,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                             return (
                                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
                                     {sidebarLeft &&
-                                        sidebarPositions.map((position) => (
-                                            <aside
-                                                key={position.id}
-                                                className="lg:col-span-1"
-                                            >
-                                                {renderPosition(
-                                                    position,
-                                                    site.widgets_config,
-                                                )}
-                                            </aside>
-                                        ))}
+                                        visibleSidebarPositions.map(
+                                            (position) => (
+                                                <aside
+                                                    key={position.id}
+                                                    className="lg:col-span-1"
+                                                >
+                                                    {renderPosition(
+                                                        position,
+                                                        site.widgets_config,
+                                                    )}
+                                                </aside>
+                                            ),
+                                        )}
 
                                     <div className="lg:col-span-3">
                                         {children}
@@ -376,17 +418,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                     </div>
 
                                     {!sidebarLeft &&
-                                        sidebarPositions.map((position) => (
-                                            <aside
-                                                key={position.id}
-                                                className="lg:col-span-1"
-                                            >
-                                                {renderPosition(
-                                                    position,
-                                                    site.widgets_config,
-                                                )}
-                                            </aside>
-                                        ))}
+                                        visibleSidebarPositions.map(
+                                            (position) => (
+                                                <aside
+                                                    key={position.id}
+                                                    className="lg:col-span-1"
+                                                >
+                                                    {renderPosition(
+                                                        position,
+                                                        site.widgets_config,
+                                                    )}
+                                                </aside>
+                                            ),
+                                        )}
                                 </div>
                             );
                         })()}

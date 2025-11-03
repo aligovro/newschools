@@ -15,15 +15,14 @@ interface City {
 interface CitySelectorProps {
     value: City | null;
     onChange: (city: City | null) => void;
-    defaultCityName?: string; // Город по умолчанию (например, "Казань")
-    detectOnMount?: boolean; // Определять город по геолокации при монтировании
+    defaultCityName?: string;
+    detectOnMount?: boolean;
 }
 
 export default function CitySelector({
     value,
     onChange,
-    defaultCityName = 'Казань',
-    detectOnMount = true,
+    detectOnMount = false,
 }: CitySelectorProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -33,74 +32,84 @@ export default function CitySelector({
 
     const {
         id: defaultId,
-        name: globalDefaultName,
+        name: defaultName,
+        region: defaultRegion,
         loaded: globalDefaultLoaded,
     } = useDefaultCity();
 
-    // Подгружаем дефолтный список при открытии выпадашки, если пусто
+    // Инициализация дефолтного города при монтировании
     useEffect(() => {
-        const loadInitial = async () => {
-            if (!isOpen) return;
-            if (cities.length > 0) return;
-            setIsLoading(true);
-            try {
-                const results = await fetchPublicCities({ limit: 20 });
+        if (!globalDefaultLoaded) return;
+        if (value) return; // Если город уже выбран, не меняем
+
+        // Если геолокация включена, пытаемся определить город
+        if (detectOnMount) {
+            setIsDetecting(true);
+            detectCityByGeolocation()
+                .then((detectedCity) => {
+                    if (
+                        detectedCity &&
+                        typeof detectedCity === 'object' &&
+                        detectedCity.id &&
+                        detectedCity.name
+                    ) {
+                        onChange(detectedCity);
+                    } else if (defaultId && defaultName) {
+                        // Если геолокация не сработала, используем дефолтный
+                        onChange({
+                            id: defaultId,
+                            name: defaultName,
+                            region: defaultRegion
+                                ? { name: defaultRegion.name }
+                                : undefined,
+                        });
+                    }
+                })
+                .catch(() => {
+                    // При ошибке используем дефолтный город
+                    if (defaultId && defaultName) {
+                        onChange({
+                            id: defaultId,
+                            name: defaultName,
+                            region: defaultRegion
+                                ? { name: defaultRegion.name }
+                                : undefined,
+                        });
+                    }
+                })
+                .finally(() => {
+                    setIsDetecting(false);
+                });
+        } else if (defaultId && defaultName) {
+            // Без геолокации сразу устанавливаем дефолтный
+            onChange({
+                id: defaultId,
+                name: defaultName,
+                region: defaultRegion
+                    ? { name: defaultRegion.name }
+                    : undefined,
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [globalDefaultLoaded, detectOnMount]);
+
+    // Загрузка списка городов при открытии выпадашки
+    useEffect(() => {
+        if (!isOpen || cities.length > 0) return;
+
+        setIsLoading(true);
+        fetchPublicCities({ limit: 100 })
+            .then((results) => {
                 setCities(results);
-            } catch (e) {
-                console.error('Ошибка загрузки списка городов:', e);
+            })
+            .catch(() => {
                 setCities([]);
-            } finally {
+            })
+            .finally(() => {
                 setIsLoading(false);
-            }
-        };
-        loadInitial();
+            });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
-
-    // Попытка определения города по геолокации (может быть отключена)
-    useEffect(() => {
-        if (!detectOnMount) return;
-        if (!globalDefaultLoaded) return;
-        const detectCity = async () => {
-            if (value) return; // Если город уже выбран, не определяем
-
-            // Мгновенно ставим дефолтный город из useDefaultCity
-            if (!value && typeof defaultId === 'number' && globalDefaultName) {
-                onChange({ id: defaultId, name: globalDefaultName });
-            }
-
-            setIsDetecting(true);
-            try {
-                const detectedCity = await detectCityByGeolocation();
-                if (detectedCity) {
-                    onChange(detectedCity);
-                } else {
-                    // Если не удалось определить, ничего не делаем (уже выбран дефолт выше)
-                }
-            } catch (error) {
-                // ignore errors
-            } finally {
-                setIsDetecting(false);
-            }
-        };
-        detectCity();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detectOnMount, globalDefaultLoaded]); // Выполняется только при монтировании/смене флага/готовности дефолта
-
-    // Поиск города по имени
-    const findCityByName = async (name: string): Promise<City | null> => {
-        try {
-            const cities = await fetchPublicCities({ search: name });
-            return (
-                cities.find((c: City) =>
-                    c.name.toLowerCase().includes(name.toLowerCase()),
-                ) || null
-            );
-        } catch (error) {
-            console.error('Ошибка поиска города:', error);
-            return null;
-        }
-    };
 
     // Поиск городов при вводе текста
     const handleSearch = useCallback(async (query: string) => {
@@ -111,7 +120,6 @@ export default function CitySelector({
             if (query.length >= 2) {
                 results = await fetchPublicCities({ search: query });
             } else {
-                // Загружаем дефолтный список при пустом/коротком запросе
                 results = await fetchPublicCities({ limit: 20 });
             }
             setCities((results as City[]).slice(0, 20));
@@ -129,6 +137,34 @@ export default function CitySelector({
         setSearchQuery('');
         setCities([]);
     };
+
+    // Формируем дефолтный город для отображения в списке
+    const getDefaultCityForList = (): City | null => {
+        if (!defaultId || !defaultName) return null;
+
+        // Проверяем, есть ли дефолтный город в загруженном списке с регионом
+        const cityFromList = cities.find((c) => c.id === defaultId && c.region);
+        if (cityFromList) return cityFromList;
+
+        // Используем данные из глобальных настроек
+        return {
+            id: defaultId,
+            name: defaultName,
+            region: defaultRegion ? { name: defaultRegion.name } : undefined,
+        };
+    };
+
+    const defaultCityForList = getDefaultCityForList();
+    const filteredCities = cities.filter(
+        (c) => !defaultCityForList || c.id !== defaultCityForList.id,
+    );
+    const sortedCities = [...filteredCities].sort((a, b) =>
+        a.name.localeCompare(b.name),
+    );
+    const finalCities = [
+        ...(defaultCityForList ? [defaultCityForList] : []),
+        ...sortedCities,
+    ];
 
     return (
         <div className="city-selector relative">
@@ -181,76 +217,35 @@ export default function CitySelector({
                                 <div className="flex items-center justify-center py-8">
                                     <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
                                 </div>
-                            ) : cities.length > 0 ? (
+                            ) : finalCities.length > 0 ? (
                                 <ul className="py-1">
-                                    {(() => {
-                                        let sortedCities = [...cities];
-                                        // Убираем дубликат дефолтного города
-                                        if (typeof defaultId === 'number') {
-                                            sortedCities = sortedCities.filter(
-                                                (c) => c.id !== defaultId,
-                                            );
-                                        }
-                                        // Сортируем оставшиеся по алфавиту
-                                        sortedCities.sort((a, b) =>
-                                            a.name.localeCompare(b.name),
-                                        );
-                                        // Ищем дефолтный город в cities:
-                                        const defaultCityObj =
-                                            typeof defaultId === 'number'
-                                                ? cities.find(
-                                                      (c) => c.id === defaultId,
-                                                  ) ||
-                                                  (globalDefaultName
-                                                      ? {
-                                                            id: defaultId,
-                                                            name: globalDefaultName,
-                                                        }
-                                                      : null)
-                                                : null;
-                                        const finalCities = [
-                                            ...(defaultCityObj
-                                                ? [defaultCityObj]
-                                                : []),
-                                            ...sortedCities,
-                                        ];
-                                        return finalCities.map((city) => (
-                                            <li key={city.id}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleSelectCity(city)
-                                                    }
-                                                    className={`city-selector__city-item w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${
-                                                        value?.id === city.id
-                                                            ? 'city-selector__city-item--selected bg-blue-50 text-blue-600'
-                                                            : 'text-gray-900'
-                                                    }`}
-                                                >
-                                                    {city.name}
-                                                    {city.region && (
-                                                        <span className="ml-2 text-xs text-gray-500">
-                                                            ({city.region.name})
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            </li>
-                                        ));
-                                    })()}
+                                    {finalCities.map((city) => (
+                                        <li key={city.id}>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleSelectCity(city)
+                                                }
+                                                className={`city-selector__city-item w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${
+                                                    value?.id === city.id
+                                                        ? 'city-selector__city-item--selected bg-blue-50 text-blue-600'
+                                                        : 'text-gray-900'
+                                                }`}
+                                            >
+                                                {city.name}
+                                                {city.region && (
+                                                    <span className="ml-2 text-xs text-gray-500">
+                                                        ({city.region.name})
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </li>
+                                    ))}
                                 </ul>
                             ) : (
-                                <>
-                                    {!value &&
-                                        typeof defaultId === 'number' &&
-                                        globalDefaultName &&
-                                        onChange({
-                                            id: defaultId,
-                                            name: globalDefaultName,
-                                        })}
-                                    <div className="px-4 py-8 text-center text-sm text-gray-500">
-                                        Города не найдены
-                                    </div>
-                                </>
+                                <div className="px-4 py-8 text-center text-sm text-gray-500">
+                                    Города не найдены
+                                </div>
                             )}
                         </div>
                     </div>

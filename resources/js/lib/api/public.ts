@@ -3,6 +3,10 @@ export interface MapsConfig {
     yandexSuggestApiKey?: string | null;
     defaultCityId?: number | null;
     defaultCityFallback?: string | null;
+    defaultCityRegion?: {
+        id: number;
+        name: string;
+    } | null;
 }
 
 export async function fetchMapsConfig(): Promise<MapsConfig> {

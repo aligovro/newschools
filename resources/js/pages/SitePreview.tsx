@@ -24,14 +24,26 @@ interface Site {
 
 type WidgetPosition = SharedWidgetPosition;
 
+type PositionVisibilityRules = {
+    mode?: 'all' | 'include' | 'exclude';
+    routes?: string[];
+    pages?: unknown[];
+};
+
 interface SitePreviewProps {
     site: Site;
     positions?: WidgetPosition[];
+    position_settings?: Array<{
+        position_slug: string;
+        visibility_rules?: PositionVisibilityRules;
+        layout_overrides?: Record<string, unknown>;
+    }>;
 }
 
 const SitePreview: React.FC<SitePreviewProps> = ({
     site,
     positions: ssrPositions,
+    position_settings = [],
 }) => {
     const [positions, setPositions] = useState<WidgetPosition[]>(
         ssrPositions || [],
@@ -62,6 +74,63 @@ const SitePreview: React.FC<SitePreviewProps> = ({
         loadPositions();
     }, [ssrPositions]);
 
+    // Настройки позиций по slug
+    const settingsBySlug = React.useMemo(() => {
+        const map: Record<
+            string,
+            {
+                visibility_rules?: PositionVisibilityRules;
+                layout_overrides?: Record<string, unknown>;
+            }
+        > = {};
+        position_settings.forEach((s) => {
+            map[s.position_slug] = {
+                visibility_rules: s.visibility_rules || {},
+                layout_overrides: s.layout_overrides || {},
+            };
+        });
+        return map;
+    }, [position_settings]);
+
+    // Группируем виджеты по позициям
+    const widgetsByPosition = React.useMemo(() => {
+        const map: Record<string, WidgetData[]> = {};
+        (site.widgets_config || []).forEach((w) => {
+            if (!map[w.position_slug]) map[w.position_slug] = [];
+            map[w.position_slug].push(w);
+        });
+        Object.keys(map).forEach((slug) => {
+            map[slug] = map[slug]
+                .filter((w) => w.is_active && w.is_visible)
+                .sort((a, b) => a.order - b.order);
+        });
+        return map;
+    }, [site.widgets_config]);
+
+    const getCurrentRouteKey = (): string | null => {
+        if (typeof window === 'undefined') return null;
+        const path = window.location.pathname || '/';
+        if (path === '/' || path === '') return 'home';
+        if (path.startsWith('/organizations')) return 'organizations';
+        if (path.startsWith('/organization/')) return 'organization_show';
+        if (path.startsWith('/projects')) return 'projects';
+        if (path.startsWith('/project/')) return 'project_show';
+        return null;
+    };
+
+    const shouldShowPosition = (position: WidgetPosition): boolean => {
+        const rules = settingsBySlug[position.slug]?.visibility_rules || {};
+        const mode = (rules.mode as 'all' | 'include' | 'exclude') || 'all';
+        const routeKey = getCurrentRouteKey();
+        const routes: string[] = rules.routes || [];
+
+        if (mode === 'all') return true;
+        if (!routeKey) return mode === 'exclude';
+        if (mode === 'include') return routes.includes(routeKey);
+        if (mode === 'exclude') return !routes.includes(routeKey);
+        return true;
+    };
+
     if (loading) {
         return (
             <div className="flex h-64 items-center justify-center">
@@ -70,13 +139,9 @@ const SitePreview: React.FC<SitePreviewProps> = ({
         );
     }
 
-    const renderPosition = (
-        position: WidgetPosition,
-        widgets: typeof site.widgets_config,
-    ) => {
-        const positionWidgets = widgets
-            .filter((widget) => widget.position_slug === position.slug)
-            .sort((a, b) => a.order - b.order);
+    const renderPosition = (position: WidgetPosition) => {
+        if (!shouldShowPosition(position)) return null;
+        const positionWidgets = widgetsByPosition[position.slug] || [];
 
         return (
             <div
@@ -86,23 +151,18 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                 <div className="container mx-auto px-4">
                     {positionWidgets.length > 0 && (
                         <div className="space-y-4">
-                            {positionWidgets
-                                .filter(
-                                    (widget) =>
-                                        widget.is_active && widget.is_visible,
-                                )
-                                .map((widget) => (
-                                    <div
-                                        key={widget.id}
-                                        className="widget-container"
-                                    >
-                                        <WidgetDisplay
-                                            widget={widget}
-                                            isEditable={false}
-                                            useOutputRenderer={true}
-                                        />
-                                    </div>
-                                ))}
+                            {positionWidgets.map((widget) => (
+                                <div
+                                    key={widget.id}
+                                    className="widget-container"
+                                >
+                                    <WidgetDisplay
+                                        widget={widget}
+                                        isEditable={false}
+                                        useOutputRenderer={true}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -123,44 +183,81 @@ const SitePreview: React.FC<SitePreviewProps> = ({
         }
         return undefined;
     };
-    const pageTitle = getString(seo['title']) ?? site.name;
-    const metaDescription =
-        getString(seo['description']) ?? site.description ?? '';
-    const metaKeywords: string | undefined = getString(seo['keywords']);
+
+    // Поддержка разных вариантов ключей для обратной совместимости
+    const seoTitle =
+        getString(seo['seo_title']) ||
+        getString(seo['meta_title']) ||
+        getString(seo['title']);
+    const seoDescription =
+        getString(seo['seo_description']) ||
+        getString(seo['meta_description']) ||
+        getString(seo['description']);
+    const seoKeywords =
+        getString(seo['seo_keywords']) ||
+        getString(seo['meta_keywords']) ||
+        getString(seo['keywords']);
+
+    // Title: приоритет seo_title из настроек > site.name
+    const pageTitle = seoTitle || site.name;
+
+    // Description: приоритет seo_description из настроек > site.description
+    const metaDescription = seoDescription || site.description || '';
+
+    // Canonical URL
     const canonicalUrl: string | undefined =
-        getString(seo['canonical_url']) ?? getString(seo['slug_url']);
-    const ogImage: string | undefined =
-        getString(seo['og_image']) ?? getString(seo['image']);
+        getString(seo['canonical_url']) ||
+        getString(seo['slug_url']) ||
+        (typeof window !== 'undefined' ? window.location.href : undefined);
+
+    // Open Graph данные
+    const ogTitle = getString(seo['og_title']) || seoTitle || pageTitle;
+    const ogDescription =
+        getString(seo['og_description']) || seoDescription || metaDescription;
+    const ogType = getString(seo['og_type']) || 'website';
+    const ogImage =
+        getString(seo['og_image']) || getString(seo['image']) || undefined;
+
+    // Twitter данные
+    const twitterCard = getString(seo['twitter_card']) || 'summary_large_image';
+    const twitterTitle =
+        getString(seo['twitter_title']) || ogTitle || pageTitle;
+    const twitterDescription =
+        getString(seo['twitter_description']) ||
+        ogDescription ||
+        metaDescription;
+    const twitterImage =
+        getString(seo['twitter_image']) || ogImage || undefined;
+
     const noindex = Boolean(getBoolean(seo['noindex']));
 
     return (
         <>
-            <Head>
-                <title>{pageTitle}</title>
+            <Head title={pageTitle}>
                 {site.favicon ? <link rel="icon" href={site.favicon} /> : null}
                 <meta name="description" content={metaDescription} />
                 <meta
                     name="viewport"
                     content="width=device-width, initial-scale=1"
                 />
-                {metaKeywords && (
-                    <meta name="keywords" content={metaKeywords} />
-                )}
+                {seoKeywords && <meta name="keywords" content={seoKeywords} />}
                 {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
                 {noindex && <meta name="robots" content="noindex,nofollow" />}
                 {/* Open Graph */}
-                <meta property="og:type" content="website" />
-                <meta property="og:title" content={pageTitle} />
-                <meta property="og:description" content={metaDescription} />
+                <meta property="og:type" content={ogType} />
+                <meta property="og:title" content={ogTitle} />
+                <meta property="og:description" content={ogDescription} />
                 {canonicalUrl && (
                     <meta property="og:url" content={canonicalUrl} />
                 )}
                 {ogImage && <meta property="og:image" content={ogImage} />}
                 {/* Twitter */}
-                <meta name="twitter:card" content="summary_large_image" />
-                <meta name="twitter:title" content={pageTitle} />
-                <meta name="twitter:description" content={metaDescription} />
-                {ogImage && <meta name="twitter:image" content={ogImage} />}
+                <meta name="twitter:card" content={twitterCard} />
+                <meta name="twitter:title" content={twitterTitle} />
+                <meta name="twitter:description" content={twitterDescription} />
+                {twitterImage && (
+                    <meta name="twitter:image" content={twitterImage} />
+                )}
                 {/* JSON-LD */}
                 <script
                     type="application/ld+json"
@@ -202,22 +299,14 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                                             {headerCols.map((p) => (
                                                 <div key={p.id}>
-                                                    {renderPosition(
-                                                        p,
-                                                        site.widgets_config,
-                                                    )}
+                                                    {renderPosition(p)}
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                 )}
                                 {headerFull && (
-                                    <div>
-                                        {renderPosition(
-                                            headerFull,
-                                            site.widgets_config,
-                                        )}
-                                    </div>
+                                    <div>{renderPosition(headerFull)}</div>
                                 )}
                                 {!headerFull && headerCols.length === 0 && (
                                     <div>
@@ -225,10 +314,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                                             .filter((p) => p.area === 'header')
                                             .map((p) => (
                                                 <div key={p.id}>
-                                                    {renderPosition(
-                                                        p,
-                                                        site.widgets_config,
-                                                    )}
+                                                    {renderPosition(p)}
                                                 </div>
                                             ))}
                                     </div>
@@ -242,7 +328,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                     .filter((p) => p.area === 'hero')
                     .map((position) => (
                         <section key={position.id} className="site-hero">
-                            {renderPosition(position, site.widgets_config)}
+                            {renderPosition(position)}
                         </section>
                     ))}
 
@@ -250,25 +336,27 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                 <main className="site-main">
                     <div className="container mx-auto px-4 py-8">
                         {(() => {
-                            // Проверяем есть ли виджеты в сайдбаре
+                            // Проверяем есть ли видимые виджеты в видимых позициях сайдбара
                             const sidebarPositions = positions.filter(
                                 (p) => p.area === 'sidebar',
                             );
 
-                            const hasSidebarWidgets = sidebarPositions.some(
-                                (position) =>
-                                    site.widgets_config.some(
-                                        (widget) =>
-                                            widget.position_slug ===
-                                                position.slug &&
-                                            widget.is_active &&
-                                            widget.is_visible,
-                                    ),
-                            );
+                            const visibleSidebarPositions =
+                                sidebarPositions.filter((position) =>
+                                    shouldShowPosition(position),
+                                );
+
+                            const hasSidebarWidgets =
+                                visibleSidebarPositions.some((position) => {
+                                    const positionWidgets =
+                                        widgetsByPosition[position.slug] || [];
+                                    return positionWidgets.length > 0;
+                                });
 
                             // Получаем позицию сайдбара
                             const sidebarPosition =
                                 site.layout_config?.sidebar_position || 'right';
+                            const sidebarLeft = sidebarPosition === 'left';
 
                             // Если нет виджетов в сайдбаре, рендерим только content
                             if (!hasSidebarWidgets) {
@@ -281,10 +369,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                                                     key={position.id}
                                                     className="site-content"
                                                 >
-                                                    {renderPosition(
-                                                        position,
-                                                        site.widgets_config,
-                                                    )}
+                                                    {renderPosition(position)}
                                                 </div>
                                             ))}
                                     </div>
@@ -295,27 +380,20 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                             return (
                                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
                                     {/* Sidebar */}
-                                    {sidebarPosition === 'left' &&
-                                        sidebarPositions.map((position) => (
-                                            <aside
-                                                key={position.id}
-                                                className="lg:col-span-1"
-                                            >
-                                                {renderPosition(
-                                                    position,
-                                                    site.widgets_config,
-                                                )}
-                                            </aside>
-                                        ))}
+                                    {sidebarLeft &&
+                                        visibleSidebarPositions.map(
+                                            (position) => (
+                                                <aside
+                                                    key={position.id}
+                                                    className="lg:col-span-1"
+                                                >
+                                                    {renderPosition(position)}
+                                                </aside>
+                                            ),
+                                        )}
 
                                     {/* Content */}
-                                    <div
-                                        className={
-                                            hasSidebarWidgets
-                                                ? 'lg:col-span-3'
-                                                : 'lg:col-span-4'
-                                        }
-                                    >
+                                    <div className="lg:col-span-3">
                                         {positions
                                             .filter((p) => p.area === 'content')
                                             .map((position) => (
@@ -323,27 +401,23 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                                                     key={position.id}
                                                     className="site-content"
                                                 >
-                                                    {renderPosition(
-                                                        position,
-                                                        site.widgets_config,
-                                                    )}
+                                                    {renderPosition(position)}
                                                 </div>
                                             ))}
                                     </div>
 
                                     {/* Sidebar справа */}
-                                    {sidebarPosition === 'right' &&
-                                        sidebarPositions.map((position) => (
-                                            <aside
-                                                key={position.id}
-                                                className="lg:col-span-1"
-                                            >
-                                                {renderPosition(
-                                                    position,
-                                                    site.widgets_config,
-                                                )}
-                                            </aside>
-                                        ))}
+                                    {!sidebarLeft &&
+                                        visibleSidebarPositions.map(
+                                            (position) => (
+                                                <aside
+                                                    key={position.id}
+                                                    className="lg:col-span-1"
+                                                >
+                                                    {renderPosition(position)}
+                                                </aside>
+                                            ),
+                                        )}
                                 </div>
                             );
                         })()}
@@ -377,19 +451,14 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                                             {footerCols.map((p) => (
                                                 <div key={p.id}>
-                                                    {renderPosition(
-                                                        p,
-                                                        site.widgets_config,
-                                                    )}
+                                                    {renderPosition(p)}
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                 )}
                                 {otherFooter.map((p) => (
-                                    <div key={p.id}>
-                                        {renderPosition(p, site.widgets_config)}
-                                    </div>
+                                    <div key={p.id}>{renderPosition(p)}</div>
                                 ))}
                             </div>
                         );

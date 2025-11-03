@@ -1,4 +1,6 @@
+import { router } from '@inertiajs/react';
 import React, { useMemo, useRef, useState } from 'react';
+import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
 import {
     Autoplay,
     EffectCards,
@@ -121,19 +123,20 @@ const SliderSlideRenderer: React.FC<{
     const handleButtonClick = () => {
         if (!slide.buttonLink) return;
 
-        const target = slide.buttonOpenInNewTab ? '_blank' : '_self';
-
-        // Handle internal links
-        if (slide.buttonLinkType === 'internal') {
-            // If link starts with /, it's an internal link
-            if (slide.buttonLink.startsWith('/')) {
-                window.location.href = slide.buttonLink;
+        // Handle internal links with Inertia
+        if (
+            slide.buttonLinkType === 'internal' ||
+            isInternalLink(slide.buttonLink)
+        ) {
+            const normalizedUrl = normalizeInternalUrl(slide.buttonLink);
+            if (slide.buttonOpenInNewTab) {
+                window.open(normalizedUrl, '_blank');
             } else {
-                // If doesn't start with /, add /
-                window.location.href = `/${slide.buttonLink}`;
+                router.visit(normalizedUrl);
             }
         } else {
             // External links
+            const target = slide.buttonOpenInNewTab ? '_blank' : '_self';
             window.open(slide.buttonLink, target);
         }
     };

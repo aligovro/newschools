@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { widgetsSystemApi } from '@/lib/api/widgets-system';
+import { Settings } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import type { WidgetData, WidgetPosition } from '../../types';
 import { DraggableWidget } from './DraggableWidget';
-import { Settings } from 'lucide-react';
 
 interface Props {
     position: WidgetPosition;
@@ -87,41 +86,64 @@ export const PositionDropZone: React.FC<Props> = ({
             }`}
         >
             {position.area === 'sidebar' ? (
-                <div className="mb-2 grid grid-cols-2 gap-2">
-                    {sidebarPosition === 'right' ? (
+                <div className="mb-2">
+                    <div className="mb-2 flex flex-wrap items-center justify-between">
+                        <h3
+                            className={`position-label position-label-${position.slug} text-lg font-semibold`}
+                        >
+                            {position.name}
+                        </h3>
+                        <div className="flex items-center space-x-2">
+                            <button
+                                type="button"
+                                className="inline-flex items-center gap-1 rounded border px-2 py-1 text-sm hover:bg-gray-50"
+                                title="Настройки позиции"
+                                onClick={onEditPosition}
+                            >
+                                <Settings size={16} />
+                                <span>Настройки</span>
+                            </button>
+                            <span className="text-sm text-gray-500">
+                                {positionWidgets.length} виджетов
+                            </span>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        {sidebarPosition === 'right' ? (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    onMoveSidebarLeft && onMoveSidebarLeft()
+                                }
+                                title="Переместить сайдбар влево"
+                                className="w-full"
+                            >
+                                Влево ←
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    onMoveSidebarRight && onMoveSidebarRight()
+                                }
+                                title="Переместить сайдбар вправо"
+                                className="w-full"
+                            >
+                                → Вправо
+                            </Button>
+                        )}
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                                onMoveSidebarLeft && onMoveSidebarLeft()
-                            }
-                            title="Переместить сайдбар влево"
+                            onClick={() => onAddWidgetToPosition(position.slug)}
+                            title="Добавить виджет в эту позицию"
                             className="w-full"
                         >
-                            Влево ←
+                            + Добавить виджет
                         </Button>
-                    ) : (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                                onMoveSidebarRight && onMoveSidebarRight()
-                            }
-                            title="Переместить сайдбар вправо"
-                            className="w-full"
-                        >
-                            → Вправо
-                        </Button>
-                    )}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onAddWidgetToPosition(position.slug)}
-                        title="Добавить виджет в эту позицию"
-                        className="w-full"
-                    >
-                        + Добавить виджет
-                    </Button>
+                    </div>
                 </div>
             ) : (
                 <div className="mb-2 flex items-center justify-between">
@@ -130,7 +152,7 @@ export const PositionDropZone: React.FC<Props> = ({
                     >
                         {position.name}
                     </h3>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             type="button"
                             className="inline-flex items-center gap-1 rounded border px-2 py-1 text-sm hover:bg-gray-50"
@@ -184,19 +206,6 @@ export const PositionDropZone: React.FC<Props> = ({
                     </div>
                 )}
             </div>
-
-            {position.area === 'sidebar' && (
-                <div className="mt-3 flex items-center justify-between">
-                    <h3
-                        className={`position-label position-label-${position.slug} text-lg font-semibold`}
-                    >
-                        {position.name}
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                        {positionWidgets.length} виджетов
-                    </span>
-                </div>
-            )}
         </div>
     );
 };

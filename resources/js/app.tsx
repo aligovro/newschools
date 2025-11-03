@@ -7,10 +7,14 @@ import { Provider } from 'react-redux';
 import { Toaster } from 'sonner';
 import { store } from './store';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Родная школа';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => {
+        if (!title) return appName;
+        if (title === appName) return appName;
+        return `${title} - ${appName}`;
+    },
     resolve: (name) =>
         resolvePageComponent(
             `./pages/${name}.tsx`,

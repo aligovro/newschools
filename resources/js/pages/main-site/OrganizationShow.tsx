@@ -1,6 +1,9 @@
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { GalleryModal } from '@/components/main-site/GalleryModal';
+import { GallerySlider } from '@/components/main-site/GallerySlider';
 import ProjectCard from '@/components/projects/ProjectCard';
 import MainLayout from '@/layouts/MainLayout';
-import { Link } from '@inertiajs/react';
+import { useState } from 'react';
 
 interface Project {
     id: number;
@@ -19,6 +22,8 @@ interface Organization {
     slug: string;
     description?: string;
     logo?: string;
+    gallery?: string[];
+    address?: string;
     region?: {
         name: string;
     };
@@ -42,6 +47,23 @@ export default function OrganizationShow({
     position_settings = [],
     organization,
 }: OrganizationShowProps) {
+    const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+    const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
+
+    const handleImageClick = (index: number) => {
+        setGalleryInitialIndex(index);
+        setGalleryModalOpen(true);
+    };
+
+    // Формируем полный адрес
+    const fullAddress = [
+        organization.region?.name,
+        organization.city?.name,
+        organization.address,
+    ]
+        .filter(Boolean)
+        .join(', ');
+
     return (
         <MainLayout
             site={site}
@@ -51,46 +73,86 @@ export default function OrganizationShow({
             pageDescription={organization.description}
         >
             <div className="space-y-8">
-                <div className="rounded-lg bg-white shadow-sm">
-                    <div className="p-8">
-                        <div className="flex items-start space-x-6">
-                            {organization.logo && (
-                                <img
-                                    src={organization.logo}
-                                    alt={organization.name}
-                                    className="h-32 w-32 rounded-lg object-cover shadow-md"
-                                />
-                            )}
-                            <div className="flex-1">
-                                <h1 className="text-3xl font-bold text-gray-900">
-                                    {organization.name}
-                                </h1>
-                                {organization.description && (
-                                    <p className="mt-2 text-gray-600">
-                                        {organization.description}
-                                    </p>
-                                )}
-                                <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500">
-                                    {organization.region && (
-                                        <span>{organization.region.name}</span>
-                                    )}
-                                    {organization.city && (
-                                        <span>г. {organization.city.name}</span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {/* Хлебные крошки */}
+                <Breadcrumbs
+                    breadcrumbs={[
+                        { title: 'Главная', href: '/' },
+                        { title: 'Школы', href: '/organizations' },
+                        { title: organization.name, href: '' },
+                    ]}
+                />
 
-                {organization.projects && organization.projects.length > 0 && (
+                {/* Слайдер галереи */}
+                {organization.gallery && organization.gallery.length > 0 && (
                     <div>
+                        <GallerySlider
+                            images={organization.gallery}
+                            onImageClick={handleImageClick}
+                        />
+                        <GalleryModal
+                            isOpen={galleryModalOpen}
+                            images={organization.gallery}
+                            initialIndex={galleryInitialIndex}
+                            onClose={() => setGalleryModalOpen(false)}
+                        />
+                    </div>
+                )}
+
+                {/* Заголовок с названием организации */}
+                <h1
+                    style={{
+                        fontFamily: 'var(--font-family)',
+                        fontWeight: 700,
+                        fontSize: '40px',
+                        lineHeight: '120%',
+                        color: '#1a1a1a',
+                    }}
+                >
+                    {organization.name}
+                </h1>
+
+                {/* Адрес школы */}
+                {fullAddress && (
+                    <div className="flex items-center gap-2">
+                        <img
+                            src="/icons/map.svg"
+                            alt=""
+                            className="h-4 w-4 flex-shrink-0"
+                        />
+                        <span
+                            style={{
+                                fontFamily: 'var(--font-family)',
+                                fontWeight: 600,
+                                fontSize: '12px',
+                                lineHeight: '120%',
+                                letterSpacing: '0.01em',
+                                color: '#1a1a1a',
+                            }}
+                        >
+                            {fullAddress}
+                        </span>
+                    </div>
+                )}
+
+                {/* Описание организации */}
+                {organization.description && (
+                    <p className="mt-4 text-gray-600">
+                        {organization.description}
+                    </p>
+                )}
+
+                {/* Проекты */}
+                {organization.projects && organization.projects.length > 0 && (
+                    <div className="mt-8">
                         <h2 className="mb-6 text-2xl font-bold text-gray-900">
                             Проекты
                         </h2>
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {organization.projects.map((project) => (
-                                <ProjectCard key={project.id} project={project} />
+                                <ProjectCard
+                                    key={project.id}
+                                    project={project}
+                                />
                             ))}
                         </div>
                     </div>
