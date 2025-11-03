@@ -2,8 +2,10 @@ import {
     WidgetOutputRenderer,
     WidgetRenderer,
 } from '@/components/dashboard/widgets';
+import type { StylingConfig } from '@/components/dashboard/widgets/common/StylingPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { Edit, Eye, EyeOff, Trash2 } from 'lucide-react';
 import React from 'react';
 import type { WidgetData } from '../types';
@@ -54,8 +56,12 @@ export const WidgetDisplay: React.FC<WidgetDisplayProps> = ({
         }
     };
 
+    // Получаем customClass из стилизации виджета
+    const styling = widget.config?.styling as StylingConfig | undefined;
+    const widgetCustomClass = styling?.customClass;
+
     return (
-        <div className={`group relative ${className}`}>
+        <div className={cn('group relative', className, widgetCustomClass)}>
             {/* Виджет */}
             <div className="widget-content">
                 {suppressRender ? (

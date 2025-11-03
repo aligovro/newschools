@@ -45,23 +45,6 @@ export interface PaginatedResponse<T> {
 
 // API методы для виджетов
 export const widgetsApi = {
-    // Получение рейтинга регионов
-    getRegionRating: (
-        organizationId: number,
-        params: {
-            page?: number;
-            per_page?: number;
-            search?: string;
-            sort_by?: string;
-            sort_order?: 'asc' | 'desc';
-        } = {},
-    ): Promise<PaginatedResponse<RegionData>> =>
-        apiClient
-            .get<
-                PaginatedResponse<RegionData>
-            >(`/organizations/${organizationId}/region-rating`, { params })
-            .then((response) => response.data),
-
     // Получение лидеров рефералов
     getReferralLeaderboard: (
         organizationId: number,

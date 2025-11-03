@@ -25,10 +25,39 @@ export const StylingPanel: React.FC<StylingPanelProps> = ({
     onChange,
 }) => {
     const styling = value || {};
+    
+    // Локальное состояние для поля customClass чтобы избежать проблем с обновлением
+    const [customClassValue, setCustomClassValue] = React.useState(
+        styling.customClass || ''
+    );
+    
+    // Используем ref для отслеживания предыдущего значения пропса
+    const prevPropValueRef = React.useRef(styling.customClass);
+    
+    React.useEffect(() => {
+        // Обновляем локальное состояние только если значение пропса действительно изменилось извне
+        if (styling.customClass !== prevPropValueRef.current) {
+            setCustomClassValue(styling.customClass || '');
+            prevPropValueRef.current = styling.customClass;
+        }
+    }, [styling.customClass]);
 
-    const handle = (key: keyof StylingConfig, val: string) => {
-        onChange({ ...styling, [key]: val });
-    };
+    const handle = React.useCallback(
+        (key: keyof StylingConfig, val: string) => {
+            const currentStyling = value || {};
+            const newStyling = { ...currentStyling, [key]: val };
+            onChange(newStyling);
+        },
+        [value, onChange],
+    );
+    
+    const handleCustomClassChange = React.useCallback(
+        (newValue: string) => {
+            setCustomClassValue(newValue);
+            handle('customClass', newValue);
+        },
+        [handle],
+    );
 
     return (
         <div className="space-y-4">
@@ -125,12 +154,18 @@ export const StylingPanel: React.FC<StylingPanelProps> = ({
             </div>
 
             <div>
-                <Label htmlFor="class">Доп. CSS класс</Label>
-                <Input
-                    id="class"
+                <Label htmlFor="customClass">Доп. CSS класс</Label>
+                <input
+                    id="customClass"
+                    type="text"
                     placeholder="custom-class"
-                    value={styling.customClass || ''}
-                    onChange={(e) => handle('customClass', e.target.value)}
+                    autoComplete="off"
+                    className="border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"
+                    value={customClassValue}
+                    onChange={(e) => {
+                        const newValue = e.target.value;
+                        handleCustomClassChange(newValue);
+                    }}
                 />
             </div>
         </div>

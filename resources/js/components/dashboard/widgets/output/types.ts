@@ -245,8 +245,8 @@ export interface DonationsListOutputConfig {
     organizationId?: number;
 }
 
-// Region rating widget types
-export interface RegionRatingOutputConfig {
+// City supporters widget types
+export interface CitySupportersOutputConfig {
     title?: string;
     subtitle?: string;
     regions?: Array<{

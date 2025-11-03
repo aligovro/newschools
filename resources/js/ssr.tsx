@@ -3,13 +3,17 @@ import createServer from '@inertiajs/react/server';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import ReactDOMServer from 'react-dom/server';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Родная школа';
 
 createServer((page) =>
     createInertiaApp({
         page,
         render: ReactDOMServer.renderToString,
-        title: (title) => (title ? `${title} - ${appName}` : appName),
+        title: (title) => {
+            if (!title) return appName;
+            if (title === appName) return appName;
+            return `${title} - ${appName}`;
+        },
         resolve: (name) =>
             resolvePageComponent(
                 `./pages/${name}.tsx`,

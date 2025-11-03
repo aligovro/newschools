@@ -150,6 +150,11 @@ class SiteController extends Controller
 
             $site->update(['seo_config' => $seoConfig]);
 
+            // Очищаем кеш виджетов и позиций, так как они могут зависеть от SEO данных
+            Cache::forget("site_widgets_config_{$site->id}");
+            Cache::forget("site_positions_{$site->template}");
+            Cache::forget("site_position_settings_{$site->id}");
+
             return response()->json([
                 'success' => true,
                 'message' => 'SEO настройки сохранены',
@@ -292,7 +297,7 @@ class SiteController extends Controller
         try {
             $site = $this->getSite($site);
             $widget = Widget::where('widget_slug', $request->widget_slug)->firstOrFail();
-            
+
             // Проверяем доступность виджета для типа сайта
             if (!$widget->isAvailableForSiteType($site->site_type)) {
                 return response()->json([
@@ -300,7 +305,7 @@ class SiteController extends Controller
                     'message' => 'Виджет недоступен для данного типа сайта',
                 ], 403);
             }
-            
+
             $position = WidgetPosition::where('slug', $request->position_slug)->firstOrFail();
 
             // Валидируем конфигурацию виджета

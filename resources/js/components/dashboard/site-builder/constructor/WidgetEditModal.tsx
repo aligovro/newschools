@@ -88,7 +88,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         [],
     );
 
-    // Синхронизация формы с виджетом
+    // Синхронизация формы с виджетом (только при первом открытии или смене виджета)
     useEffect(() => {
         if (widget) {
             const config = widget.configs
@@ -109,7 +109,9 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 handleSetPendingConfig(config);
             }
         }
-    }, [widget, _pendingConfig, handleSetPendingConfig]);
+        // Убираем _pendingConfig из зависимостей, чтобы не перезаписывать изменения пользователя
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [widget, handleSetPendingConfig]);
 
     // Мемоизированная функция сохранения
     const handleSave = useCallback(async () => {
@@ -463,12 +465,18 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                             <StylingPanel
                                 value={stylingConfig}
                                 onChange={(val) => {
-                                    const cfg = {
-                                        ...(formData.config || {}),
-                                        styling: val,
-                                    };
-                                    setPendingConfig(cfg);
-                                    handleInputChange('config', cfg);
+                                    // Используем функциональное обновление для гарантии актуального состояния
+                                    setFormData((prev) => {
+                                        const cfg = {
+                                            ...(prev.config || {}),
+                                            styling: val,
+                                        };
+                                        setPendingConfig(cfg);
+                                        return {
+                                            ...prev,
+                                            config: cfg,
+                                        };
+                                    });
                                 }}
                             />
                         </div>

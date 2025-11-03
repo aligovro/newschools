@@ -62,32 +62,9 @@ class MainSiteController extends Controller
 
     public function index(Request $request)
     {
-        $site = Site::where('site_type', 'main')->published()->first();
-
-        if (!$site) {
-            abort(404, 'Главный сайт не настроен');
-        }
-
-        /** @var WidgetDataService $widgetDataService */
-        $widgetDataService = app(WidgetDataService::class);
-        $widgetsConfig = Cache::remember("site_widgets_config_{$site->id}", 300, function () use ($widgetDataService, $site) {
-            return $widgetDataService->getSiteWidgetsWithData($site->id);
-        });
-
-        $positions = Cache::remember("site_positions_{$site->template}", 600, function () use ($site) {
-            $template = SiteTemplate::where('slug', $site->template)->first();
-            $query = WidgetPosition::active()->ordered();
-            if ($template) {
-                $query->where(function ($q) use ($template) {
-                    $q->where('template_id', $template->id)->orWhereNull('template_id');
-                });
-            }
-            return $query->get();
-        });
-
         $data = $this->getSiteWidgetsAndPositions();
 
-        return Inertia::render('SitePreview', $data);
+        return Inertia::render('main-site/Index', $data);
     }
 
     public function organizations(Request $request)
@@ -174,6 +151,14 @@ class MainSiteController extends Controller
             }])
             ->firstOrFail();
 
+        // Подготавливаем галерею изображений
+        $gallery = [];
+        if (!empty($organization->images) && is_array($organization->images)) {
+            $gallery = array_map(function ($image) {
+                return '/storage/' . ltrim($image, '/');
+            }, $organization->images);
+        }
+
         // Подготавливаем данные организации для отображения
         $organizationData = [
             'id' => $organization->id,
@@ -181,6 +166,7 @@ class MainSiteController extends Controller
             'slug' => $organization->slug,
             'description' => $organization->description,
             'logo' => $organization->logo ? '/storage/' . $organization->logo : null,
+            'gallery' => $gallery,
             'region' => $organization->region ? [
                 'id' => $organization->region->id,
                 'name' => $organization->region->name,
@@ -208,6 +194,7 @@ class MainSiteController extends Controller
 
         return Inertia::render('main-site/OrganizationShow', array_merge($data, [
             'organization' => $organizationData,
+            'organizationId' => $organization->id, // Передаем organizationId для виджетов
         ]));
     }
 
@@ -245,10 +232,44 @@ class MainSiteController extends Controller
             ->with(['organization', 'organization.region'])
             ->firstOrFail();
 
+        // Подготавливаем галерею изображений
+        $gallery = [];
+        if (!empty($project->gallery) && is_array($project->gallery)) {
+            $gallery = array_map(function ($image) {
+                return '/storage/' . ltrim($image, '/');
+            }, $project->gallery);
+        }
+
+        // Подготавливаем данные проекта для отображения
+        $projectData = [
+            'id' => $project->id,
+            'title' => $project->title,
+            'slug' => $project->slug,
+            'description' => $project->description,
+            'short_description' => $project->short_description,
+            'image' => $project->image ? '/storage/' . ltrim($project->image, '/') : null,
+            'gallery' => $gallery,
+            'target_amount_rubles' => $project->target_amount_rubles ?? ($project->target_amount / 100),
+            'collected_amount_rubles' => $project->collected_amount_rubles ?? ($project->collected_amount / 100),
+            'progress_percentage' => $project->progress_percentage ?? 0,
+            'has_stages' => $project->has_stages ?? false,
+            'stages' => $project->stages ?? [],
+            'category' => $project->category,
+            'start_date' => $project->start_date,
+            'end_date' => $project->end_date,
+            'beneficiaries' => $project->beneficiaries ?? [],
+            'progress_updates' => $project->progress_updates ?? [],
+            'organization' => $project->organization ? [
+                'id' => $project->organization->id,
+                'name' => $project->organization->name,
+                'slug' => $project->organization->slug,
+            ] : null,
+        ];
+
         $data = $this->getSiteWidgetsAndPositions();
 
         return Inertia::render('main-site/ProjectShow', array_merge($data, [
-            'project' => $project,
+            'project' => $projectData,
         ]));
     }
 }

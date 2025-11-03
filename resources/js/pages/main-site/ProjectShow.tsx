@@ -1,10 +1,21 @@
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { GalleryModal } from '@/components/main-site/GalleryModal';
+import { GallerySlider } from '@/components/main-site/GallerySlider';
 import MainLayout from '@/layouts/MainLayout';
 import { Link } from '@inertiajs/react';
+import { useState } from 'react';
 
 interface Organization {
     id: number;
     name: string;
     slug: string;
+    address?: string;
+    region?: {
+        name: string;
+    };
+    city?: {
+        name: string;
+    };
 }
 
 interface ProjectStage {
@@ -61,6 +72,25 @@ export default function ProjectShow({
     position_settings = [],
     project,
 }: ProjectShowProps) {
+    const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+    const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
+
+    const handleImageClick = (index: number) => {
+        setGalleryInitialIndex(index);
+        setGalleryModalOpen(true);
+    };
+
+    // Формируем полный адрес организации
+    const organizationAddress = project.organization
+        ? [
+              project.organization.region?.name,
+              project.organization.city?.name,
+              project.organization.address,
+          ]
+              .filter(Boolean)
+              .join(', ')
+        : null;
+
     return (
         <MainLayout
             site={site}
@@ -70,25 +100,81 @@ export default function ProjectShow({
             pageDescription={project.short_description}
         >
             <div className="space-y-8">
+                {/* Хлебные крошки */}
+                <Breadcrumbs
+                    breadcrumbs={[
+                        { title: 'Главная', href: '/' },
+                        { title: 'Проекты', href: '/projects' },
+                        { title: project.title, href: '' },
+                    ]}
+                />
+
+                {/* Слайдер галереи */}
+                {project.gallery && project.gallery.length > 0 && (
+                    <div>
+                        <GallerySlider
+                            images={project.gallery}
+                            onImageClick={handleImageClick}
+                        />
+                        <GalleryModal
+                            isOpen={galleryModalOpen}
+                            images={project.gallery}
+                            initialIndex={galleryInitialIndex}
+                            onClose={() => setGalleryModalOpen(false)}
+                        />
+                    </div>
+                )}
+
+                {/* Заголовок с названием проекта */}
+                <h1
+                    style={{
+                        fontFamily: 'var(--font-family)',
+                        fontWeight: 700,
+                        fontSize: '40px',
+                        lineHeight: '120%',
+                        color: '#1a1a1a',
+                    }}
+                >
+                    {project.title}
+                </h1>
+
+                {/* Адрес организации */}
+                {organizationAddress && (
+                    <div className="flex items-center gap-2">
+                        <img
+                            src="/icons/map.svg"
+                            alt=""
+                            className="h-4 w-4 flex-shrink-0"
+                        />
+                        <span
+                            style={{
+                                fontFamily: 'var(--font-family)',
+                                fontWeight: 600,
+                                fontSize: '12px',
+                                lineHeight: '120%',
+                                letterSpacing: '0.01em',
+                                color: '#1a1a1a',
+                            }}
+                        >
+                            {organizationAddress}
+                        </span>
+                    </div>
+                )}
+
                 <article className="rounded-lg bg-white shadow-sm">
                     <div className="p-8">
-                        <div className="mb-6">
-                            <h1 className="text-3xl font-bold text-gray-900">
-                                {project.title}
-                            </h1>
-                            {project.organization && (
-                                <p className="mt-2 text-gray-600">
-                                    <Link
-                                        href={`/organization/${project.organization.slug}`}
-                                        className="hover:text-blue-600"
-                                    >
-                                        {project.organization.name}
-                                    </Link>
-                                </p>
-                            )}
-                        </div>
+                        {project.organization && (
+                            <p className="mb-4 text-gray-600">
+                                <Link
+                                    href={`/organization/${project.organization.slug}`}
+                                    className="hover:text-blue-600"
+                                >
+                                    {project.organization.name}
+                                </Link>
+                            </p>
+                        )}
 
-                        {project.image && (
+                        {!project.gallery && project.image && (
                             <div className="mb-6">
                                 <img
                                     src={project.image}
@@ -155,23 +241,6 @@ export default function ProjectShow({
                             </div>
                         </div>
 
-                        {project.gallery && project.gallery.length > 0 && (
-                            <div className="mt-8">
-                                <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                                    Галерея
-                                </h3>
-                                <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                                    {project.gallery.map((image, index) => (
-                                        <img
-                                            key={index}
-                                            src={image}
-                                            alt={`${project.title} - ${index + 1}`}
-                                            className="rounded-lg object-cover"
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
                         {project.has_stages &&
                             project.stages &&
