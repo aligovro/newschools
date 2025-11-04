@@ -1,0 +1,64 @@
+.organization-search {
+    &__input {
+        padding-left: 2.75rem;
+        padding-right: 2.75rem;
+        height: 3rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease-in-out;
+
+        &:focus {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+    }
+
+    &__results {
+        margin-top: 0.5rem;
+        animation: fadeIn 0.2s ease-in-out;
+    }
+
+    &__result-item {
+        &:first-child {
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+
+        &:last-child {
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+        }
+
+        &:hover {
+            background-color: rgb(249, 250, 251);
+        }
+    }
+
+    &__logo {
+        min-width: 3rem;
+        min-height: 3rem;
+        background-color: rgb(243, 244, 246);
+    }
+
+    &__name {
+        font-size: 1rem;
+        line-height: 1.5;
+        color: rgb(17, 24, 39);
+    }
+
+    &__address {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: rgb(75, 85, 99);
+        margin-top: 0.25rem;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-0.5rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

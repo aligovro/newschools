@@ -1,0 +1,157 @@
+// Menu Widget Styles
+// Общие стили для всех виджетов типа "menu"
+
+// Базовые стили для menu виджетов
+.menu-widget {
+    font-family: inherit;
+    line-height: 1.6;
+
+    // Контейнер виджета
+    &.widget-output {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    // Навигационное меню
+    nav {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    // Ссылки меню
+    a {
+        color: inherit;
+        text-decoration: none;
+        transition:
+            opacity 0.2s ease,
+            color 0.2s ease;
+
+        &:hover {
+            opacity: 0.8;
+            text-decoration: none;
+        }
+
+        // Активное состояние (если нужно)
+        &.active {
+            font-weight: 600;
+        }
+    }
+
+    // Заголовок меню (если есть)
+    .menu-widget__title {
+        font-weight: 600;
+        margin-right: 16px;
+    }
+
+    // Различные ориентации
+    &.flex-row {
+        flex-direction: row;
+    }
+
+    &.flex-col {
+        flex-direction: column;
+
+        nav {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    // Выравнивание
+    &.justify-start {
+        justify-content: flex-start;
+    }
+
+    &.justify-center {
+        justify-content: center;
+    }
+
+    &.justify-end {
+        justify-content: flex-end;
+    }
+
+    &.justify-between {
+        justify-content: space-between;
+    }
+}
+
+// Стили для редактора меню (если нужно)
+.menu-widget-editor {
+    &__tabs {
+        display: flex;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 20px;
+    }
+
+    &__tab {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-weight: 500;
+        color: #6b7280;
+        transition: all 0.2s;
+
+        &:hover {
+            color: #374151;
+            background-color: #f9fafb;
+        }
+
+        &.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+    }
+
+    &__content {
+        min-height: 400px;
+    }
+}
+
+// Специфичные стили для разных классов menu виджетов
+// Например, для header-menu-widget
+.header-menu-widget {
+    .menu-widget {
+        nav {
+            gap: 16px;
+        }
+
+        a {
+            font-size: 14px;
+            font-weight: 500;
+        }
+    }
+}
+
+// Адаптивность для всех menu виджетов
+@media (max-width: 768px) {
+    .menu-widget {
+        nav {
+            gap: 8px;
+        }
+
+        a {
+            font-size: 14px;
+        }
+
+        &.flex-row nav {
+            flex-wrap: wrap;
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .menu-widget {
+        nav {
+            gap: 6px;
+        }
+
+        a {
+            font-size: 12px;
+        }
+    }
+}

@@ -1,7 +1,7 @@
 import { useDefaultCity } from '@/hooks/useDefaultCity';
 import { detectCityByGeolocation, fetchPublicCities } from '@/lib/api/public';
 import '@css/components/main-site/CitySelector.scss';
-import { ChevronDown, Loader2, MapPin } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 interface City {
@@ -171,10 +171,9 @@ export default function CitySelector({
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center space-x-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="city-selector__button"
             >
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <span className="min-w-[120px] text-left">
+                <span className="city-selector__text">
                     {isDetecting ? (
                         <span className="flex items-center space-x-2">
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -188,11 +187,7 @@ export default function CitySelector({
                         <span className="text-gray-500">Выберите город</span>
                     )}
                 </span>
-                <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                        isOpen ? 'rotate-180' : ''
-                    }`}
-                />
+                <img src="/icons/direct-right.svg" alt="" className="city-selector__icon" />
             </button>
 
             {isOpen && (

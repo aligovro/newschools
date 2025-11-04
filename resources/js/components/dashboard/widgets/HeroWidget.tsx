@@ -23,6 +23,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
     configs,
     styling,
     hero_slides = [],
+    css_class = '',
 }) => {
     const [isSettingsExpanded, setIsSettingsExpanded] =
         useState(autoExpandSettings);
@@ -33,14 +34,13 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
     // Стабилизируем hero_slides чтобы избежать лишних перерендеров
     const stableHeroSlides = useMemo(() => {
         return hero_slides;
-    }, [hero_slides.length, hero_slides.map((slide) => slide.id).join(',')]);
+    }, [hero_slides]);
 
     // Извлекаем значения из configs если они переданы
     const configValues = useMemo(() => {
         if (!configs) return config;
 
         return {
-            type: getConfigValue(configs, 'type', config.type || 'single'),
             height: getConfigValue(configs, 'height', config.height || '400px'),
             animation: getConfigValue(
                 configs,
@@ -72,16 +72,6 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                 stableHeroSlides.length > 0
                     ? stableHeroSlides
                     : getConfigValue(configs, 'slides', config.slides || []),
-            singleSlide: getConfigValue(
-                configs,
-                'singleSlide',
-                config.singleSlide,
-            ),
-            css_class: getConfigValue(
-                configs,
-                'css_class',
-                config.css_class || '',
-            ),
         };
     }, [configs, config, stableHeroSlides]);
 
@@ -176,7 +166,6 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
     };
 
     const {
-        type = 'single',
         height = '600px',
         animation = 'fade',
         autoplay = true,
@@ -185,60 +174,9 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
         showDots = true,
         showArrows = true,
         slides = [],
-        singleSlide = {
-            id: '1',
-            title: 'Добро пожаловать',
-            subtitle: 'Наш сайт',
-            description: 'Описание вашего сайта',
-            buttonText: 'Узнать больше',
-            buttonLink: '#',
-            buttonOpenInNewTab: false,
-            buttonLinkType: 'internal',
-            backgroundImage: '',
-            overlayOpacity: 50,
-            overlayColor: '#000000',
-            overlayGradient: 'none',
-            overlayGradientIntensity: 50,
-        },
     } = localConfig;
 
-    const currentSlides =
-        type === 'slider' ? slides : singleSlide ? [singleSlide] : [];
-
-    // Обработчики для настроек
-    const handleTypeChange = (newType: 'single' | 'slider') => {
-        setLocalConfig((prev) => {
-            const newConfig = {
-                ...prev,
-                type: newType,
-            };
-
-            // Если переключаемся на слайдер и нет слайдов, создаем первый слайд
-            if (
-                newType === 'slider' &&
-                (!prev.slides || prev.slides.length === 0)
-            ) {
-                const firstSlide: HeroSlide = {
-                    id: '1',
-                    title: 'Первый слайд',
-                    subtitle: 'Подзаголовок',
-                    description: 'Описание слайда',
-                    buttonText: 'Кнопка',
-                    buttonLink: '#',
-                    buttonOpenInNewTab: false,
-                    buttonLinkType: 'internal',
-                    backgroundImage: '',
-                    overlayOpacity: 50,
-                    overlayColor: '#000000',
-                    overlayGradient: 'none',
-                    overlayGradientIntensity: 50,
-                };
-                newConfig.slides = [firstSlide];
-            }
-
-            return newConfig;
-        });
-    };
+    const currentSlides = slides || [];
 
     const handleHeightChange = (newHeight: string) => {
         setLocalConfig((prev) => ({ ...prev, height: newHeight }));
@@ -270,28 +208,17 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
 
     // Обработчики для слайдов
     const handleSlideUpdate = (updatedSlide: HeroSlide) => {
-        if (type === 'slider') {
-            setLocalConfig((prev) => {
-                const newConfig = {
-                    ...prev,
-                    slides:
-                        prev.slides?.map((s) =>
-                            s.id === updatedSlide.id ? updatedSlide : s,
-                        ) || [],
-                };
+        setLocalConfig((prev) => {
+            const newConfig = {
+                ...prev,
+                slides:
+                    prev.slides?.map((s) =>
+                        s.id === updatedSlide.id ? updatedSlide : s,
+                    ) || [],
+            };
 
-                return newConfig;
-            });
-        } else {
-            setLocalConfig((prev) => {
-                const newConfig = {
-                    ...prev,
-                    singleSlide: updatedSlide,
-                };
-
-                return newConfig;
-            });
-        }
+            return newConfig;
+        });
     };
 
     const handleAddSlide = () => {
@@ -305,7 +232,7 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
             buttonOpenInNewTab: false,
             buttonLinkType: 'internal',
             backgroundImage: '',
-            overlayOpacity: 50,
+            overlayOpacity: 0,
             overlayColor: '#000000',
             overlayGradient: 'none',
             overlayGradientIntensity: 50,
@@ -335,81 +262,41 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
     const handleImageUpload = useCallback(
         (slideId: string, file: File, serverUrl?: string) => {
             if (serverUrl && !serverUrl.startsWith('blob:')) {
-                if (type === 'slider') {
-                    setLocalConfig((prev) => {
-                        const updatedSlides =
-                            prev.slides?.map((s) =>
-                                s.id === slideId
-                                    ? { ...s, backgroundImage: serverUrl }
-                                    : s,
-                            ) || [];
-                        return { ...prev, slides: updatedSlides };
-                    });
-                } else {
-                    setLocalConfig((prev) => ({
-                        ...prev,
-                        singleSlide: {
-                            ...prev.singleSlide!,
-                            backgroundImage: serverUrl,
-                        },
-                    }));
-                }
-            }
-        },
-        [type],
-    );
-
-    const handleImageCrop = useCallback(
-        (slideId: string, url: string) => {
-            if (!url.startsWith('blob:')) {
-                if (type === 'slider') {
-                    setLocalConfig((prev) => {
-                        const updatedSlides =
-                            prev.slides?.map((s) =>
-                                s.id === slideId
-                                    ? { ...s, backgroundImage: url }
-                                    : s,
-                            ) || [];
-                        return { ...prev, slides: updatedSlides };
-                    });
-                } else {
-                    setLocalConfig((prev) => ({
-                        ...prev,
-                        singleSlide: {
-                            ...prev.singleSlide!,
-                            backgroundImage: url,
-                        },
-                    }));
-                }
-            }
-        },
-        [type],
-    );
-
-    const handleImageDelete = useCallback(
-        (slideId: string) => {
-            if (type === 'slider') {
                 setLocalConfig((prev) => {
                     const updatedSlides =
                         prev.slides?.map((s) =>
                             s.id === slideId
-                                ? { ...s, backgroundImage: '' }
+                                ? { ...s, backgroundImage: serverUrl }
                                 : s,
                         ) || [];
                     return { ...prev, slides: updatedSlides };
                 });
-            } else {
-                setLocalConfig((prev) => ({
-                    ...prev,
-                    singleSlide: {
-                        ...prev.singleSlide!,
-                        backgroundImage: '',
-                    },
-                }));
             }
         },
-        [type],
+        [],
     );
+
+    const handleImageCrop = useCallback((slideId: string, url: string) => {
+        if (!url.startsWith('blob:')) {
+            setLocalConfig((prev) => {
+                const updatedSlides =
+                    prev.slides?.map((s) =>
+                        s.id === slideId ? { ...s, backgroundImage: url } : s,
+                    ) || [];
+                return { ...prev, slides: updatedSlides };
+            });
+        }
+    }, []);
+
+    const handleImageDelete = useCallback((slideId: string) => {
+        setLocalConfig((prev) => {
+            const updatedSlides =
+                prev.slides?.map((s) =>
+                    s.id === slideId ? { ...s, backgroundImage: '' } : s,
+                ) || [];
+            return { ...prev, slides: updatedSlides };
+        });
+    }, []);
 
     if (isEditable) {
         return (
@@ -438,7 +325,6 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                                     {activeTab === 'settings' && (
                                         <div className="space-y-4">
                                             <HeroSettings
-                                                type={type}
                                                 height={height}
                                                 animation={animation}
                                                 autoplay={autoplay}
@@ -446,10 +332,6 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                                                 loop={loop}
                                                 showDots={showDots}
                                                 showArrows={showArrows}
-                                                css_class={
-                                                    localConfig.css_class
-                                                }
-                                                onTypeChange={handleTypeChange}
                                                 onHeightChange={
                                                     handleHeightChange
                                                 }
@@ -469,42 +351,24 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                                                 onShowArrowsChange={
                                                     handleShowArrowsChange
                                                 }
-                                                onCssClassChange={(css_class) =>
-                                                    setLocalConfig((prev) => ({
-                                                        ...prev,
-                                                        css_class,
-                                                    }))
-                                                }
                                             />
                                         </div>
                                     )}
 
                                     {activeTab === 'slides' && (
                                         <div className="space-y-4">
-                                            {type === 'slider' ? (
-                                                <div className="mb-4 flex items-center justify-between">
-                                                    <h3 className="text-lg font-semibold">
-                                                        Слайды (
-                                                        {currentSlides.length})
-                                                    </h3>
-                                                    <Button
-                                                        onClick={handleAddSlide}
-                                                    >
-                                                        <Plus className="mr-2 h-4 w-4" />
-                                                        Добавить слайд
-                                                    </Button>
-                                                </div>
-                                            ) : (
-                                                <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
-                                                    <p className="text-sm text-blue-700">
-                                                        💡 Чтобы добавить
-                                                        несколько слайдов,
-                                                        сначала переключите тип
-                                                        на "Слайдер" в
-                                                        настройках.
-                                                    </p>
-                                                </div>
-                                            )}
+                                            <div className="mb-4 flex items-center justify-between">
+                                                <h3 className="text-lg font-semibold">
+                                                    Слайды (
+                                                    {currentSlides.length})
+                                                </h3>
+                                                <Button
+                                                    onClick={handleAddSlide}
+                                                >
+                                                    <Plus className="mr-2 h-4 w-4" />
+                                                    Добавить слайд
+                                                </Button>
+                                            </div>
 
                                             <div className="max-h-[400px] space-y-4 overflow-y-auto">
                                                 {currentSlides
@@ -518,7 +382,12 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                                                             key={slide.id}
                                                             slide={slide}
                                                             index={index}
-                                                            type={type}
+                                                            type={
+                                                                currentSlides.length >
+                                                                1
+                                                                    ? 'slider'
+                                                                    : 'single'
+                                                            }
                                                             totalSlides={
                                                                 currentSlides.length
                                                             }
@@ -571,10 +440,10 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
     }
 
     return (
-        <div className="hero-widget" style={styling || {}}>
-            {type === 'slider' ? (
+        <div className={`hero-widget ${css_class || ''}`} style={styling || {}}>
+            {currentSlides.length > 1 ? (
                 <HeroSlider
-                    slides={slides}
+                    slides={currentSlides}
                     height={height}
                     animation={animation}
                     autoplay={autoplay}
@@ -582,14 +451,14 @@ export const HeroWidget: React.FC<HeroWidgetProps> = ({
                     showDots={showDots}
                     showArrows={showArrows}
                     getGradientStyle={getGradientStyle}
-                    css_class={localConfig.css_class}
+                    css_class={css_class}
                 />
             ) : (
                 <HeroRenderer
-                    slide={singleSlide || null}
+                    slide={currentSlides[0] || null}
                     height={height}
                     getGradientStyle={getGradientStyle}
-                    css_class={localConfig.css_class}
+                    css_class={css_class}
                 />
             )}
         </div>

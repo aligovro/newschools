@@ -12,6 +12,7 @@ interface StandardWidgetFieldsProps {
         settings: Record<string, unknown>;
         is_active: boolean;
         is_visible: boolean;
+        wrapper_class?: string;
     };
     onInputChange: (field: string, value: unknown) => void;
     onConfigUpdate: (config: WidgetConfig) => void;

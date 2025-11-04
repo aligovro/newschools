@@ -5,6 +5,7 @@ import { PositionDropZone } from './PositionDropZone';
 interface PositionsRendererProps {
     positions: WidgetPosition[];
     widgets: WidgetData[];
+    positionSettings?: Record<string, Record<string, any>>;
     isPreviewMode: boolean;
     newlyAddedWidgetId: string | null;
     validationErrors: string[];
@@ -31,6 +32,7 @@ interface PositionsRendererProps {
 export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
     positions,
     widgets,
+    positionSettings = {},
     isPreviewMode,
     newlyAddedWidgetId,
     validationErrors,
@@ -51,6 +53,7 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
             key={position.id}
             position={position}
             widgets={widgets}
+            positionSettings={positionSettings[position.slug]}
             onDropWidget={onDropWidget}
             onEditWidget={onEditWidget}
             onDeleteWidget={onDeleteWidget}

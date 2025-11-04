@@ -51,6 +51,7 @@ class MainSiteController extends Controller
                 'description' => $site->description,
                 'favicon' => $site->getFaviconUrlAttribute(),
                 'template' => $site->template,
+                'site_type' => $site->site_type,
                 'widgets_config' => $widgetsConfig,
                 'seo_config' => $site->seo_config ?? [],
                 'layout_config' => $site->layout_config ?? [],

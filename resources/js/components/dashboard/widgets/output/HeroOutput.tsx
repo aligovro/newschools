@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
+import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
 import { router } from '@inertiajs/react';
 import React, { useMemo } from 'react';
-import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
 import {
     Autoplay,
     EffectCube,
@@ -57,12 +57,12 @@ const HeroSlideRenderer: React.FC<{
         left: 0,
         right: 0,
         bottom: 0,
-        opacity: (slide.overlayOpacity || 50) / 100,
+        opacity: (slide.overlayOpacity || 0) / 100,
         background:
             slide.overlayGradient && slide.overlayGradient !== 'none'
                 ? getGradientStyle(
                       slide.overlayColor || '#000000',
-                      slide.overlayOpacity || 50,
+                      slide.overlayOpacity || 0,
                       slide.overlayGradient,
                       slide.overlayGradientIntensity || 50,
                   )
@@ -99,9 +99,11 @@ const HeroSlideRenderer: React.FC<{
             <div style={overlayStyle} />
             <div className="relative z-10 flex h-full items-center justify-center">
                 <div className="max-w-4xl px-6 text-center text-white">
-                    <h1 className="mb-4 text-5xl font-bold md:text-6xl">
-                        {slide.title}
-                    </h1>
+                    {slide.title && (
+                        <h1 className="mb-4 text-5xl font-bold md:text-6xl">
+                            {slide.title}
+                        </h1>
+                    )}
                     {slide.subtitle && (
                         <h2 className="mb-6 text-2xl font-light md:text-3xl">
                             {slide.subtitle}
@@ -406,7 +408,6 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
     const config = widget.config as HeroOutputConfig;
 
     const {
-        type = 'single',
         height = '600px',
         animation = 'fade',
         autoplay = true,
@@ -415,21 +416,6 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
         showDots = true,
         showArrows = true,
         slides = [],
-        singleSlide = {
-            id: '1',
-            title: 'Добро пожаловать',
-            subtitle: 'Наш сайт',
-            description: 'Описание вашего сайта',
-            buttonText: 'Узнать больше',
-            buttonLink: '#',
-            buttonOpenInNewTab: false,
-            buttonLinkType: 'internal',
-            backgroundImage: '',
-            overlayOpacity: 50,
-            overlayColor: '#000000',
-            overlayGradient: 'none',
-            overlayGradientIntensity: 50,
-        },
         css_class,
         styling = {},
     } = config;
@@ -479,19 +465,17 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
             return slides;
         }
 
-        // If single slide is provided, convert to array
-        if (singleSlide) {
-            return [singleSlide];
-        }
-
         return [];
-    }, [widget, slides, singleSlide]);
+    }, [widget, slides]);
 
     if (currentSlides.length === 0) return null;
 
     return (
-        <div className={`hero-output ${className || ''}`} style={style}>
-            {type === 'slider' ? (
+        <div
+            className={`hero-output ${className || ''} ${css_class || ''}`}
+            style={style}
+        >
+            {currentSlides.length > 1 ? (
                 <HeroSlider
                     slides={currentSlides}
                     height={height}

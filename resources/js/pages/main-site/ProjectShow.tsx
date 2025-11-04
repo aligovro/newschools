@@ -49,6 +49,8 @@ interface Project {
     target_amount_rubles: number;
     collected_amount_rubles: number;
     progress_percentage: number;
+    formatted_target_amount?: string;
+    formatted_collected_amount?: string;
     has_stages?: boolean;
     stages?: ProjectStage[];
     category?: string;
@@ -240,7 +242,6 @@ export default function ProjectShow({
                                 </a>
                             </div>
                         </div>
-
 
                         {project.has_stages &&
                             project.stages &&

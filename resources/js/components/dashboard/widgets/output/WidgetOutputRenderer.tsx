@@ -19,6 +19,7 @@ import { SliderOutput } from './SliderOutput';
 import { StatsOutput } from './StatsOutput';
 import { SubscribeBlockOutput } from './SubscribeBlockOutput';
 import { AddOrganizationBlockOutput } from './AddOrganizationBlockOutput';
+import { OrganizationSearchOutput } from './OrganizationSearchOutput';
 import { TextOutput } from './TextOutput';
 import { CityOrganizationsOutput } from './CityOrganizationsOutput';
 
@@ -43,6 +44,7 @@ const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
     city_organizations: CityOrganizationsOutput,
     subscribe_block: SubscribeBlockOutput,
     add_organization_block: AddOrganizationBlockOutput,
+    organization_search: OrganizationSearchOutput,
 };
 
 // Default output component for unknown widgets

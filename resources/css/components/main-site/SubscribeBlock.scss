@@ -1,31 +1,56 @@
 // Стили для компонента SubscribeBlock
-.subscribe-block {
-    // height и background задаются через инлайн стили из config, поэтому здесь не указываем
-}
-
 .subscribe-block__loader {
     border-color: rgba(255, 255, 255, 0.2);
     border-top-color: white;
 }
 
 .subscribe-block__school-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(4px);
-    transition: background-color 0.2s ease;
+    background: #fff;
+    border-radius: 10px;
+    min-height: 68px;
+    box-shadow: 0 4px 34px 0 rgba(26, 26, 26, 0.08);
+    transition:
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
 
     &:hover {
-        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 6px 40px 0 rgba(26, 26, 26, 0.12);
+        transform: translateY(-2px);
     }
 }
 
 .subscribe-block__school-logo {
+    width: 36px;
+    height: 36px;
     background: rgba(255, 255, 255, 0.2);
+}
+
+.subscribe-block__school-address {
+    font-size: 10px;
+    line-height: 120%;
+    color: #b5b9c3;
+}
+
+.subscribe-block__school-name {
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 120%;
+    color: #1a1a1a;
 }
 
 .subscribe-block__search-input {
     border-color: rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(4px);
+    border-radius: 10px;
+    height: 40px;
+    font-family: var(--font-family, 'Montserrat', sans-serif);
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 130%;
+    color: #fff;
+    padding-left: 40px;
+    padding-right: 16px;
 
     &::placeholder {
         color: rgba(255, 255, 255, 0.7);
@@ -38,14 +63,31 @@
 }
 
 .subscribe-block__subscribe-button {
-    color: #3259ff;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+    border-radius: 50%;
+    color: white;
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+
+    svg {
+        color: white;
+    }
 
     &:hover {
-        background: rgba(255, 255, 255, 0.9);
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
+
+    &:active {
+        transform: scale(0.95);
     }
 
     &:focus {
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(150, 189, 255, 0.5);
     }
 }
 
@@ -53,4 +95,3 @@
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(4px);
 }
-

@@ -27,6 +27,7 @@ class SiteWidget extends Model
     'sort_order',
     'is_active',
     'is_visible',
+    'wrapper_class',
   ];
 
   protected $casts = [
@@ -565,6 +566,7 @@ class SiteWidget extends Model
     $baseData['order'] = $this->order;
     $baseData['is_active'] = $this->is_active;
     $baseData['is_visible'] = $this->is_visible;
+    $baseData['wrapper_class'] = $this->wrapper_class;
     $baseData['created_at'] = $this->created_at;
     $baseData['updated_at'] = $this->updated_at;
 

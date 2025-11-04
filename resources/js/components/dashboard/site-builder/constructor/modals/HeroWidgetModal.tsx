@@ -1,4 +1,4 @@
-import { HeroWidget } from '@/components/dashboard/widgets/HeroWidgetRefactored';
+import { HeroWidget } from '@/components/dashboard/widgets/HeroWidget';
 import {
     convertConfigsToConfig,
     type WidgetConfig,

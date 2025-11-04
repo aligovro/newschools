@@ -241,9 +241,7 @@ class WidgetService
   {
     $errors = [];
 
-    if (empty($slide['title'])) {
-      $errors[] = "Слайд " . ($index + 1) . ": Заголовок обязателен";
-    }
+    // Заголовок теперь опционален для hero виджета
 
     if (isset($slide['overlayOpacity']) && ($slide['overlayOpacity'] < 0 || $slide['overlayOpacity'] > 100)) {
       $errors[] = "Слайд " . ($index + 1) . ": Прозрачность наложения должна быть от 0 до 100%";

@@ -1,0 +1,114 @@
+// Image Widget Styles
+// Общие стили для всех виджетов типа "image"
+
+// Базовые стили для image виджетов
+.image-widget {
+    font-family: inherit;
+    line-height: 1.6;
+
+    // Контейнер виджета
+    &.widget-output {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    // Внутренний контейнер изображения
+    .image-output {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    // Обертка для изображения и подписи
+    .image-output__wrapper {
+        width: 100%;
+    }
+
+    // Изображение
+    img {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+    }
+
+    // Подпись к изображению
+    .image-output__caption {
+        margin-top: 0.5rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: #4b5563;
+    }
+
+    // Ссылка с изображением
+    a {
+        display: inline-block;
+        transition:
+            transform 0.2s ease,
+            opacity 0.2s ease;
+
+        &:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+    }
+}
+
+// Специфичные стили для разных классов image виджетов
+// Например, для logo-widget
+.logo-widget {
+    .image-output__wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+    }
+    .image-output__caption {
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 120%;
+        color: #fff;
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+
+        // Добавьте здесь стили для логотипа
+    }
+
+    a {
+        display: inline-block;
+        transition:
+            transform 0.2s ease,
+            opacity 0.2s ease;
+
+        &:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+    }
+}
+
+// Добавьте здесь стили для других классов image виджетов
+// Например:
+// .banner-widget { ... }
+// .icon-widget { ... }
+// .gallery-item-widget { ... }
+
+// Адаптивность для всех image виджетов
+@media (max-width: 768px) {
+    .image-widget img,
+    .logo-widget img {
+        max-height: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .image-widget img,
+    .logo-widget img {
+        max-height: 40px;
+    }
+}

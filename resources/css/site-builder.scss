@@ -191,6 +191,7 @@
 /* Menu Widget Styles */
 .menu-widget {
     /* Base menu styles */
+    display: block;
 }
 
 .menu-widget a {
@@ -224,3 +225,9 @@
 .position-empty-state {
     padding: 8px;
 }
+
+/* Custom position classes - базовые стили для всех кастомных классов позиций
+   Эти стили применяются автоматически к классам вида position-{slug}-{custom-class}
+   Например: position-hero-main-top, position-header-sticky и т.д.
+   Здесь можно добавлять глобальные стили для всех кастомных классов позиций
+*/

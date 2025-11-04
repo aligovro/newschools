@@ -34,7 +34,6 @@ interface MenuWidgetConfig {
     fontSize?: string; // e.g. '16px'
     uppercase?: boolean;
     gap?: number; // px
-    css_class?: string;
     styling?: Record<string, any>; // CSS стили
     items?: MenuItem[];
 }
@@ -64,7 +63,6 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
             fontSize: getConfigValue(configs, 'fontSize', '16px'),
             uppercase: getConfigValue(configs, 'uppercase', false),
             gap: getConfigValue(configs, 'gap', 12),
-            css_class: getConfigValue(configs, 'css_class', ''),
             styling: getConfigValue(configs, 'styling', {}),
             items: getConfigValue(configs, 'items', defaultItems),
         };
@@ -88,7 +86,6 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
                 fontSize: getConfigValue(configs, 'fontSize', '16px'),
                 uppercase: getConfigValue(configs, 'uppercase', false),
                 gap: getConfigValue(configs, 'gap', 12),
-                css_class: getConfigValue(configs, 'css_class', ''),
                 styling: getConfigValue(configs, 'styling', {}),
                 items: getConfigValue(configs, 'items', defaultItems),
             };
@@ -334,31 +331,6 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
                                                         }))
                                                     }
                                                 />
-                                            </div>
-
-                                            <div className="md:col-span-2">
-                                                <Label htmlFor="css_class">
-                                                    CSS класс для обертки
-                                                </Label>
-                                                <Input
-                                                    id="css_class"
-                                                    value={
-                                                        localConfig.css_class ||
-                                                        ''
-                                                    }
-                                                    onChange={(e) =>
-                                                        setLocalConfig((p) => ({
-                                                            ...p,
-                                                            css_class:
-                                                                e.target.value,
-                                                        }))
-                                                    }
-                                                    placeholder="my-custom-menu-class"
-                                                />
-                                                <p className="mt-1 text-sm text-gray-500">
-                                                    Добавьте CSS класс для
-                                                    кастомной стилизации меню.
-                                                </p>
                                             </div>
                                         </div>
 
@@ -651,7 +623,7 @@ export const MenuWidget: React.FC<MenuWidgetProps> = ({
     // Публичный рендер
     return (
         <div
-            className={`menu-widget flex ${directionClass} ${alignClass} ${localConfig.css_class || ''}`}
+            className={`menu-widget flex ${directionClass} ${alignClass}`}
             style={{
                 ...gapStyle,
                 ...(styling || {}), // Применяем стили из styling к контейнеру

@@ -40,6 +40,7 @@ export const isCustomWidget = (slug: string): boolean => {
         'city_organizations',
         'subscribe_block',
         'add_organization_block',
+        'organization_search',
     ];
     return customWidgets.includes(slug);
 };

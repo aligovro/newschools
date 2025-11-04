@@ -73,12 +73,12 @@ export const HeroRenderer: React.FC<HeroRendererProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        opacity: (slide.overlayOpacity || 50) / 100,
+        opacity: (slide.overlayOpacity || 0) / 100,
         background:
             slide.overlayGradient && slide.overlayGradient !== 'none'
                 ? getGradientStyle(
                       slide.overlayColor || '#000000',
-                      slide.overlayOpacity || 50,
+                      slide.overlayOpacity || 0,
                       slide.overlayGradient,
                       slide.overlayGradientIntensity || 50,
                   )
@@ -97,9 +97,11 @@ export const HeroRenderer: React.FC<HeroRendererProps> = ({
                 style={{ pointerEvents: 'auto' }}
             >
                 <div className="max-w-4xl px-6 text-center text-white">
-                    <h1 className="mb-4 text-5xl font-bold md:text-6xl">
-                        {slide.title}
-                    </h1>
+                    {slide.title && (
+                        <h1 className="mb-4 text-5xl font-bold md:text-6xl">
+                            {slide.title}
+                        </h1>
+                    )}
                     {slide.subtitle && (
                         <h2 className="mb-6 text-2xl font-light md:text-3xl">
                             {slide.subtitle}

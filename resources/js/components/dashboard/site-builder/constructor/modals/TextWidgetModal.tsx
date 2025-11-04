@@ -126,41 +126,113 @@ export const TextWidgetModal: React.FC<TextWidgetModalProps> = ({
         enableColors: (fromCfg.enableColors as boolean) || false,
     });
 
-    // Обновляем локальное состояние при изменении fromCfg
+    // Отслеживаем, активно ли редактируется контент
+    const isContentEditingRef = React.useRef(false);
+    const contentInitializedRef = React.useRef(false);
+    const lastWidgetIdRef = React.useRef<string>(widget.id);
+
+    // Сбрасываем инициализацию при смене виджета
     React.useEffect(() => {
-        setFormData({
-            title: (fromCfg.title as string) || '',
-            content: (fromCfg.content as string) || '',
-            fontSize: (fromCfg.fontSize as string) || 'medium',
-            textAlign:
-                (fromCfg.textAlign as 'left' | 'center' | 'right') || 'left',
-            backgroundColor: (fromCfg.backgroundColor as string) || '',
-            textColor: (fromCfg.textColor as string) || '',
-            titleColor: (fromCfg.titleColor as string) || '',
-            padding: (fromCfg.padding as string) || '',
-            margin: (fromCfg.margin as string) || '',
-            borderRadius: (fromCfg.borderRadius as string) || '',
-            borderWidth: (fromCfg.borderWidth as string) || '',
-            borderColor: (fromCfg.borderColor as string) || '',
-            enableFormatting: (fromCfg.enableFormatting as boolean) || false,
-            enableColors: (fromCfg.enableColors as boolean) || false,
-        });
+        if (lastWidgetIdRef.current !== widget.id) {
+            lastWidgetIdRef.current = widget.id;
+            contentInitializedRef.current = false;
+            isContentEditingRef.current = false;
+        }
+    }, [widget.id]);
+
+    // Обновляем локальное состояние при изменении fromCfg
+    // НЕ обновляем content, если он активно редактируется
+    React.useEffect(() => {
+        // Инициализация при первом открытии виджета
+        if (!contentInitializedRef.current) {
+            contentInitializedRef.current = true;
+            setFormData((prev) => ({
+                ...prev,
+                title: (fromCfg.title as string) ?? prev.title,
+                content: (fromCfg.content as string) ?? prev.content,
+                fontSize: (fromCfg.fontSize as string) ?? prev.fontSize,
+                textAlign:
+                    (fromCfg.textAlign as 'left' | 'center' | 'right') ??
+                    prev.textAlign,
+                backgroundColor: (fromCfg.backgroundColor as string) ??
+                    prev.backgroundColor,
+                textColor: (fromCfg.textColor as string) ?? prev.textColor,
+                titleColor: (fromCfg.titleColor as string) ?? prev.titleColor,
+                padding: (fromCfg.padding as string) ?? prev.padding,
+                margin: (fromCfg.margin as string) ?? prev.margin,
+                borderRadius: (fromCfg.borderRadius as string) ?? prev.borderRadius,
+                borderWidth: (fromCfg.borderWidth as string) ?? prev.borderWidth,
+                borderColor: (fromCfg.borderColor as string) ?? prev.borderColor,
+                enableFormatting:
+                    (fromCfg.enableFormatting as boolean) !== undefined
+                        ? (fromCfg.enableFormatting as boolean)
+                        : prev.enableFormatting,
+                enableColors:
+                    (fromCfg.enableColors as boolean) !== undefined
+                        ? (fromCfg.enableColors as boolean)
+                        : prev.enableColors,
+            }));
+            return;
+        }
+
+        // Обновляем только если контент не редактируется
+        if (!isContentEditingRef.current) {
+            setFormData((prev) => ({
+                ...prev,
+                title: (fromCfg.title as string) ?? prev.title,
+                // content не обновляем если активно редактируется
+                fontSize: (fromCfg.fontSize as string) ?? prev.fontSize,
+                textAlign:
+                    (fromCfg.textAlign as 'left' | 'center' | 'right') ??
+                    prev.textAlign,
+                backgroundColor: (fromCfg.backgroundColor as string) ??
+                    prev.backgroundColor,
+                textColor: (fromCfg.textColor as string) ?? prev.textColor,
+                titleColor: (fromCfg.titleColor as string) ?? prev.titleColor,
+                padding: (fromCfg.padding as string) ?? prev.padding,
+                margin: (fromCfg.margin as string) ?? prev.margin,
+                borderRadius: (fromCfg.borderRadius as string) ?? prev.borderRadius,
+                borderWidth: (fromCfg.borderWidth as string) ?? prev.borderWidth,
+                borderColor: (fromCfg.borderColor as string) ?? prev.borderColor,
+                enableFormatting:
+                    (fromCfg.enableFormatting as boolean) !== undefined
+                        ? (fromCfg.enableFormatting as boolean)
+                        : prev.enableFormatting,
+                enableColors:
+                    (fromCfg.enableColors as boolean) !== undefined
+                        ? (fromCfg.enableColors as boolean)
+                        : prev.enableColors,
+            }));
+        }
     }, [fromCfg]);
 
     const updateFormData = useCallback(
         (field: string, value: string | number | boolean) => {
-            setFormData((prev) => ({
-                ...prev,
-                [field]: value,
-            }));
+            // Отслеживаем редактирование контента
+            if (field === 'content') {
+                isContentEditingRef.current = true;
+            }
 
-            // Сразу обновляем конфиг
-            handleConfigUpdate({
-                ...formData,
-                [field]: value,
+            setFormData((prev) => {
+                const updated = {
+                    ...prev,
+                    [field]: value,
+                };
+
+                // Сразу обновляем конфиг
+                handleConfigUpdate(updated);
+
+                return updated;
             });
+
+            // Сбрасываем флаг редактирования через небольшую задержку
+            if (field === 'content') {
+                setTimeout(() => {
+                    isContentEditingRef.current = false;
+                }, 300);
+            }
         },
-        [formData, handleConfigUpdate],
+        [handleConfigUpdate],
     );
 
     return (

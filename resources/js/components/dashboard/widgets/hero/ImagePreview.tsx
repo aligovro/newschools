@@ -1,10 +1,8 @@
-import { Button } from '@/components/ui/button';
 import React from 'react';
 import { HeroSlide } from './types';
 
 interface ImagePreviewProps {
     slide: HeroSlide;
-    onDeleteImage: () => void;
     getGradientStyle: (
         color: string,
         opacity: number,
@@ -15,7 +13,6 @@ interface ImagePreviewProps {
 
 export const ImagePreview: React.FC<ImagePreviewProps> = ({
     slide,
-    onDeleteImage,
     getGradientStyle,
 }) => {
     if (!slide.backgroundImage) return null;
@@ -33,13 +30,13 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
                     <div
                         className="absolute inset-0"
                         style={{
-                            opacity: (slide.overlayOpacity || 50) / 100,
+                            opacity: (slide.overlayOpacity || 0) / 100,
                             background:
                                 slide.overlayGradient &&
                                 slide.overlayGradient !== 'none'
                                     ? getGradientStyle(
                                           slide.overlayColor || '#000000',
-                                          slide.overlayOpacity || 50,
+                                          slide.overlayOpacity || 0,
                                           slide.overlayGradient,
                                           slide.overlayGradientIntensity || 50,
                                       )
@@ -47,11 +44,6 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
                         }}
                     />
                 )}
-            </div>
-            <div className="mt-2 flex gap-2">
-                <Button variant="outline" onClick={onDeleteImage}>
-                    Удалить изображение
-                </Button>
             </div>
         </div>
     );

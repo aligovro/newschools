@@ -1,6 +1,6 @@
+import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
 import { Link } from '@inertiajs/react';
 import React from 'react';
-import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
 import { ImageOutputConfig, WidgetOutputProps } from './types';
 
 export const ImageOutput: React.FC<WidgetOutputProps> = ({
@@ -79,7 +79,7 @@ export const ImageOutput: React.FC<WidgetOutputProps> = ({
             case 'center':
                 return 'mx-auto';
             default:
-                return 'mx-auto';
+                return '';
         }
     };
 
@@ -87,7 +87,7 @@ export const ImageOutput: React.FC<WidgetOutputProps> = ({
         <img
             src={safeImage}
             alt={altText}
-            className="h-auto w-full rounded-lg object-cover"
+            className="h-auto w-full object-contain"
             loading="lazy"
         />
     );
@@ -116,14 +116,10 @@ export const ImageOutput: React.FC<WidgetOutputProps> = ({
     return (
         <div className={`image-output ${className || ''}`} style={style}>
             <div
-                className={`${getSizeClasses(size)} ${getAlignmentClasses(alignment)}`}
+                className={`image-output__wrapper ${getSizeClasses(size)} ${getAlignmentClasses(alignment)}`}
             >
                 {wrappedImage}
-                {caption && (
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        {caption}
-                    </p>
-                )}
+                {caption && <p className="image-output__caption">{caption}</p>}
             </div>
         </div>
     );

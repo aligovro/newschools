@@ -1,3 +1,4 @@
+import CitySelector from '@/components/main-site/CitySelector';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,18 +15,10 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm } from '@inertiajs/react';
-import {
-    Download,
-    Eye,
-    RefreshCw,
-    RotateCcw,
-    Save,
-    Settings,
-} from 'lucide-react';
-import React, { useEffect, useState } from 'react';
-import CitySelector from '@/components/main-site/CitySelector';
 import { fetchPublicCities } from '@/lib/api/public';
+import { Head, useForm } from '@inertiajs/react';
+import { Download, Eye, RefreshCw, Save, Settings } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface GlobalSettingsPageProps {
     settings: {
@@ -194,9 +187,7 @@ export default function GlobalSettingsPage({
                     const byIncludes =
                         byExact ||
                         results.find((c) =>
-                            c.name
-                                .toLowerCase()
-                                .includes(name.toLowerCase()),
+                            c.name.toLowerCase().includes(name.toLowerCase()),
                         );
                     if (byIncludes) {
                         setSelectedDefaultCity(byIncludes as any);
@@ -258,28 +249,6 @@ export default function GlobalSettingsPage({
     const handleIntegrationsSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         integrationsForm.post('/dashboard/admin/global-settings/integrations');
-    };
-
-    const handleReset = () => {
-        if (
-            confirm(
-                'Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?',
-            )
-        ) {
-            // Отправляем POST запрос для сброса
-            fetch('/dashboard/admin/global-settings/reset', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN':
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute('content') || '',
-                },
-            }).then(() => {
-                window.location.reload();
-            });
-        }
     };
 
     const handleExport = () => {
@@ -1221,18 +1190,30 @@ export default function GlobalSettingsPage({
                                         <div className="space-y-2">
                                             <Label>Город по умолчанию</Label>
                                             <p className="text-sm text-muted-foreground">
-                                                Выберите город из списка вместо ручного ввода ID/названия
+                                                Выберите город из списка вместо
+                                                ручного ввода ID/названия
                                             </p>
                                             <div className="flex items-center gap-3">
                                                 <CitySelector
                                                     value={selectedDefaultCity}
-                                                    onChange={handleDefaultCityChange}
-                                                    defaultCityName={(systemConfigForm.data.system_settings as any)?.default_city_fallback || 'Казань'}
+                                                    onChange={
+                                                        handleDefaultCityChange
+                                                    }
+                                                    defaultCityName={
+                                                        (
+                                                            systemConfigForm
+                                                                .data
+                                                                .system_settings as any
+                                                        )
+                                                            ?.default_city_fallback ||
+                                                        'Казань'
+                                                    }
                                                     detectOnMount={false}
                                                 />
                                                 {selectedDefaultCity && (
                                                     <span className="text-sm text-muted-foreground">
-                                                        ID: {selectedDefaultCity.id}
+                                                        ID:{' '}
+                                                        {selectedDefaultCity.id}
                                                     </span>
                                                 )}
                                             </div>
@@ -1339,10 +1320,6 @@ export default function GlobalSettingsPage({
                             <Button variant="outline" onClick={handleExport}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Экспортировать настройки
-                            </Button>
-                            <Button variant="outline" onClick={handleReset}>
-                                <RotateCcw className="mr-2 h-4 w-4" />
-                                Сбросить к умолчанию
                             </Button>
                             <Button
                                 variant="outline"

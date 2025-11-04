@@ -178,7 +178,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
     const isOrgAdmin = roles.includes('organization_admin');
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
             {!effectiveIsAuthenticated ? (
                 <>
                     <Button

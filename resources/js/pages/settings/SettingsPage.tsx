@@ -209,25 +209,6 @@ export default function SettingsPage({
                 );
             },
         },
-        {
-            title: 'Сброс к умолчанию',
-            description: 'Вернуть все настройки к значениям по умолчанию',
-            action: async () => {
-                if (
-                    confirm(
-                        'Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?',
-                    )
-                ) {
-                    try {
-                        await adminApi.resetSettings();
-                        window.location.reload();
-                    } catch (error) {
-                        console.error('Error resetting settings:', error);
-                        alert('Ошибка при сбросе настроек');
-                    }
-                }
-            },
-        },
     ];
 
     return (

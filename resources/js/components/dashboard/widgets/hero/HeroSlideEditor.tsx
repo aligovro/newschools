@@ -1,3 +1,4 @@
+import ImageUploader from '@/components/dashboard/settings/sites/ImageUploader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,9 +13,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2 } from 'lucide-react';
-import React from 'react';
-import ImageUploader from '@/components/dashboard/settings/sites/ImageUploader';
-import { ImagePreview } from './ImagePreview';
+import React, { useEffect, useState } from 'react';
 import { OverlaySettings } from './OverlaySettings';
 import { HeroSlide } from './types';
 
@@ -48,6 +47,18 @@ export const HeroSlideEditor: React.FC<HeroSlideEditorProps> = ({
     onImageDelete,
     getGradientStyle,
 }) => {
+    // Состояние для показа/скрытия настроек кнопки
+    const hasButton = !!(slide.buttonText && slide.buttonText.trim());
+    const [showButtonSettings, setShowButtonSettings] = useState(hasButton);
+
+    // Синхронизируем состояние при изменении slide
+    useEffect(() => {
+        const currentHasButton = !!(
+            slide.buttonText && slide.buttonText.trim()
+        );
+        setShowButtonSettings(currentHasButton);
+    }, [slide.buttonText]);
+
     const handleFieldChange = (
         field: keyof HeroSlide,
         value: string | boolean,
@@ -57,6 +68,20 @@ export const HeroSlideEditor: React.FC<HeroSlideEditorProps> = ({
             [field]: value,
         };
         onSlideUpdate(updatedSlide);
+    };
+
+    const handleToggleButton = (checked: boolean) => {
+        setShowButtonSettings(checked);
+        if (!checked) {
+            // Если отключаем, очищаем все настройки кнопки
+            const updatedSlide = {
+                ...slide,
+                buttonText: '',
+                buttonLink: '',
+                buttonOpenInNewTab: false,
+            };
+            onSlideUpdate(updatedSlide);
+        }
     };
 
     return (
@@ -80,109 +105,6 @@ export const HeroSlideEditor: React.FC<HeroSlideEditorProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                    {/* Основные поля */}
-                    <div>
-                        <Label>Заголовок</Label>
-                        <Input
-                            value={slide.title}
-                            onChange={(e) =>
-                                handleFieldChange('title', e.target.value)
-                            }
-                        />
-                    </div>
-
-                    <div>
-                        <Label>Подзаголовок</Label>
-                        <Input
-                            value={slide.subtitle || ''}
-                            onChange={(e) =>
-                                handleFieldChange('subtitle', e.target.value)
-                            }
-                        />
-                    </div>
-
-                    <div>
-                        <Label>Описание</Label>
-                        <Textarea
-                            value={slide.description || ''}
-                            onChange={(e) =>
-                                handleFieldChange('description', e.target.value)
-                            }
-                        />
-                    </div>
-
-                    <div className="space-y-4">
-                        <div>
-                            <Label>Текст кнопки</Label>
-                            <Input
-                                value={slide.buttonText || ''}
-                                onChange={(e) =>
-                                    handleFieldChange(
-                                        'buttonText',
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label>Ссылка кнопки</Label>
-                                <Input
-                                    value={slide.buttonLink || ''}
-                                    onChange={(e) =>
-                                        handleFieldChange(
-                                            'buttonLink',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="https://example.com или /page"
-                                />
-                            </div>
-
-                            <div>
-                                <Label>Тип ссылки</Label>
-                                <Select
-                                    value={slide.buttonLinkType || 'internal'}
-                                    onValueChange={(value) =>
-                                        handleFieldChange(
-                                            'buttonLinkType',
-                                            value,
-                                        )
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="internal">
-                                            Внутренняя
-                                        </SelectItem>
-                                        <SelectItem value="external">
-                                            Внешняя
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                            <Switch
-                                id={`openNewTab-${slide.id}`}
-                                checked={slide.buttonOpenInNewTab || false}
-                                onCheckedChange={(checked) =>
-                                    handleFieldChange(
-                                        'buttonOpenInNewTab',
-                                        checked,
-                                    )
-                                }
-                            />
-                            <Label htmlFor={`openNewTab-${slide.id}`}>
-                                Открывать в новом окне
-                            </Label>
-                        </div>
-                    </div>
-
                     {/* Загрузка изображения */}
                     <div>
                         <Label>Фоновое изображение</Label>
@@ -190,20 +112,20 @@ export const HeroSlideEditor: React.FC<HeroSlideEditorProps> = ({
                             key={`image-uploader-${slide.id}-${slide.backgroundImage || 'empty'}`}
                             onImageUpload={onImageUpload}
                             onImageCrop={onImageCrop}
-                            aspectRatio={16 / 9}
+                            onImageDelete={onImageDelete}
+                            //aspectRatio={16 / 9}
                             className="mt-2"
                             widgetSlug="hero-slider"
                             imageType="background"
                             slideId={slide.id}
                             enableServerUpload={true}
                             existingImageUrl={slide.backgroundImage || ''}
-                            hidePreview={true}
+                            hidePreview={false}
                         />
-                        <ImagePreview
+                        {/* <ImagePreview
                             slide={slide}
-                            onDeleteImage={onImageDelete}
                             getGradientStyle={getGradientStyle}
-                        />
+                        /> */}
                     </div>
 
                     {/* Настройки наложения */}
@@ -211,6 +133,143 @@ export const HeroSlideEditor: React.FC<HeroSlideEditorProps> = ({
                         slide={slide}
                         onSlideUpdate={onSlideUpdate}
                     />
+
+                    {/* Основные поля - компактное размещение */}
+                    <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <Label className="text-sm">Заголовок</Label>
+                                <Input
+                                    value={slide.title}
+                                    onChange={(e) =>
+                                        handleFieldChange(
+                                            'title',
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="h-9"
+                                />
+                            </div>
+
+                            <div>
+                                <Label className="text-sm">Подзаголовок</Label>
+                                <Input
+                                    value={slide.subtitle || ''}
+                                    onChange={(e) =>
+                                        handleFieldChange(
+                                            'subtitle',
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="h-9"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label className="text-sm">Описание</Label>
+                            <Textarea
+                                value={slide.description || ''}
+                                onChange={(e) =>
+                                    handleFieldChange(
+                                        'description',
+                                        e.target.value,
+                                    )
+                                }
+                                className="min-h-[60px]"
+                                rows={2}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Переключатель для настроек кнопки */}
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id={`showButton-${slide.id}`}
+                            checked={showButtonSettings}
+                            onCheckedChange={handleToggleButton}
+                        />
+                        <Label htmlFor={`showButton-${slide.id}`}>
+                            Добавить кнопку
+                        </Label>
+                    </div>
+
+                    {/* Настройки кнопки (показываются только если включено) */}
+                    {showButtonSettings && (
+                        <div className="space-y-4 rounded-lg border p-4">
+                            <div>
+                                <Label>Текст кнопки</Label>
+                                <Input
+                                    value={slide.buttonText || ''}
+                                    onChange={(e) =>
+                                        handleFieldChange(
+                                            'buttonText',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label>Ссылка кнопки</Label>
+                                    <Input
+                                        value={slide.buttonLink || ''}
+                                        onChange={(e) =>
+                                            handleFieldChange(
+                                                'buttonLink',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="https://example.com или /page"
+                                    />
+                                </div>
+
+                                <div>
+                                    <Label>Тип ссылки</Label>
+                                    <Select
+                                        value={
+                                            slide.buttonLinkType || 'internal'
+                                        }
+                                        onValueChange={(value) =>
+                                            handleFieldChange(
+                                                'buttonLinkType',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="internal">
+                                                Внутренняя
+                                            </SelectItem>
+                                            <SelectItem value="external">
+                                                Внешняя
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id={`openNewTab-${slide.id}`}
+                                    checked={slide.buttonOpenInNewTab || false}
+                                    onCheckedChange={(checked) =>
+                                        handleFieldChange(
+                                            'buttonOpenInNewTab',
+                                            checked,
+                                        )
+                                    }
+                                />
+                                <Label htmlFor={`openNewTab-${slide.id}`}>
+                                    Открывать в новом окне
+                                </Label>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>

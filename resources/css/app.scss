@@ -10,6 +10,10 @@
 @import './widgets/date-picker.scss';
 @import './widgets/form-widget.scss';
 @import './widgets/region-rating.scss';
+@import './widgets/image-widget.scss';
+@import './widgets/menu-widget.scss';
+@import './widgets/auth-menu-widget.scss';
+@import './widgets/hero-widget.scss';
 
 // Import UI components
 @import './components/ui/universal-select.scss';
@@ -72,10 +76,8 @@
 /* Sites pages */
 @import 'pages/sites/create-site.scss';
 
-/* Home page components */
-@import 'components/home.css';
-
 /* Main site components */
 @import 'components/main-site/AddOrganizationBlock.scss';
 @import 'components/main-site/SubscribeBlock.scss';
+@import 'components/main-site/OrganizationSearch.scss';
 @import 'components/main-site/CitySelector.scss';

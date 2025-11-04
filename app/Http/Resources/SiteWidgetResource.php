@@ -209,6 +209,7 @@ class SiteWidgetResource extends JsonResource
       'sort_order' => $this->sort_order,
       'is_active' => $this->is_active,
       'is_visible' => $this->is_visible,
+      'wrapper_class' => $this->wrapper_class,
       'created_at' => $this->created_at,
       'updated_at' => $this->updated_at,
 

@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
 import { ColorPicker } from '@/components/ui/ColorPicker';
+import React, { useCallback, useMemo } from 'react';
 import { FormWidget } from './types';
 
 interface FormStylingEditorProps {
@@ -265,27 +265,6 @@ export const FormStylingEditor: React.FC<FormStylingEditorProps> = ({
                         }
                         placeholder="4px"
                     />
-                </div>
-            </div>
-
-            {/* CSS класс */}
-            <div className="form-styling-editor__section">
-                <h4>Дополнительно</h4>
-
-                <div className="form-styling-editor__field">
-                    <label>CSS класс для обертки</label>
-                    <input
-                        type="text"
-                        value={widget.css_class || ''}
-                        onChange={(e) =>
-                            onStylingChange({ css_class: e.target.value })
-                        }
-                        placeholder="my-custom-form-class"
-                    />
-                    <p className="form-styling-editor__help-text">
-                        Добавьте CSS класс для кастомной стилизации формы. Вы
-                        сможете использовать этот класс в своих CSS файлах.
-                    </p>
                 </div>
             </div>
         </div>
