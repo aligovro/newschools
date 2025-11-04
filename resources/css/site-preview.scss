@@ -8,9 +8,9 @@
 }
 
 .site-header {
-    height: 90px;
-
     padding: 30px 0;
+    position: relative;
+    z-index: 2;
 }
 
 .site-main {
@@ -29,6 +29,11 @@
 
 .widget-container:last-child {
     margin-bottom: 0;
+}
+
+.site-type--main {
+    .site-header {
+    }
 }
 
 /* Responsive adjustments */

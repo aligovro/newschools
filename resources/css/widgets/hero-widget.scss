@@ -1,0 +1,333 @@
+// Hero Widget Styles
+// Общие стили для всех виджетов типа "hero"
+
+// Базовые стили для hero виджетов
+.hero-widget {
+    font-family: inherit;
+    line-height: 1.6;
+    position: relative;
+    overflow: hidden;
+
+    // Контейнер виджета
+    &.widget-output {
+        display: block;
+        width: 100%;
+    }
+
+    // Выходной контейнер hero
+    .hero-output {
+        width: 100%;
+        position: relative;
+    }
+
+    // Слайдер hero
+    .hero-slider {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+
+        // Обертка слайдера Swiper
+        .swiper {
+            width: 100%;
+            height: 100%;
+        }
+
+        // Контейнер для слайдов
+        .swiper-wrapper {
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    // Отдельный слайд
+    .hero-slide {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+
+        // Оверлей слайда
+        > div:first-child {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+
+        // Контент слайда
+        > div:last-child {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1200px;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        // Заголовок
+        h1 {
+            margin-bottom: 16px;
+            color: white;
+            font-weight: 700;
+            line-height: 1.2;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        // Подзаголовок
+        h2 {
+            margin-bottom: 24px;
+            color: white;
+            font-weight: 300;
+            line-height: 1.4;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        // Описание
+        p {
+            margin-bottom: 32px;
+            color: white;
+            line-height: 1.6;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        // Кнопка
+        button {
+            transition: all 0.3s ease;
+
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+        }
+    }
+
+    // Навигация (стрелки)
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: #333;
+        background: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        z-index: 100;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        opacity: 1;
+        visibility: visible;
+
+        &:hover {
+            background: #f5f5f5;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        &::after {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+    }
+
+    .swiper-button-prev {
+        left: 15px;
+    }
+
+    .swiper-button-next {
+        right: 15px;
+    }
+
+    // Пагинация (точки)
+    .swiper-pagination {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px 12px;
+        border-radius: 20px;
+        width: auto;
+        min-width: 60px;
+        max-width: 200px;
+
+        .swiper-pagination-bullet {
+            background: rgba(0, 0, 0, 0.3);
+            width: 8px;
+            height: 8px;
+            margin: 0 4px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0.6;
+            display: inline-block;
+            flex-shrink: 0;
+
+            &:hover {
+                background: rgba(0, 0, 0, 0.5);
+                opacity: 1;
+            }
+
+            &.swiper-pagination-bullet-active {
+                background: #333;
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+    }
+}
+
+// Стили для редактора hero (если нужно)
+.hero-widget-editor {
+    &__tabs {
+        display: flex;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 20px;
+    }
+
+    &__tab {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-weight: 500;
+        color: #6b7280;
+        transition: all 0.2s;
+
+        &:hover {
+            color: #374151;
+            background-color: #f9fafb;
+        }
+
+        &.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+    }
+
+    &__content {
+        min-height: 400px;
+    }
+}
+
+// Специфичные стили для разных классов hero виджетов
+// Например, для main-hero-widget
+.main-hero-widget {
+    .hero-widget {
+        .hero-slide {
+            h1 {
+                font-size: 48px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+        }
+    }
+}
+
+// Адаптивность для всех hero виджетов
+@media (max-width: 768px) {
+    .hero-widget {
+        .hero-slide {
+            padding: 30px 16px;
+
+            h1 {
+                font-size: 36px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            p {
+                font-size: 16px;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+
+        .swiper-button-next,
+        .swiper-button-prev {
+            width: 32px;
+            height: 32px;
+
+            &::after {
+                font-size: 14px;
+            }
+        }
+
+        .swiper-pagination {
+            bottom: 15px;
+            padding: 6px 10px;
+
+            .swiper-pagination-bullet {
+                width: 6px;
+                height: 6px;
+                margin: 0 3px;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-widget {
+        .hero-slide {
+            padding: 20px 12px;
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+
+            p {
+                font-size: 14px;
+            }
+
+            button {
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+        }
+
+        .swiper-button-next,
+        .swiper-button-prev {
+            width: 28px;
+            height: 28px;
+            display: none; // Скрываем стрелки на очень маленьких экранах
+        }
+    }
+}
+
+// Стили для фонового hero блока вверху страницы
+.main-top-hero,
+.hero-widget.main-top-hero,
+.hero-output.main-top-hero {
+    position: absolute;
+    width: 100%;
+    height: 504px;
+    top: 0;
+    left: 0;
+    z-index: 0;
+}

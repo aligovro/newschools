@@ -15,6 +15,7 @@ interface MainLayoutProps {
         description?: string;
         favicon?: string;
         template: string;
+        site_type?: string;
         widgets_config: WidgetData[];
         seo_config?: Record<string, unknown>;
         layout_config?: {
@@ -76,6 +77,24 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         if (path.startsWith('/projects')) return 'projects';
         if (path.startsWith('/project/')) return 'project_show';
         return null;
+    };
+
+    const isHomePage = (): boolean => {
+        if (typeof window === 'undefined') return false;
+        const path = window.location.pathname || '/';
+        return path === '/' || path === '';
+    };
+
+    const getSitePreviewClasses = (): string => {
+        const baseClasses = 'site-preview';
+        const siteTypeClass = site.site_type
+            ? ` site-type--${site.site_type}`
+            : '';
+        const templateClass = ` site-template--${site.template || 'default'}`;
+        const pageTypeClass = isHomePage()
+            ? ' page-type--home'
+            : ' page-type--inner';
+        return `${baseClasses}${siteTypeClass}${templateClass}${pageTypeClass}`;
     };
 
     const shouldShowPosition = (position: WidgetPosition): boolean => {
@@ -170,7 +189,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
         const layout = getLayoutFor(position);
         const containerClass =
-            layout.width === 'boxed' ? 'container mx-auto px-4' : 'px-4';
+            layout.width === 'boxed' ? 'container mx-auto px-4' : '';
         const alignClass =
             layout.alignment === 'left'
                 ? 'mx-0 ml-0'
@@ -189,7 +208,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                             {positionWidgets.map((widget) => (
                                 <div
                                     key={widget.id}
-                                    className="widget-container"
+                                    className={`widget-container${widget.wrapper_class ? ` ${widget.wrapper_class}` : ''}`}
                                 >
                                     <MemoWidgetDisplay
                                         widget={widget}
@@ -284,7 +303,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 )}
             </Head>
 
-            <div className="site-preview">
+            <div className={getSitePreviewClasses()}>
                 {/* Header: четыре колонки (header-col-1..4) */}
                 <header className="site-header">
                     {(() => {

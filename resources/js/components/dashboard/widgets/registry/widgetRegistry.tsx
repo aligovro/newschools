@@ -8,7 +8,7 @@ import { AuthMenuWidget } from '../AuthMenuWidget';
 import { DonationsListWidget } from '../DonationsListWidget';
 import { FormWidget } from '../FormWidget';
 import { GalleryWidget } from '../GalleryWidget';
-import { HeroWidget } from '../HeroWidgetRefactored';
+import { HeroWidget } from '../HeroWidget';
 import { HtmlWidget } from '../HtmlWidget';
 import { ImageWidget } from '../ImageWidget';
 import { MenuWidget } from '../MenuWidget';
@@ -104,9 +104,16 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         onConfigChange,
     }) => {
         const styling = widget.config?.styling as StylingConfig | undefined;
+        const cfg = widget.config || {};
+        const css_class =
+            (getConfigValue(
+                widget.configs,
+                'css_class',
+                cfg.css_class,
+            ) as string) || '';
         return (
             <HeroWidget
-                config={widget.config || {}}
+                config={cfg}
                 isEditable={isEditable}
                 autoExpandSettings={autoExpandSettings}
                 onSave={onSave}
@@ -115,6 +122,7 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                 configs={widget.configs}
                 styling={styling}
                 hero_slides={widget.hero_slides}
+                css_class={css_class}
             />
         );
     },
@@ -583,6 +591,20 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                 <div className="text-2xl font-bold text-gray-800">{title}</div>
                 <div className="mt-1 text-sm text-gray-500">
                     add_organization_block
+                </div>
+            </div>
+        );
+    },
+
+    // Поиск организаций (только для главного сайта) — в конструкторе показываем плейсхолдер
+    organization_search: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) || 'Поиск организаций';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">
+                    organization_search
                 </div>
             </div>
         );

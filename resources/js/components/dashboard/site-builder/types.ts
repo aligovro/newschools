@@ -26,6 +26,7 @@ export interface WidgetData {
     order: number;
     position_name: string;
     position_slug: string;
+    wrapper_class?: string;
     created_at: string;
     updated_at?: string;
     configs: Array<{

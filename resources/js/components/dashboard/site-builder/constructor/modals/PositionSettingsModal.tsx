@@ -21,6 +21,7 @@ export const PositionSettingsModal: React.FC<PositionSettingsModalProps> = ({ op
     const [loading, setLoading] = useState(false);
     const [width, setWidth] = useState<string>('full');
     const [alignment, setAlignment] = useState<string>('center');
+    const [cssClass, setCssClass] = useState<string>('');
     const [mode, setMode] = useState<'all' | 'include' | 'exclude'>('all');
     const [routeOptions, setRouteOptions] = useState<Array<{ key: string; label: string; pattern: string }>>([]);
     const [selectedRoutes, setSelectedRoutes] = useState<string[]>([]);
@@ -50,6 +51,7 @@ export const PositionSettingsModal: React.FC<PositionSettingsModalProps> = ({ op
                     const layout = (s.layout_overrides || {}) as Record<string, any>;
                     if (layout.width) setWidth(String(layout.width));
                     if (layout.alignment) setAlignment(String(layout.alignment));
+                    if (layout.css_class) setCssClass(String(layout.css_class));
 
                     const vis = (s.visibility_rules || {}) as PositionVisibilityRules;
                     setMode((vis.mode as any) || 'all');
@@ -78,7 +80,7 @@ export const PositionSettingsModal: React.FC<PositionSettingsModalProps> = ({ op
         try {
             setSaving(true);
             await widgetsSystemApi.savePositionSettings(siteId, position.slug, {
-                layout: { width, alignment },
+                layout: { width, alignment, css_class: cssClass },
                 visibility: {
                     mode,
                     routes: selectedRoutes,
@@ -117,6 +119,22 @@ export const PositionSettingsModal: React.FC<PositionSettingsModalProps> = ({ op
                                 <option value="right">Справа</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                            CSS класс
+                        </label>
+                        <input
+                            type="text"
+                            value={cssClass}
+                            onChange={(e) => setCssClass(e.target.value)}
+                            placeholder="my-custom-class"
+                            className="w-full rounded border px-3 py-2 text-sm"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                            Класс будет добавлен с префиксом "position-{position.slug}-"
+                        </p>
                     </div>
 
                     <div>

@@ -14,27 +14,41 @@ import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
-import { HeadingNode, QuoteNode } from '@lexical/rich-text';
+import {
+    $createHeadingNode,
+    HeadingNode,
+    QuoteNode,
+    type HeadingTagType,
+} from '@lexical/rich-text';
 import {
     $getRoot,
+    $getSelection,
     $insertNodes,
+    $isElementNode,
+    $isRangeSelection,
     EditorState,
     FORMAT_ELEMENT_COMMAND,
     FORMAT_TEXT_COMMAND,
     REDO_COMMAND,
     UNDO_COMMAND,
+    type ElementNode,
     type LexicalEditor,
+    type LexicalNode,
 } from 'lexical';
 import {
     AlignCenter,
     AlignLeft,
     AlignRight,
     Bold as BoldIcon,
+    Heading1,
+    Heading2,
+    Heading3,
     Italic as ItalicIcon,
     Link as LinkIcon,
     List as ListIcon,
     ListOrdered as ListOrderedIcon,
     Redo2,
+    Square,
     Underline as UnderlineIcon,
     Undo2,
 } from 'lucide-react';
@@ -96,6 +110,111 @@ const EditorToolbar: React.FC = () => {
         );
     };
 
+    const insertButton = () => {
+        // Сначала получаем выделенный текст через браузерное API (вне editor.update)
+        const browserSelection = window.getSelection();
+        let selectedText = '';
+        if (browserSelection && browserSelection.rangeCount > 0) {
+            selectedText = browserSelection.toString().trim();
+        }
+
+        const defaultText = selectedText || 'Нажмите здесь';
+
+        // Получаем текст кнопки из пользователя (с выделенным текстом по умолчанию)
+        const buttonText = window.prompt('Введите текст кнопки:', defaultText);
+        if (buttonText === null) return;
+
+        const finalButtonText = buttonText.trim() || defaultText;
+        if (!finalButtonText) return;
+
+        const buttonUrl = window.prompt(
+            'Введите URL для кнопки (можно оставить пустым):',
+            '',
+        );
+        if (buttonUrl === null) return;
+
+        const url = buttonUrl.trim();
+
+        // Теперь обновляем редактор
+        editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+                // Создаем HTML для кнопки - используем ссылку со стилями кнопки
+                // Это более надежно для контент-редакторов
+                const escapedUrl = url || '#';
+                const escapedText = finalButtonText
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                const buttonHtml = `<a href="${escapedUrl}" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" style="display: inline-block; text-decoration: none; cursor: pointer;" role="button" ${!url || url === '#' ? 'onclick="return false;"' : ''}>${escapedText}</a>`;
+
+                // Используем DOM парсер для создания узлов из HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(buttonHtml, 'text/html');
+
+                // Конвертируем DOM элемент в Lexical узлы
+                const nodes = $generateNodesFromDOM(editor, doc.body);
+
+                // Удаляем содержимое выделения
+                selection.removeText();
+
+                // Вставляем узлы в выделение
+                if (nodes.length > 0) {
+                    selection.insertNodes(nodes);
+                }
+            }
+        });
+    };
+
+    const applyHeading = (tag: HeadingTagType) => {
+        editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+                const selectedBlocks: ElementNode[] = [];
+                const nodes = selection.getNodes();
+
+                // Собираем все блоки верхнего уровня из выделения
+                if (nodes.length > 0) {
+                    nodes.forEach((node) => {
+                        const block = node.getTopLevelElement();
+                        if (
+                            block &&
+                            $isElementNode(block) &&
+                            !selectedBlocks.includes(block)
+                        ) {
+                            selectedBlocks.push(block);
+                        }
+                    });
+                }
+
+                // Если ничего не выделено, берем блок, в котором находится курсор
+                if (selectedBlocks.length === 0) {
+                    const anchorNode = selection.anchor.getNode();
+                    const block = anchorNode.getTopLevelElement();
+                    if (block && $isElementNode(block)) {
+                        selectedBlocks.push(block);
+                    }
+                }
+
+                // Преобразуем блоки в заголовки
+                selectedBlocks.forEach((block) => {
+                    // Сохраняем все дочерние элементы
+                    const children = block.getChildren();
+
+                    // Создаем новый заголовок
+                    const headingNode = $createHeadingNode(tag);
+
+                    // Переносим все дочерние элементы в заголовок
+                    children.forEach((child: LexicalNode) => {
+                        headingNode.append(child);
+                    });
+
+                    // Заменяем блок на заголовок
+                    block.replace(headingNode);
+                });
+            }
+        });
+    };
+
     return (
         <div className="flex flex-wrap items-center gap-2 border-b bg-gray-50 p-2">
             <div className="flex items-center gap-2">
@@ -134,6 +253,30 @@ const EditorToolbar: React.FC = () => {
                 </ToolbarButton>
                 <ToolbarButton title="Ссылка" onClick={toggleLink}>
                     <LinkIcon className="h-4 w-4" />
+                </ToolbarButton>
+                <ToolbarButton title="Вставить кнопку" onClick={insertButton}>
+                    <Square className="h-4 w-4" />
+                </ToolbarButton>
+            </div>
+            <div className="mx-2 h-5 w-px bg-gray-300" />
+            <div className="flex items-center gap-2">
+                <ToolbarButton
+                    title="Заголовок 1"
+                    onClick={() => applyHeading('h1')}
+                >
+                    <Heading1 className="h-4 w-4" />
+                </ToolbarButton>
+                <ToolbarButton
+                    title="Заголовок 2"
+                    onClick={() => applyHeading('h2')}
+                >
+                    <Heading2 className="h-4 w-4" />
+                </ToolbarButton>
+                <ToolbarButton
+                    title="Заголовок 3"
+                    onClick={() => applyHeading('h3')}
+                >
+                    <Heading3 className="h-4 w-4" />
                 </ToolbarButton>
             </div>
             <div className="mx-2 h-5 w-px bg-gray-300" />
@@ -364,21 +507,70 @@ const EditorInit: React.FC<{
         }
     }, [editor, mounted, onReady]);
 
+    // Отслеживаем, изменился ли контент извне (не от пользователя)
+    const lastExternalValueRef = React.useRef<string>(valueHTML || '');
+    const isEditingRef = React.useRef(false);
+    const updateTimeoutRef = React.useRef<number | null>(null);
+
+    // Отслеживаем изменения редактора (когда пользователь редактирует)
+    React.useEffect(() => {
+        if (!mounted) return;
+
+        const removeOnChange = editor.registerUpdateListener(() => {
+            isEditingRef.current = true;
+
+            // Очищаем предыдущий таймаут
+            if (updateTimeoutRef.current) {
+                window.clearTimeout(updateTimeoutRef.current);
+            }
+
+            // Сбрасываем флаг через задержку после последнего изменения
+            updateTimeoutRef.current = window.setTimeout(() => {
+                isEditingRef.current = false;
+            }, 800);
+        });
+
+        return () => {
+            removeOnChange();
+            if (updateTimeoutRef.current) {
+                window.clearTimeout(updateTimeoutRef.current);
+            }
+        };
+    }, [editor, mounted]);
+
     // Реакция на изменение внешнего HTML (когда не в режиме редактирования)
     useEffect(() => {
         if (!mounted) return;
-        if (!valueHTML) return;
+
+        // Инициализация при первом монтировании
+        if (!lastExternalValueRef.current && valueHTML) {
+            lastExternalValueRef.current = valueHTML || '';
+            return;
+        }
+
+        // Если значение не изменилось, не обновляем
+        if (lastExternalValueRef.current === valueHTML) return;
+
+        // Если активно редактируется, не обновляем
+        if (isEditingRef.current) {
+            // Но обновляем последнее известное значение
+            lastExternalValueRef.current = valueHTML || '';
+            return;
+        }
+
+        // Обновляем только если контент действительно изменился извне
+        lastExternalValueRef.current = valueHTML || '';
+
         editor.update(() => {
             const parser = new DOMParser();
-            const dom = parser.parseFromString(valueHTML, 'text/html');
+            const dom = parser.parseFromString(valueHTML || '', 'text/html');
             const nodes = $generateNodesFromDOM(editor, dom.body);
             const root = $getRoot();
             root.clear();
             root.select();
             $insertNodes(nodes);
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [valueHTML]);
+    }, [valueHTML, mounted, editor]);
 
     return null;
 };

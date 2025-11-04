@@ -164,7 +164,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
                 // Если включена серверная загрузка
                 if (enableServerUpload && widgetSlug) {
-                    if (aspectRatio && onImageCrop && !isSvg) {
+                    if (onImageCrop && !isSvg) {
                         // Не грузим оригинал, сначала открываем кроп модалку и после кропа грузим сжатый файл
                         const reader = new FileReader();
                         reader.addEventListener('load', () => {
@@ -174,7 +174,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                             setShowCropModal(true);
                             if (DEBUG_CROP)
                                 console.log(
-                                    '[Uploader] reader loaded (server upload, aspect)',
+                                    '[Uploader] reader loaded (server upload, crop modal)',
                                 );
                         });
                         reader.readAsDataURL(file);
@@ -235,8 +235,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                         if (isSvg && onImageCrop) {
                             onImageCrop(src);
                         }
-                        // Если нужно обрезание и есть обработчик кропа, показываем модальное окно (только для не-SVG)
-                        else if (aspectRatio && onImageCrop) {
+                        // Если есть обработчик кропа, показываем модальное окно (только для не-SVG)
+                        else if (onImageCrop) {
                             setShowCropModal(true);
                         }
 
@@ -624,42 +624,40 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             {/* Отображение загруженного изображения */}
             {hasImage && !hidePreview && (
                 <div className="image-uploader__preview">
-                    <div className="flex items-start gap-3">
-                        <img
-                            src={previewUrl || existingImageUrl}
-                            alt="Preview"
-                            className="image-uploader__preview-image flex-1"
-                            style={{
-                                maxWidth: '100%',
-                                maxHeight: '200px',
-                                objectFit: 'contain',
+                    <img
+                        src={previewUrl || existingImageUrl}
+                        alt="Preview"
+                        className="image-uploader__preview-image w-full"
+                        style={{
+                            maxHeight: '200px',
+                            objectFit: 'contain',
+                            display: 'block',
+                        }}
+                    />
+                    <div className="mt-2 flex gap-2">
+                        {/* Показываем кнопку редактирования только для растровых изображений */}
+                        {previewUrl &&
+                            !previewUrl.includes('.svg') &&
+                            !existingImageUrl?.includes('.svg') &&
+                            onImageCrop && (
+                                <button
+                                    type="button"
+                                    className="image-uploader__edit-button px-3 py-1 text-sm"
+                                    onClick={handleEditImage}
+                                >
+                                    ✏️ Редактировать
+                                </button>
+                            )}
+                        <button
+                            type="button"
+                            className="image-uploader__delete-button px-3 py-1 text-sm"
+                            onClick={() => {
+                                setPreviewUrl('');
+                                onImageDelete?.();
                             }}
-                        />
-                        <div className="flex flex-col gap-2">
-                            {/* Показываем кнопку редактирования только для растровых изображений */}
-                            {previewUrl &&
-                                !previewUrl.includes('.svg') &&
-                                !existingImageUrl?.includes('.svg') &&
-                                onImageCrop && (
-                                    <button
-                                        type="button"
-                                        className="image-uploader__edit-button px-3 py-1 text-sm"
-                                        onClick={handleEditImage}
-                                    >
-                                        ✏️ Редактировать
-                                    </button>
-                                )}
-                            <button
-                                type="button"
-                                className="image-uploader__delete-button px-3 py-1 text-sm"
-                                onClick={() => {
-                                    setPreviewUrl('');
-                                    onImageDelete?.();
-                                }}
-                            >
-                                🗑️ Удалить
-                            </button>
-                        </div>
+                        >
+                            🗑️ Удалить
+                        </button>
                     </div>
                 </div>
             )}

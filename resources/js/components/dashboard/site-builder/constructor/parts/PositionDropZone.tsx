@@ -8,6 +8,7 @@ import { DraggableWidget } from './DraggableWidget';
 interface Props {
     position: WidgetPosition;
     widgets: WidgetData[];
+    positionSettings?: Record<string, any>;
     onDropWidget: (widget: { widget: any }, positionSlug: string) => void;
     onEditWidget: (widget: WidgetData) => void;
     onDeleteWidget: (widget: WidgetData) => void;
@@ -34,6 +35,7 @@ interface Props {
 export const PositionDropZone: React.FC<Props> = ({
     position,
     widgets,
+    positionSettings,
     onDropWidget,
     onEditWidget,
     onDeleteWidget,
@@ -78,10 +80,15 @@ export const PositionDropZone: React.FC<Props> = ({
     const isHeaderOrFooter =
         position.slug === 'header' || position.slug === 'footer';
 
+    // Получаем css_class из настроек позиции
+    const layoutOverrides = positionSettings?.layout_overrides as Record<string, any> | undefined;
+    const cssClass = layoutOverrides?.css_class as string | undefined;
+    const positionClass = cssClass ? `position-${position.slug}-${cssClass}` : '';
+
     return (
         <div
             ref={drop as unknown as React.RefObject<HTMLDivElement>}
-            className={`widget-position widget-position-${position.slug} rounded-lg border-2 border-dashed p-4 transition-colors ${
+            className={`widget-position widget-position-${position.slug} ${positionClass} rounded-lg border-2 border-dashed p-4 transition-colors ${
                 isOver && canDrop ? 'drag-over' : ''
             }`}
         >

@@ -32,6 +32,9 @@ export const useSiteBuilderState = ({
     } = useWidgets(siteId, initialWidgets);
 
     const [positions, setPositions] = useState<WidgetPosition[]>([]);
+    const [positionSettings, setPositionSettings] = useState<
+        Record<string, Record<string, unknown>>
+    >({});
     const [loading, setLoading] = useState(true);
     const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
     const [isPreviewMode] = useState(false);
@@ -97,13 +100,37 @@ export const useSiteBuilderState = ({
             const templateId = (template as any)?.id || 1;
             const positionsData =
                 await widgetsSystemApi.getWidgetPositions(templateId);
-            if (positionsData.success) setPositions(positionsData.data || []);
+            if (positionsData.success) {
+                const pos = positionsData.data || [];
+                setPositions(pos);
+
+                // Загружаем настройки для всех позиций
+                const settingsPromises = pos.map((p) =>
+                    widgetsSystemApi
+                        .getPositionSettings(siteId, p.slug)
+                        .then((res) => ({
+                            slug: p.slug,
+                            settings: res.data?.settings as
+                                | Record<string, unknown>
+                                | undefined,
+                        }))
+                        .catch(() => ({ slug: p.slug, settings: null })),
+                );
+                const settingsResults = await Promise.all(settingsPromises);
+                const settingsMap: Record<string, Record<string, unknown>> = {};
+                settingsResults.forEach(({ slug, settings }) => {
+                    if (settings) {
+                        settingsMap[slug] = settings;
+                    }
+                });
+                setPositionSettings(settingsMap);
+            }
         } catch (error) {
             console.error('Error loading positions:', error);
         } finally {
             setLoading(false);
         }
-    }, [template]);
+    }, [template, siteId]);
 
     const loadAvailableWidgets = useCallback(async () => {
         try {
@@ -273,6 +300,7 @@ export const useSiteBuilderState = ({
     return {
         widgets,
         positions,
+        positionSettings,
         loading,
         isRightPanelOpen,
         setIsRightPanelOpen,
@@ -301,5 +329,6 @@ export const useSiteBuilderState = ({
         setSelectedPosition,
         onMoveWidget,
         onMoveWidgetOrder,
+        loadPositions,
     };
 };

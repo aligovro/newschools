@@ -2,7 +2,7 @@ import { fetchPublicOrganizations } from '@/lib/api/public';
 import '@css/components/main-site/SubscribeBlock.scss';
 import { usePage } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CitySelector from './CitySelector';
 
 interface Organization {
@@ -69,10 +69,11 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [popularSchools, setPopularSchools] = useState<Organization[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Загружаем популярные школы
-    const loadPopularSchools = useCallback(
-        async (cityId?: number) => {
+    // Функция для выполнения поиска
+    const performSearch = useCallback(
+        async (query: string, cityId?: number) => {
             setIsLoading(true);
             try {
                 const params: Record<string, string | number> = {
@@ -82,6 +83,10 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                     order_direction: 'desc',
                 };
 
+                if (query.trim()) {
+                    params.search = query.trim();
+                }
+
                 if (cityId) {
                     params.city_id = cityId;
                 }
@@ -90,7 +95,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                 const schools = response.data || [];
                 setPopularSchools(schools.slice(0, schoolsLimit));
             } catch (error) {
-                console.error('Ошибка загрузки популярных школ:', error);
+                console.error('Ошибка поиска школ:', error);
                 setPopularSchools([]);
             } finally {
                 setIsLoading(false);
@@ -99,40 +104,33 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
         [schoolsLimit],
     );
 
-    // Загружаем школы при изменении города
+    // Поиск школ при изменении текста или города (live search с дебаунсом)
     useEffect(() => {
-        loadPopularSchools(selectedCity?.id);
-    }, [selectedCity, loadPopularSchools]);
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
 
-    // Поиск школ
-    const handleSearch = useCallback(
+        searchTimeoutRef.current = setTimeout(() => {
+            performSearch(searchQuery, selectedCity?.id);
+        }, 500); // Дебаунс 500ms
+
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+        };
+    }, [searchQuery, selectedCity, performSearch]);
+
+    // Обработчик submit формы
+    const handleSearchSubmit = useCallback(
         async (e: React.FormEvent) => {
             e.preventDefault();
-            setIsLoading(true);
-            try {
-                const params: Record<string, string | number> = {
-                    type: 'school',
-                    limit: schoolsLimit,
-                };
-
-                if (searchQuery.trim()) {
-                    params.search = searchQuery.trim();
-                }
-
-                if (selectedCity?.id) {
-                    params.city_id = selectedCity.id;
-                }
-
-                const response = await fetchPublicOrganizations(params);
-                const schools = response.data || [];
-                setPopularSchools(schools.slice(0, schoolsLimit));
-            } catch (error) {
-                console.error('Ошибка поиска школ:', error);
-            } finally {
-                setIsLoading(false);
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
             }
+            await performSearch(searchQuery, selectedCity?.id);
         },
-        [searchQuery, selectedCity, schoolsLimit],
+        [searchQuery, selectedCity, performSearch],
     );
 
     const handleSubscribe = (schoolId: number) => {
@@ -158,7 +156,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
 
     return (
         <section
-            className="subscribe-block relative overflow-hidden rounded-[20px] p-8 md:p-12"
+            className="subscribe-block relative overflow-hidden rounded-[20px]"
             style={{
                 height: '572px',
                 background: backgroundGradient,
@@ -174,9 +172,9 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
             </div>
 
             {/* Контент */}
-            <div className="relative z-10 max-w-4xl">
+            <div className="relative z-10 flex h-full flex-col">
                 {/* Заголовки */}
-                <div className="mb-8">
+                <div className="mb-8 p-8 pb-0 md:p-12">
                     <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
                         {mainTitle}
                     </h2>
@@ -186,7 +184,10 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                 </div>
 
                 {/* Форма поиска */}
-                <form onSubmit={handleSearch} className="mb-8">
+                <form
+                    onSubmit={handleSearchSubmit}
+                    className="mb-8 pl-8 pr-8 md:pl-12 md:pr-12"
+                >
                     <div className="flex flex-col gap-4 md:flex-row">
                         {/* Селектор города */}
                         <div className="w-full md:w-auto">
@@ -199,25 +200,22 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
 
                         {/* Поле поиска */}
                         <div className="relative flex-1">
+                            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">
+                                <Search className="h-5 w-5 text-white/70" />
+                            </div>
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={`Поиск по названию, адресу ${orgSingular}...`}
-                                className="subscribe-block__search-input w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 pr-12 text-white backdrop-blur-sm placeholder:text-white/70 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+                                className="subscribe-block__search-input w-full border border-white/20 bg-white/10 text-white backdrop-blur-sm placeholder:text-white/70 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
                             />
-                            <button
-                                type="submit"
-                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-white/70 transition-colors hover:text-white"
-                            >
-                                <Search className="h-5 w-5" />
-                            </button>
                         </div>
                     </div>
                 </form>
 
                 {/* Популярные школы */}
-                <div>
+                <div className="flex-1 overflow-auto pl-8 pr-8 md:pl-12 md:pr-12">
                     <h3 className="mb-4 text-xl font-semibold text-white">
                         Популярные {orgPlural}:
                     </h3>
@@ -231,10 +229,10 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                             {popularSchools.map((school) => (
                                 <div
                                     key={school.id}
-                                    className="subscribe-block__school-card flex items-center gap-3 rounded-lg bg-white/10 p-3 backdrop-blur-sm transition-colors hover:bg-white/15"
+                                    className="subscribe-block__school-card flex items-center gap-3 p-3"
                                 >
                                     {/* Лого */}
-                                    <div className="subscribe-block__school-logo flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20">
+                                    <div className="subscribe-block__school-logo flex shrink-0 items-center justify-center overflow-hidden rounded-full">
                                         {school.logo ? (
                                             <img
                                                 src={school.logo}
@@ -248,7 +246,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                                                 className="h-full w-full object-cover"
                                             />
                                         ) : (
-                                            <span className="text-lg font-semibold text-white">
+                                            <span className="text-lg font-semibold text-gray-400">
                                                 {school.name
                                                     .charAt(0)
                                                     .toUpperCase()}
@@ -258,13 +256,13 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
 
                                     {/* Текст */}
                                     <div className="min-w-0 flex-1">
-                                        <div className="truncate text-sm font-medium text-white">
+                                        <div className="subscribe-block__school-address truncate">
                                             {school.address ||
                                                 (school.city?.name
                                                     ? `${school.city.name}`
                                                     : '')}
                                         </div>
-                                        <div className="truncate text-sm text-white/80">
+                                        <div className="subscribe-block__school-name truncate">
                                             {school.name}
                                         </div>
                                     </div>
@@ -274,7 +272,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                                         onClick={() =>
                                             handleSubscribe(school.id)
                                         }
-                                        className="subscribe-block__subscribe-button flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#3259ff] transition-colors hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/50"
+                                        className="subscribe-block__subscribe-button flex shrink-0 items-center justify-center"
                                         aria-label="Подписаться"
                                     >
                                         <Plus className="h-5 w-5" />

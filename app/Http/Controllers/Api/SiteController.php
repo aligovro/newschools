@@ -399,6 +399,7 @@ class SiteController extends Controller
             'settings' => 'nullable|array',
             'is_active' => 'nullable|boolean',
             'is_visible' => 'nullable|boolean',
+            'wrapper_class' => 'nullable|string|max:255',
         ]);
 
         try {
@@ -453,6 +454,12 @@ class SiteController extends Controller
             }
             if ($request->has('is_visible')) {
                 $updateData['is_visible'] = $request->is_visible;
+            }
+            if ($request->has('wrapper_class')) {
+                $updateData['wrapper_class'] = $request->wrapper_class;
+            }
+            if ($request->has('name')) {
+                $updateData['name'] = $request->name;
             }
 
             if (!empty($updateData)) {

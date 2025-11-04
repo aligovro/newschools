@@ -154,7 +154,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                             {positionWidgets.map((widget) => (
                                 <div
                                     key={widget.id}
-                                    className="widget-container"
+                                    className={`widget-container${widget.wrapper_class ? ` ${widget.wrapper_class}` : ''}`}
                                 >
                                     <WidgetDisplay
                                         widget={widget}

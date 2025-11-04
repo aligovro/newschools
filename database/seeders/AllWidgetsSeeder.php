@@ -231,6 +231,19 @@ class AllWidgetsSeeder extends Seeder
                 'allowed_site_types' => ['main'], // Только для главного сайта
                 'sort_order' => 19,
             ],
+
+            // ПОИСК ОРГАНИЗАЦИЙ (только для главного сайта)
+            [
+                'name' => 'Поиск организаций',
+                'widget_slug' => 'organization_search',
+                'description' => 'Виджет поиска организаций (школ) с автодополнением и выпадающим списком результатов (только для главного сайта)',
+                'icon' => '🔍',
+                'category' => 'content',
+                'component_name' => 'OrganizationSearchWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['main'], // Только для главного сайта
+                'sort_order' => 20,
+            ],
         ];
 
         foreach ($widgets as $widgetData) {

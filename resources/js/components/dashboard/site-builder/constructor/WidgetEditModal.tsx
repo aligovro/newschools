@@ -6,6 +6,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -27,8 +28,11 @@ import { isCustomWidget } from '@/utils/widgetHelpers';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { WidgetData } from '../types';
 import { StandardWidgetFields } from './components/StandardWidgetFields';
+import { AddOrganizationBlockWidgetModal } from './modals/AddOrganizationBlockWidgetModal';
 import { AlumniStatsWidgetModal } from './modals/AlumniStatsWidgetModal';
 import { AuthMenuWidgetModal } from './modals/AuthMenuWidgetModal';
+import { CityOrganizationsWidgetModal } from './modals/CityOrganizationsWidgetModal';
+import { CitySupportersWidgetModal } from './modals/CitySupportersWidgetModal';
 import { DonationWidgetModal } from './modals/DonationWidgetModal';
 import { DonationsListWidgetModal } from './modals/DonationsListWidgetModal';
 import { FormWidgetModal } from './modals/FormWidgetModal';
@@ -37,12 +41,10 @@ import { HtmlWidgetModal } from './modals/HtmlWidgetModal';
 import { ImageWidgetModal } from './modals/ImageWidgetModal';
 import { MenuWidgetModal } from './modals/MenuWidgetModal';
 import { ProjectsWidgetModal } from './modals/ProjectsWidgetModal';
-import { CityOrganizationsWidgetModal } from './modals/CityOrganizationsWidgetModal';
 import { ReferralLeaderboardWidgetModal } from './modals/ReferralLeaderboardWidgetModal';
-import { CitySupportersWidgetModal } from './modals/CitySupportersWidgetModal';
 import { SliderWidgetModal } from './modals/SliderWidgetModal';
 import { SubscribeBlockWidgetModal } from './modals/SubscribeBlockWidgetModal';
-import { AddOrganizationBlockWidgetModal } from './modals/AddOrganizationBlockWidgetModal';
+import { OrganizationSearchWidgetModal } from './modals/OrganizationSearchWidgetModal';
 import { TextWidgetModal } from './modals/TextWidgetModal';
 
 interface WidgetEditModalProps {
@@ -73,6 +75,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         settings: {},
         is_active: true,
         is_visible: true,
+        wrapper_class: '',
     });
 
     const [_pendingConfig, setPendingConfig] = useState<WidgetConfig | null>(
@@ -102,6 +105,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 settings: widget.settings || {},
                 is_active: widget.is_active,
                 is_visible: widget.is_visible,
+                wrapper_class: widget.wrapper_class || '',
             });
 
             // Устанавливаем pendingConfig только если он еще не установлен
@@ -134,6 +138,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 widget_slug: formData.widget_slug,
                 is_active: formData.is_active,
                 is_visible: formData.is_visible,
+                wrapper_class: formData.wrapper_class,
                 // Используем обновленную конфигурацию
                 config: _pendingConfig || formData.config,
             } as unknown as WidgetData;
@@ -187,7 +192,10 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
     const renderCustomWidget = useMemo(() => {
         if (!widget) return null;
 
-        switch (widget.widget_slug) {
+        // Используем widget_slug или slug для определения типа виджета
+        const widgetSlug = widget.widget_slug || (widget as any).slug || '';
+        
+        switch (widgetSlug) {
             case 'text': {
                 return (
                     <TextWidgetModal
@@ -311,6 +319,16 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             case 'add_organization_block': {
                 return (
                     <AddOrganizationBlockWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'organization_search': {
+                return (
+                    <OrganizationSearchWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
                         onConfigUpdate={handleSetPendingConfig}
@@ -458,27 +476,59 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                             renderStandardFields
                         )
                     ) : (
-                        <div className="rounded-lg border bg-white p-4">
-                            <h4 className="mb-3 text-sm font-semibold text-gray-700">
-                                Стилизация
-                            </h4>
-                            <StylingPanel
-                                value={stylingConfig}
-                                onChange={(val) => {
-                                    // Используем функциональное обновление для гарантии актуального состояния
-                                    setFormData((prev) => {
-                                        const cfg = {
-                                            ...(prev.config || {}),
-                                            styling: val,
-                                        };
-                                        setPendingConfig(cfg);
-                                        return {
-                                            ...prev,
-                                            config: cfg,
-                                        };
-                                    });
-                                }}
-                            />
+                        <div className="space-y-4">
+                            <div className="rounded-lg border bg-white p-4">
+                                <h4 className="mb-3 text-sm font-semibold text-gray-700">
+                                    Стилизация виджета
+                                </h4>
+                                <StylingPanel
+                                    value={stylingConfig}
+                                    onChange={(val) => {
+                                        // Используем функциональное обновление для гарантии актуального состояния
+                                        setFormData((prev) => {
+                                            const cfg = {
+                                                ...(prev.config || {}),
+                                                styling: val,
+                                            };
+                                            setPendingConfig(cfg);
+                                            return {
+                                                ...prev,
+                                                config: cfg,
+                                            };
+                                        });
+                                    }}
+                                />
+                            </div>
+
+                            <div className="rounded-lg border bg-white p-4">
+                                <h4 className="mb-3 text-sm font-semibold text-gray-700">
+                                    Класс обертки виджета
+                                </h4>
+                                <div>
+                                    <Label htmlFor="wrapper_class">
+                                        CSS класс для контейнера виджета
+                                    </Label>
+                                    <Input
+                                        id="wrapper_class"
+                                        value={formData.wrapper_class || ''}
+                                        onChange={(
+                                            e: React.ChangeEvent<HTMLInputElement>,
+                                        ) =>
+                                            handleInputChange(
+                                                'wrapper_class',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="например: custom-widget-wrapper"
+                                        className="mt-2"
+                                    />
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Этот класс будет применён к первому
+                                        блоку, который оборачивает виджет
+                                        (widget-container)
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>

@@ -34,6 +34,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
     const {
         widgets,
         positions,
+        positionSettings,
         loading,
         isRightPanelOpen,
         setIsRightPanelOpen,
@@ -62,6 +63,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
         setSelectedPosition,
         onMoveWidget,
         onMoveWidgetOrder,
+        loadPositions,
     } = useSiteBuilderState({
         template,
         siteId,
@@ -77,7 +79,8 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
         area: string;
         layout_config?: Record<string, unknown>;
     } | null>(null);
-    const [positionSettingsOpen, setPositionSettingsOpen] = React.useState(false);
+    const [positionSettingsOpen, setPositionSettingsOpen] =
+        React.useState(false);
 
     return (
         <DragDropProvider>
@@ -126,6 +129,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                                 <PositionsRenderer
                                     positions={positions}
                                     widgets={widgets}
+                                    positionSettings={positionSettings}
                                     isPreviewMode={isPreviewMode}
                                     newlyAddedWidgetId={newlyAddedWidgetId}
                                     validationErrors={validationErrors}
@@ -180,7 +184,10 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
             {positionForSettings && (
                 <PositionSettingsModal
                     open={positionSettingsOpen}
-                    onClose={() => setPositionSettingsOpen(false)}
+                    onClose={() => {
+                        setPositionSettingsOpen(false);
+                        loadPositions(); // Перезагружаем позиции после сохранения настроек
+                    }}
                     siteId={siteId}
                     position={positionForSettings}
                 />

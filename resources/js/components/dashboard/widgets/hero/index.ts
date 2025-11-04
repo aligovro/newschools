@@ -1,4 +1,4 @@
-export { HeroWidget } from '../HeroWidgetRefactored';
+export { HeroWidget } from '../HeroWidget';
 export { HeroRenderer } from './HeroRenderer';
 export { HeroSettings } from './HeroSettings';
 export { HeroSlideEditor } from './HeroSlideEditor';
