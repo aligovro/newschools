@@ -35,7 +35,7 @@ interface Page {
     seo_description: string;
     seo_keywords: string;
     seo_image: string;
-    featured_image: string;
+    image?: string;
     is_homepage: boolean;
     published_at: string | null;
     created_at: string;
@@ -494,14 +494,14 @@ const PageShow: React.FC<PageShowProps> = ({ organization, page }) => {
                         </Card>
 
                         {/* Media */}
-                        {page.featured_image && (
+                        {page.image && (
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Изображение страницы</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <img
-                                        src={page.featured_image}
+                                        src={page.image}
                                         alt={page.title}
                                         className="h-48 w-full rounded-md object-cover"
                                     />

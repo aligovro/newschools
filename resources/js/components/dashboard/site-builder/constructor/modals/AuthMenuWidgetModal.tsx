@@ -73,16 +73,59 @@ export const AuthMenuWidgetModal: React.FC<AuthMenuWidgetModalProps> = ({
     const showName = Boolean(fromCfg.showName ?? true);
     const loginText = String(fromCfg.loginText ?? 'Войти');
     const registerText = String(fromCfg.registerText ?? 'Регистрация');
+    const showLogin = Boolean(fromCfg.showLogin ?? true);
+    const showRegister = Boolean(fromCfg.showRegister ?? true);
+    const showExtraButton = Boolean(fromCfg.showExtraButton ?? false);
+    const extraButtonText = String(fromCfg.extraButtonText ?? 'Подробнее');
+    const extraButtonUrl = String(fromCfg.extraButtonUrl ?? '');
 
     const handleConfigUpdate = useCallback(
         (updates: Record<string, unknown>) => {
-            onConfigUpdate(updates);
+            // Важно: сливаем с текущей конфигурацией, иначе частичные обновления
+            // могут "стёреть" другие поля и вызвать скрытие разделов
+            onConfigUpdate({ ...fromCfg, ...updates });
         },
-        [onConfigUpdate],
+        [onConfigUpdate, fromCfg],
     );
 
     return (
         <div className="space-y-4">
+            {/* Основные переключатели видимости кнопок */}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                    <input
+                        id="auth_show_login"
+                        type="checkbox"
+                        checked={showLogin}
+                        onChange={(e) =>
+                            handleConfigUpdate({
+                                showLogin: e.target.checked,
+                            })
+                        }
+                        className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="auth_show_login">
+                        Показывать кнопку входа
+                    </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <input
+                        id="auth_show_register"
+                        type="checkbox"
+                        checked={showRegister}
+                        onChange={(e) =>
+                            handleConfigUpdate({
+                                showRegister: e.target.checked,
+                            })
+                        }
+                        className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="auth_show_register">
+                        Показывать кнопку регистрации
+                    </Label>
+                </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <Label htmlFor="auth_login_text">Текст кнопки входа</Label>
@@ -112,6 +155,61 @@ export const AuthMenuWidgetModal: React.FC<AuthMenuWidgetModalProps> = ({
                         placeholder="Регистрация"
                     />
                 </div>
+            </div>
+
+            {/* Дополнительная кнопка */}
+            <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                    <input
+                        id="auth_show_extra"
+                        type="checkbox"
+                        checked={showExtraButton}
+                        onChange={(e) =>
+                            handleConfigUpdate({
+                                showExtraButton: e.target.checked,
+                            })
+                        }
+                        className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="auth_show_extra">
+                        Показывать дополнительную кнопку
+                    </Label>
+                </div>
+
+                {showExtraButton && (
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="auth_extra_text">
+                                Текст доп. кнопки
+                            </Label>
+                            <Input
+                                id="auth_extra_text"
+                                value={extraButtonText}
+                                onChange={(e) =>
+                                    handleConfigUpdate({
+                                        extraButtonText: e.target.value,
+                                    })
+                                }
+                                placeholder="Подробнее"
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="auth_extra_url">
+                                Ссылка доп. кнопки
+                            </Label>
+                            <Input
+                                id="auth_extra_url"
+                                value={extraButtonUrl}
+                                onChange={(e) =>
+                                    handleConfigUpdate({
+                                        extraButtonUrl: e.target.value,
+                                    })
+                                }
+                                placeholder="https://example.com"
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

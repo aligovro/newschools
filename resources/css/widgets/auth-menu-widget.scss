@@ -1,5 +1,8 @@
 // Auth Menu Widget Styles
 // Общие стили для всех виджетов типа "auth_menu"
+// Использует универсальные миксины кнопок из _variables.scss
+
+@import '../variables';
 
 // Базовые стили для auth-menu виджетов
 .auth-menu-widget {
@@ -100,8 +103,37 @@
     }
 
     // Модальные окна входа и регистрации
-    .dialog-content {
+    .dialog-content,
+    [data-slot='dialog-content'] {
         max-width: 400px;
+
+        // Кнопки в модальных окнах с нашими стилями
+        .auth-btn {
+            @include button-base;
+        }
+
+        .btn-outline-primary {
+            @include button-outline;
+        }
+
+        .btn-accent {
+            @include button-accent;
+        }
+
+        // Убеждаемся, что миксины применяются ко всем кнопкам в модалке
+        button.auth-btn,
+        button.btn-outline-primary,
+        button.btn-accent {
+            @include button-base;
+
+            &.btn-outline-primary {
+                @include button-outline;
+            }
+
+            &.btn-accent {
+                @include button-accent;
+            }
+        }
 
         form {
             display: flex;
@@ -175,6 +207,62 @@
 
         .user-name {
             display: none; // Скрываем имя на очень маленьких экранах
+        }
+    }
+}
+
+// Output-only scoped styles for buttons
+.auth-menu-output {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    width: 100%;
+
+    // Base style for all auth buttons in output
+    .auth-btn {
+        @include button-base;
+    }
+
+    // Login button: gradient border via ::before to keep text visible
+    .btn-outline-primary {
+        @include button-outline;
+    }
+
+    // Other buttons: accent gradient fill
+    .btn-accent {
+        @include button-accent;
+    }
+}
+
+// Ensure outline button style applies in both builder and output contexts
+.auth-menu-widget {
+    .auth-btn {
+        @include button-base;
+    }
+
+    .btn-outline-primary {
+        @include button-outline;
+    }
+
+    .btn-accent {
+        @include button-accent;
+    }
+}
+
+// Стили для кнопок в модальных окнах (DialogContent может рендериться через портал)
+[data-slot='dialog-content'] {
+    button.auth-btn,
+    button.btn-outline-primary,
+    button.btn-accent {
+        @include button-base;
+
+        &.btn-outline-primary {
+            @include button-outline;
+        }
+
+        &.btn-accent {
+            @include button-accent;
         }
     }
 }

@@ -1,5 +1,4 @@
 import '@css/components/main-site/AddOrganizationBlock.scss';
-import { MapPin } from 'lucide-react';
 import { useState } from 'react';
 import CitySelector from './CitySelector';
 
@@ -17,14 +16,17 @@ interface AddOrganizationBlockProps {
         successMessage?: string;
         errorMessage?: string;
     };
+    useSimpleCityInput?: boolean;
 }
 
 export default function AddoOganizationBlock({
     config = {},
+    useSimpleCityInput = false,
 }: AddOrganizationBlockProps) {
     const [formData, setFormData] = useState({
         organizationName: '',
         city: null as City | null,
+        cityName: '',
         address: '',
         mapCoordinates: null as { lat: number; lng: number } | null,
     });
@@ -54,7 +56,7 @@ export default function AddoOganizationBlock({
         setSubmitStatus('idle');
 
         try {
-            const response = await fetch('/api/public/suggest-organization', {
+            const response = await fetch('/api/public/suggest-school', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -62,8 +64,10 @@ export default function AddoOganizationBlock({
                 },
                 body: JSON.stringify({
                     name: formData.organizationName,
-                    city_id: formData.city?.id,
-                    city_name: formData.city?.name,
+                    city_id: useSimpleCityInput ? undefined : formData.city?.id,
+                    city_name: useSimpleCityInput
+                        ? formData.cityName
+                        : formData.city?.name,
                     address: formData.address,
                     latitude: formData.mapCoordinates?.lat,
                     longitude: formData.mapCoordinates?.lng,
@@ -79,6 +83,7 @@ export default function AddoOganizationBlock({
             setFormData({
                 organizationName: '',
                 city: null,
+                cityName: '',
                 address: '',
                 mapCoordinates: null,
             });
@@ -118,13 +123,7 @@ export default function AddoOganizationBlock({
                         {/* Два поля в одной строке */}
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             {/* Название школы */}
-                            <div>
-                                <label
-                                    htmlFor="organizationName"
-                                    className="add-organization-block__label mb-2 block text-sm font-medium text-gray-700"
-                                >
-                                    Название школы
-                                </label>
+                            <div className="relative">
                                 <input
                                     type="text"
                                     id="organizationName"
@@ -137,62 +136,92 @@ export default function AddoOganizationBlock({
                                     }
                                     placeholder="Школа №32..."
                                     required
-                                    className="add-organization-block__input w-full rounded-[10px] border border-[#e8ecf3] px-4 py-3 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                    className="add-organization-block__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                                 />
+                                <label
+                                    htmlFor="organizationName"
+                                    className="add-organization-block__label pointer-events-none absolute left-4 top-[9px]"
+                                >
+                                    Название школы
+                                </label>
                             </div>
 
                             {/* Город */}
-                            <div>
-                                <label
-                                    htmlFor="city"
-                                    className="add-organization-block__label mb-2 block text-sm font-medium text-gray-700"
-                                >
-                                    Город
-                                </label>
-                                <div className="add-organization-block__city-selector-wrapper">
-                                    <CitySelector
-                                        value={formData.city}
-                                        onChange={(city) =>
-                                            setFormData({ ...formData, city })
-                                        }
-                                        detectOnMount={false}
-                                    />
-                                </div>
+                            <div className="relative">
+                                {useSimpleCityInput ? (
+                                    <>
+                                        <input
+                                            type="text"
+                                            id="city"
+                                            value={formData.cityName}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    cityName: e.target.value,
+                                                })
+                                            }
+                                            placeholder="Казань..."
+                                            required
+                                            className="add-organization-block__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                        />
+                                        <label
+                                            htmlFor="city"
+                                            className="add-organization-block__label pointer-events-none absolute left-4 top-[9px]"
+                                        >
+                                            Город
+                                        </label>
+                                    </>
+                                ) : (
+                                    <div className="add-organization-block__city-selector-wrapper">
+                                        <CitySelector
+                                            value={formData.city}
+                                            onChange={(city) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    city,
+                                                })
+                                            }
+                                            detectOnMount={false}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         {/* Адрес школы с кнопкой */}
                         <div className="relative">
+                            <input
+                                type="text"
+                                id="address"
+                                value={formData.address}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        address: e.target.value,
+                                    })
+                                }
+                                placeholder="Город, улица..."
+                                required
+                                className="add-organization-block__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pr-[180px] pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            />
                             <label
                                 htmlFor="address"
-                                className="add-organization-block__label mb-2 block text-sm font-medium text-gray-700"
+                                className="add-organization-block__label pointer-events-none absolute left-4 top-[9px]"
                             >
                                 Адрес школы
                             </label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    id="address"
-                                    value={formData.address}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            address: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Город, улица..."
-                                    required
-                                    className="add-organization-block__input w-full rounded-[10px] border border-[#e8ecf3] px-4 py-3 pr-[180px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            <button
+                                type="button"
+                                onClick={handleSelectOnMap}
+                                className="add-organization-block__map-button absolute right-2 top-1/2 -translate-y-1/2"
+                            >
+                                Указать на карте
+                                <img
+                                    src="/icons/direct-right.svg"
+                                    alt=""
+                                    className="h-4 w-4"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={handleSelectOnMap}
-                                    className="add-organization-block__map-button absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-2 rounded-[10px] bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100"
-                                >
-                                    Указать на карте
-                                    <MapPin className="h-4 w-4" />
-                                </button>
-                            </div>
+                            </button>
                         </div>
 
                         {/* Кнопка отправки */}

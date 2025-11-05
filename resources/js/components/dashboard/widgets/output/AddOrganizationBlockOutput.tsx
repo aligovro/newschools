@@ -13,6 +13,8 @@ export function AddOrganizationBlockOutput({ widget }: WidgetOutputProps) {
           }
         | undefined;
 
-    return <AddoOganizationBlock config={config} />;
+    return (
+        <AddoOganizationBlock config={config} useSimpleCityInput={true} />
+    );
 }
 

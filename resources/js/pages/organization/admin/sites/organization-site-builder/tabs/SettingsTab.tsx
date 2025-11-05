@@ -19,6 +19,7 @@ interface SettingsTabProps {
         value: string,
     ) => void;
     isCreating: boolean;
+    isMainSite?: boolean;
 }
 
 export default function SettingsTab({
@@ -27,6 +28,7 @@ export default function SettingsTab({
     createData,
     setCreateData,
     isCreating,
+    isMainSite = false,
 }: SettingsTabProps) {
     return (
         <div className="h-full overflow-auto bg-white p-6">
@@ -87,7 +89,11 @@ export default function SettingsTab({
                         {isCreating ? 'Создание...' : 'Создать сайт'}
                     </Button>
                     <Link
-                        href={`/dashboard/organization/${organization.id}/admin/sites`}
+                        href={
+                            isMainSite
+                                ? '/dashboard/sites'
+                                : `/dashboard/organization/${organization.id}/admin/sites`
+                        }
                     >
                         <Button type="button" variant="outline">
                             Отмена

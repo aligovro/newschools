@@ -1,5 +1,4 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Dialog,
     DialogContent,
@@ -88,7 +87,8 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                 });
                 if (!res.ok) return;
                 const data = await res.json();
-                if (!cancelled) setSessionUser(data || null);
+                const isValidUser = data && typeof data.id === 'number';
+                if (!cancelled) setSessionUser(isValidUser ? data : null);
             } catch {
                 // ignore
             }
@@ -144,18 +144,22 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
     };
 
     const handleLogout = async () => {
-        if (isAuthenticated) {
-            await logout();
-        } else {
-            try {
-                await fetch('/api/public/session-logout', {
-                    method: 'POST',
-                    credentials: 'include',
-                });
-            } catch {
-                // ignore
+        try {
+            if (isAuthenticated) {
+                await logout();
             }
+            // всегда пробуем завершить web-сессию, чтобы при обновлении не подтянулся session-user
+            await fetch('/api/public/session-logout', {
+                method: 'GET',
+                credentials: 'include',
+            });
+        } catch {
+            // ignore
+        } finally {
             setSessionUser(null);
+            if (typeof window !== 'undefined') {
+                window.location.reload();
+            }
         }
     };
 
@@ -166,7 +170,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         (effectiveUser?.name as string) ||
         (effectiveUser?.email as string) ||
         'Пользователь';
-    const initial = (displayName[0] || '?').toUpperCase();
+    const avatarUrl = (effectiveUser as any)?.avatar as string | undefined;
     const rawRoles = (effectiveUser as Record<string, unknown>)
         ?.roles as unknown;
     const roles = Array.isArray(rawRoles)
@@ -177,20 +181,45 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
     const isSuperAdmin = roles.includes('super_admin');
     const isOrgAdmin = roles.includes('organization_admin');
 
+    const cfg = (config || {}) as Record<string, unknown>;
+    const showLogin = Boolean(cfg.showLogin ?? true);
+    const showRegister = Boolean(cfg.showRegister ?? true);
+    const showExtraButton = Boolean(cfg.showExtraButton ?? false);
+    const extraButtonText = String(cfg.extraButtonText ?? 'Подробнее');
+    const extraButtonUrl = String(cfg.extraButtonUrl ?? '');
+    const loginButtonText = String(cfg.loginText ?? 'Войти');
+    const registerButtonText = String(cfg.registerText ?? 'Регистрация');
+
     return (
-        <div className="flex items-center justify-end gap-2">
+        <div className="auth-menu-widget flex items-center justify-end gap-2">
             {!effectiveIsAuthenticated ? (
                 <>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIsLoginOpen(true)}
-                    >
-                        Войти
-                    </Button>
-                    <Button size="sm" onClick={() => setIsRegisterOpen(true)}>
-                        Регистрация
-                    </Button>
+                    {showLogin && (
+                        <button
+                            type="button"
+                            className="btn-outline-primary auth-btn login-btn"
+                            onClick={() => setIsLoginOpen(true)}
+                        >
+                            {loginButtonText}
+                        </button>
+                    )}
+                    {showRegister && (
+                        <button
+                            type="button"
+                            className="btn-accent auth-btn register-btn"
+                            onClick={() => setIsRegisterOpen(true)}
+                        >
+                            {registerButtonText}
+                        </button>
+                    )}
+                    {showExtraButton && extraButtonUrl && (
+                        <a
+                            href={extraButtonUrl}
+                            className="btn-accent auth-btn extra-btn"
+                        >
+                            {extraButtonText}
+                        </a>
+                    )}
 
                     <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
                         <DialogContent>
@@ -230,16 +259,20 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                                     </div>
                                 )}
                                 <div className="flex justify-end gap-2">
-                                    <Button
+                                    <button
                                         type="button"
-                                        variant="outline"
+                                        className="btn-outline-primary auth-btn"
                                         onClick={() => setIsLoginOpen(false)}
                                     >
                                         Отмена
-                                    </Button>
-                                    <Button type="submit" disabled={isLoading}>
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn-accent auth-btn"
+                                        disabled={isLoading}
+                                    >
                                         {isLoading ? 'Вход...' : 'Войти'}
-                                    </Button>
+                                    </button>
                                 </div>
                             </form>
                         </DialogContent>
@@ -318,18 +351,22 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                                     <div>site_id: {siteId ?? '-'}</div>
                                 </div>
                                 <div className="flex justify-end gap-2">
-                                    <Button
+                                    <button
                                         type="button"
-                                        variant="outline"
+                                        className="btn-outline-primary auth-btn"
                                         onClick={() => setIsRegisterOpen(false)}
                                     >
                                         Отмена
-                                    </Button>
-                                    <Button type="submit" disabled={isLoading}>
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn-accent auth-btn"
+                                        disabled={isLoading}
+                                    >
                                         {isLoading
                                             ? 'Регистрация...'
                                             : 'Зарегистрироваться'}
-                                    </Button>
+                                    </button>
                                 </div>
                             </form>
                         </DialogContent>
@@ -338,13 +375,22 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
             ) : (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <button className="flex items-center gap-2 rounded-md border px-2 py-1 hover:bg-gray-50">
-                            <Avatar className="h-6 w-6">
-                                <AvatarFallback>{initial}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm text-gray-800">
-                                {displayName}
-                            </span>
+                        <button
+                            className="dropdown-menu-trigger auth-btn btn-outline-primary gap-2"
+                            type="button"
+                        >
+                            {/* Показываем аватар только если есть картинка и showAvatar не отключён */}
+                            {Boolean((cfg.showAvatar ?? true) && avatarUrl) && (
+                                <Avatar className="h-6 w-6">
+                                    <AvatarImage src={avatarUrl} alt={displayName} />
+                                    <AvatarFallback className="hidden" />
+                                </Avatar>
+                            )}
+                            {Boolean(cfg.showName ?? true) && (
+                                <span className="text-sm text-gray-800">
+                                    {displayName}
+                                </span>
+                            )}
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="min-w-[220px]">

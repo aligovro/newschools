@@ -66,7 +66,7 @@ export default function MainSiteManagementPage({
                                         </Link>
                                     </Button>
                                     <Button asChild>
-                                        <Link href="/dashboard/main-site/builder">
+                                        <Link href={`/dashboard/sites/${mainSite.id}/builder`}>
                                             <Settings className="mr-2 h-4 w-4" />
                                             Редактировать
                                         </Link>

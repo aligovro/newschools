@@ -176,29 +176,46 @@ export default function OrganizationSiteBuilder({
         [validationErrors],
     );
 
+    // Проверяем, является ли это главным сайтом (organization.id === 0 означает главный сайт)
+    const isMainSite = organization.id === 0 || site.site_type === 'main';
+
     const breadcrumbs: BreadcrumbItem[] = useMemo(
         () => [
             { title: 'Dashboard', href: '/dashboard' },
             { title: 'Организации', href: '/dashboard/organizations' },
-            {
-                title: organization.name,
-                href: `/dashboard/organization/${organization.id}/admin`,
-            },
-            {
-                title: 'Сайты',
-                href: `/dashboard/organization/${organization.id}/admin/sites`,
-            },
+            isMainSite
+                ? {
+                      title: 'Сайты',
+                      href: '/dashboard/sites',
+                  }
+                : {
+                      title: organization.name,
+                      href: `/dashboard/organization/${organization.id}/admin`,
+                  },
+            isMainSite
+                ? {
+                      title: site.name,
+                      href: `/dashboard/sites/${site.id}`,
+                  }
+                : {
+                      title: 'Сайты',
+                      href: `/dashboard/organization/${organization.id}/admin/sites`,
+                  },
             isCreateMode
                 ? {
                       title: 'Создать сайт',
-                      href: `/dashboard/organization/${organization.id}/admin/sites/create`,
+                      href: isMainSite
+                          ? '/dashboard/sites/create'
+                          : `/dashboard/organization/${organization.id}/admin/sites/create`,
                   }
                 : {
                       title: site.name,
-                      href: `/dashboard/organization/${organization.id}/admin/sites/${site.id}/builder`,
+                      href: isMainSite
+                          ? `/dashboard/sites/${site.id}/builder`
+                          : `/dashboard/organization/${organization.id}/admin/sites/${site.id}/builder`,
                   },
         ],
-        [organization.id, organization.name, isCreateMode, site.id, site.name],
+        [organization.id, organization.name, isCreateMode, site.id, site.name, site.site_type, isMainSite],
     );
 
     // const handleSave = useCallback(async () => { ... }, []) // удалено
@@ -257,11 +274,12 @@ export default function OrganizationSiteBuilder({
     const handleCreateSubmit = useCallback(
         (e: React.FormEvent) => {
             e.preventDefault();
-            postCreate(
-                `/dashboard/organization/${organization.id}/admin/sites`,
-            );
+            const createUrl = isMainSite
+                ? '/dashboard/sites'
+                : `/dashboard/organization/${organization.id}/admin/sites`;
+            postCreate(createUrl);
         },
-        [organization.id, postCreate],
+        [organization.id, postCreate, isMainSite],
     );
 
     return (
@@ -278,7 +296,11 @@ export default function OrganizationSiteBuilder({
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <Link
-                                href={`/dashboard/organization/${organization.id}/admin/sites`}
+                                href={
+                                    isMainSite
+                                        ? '/dashboard/sites'
+                                        : `/dashboard/organization/${organization.id}/admin/sites`
+                                }
                             >
                                 <Button variant="ghost" size="sm">
                                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -314,9 +336,10 @@ export default function OrganizationSiteBuilder({
                                     disabled={isCreating || !createData.name}
                                     onClick={(e) => {
                                         e.preventDefault();
-                                        postCreate(
-                                            `/dashboard/organization/${organization.id}/admin/sites`,
-                                        );
+                                        const createUrl = isMainSite
+                                            ? '/dashboard/sites'
+                                            : `/dashboard/organization/${organization.id}/admin/sites`;
+                                        postCreate(createUrl);
                                     }}
                                 >
                                     <Save className="mr-2 h-4 w-4" />
@@ -412,7 +435,11 @@ export default function OrganizationSiteBuilder({
                                             : 'Создать сайт'}
                                     </Button>
                                     <Link
-                                        href={`/dashboard/organization/${organization.id}/admin/sites`}
+                                        href={
+                                            isMainSite
+                                                ? '/dashboard/sites'
+                                                : `/dashboard/organization/${organization.id}/admin/sites`
+                                        }
                                     >
                                         <Button type="button" variant="outline">
                                             Отмена

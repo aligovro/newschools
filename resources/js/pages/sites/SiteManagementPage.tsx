@@ -16,10 +16,10 @@ import {
     Building2,
     Edit,
     Eye,
+    FileText,
     Globe,
     Plus,
     Search,
-    Settings,
     Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -75,6 +75,11 @@ interface Props {
     organizations: Organization[];
     templates: SiteTemplate[];
     filters: Filters;
+    terminology?: {
+        organization?: {
+            singular_nominative?: string;
+        };
+    };
 }
 
 export default function SiteManagementPage({
@@ -82,6 +87,7 @@ export default function SiteManagementPage({
     organizations,
     templates,
     filters,
+    terminology,
 }: Props) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || 'all');
@@ -362,11 +368,19 @@ export default function SiteManagementPage({
                                                 {site.description}
                                             </p>
                                             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                                                <span>
-                                                    Организация:{' '}
-                                                    {site.organization?.name ??
-                                                        '—'}
-                                                </span>
+                                                {site.site_type === 'main' ? (
+                                                    <span>Главный сайт</span>
+                                                ) : (
+                                                    <span>
+                                                        {terminology
+                                                            ?.organization
+                                                            ?.singular_nominative ||
+                                                            'Организация'}
+                                                        :{' '}
+                                                        {site.organization
+                                                            ?.name ?? '—'}
+                                                    </span>
+                                                )}
                                                 <span>
                                                     Создан:{' '}
                                                     {new Date(
@@ -400,38 +414,36 @@ export default function SiteManagementPage({
 
                                     <div className="flex items-center space-x-2">
                                         <Link
-                                            href={
-                                                site.site_type === 'main'
-                                                    ? '/dashboard/main-site/builder'
-                                                    : site.organization
-                                                      ? `/dashboard/organization/${site.organization.id}/admin/sites/${site.id}/builder`
-                                                      : '#'
-                                            }
+                                            href={`/dashboard/sites/${site.id}`}
                                         >
                                             <Button variant="outline" size="sm">
-                                                <Edit className="mr-1 h-4 w-4" />
-                                                Редактировать
+                                                <Eye className="mr-1 h-4 w-4" />
+                                                Просмотр
                                             </Button>
                                         </Link>
 
                                         <Link
-                                            href={
-                                                site.site_type === 'main'
-                                                    ? '/dashboard/main-site'
-                                                    : site.organization
-                                                      ? `/dashboard/organization/${site.organization.id}/admin`
-                                                      : '#'
-                                            }
+                                            href={`/dashboard/sites/${site.id}/pages`}
                                         >
-                                            <Button variant="ghost" size="sm">
-                                                <Settings className="h-4 w-4" />
+                                            <Button variant="outline" size="sm">
+                                                <FileText className="mr-1 h-4 w-4" />
+                                                Страницы ({site.pages_count})
+                                            </Button>
+                                        </Link>
+
+                                        <Link
+                                            href={`/dashboard/sites/${site.id}/builder`}
+                                        >
+                                            <Button variant="outline" size="sm">
+                                                <Edit className="mr-1 h-4 w-4" />
+                                                Изменить
                                             </Button>
                                         </Link>
 
                                         <div className="flex items-center space-x-1">
                                             {site.status === 'published' ? (
                                                 <Button
-                                                    variant="ghost"
+                                                    variant="outline"
                                                     size="sm"
                                                     onClick={() =>
                                                         handleUnpublish(site.id)
@@ -441,7 +453,7 @@ export default function SiteManagementPage({
                                                 </Button>
                                             ) : site.status === 'draft' ? (
                                                 <Button
-                                                    variant="ghost"
+                                                    variant="outline"
                                                     size="sm"
                                                     onClick={() =>
                                                         handlePublish(site.id)
@@ -451,7 +463,7 @@ export default function SiteManagementPage({
                                                 </Button>
                                             ) : (
                                                 <Button
-                                                    variant="ghost"
+                                                    variant="outline"
                                                     size="sm"
                                                     onClick={() =>
                                                         handleArchive(site.id)

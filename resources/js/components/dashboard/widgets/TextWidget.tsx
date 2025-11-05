@@ -1,30 +1,15 @@
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ColorPicker } from '@/components/ui/ColorPicker';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import RichTextEditor from '@/components/RichTextEditor';
 import { getConfigValue, WidgetConfig } from '@/utils/getConfigValue';
 import {
-    Bold,
     ChevronDown,
     ChevronUp,
-    Italic,
-    Link,
-    List,
-    ListOrdered,
-    Quote,
     Settings,
-    Type,
-    Underline,
 } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface TextWidgetProps {
     config?: {
@@ -113,9 +98,6 @@ export const TextWidget: React.FC<TextWidgetProps> = ({
         : config;
 
     const [localConfig, setLocalConfig] = useState(configValues);
-    const [showLinkModal, setShowLinkModal] = useState(false);
-    const [linkUrl, setLinkUrl] = useState('');
-    const textareaRef = useRef<HTMLDivElement>(null);
 
     // Синхронизируем локальное состояние с внешним config
     useEffect(() => {
@@ -129,164 +111,6 @@ export const TextWidget: React.FC<TextWidgetProps> = ({
         }
     }, [autoExpandSettings, isSettingsExpanded]);
 
-    // Функции форматирования текста
-    const insertFormatting = (format: string) => {
-        if (!textareaRef.current) return;
-
-        const editor = textareaRef.current;
-        const selection = window.getSelection();
-        const range = selection?.getRangeAt(0);
-
-        if (!selection || !range) return;
-
-        // Получаем выбранный текст
-        const selectedText = selection.toString();
-
-        switch (format) {
-            case 'bold':
-                if (selectedText) {
-                    const strongElement = document.createElement('strong');
-                    strongElement.textContent = selectedText;
-                    range.deleteContents();
-                    range.insertNode(strongElement);
-                } else {
-                    document.execCommand('bold');
-                }
-                break;
-
-            case 'italic':
-                if (selectedText) {
-                    const emElement = document.createElement('em');
-                    emElement.textContent = selectedText;
-                    range.deleteContents();
-                    range.insertNode(emElement);
-                } else {
-                    document.execCommand('italic');
-                }
-                break;
-
-            case 'underline':
-                if (selectedText) {
-                    const uElement = document.createElement('u');
-                    uElement.textContent = selectedText;
-                    range.deleteContents();
-                    range.insertNode(uElement);
-                } else {
-                    document.execCommand('underline');
-                }
-                break;
-
-            case 'quote':
-                if (selectedText) {
-                    const blockquoteElement =
-                        document.createElement('blockquote');
-                    blockquoteElement.textContent = selectedText;
-                    blockquoteElement.style.borderLeft = '4px solid #ccc';
-                    blockquoteElement.style.paddingLeft = '16px';
-                    blockquoteElement.style.fontStyle = 'italic';
-                    blockquoteElement.style.margin = '16px 0';
-                    range.deleteContents();
-                    range.insertNode(blockquoteElement);
-                } else {
-                    const blockquoteElement =
-                        document.createElement('blockquote');
-                    blockquoteElement.innerHTML = '<br>';
-                    blockquoteElement.style.borderLeft = '4px solid #ccc';
-                    blockquoteElement.style.paddingLeft = '16px';
-                    blockquoteElement.style.fontStyle = 'italic';
-                    blockquoteElement.style.margin = '16px 0';
-                    range.insertNode(blockquoteElement);
-                }
-                break;
-
-            case 'heading':
-                if (selectedText) {
-                    const h1Element = document.createElement('h2');
-                    h1Element.textContent = selectedText;
-                    h1Element.style.fontSize = '1.5em';
-                    h1Element.style.fontWeight = 'bold';
-                    h1Element.style.margin = '16px 0 8px 0';
-                    range.deleteContents();
-                    range.insertNode(h1Element);
-                } else {
-                    const h1Element = document.createElement('h2');
-                    h1Element.innerHTML = '<br>';
-                    h1Element.style.fontSize = '1.5em';
-                    h1Element.style.fontWeight = 'bold';
-                    h1Element.style.margin = '16px 0 8px 0';
-                    range.insertNode(h1Element);
-                }
-                break;
-
-            case 'code':
-                if (selectedText) {
-                    const codeElement = document.createElement('code');
-                    codeElement.textContent = selectedText;
-                    codeElement.style.backgroundColor = '#f1f1f1';
-                    codeElement.style.padding = '2px 4px';
-                    codeElement.style.borderRadius = '3px';
-                    codeElement.style.fontFamily = 'monospace';
-                    range.deleteContents();
-                    range.insertNode(codeElement);
-                } else {
-                    const codeElement = document.createElement('code');
-                    codeElement.innerHTML = '<br>';
-                    codeElement.style.backgroundColor = '#f1f1f1';
-                    codeElement.style.padding = '2px 4px';
-                    codeElement.style.borderRadius = '3px';
-                    codeElement.style.fontFamily = 'monospace';
-                    range.insertNode(codeElement);
-                }
-                break;
-
-            case 'link':
-                setShowLinkModal(true);
-                return;
-        }
-
-        // Обновляем контент
-        const htmlContent = editor.innerHTML;
-        setLocalConfig((prev) => ({ ...prev, content: htmlContent }));
-
-        // Восстанавливаем фокус
-        editor.focus();
-    };
-
-    // Функция для создания ссылки
-    const createLink = () => {
-        if (!textareaRef.current || !linkUrl.trim()) return;
-
-        const editor = textareaRef.current;
-        const selection = window.getSelection();
-        const range = selection?.getRangeAt(0);
-
-        if (!selection || !range) return;
-
-        const selectedText = selection.toString() || 'ссылка';
-        const linkElement = document.createElement('a');
-        linkElement.href = linkUrl;
-        linkElement.textContent = selectedText;
-        linkElement.target = '_blank';
-        linkElement.rel = 'noopener noreferrer';
-        linkElement.style.color = '#2563eb';
-        linkElement.style.textDecoration = 'underline';
-
-        if (selectedText) {
-            range.deleteContents();
-        }
-        range.insertNode(linkElement);
-
-        // Обновляем контент
-        const htmlContent = editor.innerHTML;
-        setLocalConfig((prev) => ({ ...prev, content: htmlContent }));
-
-        // Закрываем модальное окно и сбрасываем URL
-        setShowLinkModal(false);
-        setLinkUrl('');
-
-        // Восстанавливаем фокус
-        editor.focus();
-    };
 
     const {
         title = 'Заголовок',
@@ -418,177 +242,21 @@ export const TextWidget: React.FC<TextWidgetProps> = ({
                                         <Label htmlFor="content">
                                             Содержимое
                                         </Label>
-
-                                        {/* Панель инструментов форматирования */}
-                                        {enableFormatting && (
-                                            <div className="mb-2 rounded-t-lg border border-gray-200 bg-gray-50 p-2">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {/* Форматирование текста */}
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            insertFormatting(
-                                                                'bold',
-                                                            )
-                                                        }
-                                                        title="Жирный текст"
-                                                    >
-                                                        <Bold className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            insertFormatting(
-                                                                'italic',
-                                                            )
-                                                        }
-                                                        title="Курсив"
-                                                    >
-                                                        <Italic className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            insertFormatting(
-                                                                'underline',
-                                                            )
-                                                        }
-                                                        title="Подчеркнутый текст"
-                                                    >
-                                                        <Underline className="h-4 w-4" />
-                                                    </Button>
-
-                                                    <div className="mx-1 h-6 w-px bg-gray-300" />
-
-                                                    {/* Заголовки */}
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            insertFormatting(
-                                                                'heading',
-                                                            )
-                                                        }
-                                                        title="Заголовок"
-                                                    >
-                                                        <Type className="h-4 w-4" />
-                                                    </Button>
-
-                                                    <div className="mx-1 h-6 w-px bg-gray-300" />
-
-                                                    {/* Списки */}
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            insertFormatting(
-                                                                'list',
-                                                            )
-                                                        }
-                                                        title="Маркированный список"
-                                                    >
-                                                        <List className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            insertFormatting(
-                                                                'numbered-list',
-                                                            )
-                                                        }
-                                                        title="Нумерованный список"
-                                                    >
-                                                        <ListOrdered className="h-4 w-4" />
-                                                    </Button>
-
-                                                    <div className="mx-1 h-6 w-px bg-gray-300" />
-
-                                                    {/* Дополнительные элементы */}
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            insertFormatting(
-                                                                'quote',
-                                                            )
-                                                        }
-                                                        title="Цитата"
-                                                    >
-                                                        <Quote className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            insertFormatting(
-                                                                'link',
-                                                            )
-                                                        }
-                                                        title="Ссылка"
-                                                    >
-                                                        <Link className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            insertFormatting(
-                                                                'code',
-                                                            )
-                                                        }
-                                                        title="Строка кода"
-                                                    >
-                                                        <code className="text-xs">
-                                                            {'<>'}
-                                                        </code>
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div
-                                            ref={textareaRef}
-                                            id="content"
-                                            contentEditable
-                                            suppressContentEditableWarning
-                                            onInput={(e) => {
-                                                const htmlContent =
-                                                    e.currentTarget.innerHTML;
+                                        <RichTextEditor
+                                            value={content || ''}
+                                            onChange={(html) =>
                                                 setLocalConfig((prev) => ({
                                                     ...prev,
-                                                    content: htmlContent,
-                                                }));
-                                            }}
-                                            className={`min-h-[200px] resize-none overflow-y-auto rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${
-                                                enableFormatting
-                                                    ? 'rounded-t-none'
-                                                    : ''
-                                            } transition-all duration-200`}
-                                            style={{
-                                                fontSize,
-                                                color: textColor,
-                                                backgroundColor:
-                                                    backgroundColor ===
-                                                    'transparent'
-                                                        ? 'white'
-                                                        : backgroundColor,
-                                                borderColor: borderColor,
-                                                borderRadius: borderRadius,
-                                                padding: padding,
-                                                textAlign: textAlign as
-                                                    | 'left'
-                                                    | 'center'
-                                                    | 'right',
-                                            }}
-                                            dangerouslySetInnerHTML={{
-                                                __html:
-                                                    content || '<p><br></p>',
-                                            }}
-                                            data-placeholder="Введите текст... Используйте панель инструментов выше для форматирования."
+                                                    content: html,
+                                                }))
+                                            }
+                                            height={220}
+                                            placeholder="Введите содержимое текстового блока..."
+                                            level="simple"
+                                            showHtmlToggle={true}
+                                            showTemplates={false}
+                                            showWordCount={true}
+                                            showImageUpload={false}
                                         />
                                     </div>
 
@@ -843,47 +511,6 @@ export const TextWidget: React.FC<TextWidgetProps> = ({
                     </Card>
                 </div>
 
-                {/* Модальное окно для создания ссылки */}
-                <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Добавить ссылку</DialogTitle>
-                            <DialogDescription>
-                                Введите URL для ссылки
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            <div>
-                                <Label htmlFor="linkUrl">URL</Label>
-                                <Input
-                                    id="linkUrl"
-                                    type="url"
-                                    value={linkUrl}
-                                    onChange={(e) => setLinkUrl(e.target.value)}
-                                    placeholder="https://example.com"
-                                    className="mt-1"
-                                />
-                            </div>
-                            <div className="flex justify-end space-x-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        setShowLinkModal(false);
-                                        setLinkUrl('');
-                                    }}
-                                >
-                                    Отмена
-                                </Button>
-                                <Button
-                                    onClick={createLink}
-                                    disabled={!linkUrl.trim()}
-                                >
-                                    Добавить ссылку
-                                </Button>
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
             </>
         );
     }
@@ -930,47 +557,6 @@ export const TextWidget: React.FC<TextWidgetProps> = ({
                 />
             </div>
 
-            {/* Модальное окно для создания ссылки */}
-            <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Добавить ссылку</DialogTitle>
-                        <DialogDescription>
-                            Введите URL для ссылки
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <Label htmlFor="linkUrl">URL</Label>
-                            <Input
-                                id="linkUrl"
-                                type="url"
-                                value={linkUrl}
-                                onChange={(e) => setLinkUrl(e.target.value)}
-                                placeholder="https://example.com"
-                                className="mt-1"
-                            />
-                        </div>
-                        <div className="flex justify-end space-x-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    setShowLinkModal(false);
-                                    setLinkUrl('');
-                                }}
-                            >
-                                Отмена
-                            </Button>
-                            <Button
-                                onClick={createLink}
-                                disabled={!linkUrl.trim()}
-                            >
-                                Добавить ссылку
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </>
     );
 };

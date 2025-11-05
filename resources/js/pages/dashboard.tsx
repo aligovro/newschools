@@ -34,7 +34,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 // Данные будут загружаться через хук useDashboardStats
 
-const getQuickActions = (terminology: any) => [
+const getQuickActions = (terminology: any, mainSiteId?: number | null) => [
     {
         title: 'Создать пользователя',
         description: 'Добавить нового пользователя в систему',
@@ -59,7 +59,7 @@ const getQuickActions = (terminology: any) => [
     {
         title: 'Управление главным сайтом',
         description: 'Конструктор и настройки главного сайта',
-        href: '/dashboard/main-site',
+        href: mainSiteId ? `/dashboard/sites/${mainSiteId}` : '/dashboard/sites',
         icon: Globe,
         color: 'bg-indigo-500',
     },
@@ -79,7 +79,11 @@ const getQuickActions = (terminology: any) => [
     },
 ];
 
-export default function Dashboard() {
+interface DashboardProps {
+    mainSiteId?: number | null;
+}
+
+export default function Dashboard({ mainSiteId }: DashboardProps) {
     const { stats, terminology, isLoading, error, refreshStats, favicon } =
         useDashboardStats();
 
@@ -255,7 +259,7 @@ export default function Dashboard() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            {getQuickActions(terminology).map(
+                            {getQuickActions(terminology, mainSiteId).map(
                                 (action, index) => (
                                     <Link key={index} href={action.href}>
                                         <div className="flex items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">

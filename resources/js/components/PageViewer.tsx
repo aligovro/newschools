@@ -16,7 +16,7 @@ interface Page {
     seo_description: string;
     seo_keywords: string;
     seo_image: string;
-    featured_image: string;
+    image?: string;
     is_homepage: boolean;
     published_at: string | null;
     created_at: string;
@@ -213,11 +213,11 @@ const PageViewer: React.FC<PageViewerProps> = ({
                                         </nav>
                                     )}
 
-                                {/* Featured Image */}
-                                {page.featured_image && (
+                                {/* Image */}
+                                {page.image && (
                                     <div className="mb-8">
                                         <img
-                                            src={page.featured_image}
+                                            src={page.image}
                                             alt={page.title}
                                             className="h-64 w-full rounded-lg object-cover shadow-md md:h-96"
                                         />

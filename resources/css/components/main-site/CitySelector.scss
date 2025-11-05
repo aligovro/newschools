@@ -1,4 +1,6 @@
 // Стили для компонента CitySelector
+@import '../../variables';
+
 .city-selector {
     // Компонент использует в основном Tailwind классы
     // Дополнительные стили можно добавить здесь при необходимости
@@ -32,7 +34,7 @@
     font-weight: 600;
     font-size: 14px;
     line-height: 120%;
-    color: #1a1a1a;
+    color: $dark-color;
     font-family: var(--font-family, 'Montserrat', sans-serif);
 }
 
@@ -51,11 +53,12 @@
 }
 
 .city-selector__city-item {
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
 
     &--selected {
         background-color: #eff6ff;
         color: #2563eb;
     }
 }
-

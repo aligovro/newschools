@@ -19,7 +19,7 @@ interface Page {
     template: string;
     layout_config: any;
     content_blocks: any[];
-    featured_image_url?: string;
+    image?: string;
     is_homepage: boolean;
     excerpt?: string;
 }
@@ -205,9 +205,9 @@ export default function SitePage({
                                 </p>
                             )}
 
-                            {page.featured_image_url && (
+                            {page.image && (
                                 <img
-                                    src={page.featured_image_url}
+                                    src={page.image}
                                     alt={page.title}
                                     className="mb-6 h-64 w-full rounded-lg object-cover"
                                 />
