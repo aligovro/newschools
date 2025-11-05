@@ -70,6 +70,7 @@
         "concurrently": "^9.0.1",
         "credit-card-type": "^10.1.0",
         "date-fns": "^4.1.0",
+        "dompurify": "^3.3.0",
         "framer-motion": "^12.23.22",
         "globals": "^15.14.0",
         "input-otp": "^1.4.2",

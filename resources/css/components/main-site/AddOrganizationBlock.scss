@@ -1,10 +1,11 @@
 // Стили для компонента AddOrganizationBlock
+@import '../../variables';
+
 .add-organization-block {
     min-height: 344px;
 }
 
 .add-organization-block__title {
-    font-family: var(--font-family, Montserrat, sans-serif);
     font-weight: 700;
     font-size: 40px;
     line-height: 120%;
@@ -15,7 +16,6 @@
 }
 
 .add-organization-block__subtitle {
-    font-family: var(--font-family, Montserrat, sans-serif);
     font-weight: 700;
     font-size: 40px;
     line-height: 120%;
@@ -26,21 +26,21 @@
 }
 
 .add-organization-block__description {
-    font-family: var(--font-family, Montserrat, sans-serif);
     font-weight: 400;
     font-size: 18px;
     line-height: 140%;
-    letter-spacing: -0.02em;
-    color: #1a1a1a;
+    color: $dark-color;
 }
 
 .add-organization-block__label {
-    font-family: var(--font-family, Montserrat, sans-serif);
+    font-weight: 500;
+    font-size: 12px;
+    color: $dark-color;
+    user-select: none;
 }
 
 .add-organization-block__input {
     height: 60px;
-    font-family: var(--font-family, Montserrat, sans-serif);
 }
 
 .add-organization-block__city-selector-wrapper {
@@ -48,13 +48,32 @@
 }
 
 .add-organization-block__map-button {
+    border-radius: 10px;
+    padding: 12px 16px;
     height: 34px;
-    width: 164px;
-    font-family: var(--font-family, Montserrat, sans-serif);
+    background: #f5f6f8;
     z-index: 10;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 120%;
+
+    &:hover {
+        background: #e8eaed;
+    }
+
+    img {
+        width: 16px;
+        height: 16px;
+        object-fit: contain;
+    }
 }
 
 .add-organization-block__submit-button {
     height: 60px;
-    font-family: var(--font-family, Montserrat, sans-serif);
 }

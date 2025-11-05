@@ -91,12 +91,19 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         [],
     );
 
+    // Отслеживаем предыдущий виджет для определения смены
+    const previousWidgetIdRef = React.useRef<string | null>(null);
+
     // Синхронизация формы с виджетом (только при первом открытии или смене виджета)
     useEffect(() => {
         if (widget) {
             const config = widget.configs
                 ? convertConfigsToConfig(widget.configs)
                 : widget.config || {};
+
+            // Определяем, изменился ли виджет или это первое открытие модального окна
+            const isWidgetChanged = previousWidgetIdRef.current !== widget.id;
+            const isFirstOpen = previousWidgetIdRef.current === null && isOpen;
 
             setFormData({
                 name: widget.name || '',
@@ -108,14 +115,22 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 wrapper_class: widget.wrapper_class || '',
             });
 
-            // Устанавливаем pendingConfig только если он еще не установлен
-            if (_pendingConfig === null) {
+            // Обновляем pendingConfig при смене виджета или первом открытии модального окна
+            // Это гарантирует, что сохраненный контент загрузится в редактор
+            if (isWidgetChanged || isFirstOpen) {
                 handleSetPendingConfig(config);
+                previousWidgetIdRef.current = widget.id;
             }
         }
-        // Убираем _pendingConfig из зависимостей, чтобы не перезаписывать изменения пользователя
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [widget, handleSetPendingConfig]);
+    }, [widget, isOpen, handleSetPendingConfig]);
+    
+    // Сбрасываем предыдущий ID при закрытии модального окна
+    useEffect(() => {
+        if (!isOpen) {
+            previousWidgetIdRef.current = null;
+        }
+    }, [isOpen]);
 
     // Мемоизированная функция сохранения
     const handleSave = useCallback(async () => {

@@ -542,14 +542,13 @@ const EditorInit: React.FC<{
     useEffect(() => {
         if (!mounted) return;
 
-        // Инициализация при первом монтировании
-        if (!lastExternalValueRef.current && valueHTML) {
-            lastExternalValueRef.current = valueHTML || '';
+        // Если значение не изменилось, не обновляем (но только если уже было инициализировано)
+        if (
+            lastExternalValueRef.current === valueHTML &&
+            lastExternalValueRef.current !== ''
+        ) {
             return;
         }
-
-        // Если значение не изменилось, не обновляем
-        if (lastExternalValueRef.current === valueHTML) return;
 
         // Если активно редактируется, не обновляем
         if (isEditingRef.current) {
@@ -558,7 +557,7 @@ const EditorInit: React.FC<{
             return;
         }
 
-        // Обновляем только если контент действительно изменился извне
+        // Обновляем контент (включая первую инициализацию)
         lastExternalValueRef.current = valueHTML || '';
 
         editor.update(() => {

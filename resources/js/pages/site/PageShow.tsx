@@ -1,58 +1,286 @@
-import PageViewer from '@/components/PageViewer';
-import React from 'react';
+import type {
+    WidgetData,
+    WidgetPosition,
+} from '@/components/dashboard/site-builder/types';
+import MainLayout from '@/layouts/MainLayout';
+import React, { useMemo } from 'react';
+
+interface Site {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+    favicon?: string;
+    template: string;
+    site_type: 'main' | 'organization';
+    widgets_config: WidgetData[];
+    seo_config?: Record<string, unknown>;
+    layout_config?: {
+        sidebar_position?: 'left' | 'right';
+    };
+}
 
 interface Page {
     id: number;
     title: string;
     slug: string;
-    content: string;
-    excerpt: string;
+    excerpt?: string;
+    content?: string;
     status: string;
-    template: string;
-    seo_title: string;
-    seo_description: string;
-    seo_keywords: string;
-    seo_image: string;
-    featured_image: string;
+    template?: string;
     is_homepage: boolean;
-    published_at: string | null;
+    is_public: boolean;
+    show_in_navigation: boolean;
+    image?: string;
+    images?: string[];
+    published_at?: string | null;
     created_at: string;
     updated_at: string;
-    url: string;
-    parent?: Page;
-    children?: Page[];
-    breadcrumbs: Array<{
+    parent?: {
+        id: number;
         title: string;
-        url: string;
         slug: string;
+    };
+    children?: Array<{
+        id: number;
+        title: string;
+        slug: string;
+        sort_order: number;
     }>;
 }
 
-interface Organization {
-    id: number;
-    name: string;
-    domain: string;
-    logo?: string;
+interface PageSeo {
+    title?: string;
     description?: string;
+    keywords?: string;
+    image?: string;
 }
 
 interface PageShowProps {
-    organization: Organization;
+    site: Site;
     page: Page;
-    navigationPages?: Page[];
+    positions?: WidgetPosition[];
+    position_settings?: Array<{
+        position_slug: string;
+        visibility_rules?: {
+            mode?: 'all' | 'include' | 'exclude';
+            routes?: string[];
+            pages?: unknown[];
+        };
+        layout_overrides?: Record<string, unknown>;
+    }>;
+    pageSeo?: PageSeo;
 }
 
 const SitePageShow: React.FC<PageShowProps> = ({
-    organization,
+    site,
     page,
-    navigationPages,
+    positions = [],
+    position_settings = [],
+    pageSeo = {},
 }) => {
+    // Мемоизируем рендер контента
+    const renderedContent = useMemo(() => {
+        if (!page.content) {
+            return (
+                <div className="py-12 text-center">
+                    <div className="text-muted-foreground">
+                        <p className="mb-2 text-lg">
+                            Содержимое страницы отсутствует
+                        </p>
+                        <p className="text-sm">
+                            Эта страница еще не содержит контента.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Если контент содержит HTML, рендерим его
+        if (page.content.includes('<')) {
+            return (
+                <div
+                    className="prose prose-gray max-w-none"
+                    dangerouslySetInnerHTML={{ __html: page.content }}
+                />
+            );
+        }
+
+        // Иначе рендерим как текст с переносами строк
+        return (
+            <div className="prose prose-gray max-w-none">
+                {page.content.split('\n').map((paragraph, index) => (
+                    <p key={index} className="mb-4">
+                        {paragraph || '\u00A0'}
+                    </p>
+                ))}
+            </div>
+        );
+    }, [page.content]);
+
+    // Мемоизируем дополнительные изображения
+    const renderedImages = useMemo(() => {
+        if (!page.images || page.images.length === 0) {
+            return null;
+        }
+
+        return (
+            <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3">
+                {page.images.map((imageUrl, index) => (
+                    <img
+                        key={index}
+                        src={imageUrl}
+                        alt={`${page.title} - ${index + 1}`}
+                        className="h-48 w-full rounded-lg object-cover"
+                        loading="lazy"
+                    />
+                ))}
+            </div>
+        );
+    }, [page.images, page.title]);
+
+    // Мемоизируем дочерние страницы
+    const renderedChildren = useMemo(() => {
+        if (!page.children || page.children.length === 0) {
+            return null;
+        }
+
+        return (
+            <div className="mt-8">
+                <h2 className="mb-4 text-2xl font-semibold">
+                    Дополнительные страницы
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2">
+                    {page.children.map((child) => (
+                        <a
+                            key={child.id}
+                            href={`/${child.slug}`}
+                            className="hover:bg-muted rounded-lg border p-4 transition-colors"
+                        >
+                            <h3 className="font-semibold">{child.title}</h3>
+                        </a>
+                    ))}
+                </div>
+            </div>
+        );
+    }, [page.children]);
+
+    // Формируем SEO заголовок
+    const seoTitle = useMemo(() => {
+        if (page.is_homepage) {
+            const siteName =
+                (site.seo_config?.site_name as string) || site.name;
+            return pageSeo.title || siteName;
+        }
+        return pageSeo.title || `${page.title} - ${site.name}`;
+    }, [
+        page.is_homepage,
+        page.title,
+        pageSeo.title,
+        site.name,
+        site.seo_config,
+    ]);
+
+    // Формируем SEO описание
+    const seoDescription = useMemo(() => {
+        const seoDesc = (site.seo_config?.seo_description as string) || '';
+        return (
+            pageSeo.description ||
+            page.excerpt ||
+            seoDesc ||
+            site.description ||
+            ''
+        );
+    }, [pageSeo.description, page.excerpt, site.seo_config, site.description]);
+
     return (
-        <PageViewer
-            organization={organization}
-            page={page}
-            navigationPages={navigationPages}
-        />
+        <MainLayout
+            site={site}
+            positions={positions}
+            position_settings={position_settings}
+            pageTitle={seoTitle}
+            pageDescription={seoDescription}
+        >
+            <article className="mx-auto max-w-4xl">
+                {/* Breadcrumbs */}
+                {page.parent && (
+                    <nav className="mb-6 flex items-center space-x-2 text-sm text-muted-foreground">
+                        <a href="/" className="hover:text-foreground">
+                            Главная
+                        </a>
+                        <span>/</span>
+                        <a
+                            href={`/${page.parent.slug}`}
+                            className="hover:text-foreground"
+                        >
+                            {page.parent.title}
+                        </a>
+                        <span>/</span>
+                        <span className="font-medium text-foreground">
+                            {page.title}
+                        </span>
+                    </nav>
+                )}
+
+                {/* Main Image */}
+                {page.image && (
+                    <div className="mb-8">
+                        <img
+                            src={page.image}
+                            alt={page.title}
+                            className="h-64 w-full rounded-lg object-cover shadow-md md:h-96"
+                            loading="eager"
+                        />
+                    </div>
+                )}
+
+                {/* Page Header */}
+                <header className="mb-8">
+                    <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
+                        {page.title}
+                    </h1>
+                    {page.excerpt && (
+                        <p className="text-xl leading-relaxed text-muted-foreground">
+                            {page.excerpt}
+                        </p>
+                    )}
+                </header>
+
+                {/* Page Content */}
+                <div className="mb-8">{renderedContent}</div>
+
+                {/* Additional Images */}
+                {renderedImages}
+
+                {/* Children Pages */}
+                {renderedChildren}
+
+                {/* Page Footer */}
+                <footer className="mt-8 border-t pt-8">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div>
+                            <p>Сайт: {site.name}</p>
+                            {page.published_at && (
+                                <p>
+                                    Опубликовано:{' '}
+                                    {new Date(
+                                        page.published_at,
+                                    ).toLocaleDateString('ru-RU')}
+                                </p>
+                            )}
+                        </div>
+                        <div>
+                            <p>
+                                Обновлено:{' '}
+                                {new Date(page.updated_at).toLocaleDateString(
+                                    'ru-RU',
+                                )}
+                            </p>
+                        </div>
+                    </div>
+                </footer>
+            </article>
+        </MainLayout>
     );
 };
 

@@ -1,0 +1,404 @@
+.editorRoot {
+  position: relative;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.editorWrapper {
+  position: relative;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  &:focus-within {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+  }
+}
+
+.adminBadge {
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  z-index: 10;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    &::before {
+      content: '👑';
+      font-size: 10px;
+    }
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  gap: 8px;
+}
+
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border-right: 1px solid #dee2e6;
+
+  &:last-child {
+    border-right: none;
+  }
+}
+
+.toolbar button,
+.imageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #dee2e6;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:hover:not(:disabled) {
+    background: #e9ecef;
+    border-color: #adb5bd;
+  }
+
+  &:active:not(:disabled) {
+    background: #dee2e6;
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+  }
+}
+
+.imageButton {
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #e9ecef;
+  }
+}
+
+.editorContent {
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+    'Open Sans', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  outline: none;
+  overflow-y: auto;
+  background: white;
+
+  &:empty:before {
+    content: attr(data-placeholder);
+    color: #999;
+    font-style: italic;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  // Стили для контента
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+  h2 {
+    font-size: 20px;
+  }
+  h3 {
+    font-size: 18px;
+  }
+
+  p {
+    margin: 8px 0;
+  }
+
+  ul,
+  ol {
+    margin: 8px 0;
+    padding-left: 24px;
+  }
+
+  li {
+    margin: 4px 0;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 8px 0;
+  }
+
+  a {
+    color: #007bff;
+    text-decoration: underline;
+
+    &:hover {
+      color: #0056b3;
+    }
+  }
+
+  blockquote {
+    margin: 16px 0;
+    padding: 12px 16px;
+    border-left: 4px solid #007bff;
+    background: #f8f9fa;
+    font-style: italic;
+  }
+
+  hr {
+    border: none;
+    border-top: 2px solid #dee2e6;
+    margin: 16px 0;
+  }
+
+  code {
+    background: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+  }
+
+  pre {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 16px 0;
+
+    code {
+      background: none;
+      padding: 0;
+    }
+  }
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  border-radius: 8px;
+  backdrop-filter: blur(2px);
+}
+
+.loadingSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Мобильные стили
+@media (max-width: 768px) {
+  .editorRoot {
+    margin: 12px 0;
+  }
+
+  .editorWrapper {
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+  }
+
+  .adminBadge {
+    top: -6px;
+    right: 8px;
+    padding: 3px 8px;
+    font-size: 10px;
+    border-radius: 8px;
+  }
+
+  .toolbar {
+    padding: 6px 8px;
+    gap: 4px;
+  }
+
+  .toolbarGroup {
+    padding: 0 4px;
+    gap: 2px;
+  }
+
+  .toolbar button,
+  .imageButton {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .editorContent {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .loadingOverlay {
+    span {
+      font-size: 14px;
+    }
+  }
+}
+
+// Темная тема
+@media (prefers-color-scheme: dark) {
+  .editorWrapper {
+    border-color: #444;
+    background: #2d2d2d;
+  }
+
+  .toolbar {
+    background: #3a3a3a;
+    border-bottom-color: #444;
+  }
+
+  .toolbar button,
+  .imageButton {
+    background: #4a4a4a;
+    border-color: #555;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #5a5a5a;
+      border-color: #666;
+    }
+  }
+
+  .editorContent {
+    background: #2d2d2d;
+    color: #fff;
+
+    &:empty:before {
+      color: #888;
+    }
+
+    code {
+      background: #3a3a3a;
+      color: #fff;
+    }
+
+    pre {
+      background: #3a3a3a;
+    }
+
+    blockquote {
+      background: #3a3a3a;
+      border-left-color: #007bff;
+    }
+  }
+
+  .loadingOverlay {
+    background: rgba(45, 45, 45, 0.95);
+    color: #ffffff;
+  }
+
+  .loadingSpinner {
+    border-color: #444;
+    border-top-color: #007bff;
+  }
+}
+
+// Стили для отключенного состояния
+.editorWrapper:has(.editorContent[contenteditable='false']) {
+  opacity: 0.6;
+  cursor: not-allowed;
+
+  .adminBadge {
+    opacity: 0.5;
+  }
+}
+
+// Анимация появления
+.editorWrapper {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Стили для ошибок
+.editorRoot.error {
+  .editorWrapper {
+    border: 2px solid #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+  }
+}

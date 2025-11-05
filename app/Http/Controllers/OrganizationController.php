@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Dashboard;
 
 use App\Models\Organization;
 use App\Http\Resources\OrganizationResource;
@@ -11,6 +11,8 @@ use App\Http\Requests\Organization\UpdateOrganizationRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use App\Services\ImageProcessingService;
+
+use App\Http\Controllers\Controller;
 
 class OrganizationController extends Controller
 {

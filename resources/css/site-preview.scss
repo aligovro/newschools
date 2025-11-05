@@ -1,10 +1,8 @@
 /* Styles for public site rendering (SSR-friendly) */
+@import 'variables';
+
 .site-preview {
     min-height: 100vh;
-    font-family:
-        system-ui,
-        -apple-system,
-        sans-serif;
 }
 
 .site-header {
@@ -33,6 +31,54 @@
 
 .site-type--main {
     .site-header {
+    }
+}
+
+.hero-texts {
+    h2 {
+        font-weight: 700;
+        font-size: 40px;
+        line-height: 120%;
+        color: #fff;
+    }
+    p {
+        display: inline-block;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 120%;
+        color: #fff;
+    }
+    a {
+        border-radius: 10px;
+        padding: 19px 35px;
+        height: 60px;
+        background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 120%;
+        text-align: center;
+        color: #fff;
+        margin-right: 30px;
+    }
+}
+
+.main-menu ul li a {
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 120%;
+    color: $dark-color;
+}
+
+.page-type--home {
+    .main-menu ul li a {
+        color: #fff;
+    }
+    .main-menu ul li a:hover {
+        color: $dark-color;
+    }
+    .btn-outline-primary {
+        color: #fff;
     }
 }
 

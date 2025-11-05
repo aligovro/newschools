@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+// Import variables
+@import 'variables';
+
 // Import widget styles
 @import './form-widget.scss';
 @import './form-styling-additional.scss';
@@ -30,7 +33,9 @@
     }
 
     body {
-        @apply bg-white text-gray-900;
+        @apply bg-white;
+        color: $dark-color;
+        font-family: var(--font-family, Montserrat, sans-serif);
     }
 
     /* Sidebar CSS variables */
@@ -39,6 +44,8 @@
         --sidebar-width-icon: 3rem;
         /* Accent gradient for main site buttons */
         --accent-gradient: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+        /* Font family */
+        --font-family: Montserrat, sans-serif;
     }
 }
 

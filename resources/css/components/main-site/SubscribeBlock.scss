@@ -1,4 +1,6 @@
 // Стили для компонента SubscribeBlock
+@import '../../variables';
+
 .subscribe-block__loader {
     border-color: rgba(255, 255, 255, 0.2);
     border-top-color: white;
@@ -35,7 +37,7 @@
     font-weight: 600;
     font-size: 16px;
     line-height: 120%;
-    color: #1a1a1a;
+    color: $dark-color;
 }
 
 .subscribe-block__search-input {

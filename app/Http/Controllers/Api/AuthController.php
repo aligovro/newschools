@@ -61,11 +61,12 @@ class AuthController extends Controller
             }
         }
 
-        $token = $user->createToken('api')->plainTextToken;
+        // Авторизуем пользователя через веб-сессию
+        Auth::login($user);
 
         return response()->json([
-            'token' => $token,
             'user' => $user->load(['roles', 'permissions', 'organizations']),
+            'success' => true,
         ], 201);
     }
 
@@ -83,27 +84,30 @@ class AuthController extends Controller
             ], 422);
         }
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        // Используем веб-авторизацию как на странице /login
+        /** @var User|null $user */
+        $user = Auth::getProvider()->retrieveByCredentials($request->only('email', 'password'));
+
+        if (!$user || !Auth::getProvider()->validateCredentials($user, $request->only('password'))) {
             return response()->json(['message' => 'Неверные учетные данные'], 401);
         }
 
-        /** @var User $user */
-        $user = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('api')->plainTextToken;
+        // Авторизуем пользователя через веб-сессию
+        Auth::login($user, $request->boolean('remember', false));
+        $request->session()->regenerate();
 
         return response()->json([
-            'token' => $token,
             'user' => $user->load(['roles', 'permissions', 'organizations']),
+            'success' => true,
         ]);
     }
 
     public function logout(Request $request): JsonResponse
     {
-        /** @var User $user */
-        $user = $request->user();
-        if ($user) {
-            $user->currentAccessToken()?->delete();
-        }
+        // Используем веб-выход как на странице logout
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
         return response()->json(['success' => true]);
     }
 

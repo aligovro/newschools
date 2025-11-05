@@ -1,4 +1,4 @@
-import { RichTextEditor } from '@/components/common/RichTextEditor';
+import RichTextEditor from '@/components/RichTextEditor';
 import { ColorPicker } from '@/components/ui/ColorPicker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -130,26 +130,41 @@ export const TextWidgetModal: React.FC<TextWidgetModalProps> = ({
     const isContentEditingRef = React.useRef(false);
     const contentInitializedRef = React.useRef(false);
     const lastWidgetIdRef = React.useRef<string>(widget.id);
+    const lastContentRef = React.useRef<string>('');
 
-    // Сбрасываем инициализацию при смене виджета
+    // Сбрасываем инициализацию при смене виджета или изменении контента извне
     React.useEffect(() => {
+        const currentContent = (fromCfg.content as string) || '';
+        
+        // Если виджет изменился, сбрасываем флаги
         if (lastWidgetIdRef.current !== widget.id) {
             lastWidgetIdRef.current = widget.id;
             contentInitializedRef.current = false;
             isContentEditingRef.current = false;
+            lastContentRef.current = '';
         }
-    }, [widget.id]);
+        
+        // Если контент изменился извне (не от пользователя), сбрасываем флаг инициализации
+        // чтобы загрузить новый контент в редактор
+        if (lastContentRef.current !== currentContent && !isContentEditingRef.current) {
+            contentInitializedRef.current = false;
+            lastContentRef.current = currentContent;
+        }
+    }, [widget.id, fromCfg.content]);
 
     // Обновляем локальное состояние при изменении fromCfg
     // НЕ обновляем content, если он активно редактируется
     React.useEffect(() => {
-        // Инициализация при первом открытии виджета
+        const currentContent = (fromCfg.content as string) || '';
+        
+        // Инициализация при первом открытии виджета или когда контент изменился извне
         if (!contentInitializedRef.current) {
             contentInitializedRef.current = true;
+            lastContentRef.current = currentContent;
             setFormData((prev) => ({
                 ...prev,
                 title: (fromCfg.title as string) ?? prev.title,
-                content: (fromCfg.content as string) ?? prev.content,
+                content: currentContent,
                 fontSize: (fromCfg.fontSize as string) ?? prev.fontSize,
                 textAlign:
                     (fromCfg.textAlign as 'left' | 'center' | 'right') ??
@@ -177,10 +192,18 @@ export const TextWidgetModal: React.FC<TextWidgetModalProps> = ({
 
         // Обновляем только если контент не редактируется
         if (!isContentEditingRef.current) {
+            // Проверяем, изменился ли контент извне
+            if (lastContentRef.current !== currentContent) {
+                lastContentRef.current = currentContent;
+                // Сбрасываем флаг инициализации, чтобы загрузить новый контент
+                contentInitializedRef.current = false;
+            }
+            
             setFormData((prev) => ({
                 ...prev,
                 title: (fromCfg.title as string) ?? prev.title,
-                // content не обновляем если активно редактируется
+                // content обновляем только если не редактируется
+                content: isContentEditingRef.current ? prev.content : currentContent,
                 fontSize: (fromCfg.fontSize as string) ?? prev.fontSize,
                 textAlign:
                     (fromCfg.textAlign as 'left' | 'center' | 'right') ??
@@ -250,9 +273,15 @@ export const TextWidgetModal: React.FC<TextWidgetModalProps> = ({
             <div>
                 <Label htmlFor="text_content">Содержимое</Label>
                 <RichTextEditor
-                    valueHTML={(formData.content as string) || ''}
-                    onChangeHTML={(html) => updateFormData('content', html)}
-                    minHeight={220}
+                    value={(formData.content as string) || ''}
+                    onChange={(html) => updateFormData('content', html)}
+                    height={220}
+                    placeholder="Введите содержимое текстового блока..."
+                    level="simple"
+                    showHtmlToggle={true}
+                    showTemplates={false}
+                    showWordCount={true}
+                    showImageUpload={false}
                 />
             </div>
 

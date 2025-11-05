@@ -1,0 +1,789 @@
+.editorRoot {
+    position: relative;
+    width: 100%;
+    margin: 16px 0;
+}
+
+.editorWrapper {
+    position: relative;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+
+    &:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    &:focus-within {
+        border-color: #1976d2;
+        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+    }
+}
+
+.adminBadge {
+    position: absolute;
+    top: -8px;
+    right: 16px;
+    z-index: 10;
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+    backdrop-filter: blur(8px);
+
+    span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        &::before {
+            content: '👑';
+            font-size: 12px;
+        }
+    }
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    border-bottom: 1px solid #e0e0e0;
+    gap: 8px;
+    min-height: 56px;
+}
+
+.toolbarGroup {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(4px);
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.9);
+    }
+}
+
+.toolbarButton {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    color: #424242 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+
+    &:hover:not(:disabled) {
+        background-color: rgba(25, 118, 210, 0.08) !important;
+        color: #1976d2 !important;
+        transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+        background-color: rgba(25, 118, 210, 0.12) !important;
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.4 !important;
+        cursor: not-allowed !important;
+    }
+
+    &:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    &.active {
+        background-color: rgba(25, 118, 210, 0.12) !important;
+        color: #1976d2 !important;
+        box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2) !important;
+    }
+}
+
+.imageButton {
+    cursor: pointer;
+    position: relative;
+
+    .toolbarButton {
+        &:hover:not(:disabled) {
+            background-color: rgba(76, 175, 80, 0.08) !important;
+            color: #4caf50 !important;
+        }
+    }
+}
+
+.editorContent {
+    padding: 20px;
+    font-family:
+        'Roboto',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Oxygen,
+        Ubuntu,
+        Cantarell,
+        sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #212121;
+    outline: none;
+    overflow-y: auto;
+    background: #ffffff;
+    min-height: 200px;
+    transition: all 0.3s ease;
+
+    &:empty:before {
+        content: attr(data-placeholder);
+        color: #9e9e9e;
+        font-style: italic;
+        pointer-events: none;
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    // Стили для контента
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        margin: 24px 0 12px 0;
+        font-weight: 500;
+        color: #1976d2;
+        line-height: 1.3;
+    }
+
+    h1 {
+        font-size: 28px;
+        font-weight: 300;
+    }
+    h2 {
+        font-size: 24px;
+        font-weight: 400;
+    }
+    h3 {
+        font-size: 20px;
+        font-weight: 500;
+    }
+    h4 {
+        font-size: 18px;
+    }
+    h5 {
+        font-size: 16px;
+    }
+    h6 {
+        font-size: 14px;
+    }
+
+    p {
+        margin: 12px 0;
+        line-height: 1.7;
+    }
+
+    // Стили для цветного текста
+    span[style*='color'] {
+        display: inline;
+    }
+
+    ul,
+    ol {
+        margin: 16px 0;
+        padding-left: 32px;
+        display: block;
+        list-style-position: outside;
+    }
+
+    ul {
+        list-style-type: disc;
+    }
+
+    ol {
+        list-style-type: decimal;
+    }
+
+    li {
+        margin: 6px 0;
+        line-height: 1.6;
+        display: list-item;
+        list-style-position: outside;
+    }
+
+    // Убираем стандартные стили браузера для списков
+    ul ul,
+    ol ol,
+    ul ol,
+    ol ul {
+        margin: 8px 0;
+        padding-left: 24px;
+    }
+
+    ul ul {
+        list-style-type: circle;
+    }
+
+    ul ul ul {
+        list-style-type: square;
+    }
+
+    // Принудительные стили для contentEditable списков
+    &[contenteditable='true'] {
+        ul {
+            list-style: disc outside none !important;
+            list-style-type: disc !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+        }
+
+        ol {
+            list-style: decimal outside none !important;
+            list-style-type: decimal !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+        }
+
+        li {
+            list-style: inherit !important;
+            display: list-item !important;
+            position: relative !important;
+        }
+
+        // Дополнительная стилизация для лучшего отображения
+        ul li::marker {
+            content: '• ' !important;
+        }
+
+        ol li::marker {
+            content: counter(list-item) '. ' !important;
+        }
+    }
+
+    // Стили для ссылок
+    a {
+        color: #1976d2;
+        text-decoration: underline;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: #1565c0;
+            text-decoration: underline;
+        }
+
+        &:visited {
+            color: #7b1fa2;
+        }
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 16px 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        image-rendering: auto;
+        user-select: none !important;
+        -webkit-user-drag: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        -webkit-user-select: none !important;
+        -khtml-user-select: none !important;
+        -webkit-touch-callout: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        pointer-events: auto !important;
+        -webkit-user-modify: none !important;
+        -moz-user-modify: none !important;
+        -webkit-user-focus: none !important;
+        -webkit-user-input: none !important;
+
+        &:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        // Маркеры для изменения размера
+        &.resizable {
+            resize: both;
+            overflow: hidden;
+            border: 2px dashed transparent;
+            transition: border-color 0.2s ease;
+
+            &:hover {
+                border-color: #1976d2;
+            }
+
+            &:active {
+                border-color: #1565c0;
+            }
+        }
+
+        // Стили для выбранного изображения
+        &.selected {
+            border: 3px solid #1976d2 !important;
+            outline: none;
+            position: relative;
+        }
+    }
+
+    a {
+        color: #1976d2;
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: all 0.2s ease;
+
+        &:hover {
+            color: #1565c0;
+            border-bottom-color: #1976d2;
+        }
+    }
+
+    blockquote {
+        margin: 24px 0;
+        padding: 16px 20px;
+        border-left: 4px solid #1976d2;
+        background: linear-gradient(135deg, #f8f9fa 0%, #f0f0f0 100%);
+        font-style: italic;
+        border-radius: 0 8px 8px 0;
+        position: relative;
+
+        &::before {
+            content: '"';
+            font-size: 48px;
+            color: #1976d2;
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            opacity: 0.3;
+        }
+    }
+
+    // финальные стили для code заданы ниже, повторное объявление убрано
+
+    hr {
+        border: none;
+        height: 2px;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            #e0e0e0 50%,
+            transparent 100%
+        );
+        margin: 32px 0;
+    }
+
+    code {
+        background: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Roboto Mono', 'Courier New', monospace;
+        font-size: 13px;
+        color: #d32f2f;
+        border: 1px solid #e0e0e0;
+    }
+
+    pre {
+        background: #f5f5f5;
+        padding: 16px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 20px 0;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+        code {
+            background: none;
+            padding: 0;
+            border: none;
+            color: #424242;
+        }
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 20px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    th,
+    td {
+        border: 1px solid #e0e0e0;
+        padding: 12px;
+        text-align: left;
+    }
+
+    th {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+        color: white;
+        font-weight: 500;
+    }
+
+    tr:nth-child(even) {
+        background: #f8f9fa;
+    }
+
+    tr:hover {
+        background: rgba(25, 118, 210, 0.04);
+    }
+
+    // Стили всплывающей подсказки изображения
+    :global(.image-tooltip) {
+        position: absolute;
+        background: rgba(25, 118, 210, 0.95);
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        z-index: 10000;
+        pointer-events: none;
+        white-space: nowrap;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(8px);
+        max-width: 220px;
+    }
+    :global(.image-tooltip__title) {
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    :global(.image-tooltip__line) {
+        font-size: 11px;
+        opacity: 0.9;
+    }
+
+    // Обертка изображения с маркерами
+    :global(.rte-image) {
+        position: relative;
+        display: inline-block;
+        line-height: 0;
+        user-select: none !important;
+        -webkit-user-drag: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        -webkit-user-select: none !important;
+        -khtml-user-select: none !important;
+        -webkit-touch-callout: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        pointer-events: auto !important;
+        -webkit-user-modify: none !important;
+        -moz-user-modify: none !important;
+        -webkit-user-focus: none !important;
+        -webkit-user-input: none !important;
+    }
+
+    // (кнопку настроек перенесли во внешний overlay)
+}
+
+// HTML режим
+.editorContent.htmlMode {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.wordCount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 12px;
+    color: #757575;
+    margin-left: auto;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+
+    span {
+        margin: 1px 0;
+    }
+}
+
+.colorPalette {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 12px;
+    max-width: 200px;
+}
+
+.colorButton {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        transform: scale(1.1);
+        border-color: #1976d2;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+}
+
+.loadingOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+}
+
+.loadingSpinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #1976d2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+// Мобильные стили
+@media (max-width: 768px) {
+    .editorRoot {
+        margin: 12px 0;
+    }
+
+    .editorWrapper {
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+
+        &:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
+    }
+
+    .adminBadge {
+        top: -6px;
+        right: 12px;
+        padding: 4px 12px;
+        font-size: 10px;
+        border-radius: 12px;
+    }
+
+    .toolbar {
+        padding: 8px 12px;
+        gap: 4px;
+        min-height: 48px;
+    }
+
+    .toolbarGroup {
+        padding: 0 4px;
+        gap: 2px;
+    }
+
+    .toolbarButton {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 18px !important;
+    }
+
+    .editorContent {
+        padding: 16px;
+        font-size: 16px; // Увеличиваем для лучшего UX на мобильных
+    }
+
+    .wordCount {
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+
+    .colorPalette {
+        grid-template-columns: repeat(4, 1fr);
+        max-width: 160px;
+    }
+
+    .colorButton {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+// Стили для отключенного состояния
+.editorWrapper:has(.editorContent[contenteditable='false']) {
+    opacity: 0.6;
+    cursor: not-allowed;
+
+    .adminBadge {
+        opacity: 0.5;
+    }
+}
+
+// Анимация появления
+.editorWrapper {
+    animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Стили для ошибок
+.editorRoot.error {
+    .editorWrapper {
+        border: 2px solid #d32f2f;
+        box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.2);
+    }
+}
+
+// Скрытый input для загрузки файлов
+.hiddenFileInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+// Глобальное отключение drag для всего редактора
+.editorRoot {
+    :global {
+        * {
+            -webkit-user-drag: none !important;
+            -khtml-user-drag: none !important;
+            -moz-user-drag: none !important;
+            -o-user-drag: none !important;
+        }
+
+        img {
+            -webkit-user-drag: none !important;
+            -khtml-user-drag: none !important;
+            -moz-user-drag: none !important;
+            -o-user-drag: none !important;
+            pointer-events: auto !important;
+        }
+
+        .rte-image {
+            -webkit-user-drag: none !important;
+            -khtml-user-drag: none !important;
+            -moz-user-drag: none !important;
+            -o-user-drag: none !important;
+            pointer-events: auto !important;
+        }
+    }
+}
+
+// Видео и таблицы (перенос инлайн-стилей)
+.rte-video {
+    margin: 16px 0;
+    text-align: center;
+}
+
+.rte-video-iframe {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.rte-video-box {
+    margin: 16px 0;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.rte-video-title {
+    margin: 0 0 8px 0;
+}
+
+.rte-video-link {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.rte-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+}
+
+.rte-table th,
+.rte-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+// Стили для обтекания изображений в редакторе
+.editorContent {
+    :global {
+        .image-align-left {
+            float: left !important;
+            margin-right: 16px !important;
+            margin-bottom: 16px !important;
+        }
+
+        .image-align-right {
+            float: right !important;
+            margin-left: 16px !important;
+            margin-bottom: 16px !important;
+        }
+
+        .image-align-center {
+            display: block !important;
+            margin: 16px auto !important;
+            float: none !important;
+        }
+
+        .image-align-none {
+            float: none !important;
+            display: inline-block !important;
+        }
+    }
+}

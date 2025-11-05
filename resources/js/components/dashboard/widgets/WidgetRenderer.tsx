@@ -81,6 +81,50 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
     }) => {
         // Мемоизируем рендер виджета
         const renderedWidget = useMemo(() => {
+            // Специальный превью для текстового виджета (плейсхолдер)
+            if (previewMode && widget.widget_slug === 'text') {
+                const cfg = widget.configs
+                    ? (() => {
+                          const config: Record<string, unknown> = {};
+                          widget.configs.forEach((item) => {
+                              let value: unknown = item.config_value;
+                              switch (item.config_type) {
+                                  case 'number':
+                                      value = parseFloat(value as string);
+                                      break;
+                                  case 'boolean':
+                                      value =
+                                          value === '1' || value === 'true';
+                                      break;
+                                  case 'json':
+                                      try {
+                                          value = JSON.parse(value as string);
+                                      } catch {
+                                          // ignore
+                                      }
+                                      break;
+                                  default:
+                                      break;
+                              }
+                              config[item.config_key] = value;
+                          });
+                          return config;
+                      })()
+                    : widget.config || {};
+                const title = (cfg.title as string) || widget.name || 'Текстовый блок';
+
+                return (
+                    <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                        <div className="text-2xl font-bold text-gray-800">
+                            {title}
+                        </div>
+                        <div className="mt-1 text-sm text-gray-500">
+                            {widget.widget_slug}
+                        </div>
+                    </div>
+                );
+            }
+
             // Специальный превью для Hero виджета
             if (
                 previewMode &&

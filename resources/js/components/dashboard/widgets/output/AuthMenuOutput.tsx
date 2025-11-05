@@ -9,7 +9,10 @@ export const AuthMenuOutput: React.FC<WidgetOutputProps> = ({
 }) => {
     const config = (widget?.config || {}) as Record<string, unknown>;
     return (
-        <div className={`auth-menu-output ${className || ''}`} style={style}>
+        <div
+            className={`auth-menu-widget auth-menu-output ${className || ''}`}
+            style={style}
+        >
             <AuthMenuWidget config={config} />
         </div>
     );

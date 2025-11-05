@@ -200,20 +200,20 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
               {
                   icon: <PeopleIcon />,
                   value: formatNumber(stats.supporters_count),
-                  label: 'Поддерживают',
-                  subtitle: 'свои школы',
+                  label: 'людей',
+                  subtitle: 'Поддерживают свои школы',
               },
               {
                   icon: <CurrencyIcon />,
                   value: formatAmount(stats.total_donated),
-                  label: 'Сумма поддержки',
-                  subtitle: 'бывшими выпускниками',
+                  label: '',
+                  subtitle: 'Сумма поддержки бывшими выпускниками',
               },
               {
                   icon: <LightbulbIcon />,
                   value: formatNumber(stats.projects_count),
-                  label: 'Реализовали',
-                  subtitle: 'бывшие выпускники',
+                  label: 'проектов',
+                  subtitle: 'Реализовали бывшие выпускники',
               },
           ];
 
@@ -231,22 +231,36 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
                         {statsItems.map((item, index) => (
                             <div
                                 key={index}
-                                className="rounded-lg bg-white p-6 text-center"
+                                className="flex items-end justify-between rounded-lg bg-white p-6"
                             >
+                                <div className="flex-1">
+                                    <div
+                                        className="mb-2"
+                                        style={{
+                                            fontWeight: 700,
+                                            fontSize: '28px',
+                                            lineHeight: '120%',
+                                            color: '#1a1a1a',
+                                        }}
+                                    >
+                                        {item.value} {item.label}
+                                    </div>
+                                    <span
+                                        style={{
+                                            fontWeight: 500,
+                                            fontSize: '18px',
+                                            lineHeight: '120%',
+                                            color: '#1a1a1a',
+                                        }}
+                                    >
+                                        {item.subtitle}
+                                    </span>
+                                </div>
                                 {showIcons && (
-                                    <div className="mb-4 flex justify-center text-blue-600">
+                                    <div className="ml-4 flex-shrink-0 text-blue-600">
                                         {item.icon}
                                     </div>
                                 )}
-                                <div className="mb-2 text-3xl font-bold text-gray-900">
-                                    {item.value}
-                                </div>
-                                <div className="mb-1 text-lg font-medium text-gray-800">
-                                    {item.label}
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                    {item.subtitle}
-                                </div>
                             </div>
                         ))}
                     </div>

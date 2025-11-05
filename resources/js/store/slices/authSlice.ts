@@ -36,13 +36,18 @@ export const loginUser = createAsyncThunk(
         { rejectWithValue },
     ) => {
         try {
-            const response = await axios.post('/api/auth/login', credentials);
-            const { token, user } = response.data;
+            // Используем веб-авторизацию через сессии
+            const response = await axios.post('/api/auth/login', credentials, {
+                withCredentials: true, // Важно для работы с cookies/сессиями
+            });
+            const { user } = response.data;
 
-            // Сохраняем токен в localStorage
-            localStorage.setItem('token', token);
+            // После авторизации получаем пользователя из сессии
+            const userResponse = await axios.get('/api/auth/me', {
+                withCredentials: true,
+            });
 
-            return { token, user };
+            return { user: userResponse.data || user };
         } catch (error: any) {
             return rejectWithValue(
                 error.response?.data?.message || 'Ошибка входа',
@@ -65,14 +70,18 @@ export const registerUser = createAsyncThunk(
         { rejectWithValue },
     ) => {
         try {
-            const response = await axios.post('/api/auth/register', userData);
-            const { token, user } = response.data;
+            // Используем веб-авторизацию через сессии
+            const response = await axios.post('/api/auth/register', userData, {
+                withCredentials: true, // Важно для работы с cookies/сессиями
+            });
+            const { user } = response.data;
 
-            localStorage.setItem('token', token);
-            // Устанавливаем заголовок авторизации по умолчанию
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            // После регистрации получаем пользователя из сессии
+            const userResponse = await axios.get('/api/auth/me', {
+                withCredentials: true,
+            });
 
-            return { token, user };
+            return { user: userResponse.data || user };
         } catch (error: any) {
             return rejectWithValue(
                 error.response?.data?.message || 'Ошибка регистрации',
@@ -85,7 +94,13 @@ export const logoutUser = createAsyncThunk(
     'auth/logout',
     async (_, { rejectWithValue }) => {
         try {
-            await axios.post('/api/auth/logout');
+            await axios.post(
+                '/api/auth/logout',
+                {},
+                {
+                    withCredentials: true, // Важно для работы с cookies/сессиями
+                },
+            );
             localStorage.removeItem('token');
             return true;
         } catch (error: any) {
@@ -99,20 +114,13 @@ export const fetchUser = createAsyncThunk(
     'auth/fetchUser',
     async (_, { rejectWithValue }) => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Токен не найден');
-            }
-
-            const response = await axios.get('/api/user', {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+            // Получаем пользователя из веб-сессии
+            const response = await axios.get('/api/auth/me', {
+                withCredentials: true, // Важно для работы с cookies/сессиями
             });
 
             return response.data;
         } catch (error: any) {
-            localStorage.removeItem('token');
             return rejectWithValue(
                 error.response?.data?.message ||
                     'Ошибка получения данных пользователя',
@@ -129,14 +137,9 @@ const authSlice = createSlice({
         clearError: (state) => {
             state.error = null;
         },
-        setCredentials: (
-            state,
-            action: PayloadAction<{ token: string; user: User }>,
-        ) => {
-            state.token = action.payload.token;
+        setCredentials: (state, action: PayloadAction<{ user: User }>) => {
             state.user = action.payload.user;
             state.isAuthenticated = true;
-            localStorage.setItem('token', action.payload.token);
         },
     },
     extraReducers: (builder) => {
@@ -150,11 +153,8 @@ const authSlice = createSlice({
                 state.isLoading = false;
                 state.isAuthenticated = true;
                 state.user = action.payload.user;
-                state.token = action.payload.token;
+                state.token = null; // Токены больше не используются
                 state.error = null;
-                // Устанавливаем заголовок авторизации по умолчанию для axios
-                (axios.defaults.headers.common as any)['Authorization'] =
-                    `Bearer ${action.payload.token}`;
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.isLoading = false;
@@ -174,10 +174,8 @@ const authSlice = createSlice({
                 state.isLoading = false;
                 state.isAuthenticated = true;
                 state.user = action.payload.user;
-                state.token = action.payload.token;
+                state.token = null; // Токены больше не используются
                 state.error = null;
-                (axios.defaults.headers.common as any)['Authorization'] =
-                    `Bearer ${action.payload.token}`;
             })
             .addCase(registerUser.rejected, (state, action) => {
                 state.isLoading = false;
@@ -193,8 +191,6 @@ const authSlice = createSlice({
             state.user = null;
             state.token = null;
             state.error = null;
-            // Сбрасываем заголовок авторизации
-            delete (axios.defaults.headers.common as any)['Authorization'];
         });
 
         // Fetch User

@@ -40,11 +40,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface SettingsPageProps {
     globalSettings?: any;
     userSettings?: any;
+    mainSiteId?: number | null;
 }
 
 export default function SettingsPage({
     globalSettings,
     userSettings,
+    mainSiteId,
 }: SettingsPageProps) {
     const settingsCategories = [
         {
@@ -67,7 +69,7 @@ export default function SettingsPage({
             title: 'Конструктор главного сайта',
             description: 'Редактирование и настройка главного сайта',
             icon: Globe,
-            href: '/dashboard/main-site/builder',
+            href: mainSiteId ? `/dashboard/sites/${mainSiteId}/builder` : '/dashboard/sites',
             color: 'bg-green-500',
             status: 'active',
             features: [

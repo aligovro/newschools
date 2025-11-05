@@ -24,10 +24,13 @@ use App\Http\Controllers\Api\AuthController;
 // Получение текущего пользователя для API
 Route::get('/user', [AuthController::class, 'me'])->middleware('auth:sanctum');
 
-// Auth (Sanctum tokens)
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+// Auth endpoints (используют веб-сессии)
+Route::middleware('web')->group(function () {
+    Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/me', [AuthController::class, 'me']);
+});
 
 /*
 |--------------------------------------------------------------------------

@@ -69,7 +69,6 @@ class SitePageController extends Controller
             'seo_description' => 'nullable|string|max:500',
             'seo_keywords' => 'nullable|string|max:255',
             'seo_image' => 'nullable|string|max:255',
-            'featured_image' => 'nullable|string|max:255',
             'parent_id' => 'nullable|exists:organization_pages,id',
             'is_homepage' => 'boolean',
             'published_at' => 'nullable|date',
@@ -158,7 +157,6 @@ class SitePageController extends Controller
             'seo_description' => 'nullable|string|max:500',
             'seo_keywords' => 'nullable|string|max:255',
             'seo_image' => 'nullable|string|max:255',
-            'featured_image' => 'nullable|string|max:255',
             'parent_id' => [
                 'nullable',
                 'exists:organization_pages,id',

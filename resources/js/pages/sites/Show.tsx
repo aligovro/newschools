@@ -1,227 +1,581 @@
-import SliderDisplay from '@/components/sliders/SliderDisplay';
-import { Head } from '@inertiajs/react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, router } from '@inertiajs/react';
+import {
+    ArrowLeft,
+    Edit,
+    FileText,
+    Globe,
+    Home,
+    Plus,
+    Search,
+    Settings,
+    Wrench,
+} from 'lucide-react';
+import { useState } from 'react';
 
 interface Site {
     id: number;
     name: string;
+    slug: string;
     description?: string;
-    logo_url?: string;
-    favicon_url?: string;
-    theme_config: any;
+    template: string;
+    site_type: string;
+    status: string;
+    is_public: boolean;
     is_maintenance_mode: boolean;
-    maintenance_message?: string;
+    logo?: string;
+    favicon?: string;
+    created_at: string;
+    updated_at: string;
+    published_at?: string;
+    organization?: {
+        id: number;
+        name: string;
+        slug: string;
+    };
+    domain?: {
+        id: number;
+        domain: string;
+        custom_domain?: string;
+    };
+    pages_count: number;
+    widgets_count: number;
 }
 
 interface Page {
     id: number;
     title: string;
-    content: string;
-    template: string;
-    layout_config: any;
-    content_blocks: any[];
-    featured_image_url?: string;
+    slug: string;
+    excerpt?: string;
+    status: string;
     is_homepage: boolean;
-}
-
-interface NavigationItem {
+    is_public: boolean;
+    show_in_navigation: boolean;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+    parent?: {
     id: number;
     title: string;
-    url: string;
-    children: NavigationItem[];
-}
-
-interface Slider {
-    id: number;
-    name: string;
-    type: string;
-    position: string;
-    settings: any;
-    slides: any[];
+        slug: string;
+    };
 }
 
 interface Props {
     site: Site;
-    homepage: Page;
-    navigation: NavigationItem[];
-    sliders: Slider[];
+    pages: {
+        data: Page[];
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        links: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
+    };
+    pageFilters: {
+        page_search?: string;
+        page_status?: string;
+        page_per_page?: string;
+    };
 }
 
-export default function SiteShow({
-    site,
-    homepage,
-    navigation,
-    sliders,
-}: Props) {
-    if (site.is_maintenance_mode) {
+export default function SiteShow({ site, pages, pageFilters }: Props) {
+    const [pageSearch, setPageSearch] = useState(
+        pageFilters.page_search || '',
+    );
+    const [pageStatus, setPageStatus] = useState(
+        pageFilters.page_status || 'all',
+    );
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Dashboard',
+            href: '/dashboard',
+        },
+        {
+            title: 'Сайты',
+            href: '/dashboard/sites',
+        },
+        {
+            title: site.name,
+        },
+    ];
+
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'published':
+                return <Badge variant="default">Опубликован</Badge>;
+            case 'draft':
+                return <Badge variant="secondary">Черновик</Badge>;
+            case 'archived':
+                return <Badge variant="destructive">Архив</Badge>;
+            default:
+                return <Badge variant="outline">{status}</Badge>;
+        }
+    };
+
+    const handlePageSearch = () => {
+        router.get(`/dashboard/sites/${site.id}`, {
+            page_search: pageSearch,
+            page_status: pageStatus === 'all' ? '' : pageStatus,
+            page_per_page: pageFilters.page_per_page || '10',
+        });
+    };
+
+    const handlePageReset = () => {
+        setPageSearch('');
+        setPageStatus('all');
+        router.get(`/dashboard/sites/${site.id}`);
+    };
+
+    const getPageStatusBadge = (status: string) => {
+        switch (status) {
+            case 'published':
+                return <Badge variant="default">Опубликована</Badge>;
+            case 'draft':
+                return <Badge variant="secondary">Черновик</Badge>;
+            case 'private':
+                return <Badge variant="outline">Приватная</Badge>;
+            default:
+                return <Badge variant="outline">{status}</Badge>;
+        }
+    };
+
         return (
-            <>
-                <Head title={`${site.name} - Обслуживание`} />
-                <div className="flex min-h-screen items-center justify-center bg-gray-100">
-                    <div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-lg">
-                        <div className="mb-6">
-                            {site.logo_url && (
-                                <img
-                                    src={site.logo_url}
-                                    alt={site.name}
-                                    className="mx-auto h-16 w-16 object-contain"
-                                />
-                            )}
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={`${site.name} - Сайт`} />
+
+            <div className="space-y-6 p-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                        <Link href="/dashboard/sites">
+                            <Button variant="ghost" size="sm">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Назад
+                            </Button>
+                        </Link>
+                        <div>
+                            <h1 className="text-3xl font-bold">{site.name}</h1>
+                            <p className="text-muted-foreground">
+                                {site.description || 'Сайт организации'}
+                            </p>
                         </div>
-                        <h1 className="mb-4 text-2xl font-bold text-gray-900">
-                            {site.name}
-                        </h1>
-                        <p className="text-gray-600">
-                            {site.maintenance_message ||
-                                'Сайт временно недоступен. Ведутся технические работы.'}
-                        </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Link href={`/dashboard/sites/${site.id}/builder`}>
+                            <Button variant="outline">
+                                <Wrench className="mr-2 h-4 w-4" />
+                                Конструктор
+                            </Button>
+                        </Link>
+                        <Link href={`/dashboard/sites/${site.id}/pages`}>
+                            <Button variant="outline">
+                                <FileText className="mr-2 h-4 w-4" />
+                                Страницы
+                            </Button>
+                        </Link>
+                        <Link href={`/dashboard/sites/${site.id}/pages/create`}>
+                            <Button>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Создать страницу
+                            </Button>
+                        </Link>
                     </div>
                 </div>
-            </>
-        );
-    }
 
-    return (
-        <>
-            <Head title={homepage.title} />
+                {/* Site Info Cards */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                Статус
+                            </CardTitle>
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            {getStatusBadge(site.status)}
+                            {site.is_maintenance_mode && (
+                                <Badge variant="destructive" className="ml-2">
+                                    Тех. работы
+                                </Badge>
+                            )}
+                        </CardContent>
+                    </Card>
 
-            <div className="min-h-screen bg-white">
-                {/* Header */}
-                <header className="border-b bg-white shadow-sm">
-                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                        <div className="flex h-16 items-center justify-between">
-                            <div className="flex items-center">
-                                {site.logo_url && (
-                                    <img
-                                        src={site.logo_url}
-                                        alt={site.name}
-                                        className="h-8 w-auto"
-                                    />
-                                )}
-                                <h1 className="ml-3 text-xl font-semibold text-gray-900">
-                                    {site.name}
-                                </h1>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                Страниц
+                            </CardTitle>
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {site.pages_count}
                             </div>
+                        </CardContent>
+                    </Card>
 
-                            {/* Navigation */}
-                            <nav className="hidden space-x-8 md:flex">
-                                {navigation.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="group relative"
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                Виджетов
+                            </CardTitle>
+                            <Settings className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {site.widgets_count}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                Тип сайта
+                            </CardTitle>
+                            <Home className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <Badge variant="outline">
+                                {site.site_type === 'main'
+                                    ? 'Главный'
+                                    : 'Организации'}
+                            </Badge>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Site Details */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Site Information */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Информация о сайте</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">
+                                            Название
+                                        </label>
+                                        <p className="text-sm">{site.name}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">
+                                            Slug
+                                        </label>
+                                        <p className="text-sm">/{site.slug}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">
+                                            Шаблон
+                                        </label>
+                                        <p className="text-sm">{site.template}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">
+                                            Публичный
+                                        </label>
+                                        <p className="text-sm">
+                                            {site.is_public ? 'Да' : 'Нет'}
+                                        </p>
+                                    </div>
+                                    {site.organization && (
+                                        <div>
+                                            <label className="text-sm font-medium text-muted-foreground">
+                                                Организация
+                                            </label>
+                                            <p className="text-sm">
+                                                {site.organization.name}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {site.domain && (
+                                        <div>
+                                            <label className="text-sm font-medium text-muted-foreground">
+                                                Домен
+                                            </label>
+                                            <p className="text-sm">
+                                                {site.domain.custom_domain ||
+                                                    site.domain.domain}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                                {site.description && (
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">
+                                            Описание
+                                        </label>
+                                        <p className="text-sm">{site.description}</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Pages Section */}
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle>Страницы сайта</CardTitle>
+                                    <Link
+                                        href={`/dashboard/sites/${site.id}/pages/create`}
                                     >
-                                        <a
-                                            href={item.url}
-                                            className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                                        <Button size="sm">
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Создать
+                                        </Button>
+                                    </Link>
+                            </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {/* Pages Filters */}
+                                <div className="flex gap-2">
+                                    <Input
+                                        placeholder="Поиск страниц..."
+                                        value={pageSearch}
+                                        onChange={(e) =>
+                                            setPageSearch(e.target.value)
+                                        }
+                                        onKeyPress={(e) =>
+                                            e.key === 'Enter' &&
+                                            handlePageSearch()
+                                        }
+                                        className="flex-1"
+                                    />
+                                    <Select
+                                        value={pageStatus}
+                                        onValueChange={setPageStatus}
+                                    >
+                                        <SelectTrigger className="w-40">
+                                            <SelectValue placeholder="Статус" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                Все
+                                            </SelectItem>
+                                            <SelectItem value="published">
+                                                Опубликованы
+                                            </SelectItem>
+                                            <SelectItem value="draft">
+                                                Черновики
+                                            </SelectItem>
+                                            <SelectItem value="private">
+                                                Приватные
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Button
+                                        onClick={handlePageSearch}
+                                        size="sm"
+                                    >
+                                        <Search className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={handlePageReset}
+                                        size="sm"
+                                    >
+                                        Сбросить
+                                    </Button>
+                                </div>
+
+                                {/* Pages List */}
+                                <div className="space-y-2">
+                                    {pages.data.map((page) => (
+                                        <div
+                                            key={page.id}
+                                            className="flex items-center justify-between rounded-lg border p-3"
                                         >
-                                            {item.title}
-                                        </a>
-                                        {item.children.length > 0 && (
-                                            <div className="invisible absolute left-0 z-50 mt-2 w-48 rounded-md bg-white opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:opacity-100">
-                                                <div className="py-1">
-                                                    {item.children.map(
-                                                        (child) => (
-                                                            <a
-                                                                key={child.id}
-                                                                href={child.url}
-                                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                            >
-                                                                {child.title}
-                                                            </a>
-                                                        ),
+                                            <div className="flex items-center space-x-3">
+                                                {page.is_homepage && (
+                                                    <Home className="h-4 w-4 text-primary" />
+                                                )}
+                                                <div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Link
+                                                            href={`/dashboard/sites/${site.id}/pages/${page.id}`}
+                                                            className="font-medium hover:underline"
+                                                        >
+                                                            {page.title}
+                                                        </Link>
+                                                        {getPageStatusBadge(
+                                                            page.status,
+                                                        )}
+                                                        {page.is_homepage && (
+                                                            <Badge variant="default">
+                                                                Главная
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    {page.excerpt && (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {page.excerpt}
+                                                        </p>
                                                     )}
+                                                    <p className="text-xs text-muted-foreground">
+                                                        /{page.slug}
+                                                    </p>
                                                 </div>
                                             </div>
-                                        )}
+                                            <div className="flex items-center space-x-2">
+                                                <Link
+                                                    href={`/dashboard/sites/${site.id}/pages/${page.id}/edit`}
+                                                >
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                            </div>
                                     </div>
                                 ))}
-                            </nav>
                         </div>
+
+                                {/* Empty State */}
+                                {pages.data.length === 0 && (
+                                    <div className="py-8 text-center">
+                                        <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                                        <p className="text-muted-foreground">
+                                            Страницы не найдены
+                                        </p>
                     </div>
-                </header>
-
-                {/* Main Content */}
-                <main>
-                    {/* Hero Sliders */}
-                    <SliderDisplay sliders={sliders} position="hero" />
-
-                    {/* Page Content */}
-                    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                        <div className="prose prose-lg max-w-none">
-                            <h1 className="mb-6 text-3xl font-bold text-gray-900">
-                                {homepage.title}
-                            </h1>
-
-                            {homepage.featured_image_url && (
-                                <img
-                                    src={homepage.featured_image_url}
-                                    alt={homepage.title}
-                                    className="mb-6 h-64 w-full rounded-lg object-cover"
-                                />
-                            )}
-
-                            <div
-                                dangerouslySetInnerHTML={{
-                                    __html: homepage.content,
-                                }}
-                                className="leading-relaxed text-gray-700"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Content Sliders */}
-                    <SliderDisplay sliders={sliders} position="content" />
-                </main>
-
-                {/* Footer */}
-                <footer className="bg-gray-900 text-white">
-                    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                            <div>
-                                <h3 className="mb-4 text-lg font-semibold">
-                                    {site.name}
-                                </h3>
-                                {site.description && (
-                                    <p className="text-gray-300">
-                                        {site.description}
-                                    </p>
                                 )}
-                            </div>
 
-                            <div>
-                                <h4 className="mb-4 text-lg font-semibold">
-                                    Навигация
-                                </h4>
-                                <ul className="space-y-2">
-                                    {navigation.map((item) => (
-                                        <li key={item.id}>
-                                            <a
-                                                href={item.url}
-                                                className="text-gray-300 hover:text-white"
-                                            >
-                                                {item.title}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            <div>
-                                <h4 className="mb-4 text-lg font-semibold">
-                                    Контакты
-                                </h4>
-                                <p className="text-gray-300">
-                                    Свяжитесь с нами для получения
-                                    дополнительной информации
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="mt-8 border-t border-gray-800 pt-8 text-center text-gray-400">
-                            <p>&copy; 2024 {site.name}. Все права защищены.</p>
+                                {/* Pagination */}
+                                {pages.last_page > 1 && (
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-sm text-muted-foreground">
+                                            Показано {pages.data.length} из{' '}
+                                            {pages.total} страниц
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            {pages.links.map((link, index) => (
+                                                <Button
+                                                    key={index}
+                                                    variant={
+                                                        link.active
+                                                            ? 'default'
+                                                            : 'outline'
+                                                    }
+                                                    size="sm"
+                                                    disabled={!link.url}
+                                                    onClick={() => {
+                                                        if (link.url) {
+                                                            window.location.href =
+                                                                link.url;
+                                                        }
+                                                    }}
+                                                >
+                                                    {link.label}
+                                                </Button>
+                                            ))}
                         </div>
                     </div>
-                </footer>
+                                )}
+                            </CardContent>
+                        </Card>
+                            </div>
+
+                    {/* Sidebar */}
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Действия</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2">
+                                <Link
+                                    href={`/dashboard/sites/${site.id}/builder`}
+                                    className="block"
+                                >
+                                    <Button variant="outline" className="w-full">
+                                        <Wrench className="mr-2 h-4 w-4" />
+                                        Открыть конструктор
+                                    </Button>
+                                </Link>
+                                <Link
+                                    href={`/dashboard/sites/${site.id}/pages`}
+                                    className="block"
+                                >
+                                    <Button variant="outline" className="w-full">
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        Все страницы
+                                    </Button>
+                                </Link>
+                                <Link
+                                    href={`/dashboard/sites/${site.id}/pages/create`}
+                                    className="block"
+                                            >
+                                    <Button className="w-full">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Создать страницу
+                                    </Button>
+                                </Link>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Метаданные</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm">
+                            <div>
+                                    <span className="text-muted-foreground">
+                                        Создан:{' '}
+                                    </span>
+                                    {new Date(
+                                        site.created_at,
+                                    ).toLocaleDateString('ru-RU')}
+                            </div>
+                                <div>
+                                    <span className="text-muted-foreground">
+                                        Обновлен:{' '}
+                                    </span>
+                                    {new Date(
+                                        site.updated_at,
+                                    ).toLocaleDateString('ru-RU')}
+                        </div>
+                                {site.published_at && (
+                                    <div>
+                                        <span className="text-muted-foreground">
+                                            Опубликован:{' '}
+                                        </span>
+                                        {new Date(
+                                            site.published_at,
+                                        ).toLocaleDateString('ru-RU')}
+                        </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
             </div>
-        </>
+        </AppLayout>
     );
 }

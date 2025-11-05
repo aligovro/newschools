@@ -37,7 +37,7 @@ interface PageFormData {
     seo_description: string;
     seo_keywords: string;
     seo_image: string;
-    featured_image: string;
+    image?: string;
     parent_id: number | null;
     is_homepage: boolean;
     published_at: string;
@@ -58,7 +58,7 @@ interface PageFormProps {
         seo_description: string;
         seo_keywords: string;
         seo_image: string;
-        featured_image: string;
+        image?: string;
         parent_id: number | null;
         is_homepage: boolean;
         published_at: string | null;
@@ -92,7 +92,7 @@ const PageForm: React.FC<PageFormProps> = ({
             seo_description: page?.seo_description || '',
             seo_keywords: page?.seo_keywords || '',
             seo_image: page?.seo_image || '',
-            featured_image: page?.featured_image || '',
+            image: page?.image || '',
             parent_id: page?.parent_id || null,
             is_homepage: page?.is_homepage || false,
             published_at: page?.published_at || '',
@@ -751,28 +751,28 @@ const PageForm: React.FC<PageFormProps> = ({
                                         </div>
 
                                         <div>
-                                            <Label htmlFor="featured_image">
-                                                Изображение страницы
+                                            <Label htmlFor="image">
+                                                Главное изображение
                                             </Label>
                                             <Input
-                                                id="featured_image"
-                                                value={data.featured_image}
+                                                id="image"
+                                                value={data.image || ''}
                                                 onChange={(e) =>
                                                     setData(
-                                                        'featured_image',
+                                                        'image',
                                                         e.target.value,
                                                     )
                                                 }
-                                                placeholder="URL изображения страницы"
+                                                placeholder="URL главного изображения"
                                                 className={
-                                                    errors.featured_image
+                                                    errors.image
                                                         ? 'border-destructive'
                                                         : ''
                                                 }
                                             />
-                                            {errors.featured_image && (
+                                            {errors.image && (
                                                 <p className="text-destructive mt-1 text-sm">
-                                                    {errors.featured_image}
+                                                    {errors.image}
                                                 </p>
                                             )}
                                         </div>
