@@ -15,7 +15,7 @@ import { ArrowLeft, Edit, Globe, Settings, Shield } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Админ панель',
         href: dashboard().url,
     },
     {

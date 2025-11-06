@@ -181,7 +181,7 @@ export default function OrganizationSiteBuilder({
 
     const breadcrumbs: BreadcrumbItem[] = useMemo(
         () => [
-            { title: 'Dashboard', href: '/dashboard' },
+            { title: 'Админ панель', href: '/dashboard' },
             { title: 'Организации', href: '/dashboard/organizations' },
             isMainSite
                 ? {
@@ -215,7 +215,15 @@ export default function OrganizationSiteBuilder({
                           : `/dashboard/organization/${organization.id}/admin/sites/${site.id}/builder`,
                   },
         ],
-        [organization.id, organization.name, isCreateMode, site.id, site.name, site.site_type, isMainSite],
+        [
+            organization.id,
+            organization.name,
+            isCreateMode,
+            site.id,
+            site.name,
+            site.site_type,
+            isMainSite,
+        ],
     );
 
     // const handleSave = useCallback(async () => { ... }, []) // удалено

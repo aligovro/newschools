@@ -35,11 +35,18 @@
 }
 
 .hero-texts {
+    min-height: 240px;
     h2 {
         font-weight: 700;
         font-size: 40px;
         line-height: 120%;
         color: #fff;
+        max-width: 50%;
+    }
+    .text-content {
+        display: flex;
+        align-items: center;
+        margin-top: 28px;
     }
     p {
         display: inline-block;
@@ -52,7 +59,7 @@
         border-radius: 10px;
         padding: 19px 35px;
         height: 60px;
-        background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+        background: $accent-gradient;
         text-decoration: none;
         font-weight: 600;
         font-size: 16px;
@@ -70,6 +77,15 @@
     color: $dark-color;
 }
 
+.btn-outline-primary {
+    @include button-base;
+    @include button-outline;
+    &:hover {
+        background: $accent-gradient;
+        color: #fff;
+    }
+}
+
 .page-type--home {
     .main-menu ul li a {
         color: #fff;
@@ -77,14 +93,10 @@
     .main-menu ul li a:hover {
         color: $dark-color;
     }
-    .btn-outline-primary {
+    .site-header .btn-outline-primary {
         color: #fff;
     }
-}
-
-/* Responsive adjustments */
-@media (max-width: 1024px) {
-    .grid-cols-1.lg\:grid-cols-4 {
-        grid-template-columns: 1fr;
+    .image-output__caption {
+        color: #fff;
     }
 }

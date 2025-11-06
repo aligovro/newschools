@@ -5,15 +5,15 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 
 use App\Models\Organization;
+use App\Models\User;
 use App\Http\Resources\OrganizationResource;
 use App\Support\InertiaResource;
 use Illuminate\Http\Request;
 use App\Http\Requests\Organization\StoreOrganizationRequest;
 use App\Http\Requests\Organization\UpdateOrganizationRequest;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Log;
 use App\Services\ImageProcessingService;
-
+use App\Services\Organizations\OrganizationSettingsService;
 
 class OrganizationController extends Controller
 {
@@ -111,7 +111,33 @@ class OrganizationController extends Controller
 
     public function show(Organization $organization)
     {
-        $organization->load(['domains', 'members', 'statistics']);
+        $organization->load([
+            'domains',
+            'members',
+            'statistics',
+            'region',
+            'city',
+            'settlement',
+            'director' => function ($query) {
+                $query->whereNull('deleted_at');
+            },
+            'staff' => function ($query) {
+                $query->where('position', '!=', \App\Models\OrganizationStaff::POSITION_DIRECTOR)
+                    ->whereNull('deleted_at')
+                    ->orderBy('position')
+                    ->orderBy('last_name');
+            },
+            'projects' => function ($query) {
+                $query->select('id', 'organization_id', 'target_amount', 'collected_amount');
+            }
+        ]);
+
+        // Подсчитываем агрегаты
+        $organization->loadCount([
+            'members as members_count',
+            'donations as donations_count',
+        ]);
+        $organization->loadSum('donations', 'amount');
 
         return Inertia::render('organizations/OrganizationShowPage', [
             'organization' => (new OrganizationResource($organization))->toArray(request()),
@@ -120,6 +146,7 @@ class OrganizationController extends Controller
 
     public function edit(Organization $organization)
     {
+        // Загружаем связи
         $organization->load(['region', 'city', 'settlement']);
 
         // Получаем справочные данные
@@ -141,10 +168,27 @@ class OrganizationController extends Controller
         ];
 
         // Готовим настройки организации (для предзаполнения платежных настроек и т.п.)
-        $orgSettings = app(\App\Services\OrganizationSettingsService::class)->getSettings($organization);
+        $orgSettings = app(OrganizationSettingsService::class)->getSettings($organization);
+
+        // Получаем данные организации через Resource
+        $organizationData = (new OrganizationResource($organization))->toArray(request());
+
+        // Получаем админа напрямую через метод модели
+        $adminUser = $organization->adminUser();
+
+        // Добавляем данные об админе в массив
+        if ($adminUser) {
+            $organizationData['admin_user'] = [
+                'id' => $adminUser->id,
+                'name' => $adminUser->name,
+                'email' => $adminUser->email,
+            ];
+        } else {
+            $organizationData['admin_user'] = null;
+        }
 
         return Inertia::render('organizations/OrganizationEditPage', [
-            'organization' => (new OrganizationResource($organization))->toArray(request()),
+            'organization' => $organizationData,
             'referenceData' => $referenceData,
             'organizationSettings' => $orgSettings,
         ]);
@@ -164,16 +208,6 @@ class OrganizationController extends Controller
 
     public function update(UpdateOrganizationRequest $request, Organization $organization)
     {
-        // Отладочная информация (без файлов)
-        Log::info('Update request data:', $request->except(['logo']));
-        Log::info('Request method: ' . $request->method());
-        Log::info('Content type: ' . $request->header('Content-Type'));
-        Log::info('Request input: ', $request->input());
-        Log::info('Request files count: ' . count($request->allFiles()));
-        if ($request->hasFile('logo')) {
-            Log::info('Logo file: ' . $request->file('logo')->getClientOriginalName());
-        }
-
         // Валидация логотипа только если это файл
         if ($request->hasFile('logo')) {
             $request->validate([
@@ -196,7 +230,6 @@ class OrganizationController extends Controller
             'city_id',
             'founded_at',
             'is_public',
-            'admin_user_id',
             'latitude',
             'longitude',
             'city_name'
@@ -231,13 +264,6 @@ class OrganizationController extends Controller
         // Очищаем пустые строки для city_name
         if (isset($updateData['city_name']) && $updateData['city_name'] === '') {
             unset($updateData['city_name']);
-        }
-
-        // Преобразуем admin_user_id в число или null
-        if (isset($updateData['admin_user_id']) && $updateData['admin_user_id'] !== null && $updateData['admin_user_id'] !== '') {
-            $updateData['admin_user_id'] = (int) $updateData['admin_user_id'];
-        } else {
-            $updateData['admin_user_id'] = null;
         }
 
         $organization->update($updateData);
@@ -288,14 +314,62 @@ class OrganizationController extends Controller
                     unset($paymentSettings['max_amount']);
                 }
 
-                app(\App\Services\OrganizationSettingsService::class)->updateSettings($organization, [
+                app(OrganizationSettingsService::class)->updateSettings($organization, [
                     'payment_settings' => $paymentSettings,
                 ]);
             }
         }
 
+        // Обрабатываем назначение админа организации
+        $this->handleAdminAssignment($organization, $request->input('admin_user_id'));
+
         // Редирект обратно на страницу редактирования с сообщением об успехе
         return redirect()->route('organizations.edit', $organization)->with('success', 'Организация успешно обновлена');
+    }
+
+    /**
+     * Обработка назначения администратора организации
+     */
+    private function handleAdminAssignment(Organization $organization, ?int $adminUserId): void
+    {
+        // Получаем текущего админа
+        $currentAdmin = $organization->adminUser();
+
+        // Если админ не изменился, ничего не делаем
+        if ($currentAdmin && $currentAdmin->id === $adminUserId) {
+            return;
+        }
+
+        // Если есть старый админ, удаляем его из organization_users с ролью organization_admin для этой организации
+        if ($currentAdmin) {
+            // Удаляем только связь с этой организацией, сохраняя роль пользователя
+            $organization->users()
+                ->wherePivot('role', 'organization_admin')
+                ->where('users.id', $currentAdmin->id)
+                ->detach();
+        }
+
+        // Если указан новый админ
+        if ($adminUserId) {
+            $newAdmin = User::find($adminUserId);
+            if ($newAdmin) {
+                // Назначаем роль organization_admin, если её нет
+                if (!$newAdmin->hasRole('organization_admin')) {
+                    $newAdmin->assignRole('organization_admin');
+                }
+
+                // Добавляем пользователя в organization_users с ролью organization_admin
+                $organization->users()->syncWithoutDetaching([
+                    $newAdmin->id => [
+                        'role' => 'organization_admin',
+                        'status' => 'active',
+                        'permissions' => null,
+                        'joined_at' => now(),
+                        'last_active_at' => now(),
+                    ],
+                ]);
+            }
+        }
     }
 
     public function destroy(Organization $organization)

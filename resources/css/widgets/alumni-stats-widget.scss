@@ -1,0 +1,25 @@
+// Alumni Stats Widget Styles
+// Стили для виджета статистики выпускников
+
+.alumni-stats-output {
+    &__value {
+        font-weight: 700;
+        font-size: 28px;
+        line-height: 120%;
+        color: #1a1a1a;
+    }
+
+    // Подзаголовок статистики
+    &__subtitle {
+        font-weight: 500;
+        font-size: 18px;
+        line-height: 120%;
+        color: #1a1a1a;
+        display: block;
+        max-width: 220px;
+    }
+
+    .grid > div:first-child .alumni-stats-output__subtitle {
+        max-width: 160px;
+    }
+}

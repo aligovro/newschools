@@ -289,7 +289,7 @@ export const ProjectsOutput: React.FC<WidgetOutputProps> = ({
                                     ? `/organizations/${organization_id}/projects`
                                     : '/projects'
                             }
-                            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                            className="btn-outline-primary dark-color"
                         >
                             Все проекты
                         </Link>

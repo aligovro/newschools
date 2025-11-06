@@ -689,9 +689,10 @@ class SiteWidget extends Model
       'configs_created' => count($config),
     ]);
 
-    // Очищаем кеш виджетов для этого сайта
+    // Очищаем кеш виджетов и настроек для этого сайта
     if ($this->site_id) {
       Cache::forget("site_widgets_config_{$this->site_id}");
+      Cache::forget("site_widget_settings_{$this->site_id}");
     }
   }
 

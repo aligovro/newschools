@@ -16,10 +16,12 @@ use App\Http\Controllers\RegionRatingController;
 use App\Http\Controllers\CitySupportersController;
 use App\Http\Controllers\DonationsListController;
 use App\Http\Controllers\Api\ReferralController;
-use App\Http\Controllers\OrganizationCreationController;
+use App\Http\Controllers\Dashboard\OrganizationCreationController;
 use App\Http\Controllers\PublicOrganizationController;
 use App\Http\Controllers\Api\Public\PublicApiController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\UserController;
 
 // Получение текущего пользователя для API
 Route::get('/user', [AuthController::class, 'me'])->middleware('auth:sanctum');
@@ -158,6 +160,8 @@ Route::prefix('dashboard/sites/{site}')->middleware(['web', 'auth', 'verified'])
     // Позиции: настройки отображения и макета для конкретного сайта
     Route::get('/positions/{positionSlug}/settings', [SiteController::class, 'getPositionSettings']);
     Route::put('/positions/{positionSlug}/settings', [SiteController::class, 'savePositionSettings']);
+    Route::get('/widgets/{widgetId}/settings', [SiteController::class, 'getWidgetSettings']);
+    Route::put('/widgets/{widgetId}/settings', [SiteController::class, 'saveWidgetSettings']);
     Route::get('/positions/routes', [SiteController::class, 'getAvailablePublicRoutes']);
     Route::get('/positions/pages', [SiteController::class, 'getSitePages']);
 });
@@ -199,6 +203,24 @@ Route::prefix('sites/{siteId}/forms')->middleware('auth:sanctum')->group(functio
 // Публичные маршруты для отправки форм (без аутентификации)
 Route::prefix('sites/{siteId}/forms/{widgetId}')->group(function () {
     Route::post('/submit', [App\Http\Controllers\Api\FormSubmissionController::class, 'submit']);
+});
+
+// Защищенные API маршруты для организаций (требуют аутентификации)
+Route::middleware(['web', 'auth'])->prefix('organizations')->group(function () {
+    Route::get('/', [OrganizationController::class, 'index']);
+    Route::get('/{organization}', [OrganizationController::class, 'show']);
+});
+
+// Защищенные API маршруты для пользователей (требуют аутентификации)
+Route::middleware(['web', 'auth'])->prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index']);
+    Route::post('/', [UserController::class, 'store']);
+    Route::post('/upload-photo', [UserController::class, 'uploadPhoto']);
+    Route::get('/{user}', [UserController::class, 'show']);
+    Route::put('/{user}', [UserController::class, 'update']);
+    Route::delete('/{user}', [UserController::class, 'destroy']);
+    Route::post('/{user}/assign-role', [UserController::class, 'assignRole']);
+    Route::delete('/{user}/remove-role', [UserController::class, 'removeRole']);
 });
 
 // Публичные карты/организации API

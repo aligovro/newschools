@@ -139,18 +139,6 @@
         -10px 0px;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .widget-position {
-        padding: 0.75rem;
-    }
-
-    .widget-position.sidebar-left,
-    .widget-position.sidebar-right {
-        margin-bottom: 1rem;
-    }
-}
-
 /* Animation for widget addition */
 @keyframes widget-appear {
     from {

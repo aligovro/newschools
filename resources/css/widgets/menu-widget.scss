@@ -126,32 +126,3 @@
         }
     }
 }
-
-// Адаптивность для всех menu виджетов
-@media (max-width: 768px) {
-    .menu-widget {
-        nav {
-            gap: 8px;
-        }
-
-        a {
-            font-size: 14px;
-        }
-
-        &.flex-row nav {
-            flex-wrap: wrap;
-        }
-    }
-}
-
-@media (max-width: 480px) {
-    .menu-widget {
-        nav {
-            gap: 6px;
-        }
-
-        a {
-            font-size: 12px;
-        }
-    }
-}

@@ -1,9 +1,9 @@
+import SitePageForm from '@/components/dashboard/pages/sites/SitePageForm';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import SitePageForm from '@/components/dashboard/pages/sites/SitePageForm';
 
 interface Site {
     id: number;
@@ -23,7 +23,7 @@ interface Props {
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Админ панель', href: '/dashboard' },
     { title: 'Сайты', href: '/dashboard/sites' },
 ];
 
@@ -32,7 +32,10 @@ export default function CreateSitePage({ site, parentPages }: Props) {
         ...breadcrumbs,
         { title: site.name, href: `/dashboard/sites/${site.id}` },
         { title: 'Страницы', href: `/dashboard/sites/${site.id}/pages` },
-        { title: 'Создать страницу' },
+        {
+            title: 'Создать страницу',
+            href: '',
+        },
     ];
 
     return (
@@ -63,4 +66,3 @@ export default function CreateSitePage({ site, parentPages }: Props) {
         </AppLayout>
     );
 }
-

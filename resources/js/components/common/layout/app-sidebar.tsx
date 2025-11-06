@@ -6,13 +6,10 @@ import {
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import {
     BarChart3,
     BookOpen,
@@ -24,7 +21,6 @@ import {
     Target,
     Users,
 } from 'lucide-react';
-import AppLogo from './app-logo';
 
 export function AppSidebar() {
     const { props } = usePage();
@@ -51,7 +47,7 @@ export function AppSidebar() {
 
     const mainNavItems: NavItem[] = [
         {
-            title: 'Dashboard',
+            title: 'Админ панель',
             href: dashboard(),
             icon: LayoutGrid,
         },
@@ -102,17 +98,7 @@ export function AppSidebar() {
 
     return (
         <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarHeader>
+            <SidebarHeader></SidebarHeader>
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />

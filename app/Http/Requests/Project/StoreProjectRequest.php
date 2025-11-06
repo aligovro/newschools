@@ -28,6 +28,8 @@ class StoreProjectRequest extends FormRequest
       'short_description' => 'nullable|string|max:500',
       'description' => 'nullable|string',
       'category' => 'required|string|in:' . implode(',', $categories),
+      'category_ids' => 'nullable|array',
+      'category_ids.*' => 'exists:project_categories,id',
       'target_amount' => 'nullable|numeric|min:0',
       'start_date' => 'nullable|date',
       'end_date' => 'nullable|date|after:start_date',

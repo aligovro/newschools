@@ -180,7 +180,7 @@ export const AlumniStatsWidget: React.FC<AlumniStatsWidgetProps> = ({
                       <img
                           src={col.icon}
                           alt={col.label}
-                          className="h-12 w-12 object-contain"
+                          className="h-22 w-22 object-contain"
                       />
                   ) : (
                       defaultIcons[index]

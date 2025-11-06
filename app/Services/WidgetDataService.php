@@ -14,8 +14,10 @@ use App\Models\SiteWidgetRegionRatingSettings;
 use App\Models\SiteWidgetDonationsListSettings;
 use App\Models\SiteWidgetReferralLeaderboardSettings;
 use App\Models\SiteWidgetImageSettings;
+use App\Models\SiteWidgetSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class WidgetDataService
 {
@@ -372,8 +374,26 @@ class WidgetDataService
       ->ordered()
       ->get();
 
-    $result = $widgets->map(function ($widget) {
-      return $this->getWidgetRenderData($widget);
+    // Загружаем настройки видимости для всех виджетов одним запросом (с кешированием)
+    $widgetIds = $widgets->pluck('id')->toArray();
+    $allWidgetSettings = Cache::remember("site_widget_settings_{$siteId}", 300, function () use ($siteId) {
+      return \App\Models\SiteWidgetSetting::where('site_id', $siteId)
+        ->get()
+        ->keyBy('widget_id');
+    });
+    // Фильтруем только нужные виджеты
+    $widgetSettings = $allWidgetSettings->filter(function ($setting, $widgetId) use ($widgetIds) {
+      return in_array($widgetId, $widgetIds);
+    });
+
+    $result = $widgets->map(function ($widget) use ($widgetSettings) {
+      $data = $this->getWidgetRenderData($widget);
+      // Добавляем настройки видимости если они есть
+      $setting = $widgetSettings->get($widget->id);
+      if ($setting) {
+        $data['visibility_rules'] = $setting->visibility_rules;
+      }
+      return $data;
     })->toArray();
 
     return $result;

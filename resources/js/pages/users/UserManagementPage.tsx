@@ -7,7 +7,7 @@ import React from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Админ панель',
         href: dashboard().url,
     },
     {
@@ -17,6 +17,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface UserManagementPageProps {
+    [key: string]: any;
     users: any;
     roles: any[];
     permissions: any[];

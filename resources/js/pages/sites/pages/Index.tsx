@@ -67,7 +67,7 @@ export default function SitePagesIndex({ site, pages, filters }: Props) {
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
+            title: 'Админ панель',
             href: '/dashboard',
         },
         {

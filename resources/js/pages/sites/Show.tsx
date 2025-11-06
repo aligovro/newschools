@@ -1,11 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -72,8 +67,8 @@ interface Page {
     created_at: string;
     updated_at: string;
     parent?: {
-    id: number;
-    title: string;
+        id: number;
+        title: string;
         slug: string;
     };
 }
@@ -100,16 +95,14 @@ interface Props {
 }
 
 export default function SiteShow({ site, pages, pageFilters }: Props) {
-    const [pageSearch, setPageSearch] = useState(
-        pageFilters.page_search || '',
-    );
+    const [pageSearch, setPageSearch] = useState(pageFilters.page_search || '');
     const [pageStatus, setPageStatus] = useState(
         pageFilters.page_status || 'all',
     );
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
+            title: 'Админ панель',
             href: '/dashboard',
         },
         {
@@ -118,6 +111,7 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
         },
         {
             title: site.name,
+            href: '',
         },
     ];
 
@@ -161,7 +155,7 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
         }
     };
 
-        return (
+    return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${site.name} - Сайт`} />
 
@@ -270,7 +264,7 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
 
                 {/* Site Details */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="space-y-6 lg:col-span-2">
                         {/* Site Information */}
                         <Card>
                             <CardHeader>
@@ -294,7 +288,9 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                         <label className="text-sm font-medium text-muted-foreground">
                                             Шаблон
                                         </label>
-                                        <p className="text-sm">{site.template}</p>
+                                        <p className="text-sm">
+                                            {site.template}
+                                        </p>
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-muted-foreground">
@@ -331,7 +327,9 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                         <label className="text-sm font-medium text-muted-foreground">
                                             Описание
                                         </label>
-                                        <p className="text-sm">{site.description}</p>
+                                        <p className="text-sm">
+                                            {site.description}
+                                        </p>
                                     </div>
                                 )}
                             </CardContent>
@@ -350,7 +348,7 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                             Создать
                                         </Button>
                                     </Link>
-                            </div>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {/* Pages Filters */}
@@ -454,9 +452,9 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                                     </Button>
                                                 </Link>
                                             </div>
-                                    </div>
-                                ))}
-                        </div>
+                                        </div>
+                                    ))}
+                                </div>
 
                                 {/* Empty State */}
                                 {pages.data.length === 0 && (
@@ -465,7 +463,7 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                         <p className="text-muted-foreground">
                                             Страницы не найдены
                                         </p>
-                    </div>
+                                    </div>
                                 )}
 
                                 {/* Pagination */}
@@ -496,12 +494,12 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                                     {link.label}
                                                 </Button>
                                             ))}
-                        </div>
-                    </div>
+                                        </div>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
-                            </div>
+                    </div>
 
                     {/* Sidebar */}
                     <div className="space-y-6">
@@ -514,7 +512,10 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                     href={`/dashboard/sites/${site.id}/builder`}
                                     className="block"
                                 >
-                                    <Button variant="outline" className="w-full">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full"
+                                    >
                                         <Wrench className="mr-2 h-4 w-4" />
                                         Открыть конструктор
                                     </Button>
@@ -523,7 +524,10 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                     href={`/dashboard/sites/${site.id}/pages`}
                                     className="block"
                                 >
-                                    <Button variant="outline" className="w-full">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full"
+                                    >
                                         <FileText className="mr-2 h-4 w-4" />
                                         Все страницы
                                     </Button>
@@ -531,7 +535,7 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                 <Link
                                     href={`/dashboard/sites/${site.id}/pages/create`}
                                     className="block"
-                                            >
+                                >
                                     <Button className="w-full">
                                         <Plus className="mr-2 h-4 w-4" />
                                         Создать страницу
@@ -545,14 +549,14 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                 <CardTitle>Метаданные</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm">
-                            <div>
+                                <div>
                                     <span className="text-muted-foreground">
                                         Создан:{' '}
                                     </span>
                                     {new Date(
                                         site.created_at,
                                     ).toLocaleDateString('ru-RU')}
-                            </div>
+                                </div>
                                 <div>
                                     <span className="text-muted-foreground">
                                         Обновлен:{' '}
@@ -560,7 +564,7 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                     {new Date(
                                         site.updated_at,
                                     ).toLocaleDateString('ru-RU')}
-                        </div>
+                                </div>
                                 {site.published_at && (
                                     <div>
                                         <span className="text-muted-foreground">
@@ -569,7 +573,7 @@ export default function SiteShow({ site, pages, pageFilters }: Props) {
                                         {new Date(
                                             site.published_at,
                                         ).toLocaleDateString('ru-RU')}
-                        </div>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>

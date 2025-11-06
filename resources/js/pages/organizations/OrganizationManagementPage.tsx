@@ -16,14 +16,13 @@ import {
     MapPin,
     Plus,
     Search,
-    Settings,
     Trash2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Админ панель',
         href: dashboard().url,
     },
     {
@@ -290,7 +289,9 @@ export default function OrganizationManagementPage({
                                                 <div className="flex items-center space-x-3">
                                                     {organization.logo ? (
                                                         <img
-                                                            src={`/storage/${organization.logo}`}
+                                                            src={
+                                                                organization.logo
+                                                            }
                                                             alt={
                                                                 organization.name
                                                             }
@@ -397,16 +398,6 @@ export default function OrganizationManagementPage({
                                                             size="sm"
                                                         >
                                                             <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
-                                                    <Link
-                                                        href={`/dashboard/organization/${organization.id}/admin`}
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                        >
-                                                            <Settings className="h-4 w-4" />
                                                         </Button>
                                                     </Link>
                                                 </div>

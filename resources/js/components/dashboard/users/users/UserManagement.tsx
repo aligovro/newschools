@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { User, UserFilters } from '@/types/user';
 import { Plus, Settings, Shield, Users } from 'lucide-react';
 import React, { useState } from 'react';
+import { router } from '@inertiajs/react';
 import UserFiltersComponent from './UserFilters';
 import UserForm from './UserForm';
 import UserTable from './UserTable';
@@ -57,15 +58,34 @@ const UserManagement: React.FC<UserManagementProps> = ({
     };
 
     const handleFiltersChange = (newFilters: UserFilters) => {
-        setFilters((prev) => ({ ...prev, ...newFilters, page: 1 }));
+        const updatedFilters = { ...filters, ...newFilters, page: 1 };
+        setFilters(updatedFilters);
+        // Перезагружаем данные с новыми фильтрами
+        router.get('/dashboard/users', updatedFilters, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['users', 'filters'],
+        });
     };
 
     const handlePageChange = (page: number) => {
-        setFilters((prev) => ({ ...prev, page }));
+        const updatedFilters = { ...filters, page };
+        setFilters(updatedFilters);
+        router.get('/dashboard/users', updatedFilters, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['users', 'filters'],
+        });
     };
 
     const handlePerPageChange = (perPage: number) => {
-        setFilters((prev) => ({ ...prev, per_page: perPage, page: 1 }));
+        const updatedFilters = { ...filters, per_page: perPage, page: 1 };
+        setFilters(updatedFilters);
+        router.get('/dashboard/users', updatedFilters, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['users', 'filters'],
+        });
     };
 
     return (

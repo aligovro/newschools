@@ -1,5 +1,6 @@
 import OrganizationCard from '@/components/organizations/OrganizationCard';
 import { fetchPublicOrganizations } from '@/lib/api/public';
+import { Link } from '@inertiajs/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -92,14 +93,16 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
         <section className="py-8">
             <div className="container mx-auto px-4">
                 <div className="mb-6 flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        {title}
+                    </h2>
                     {showHeaderActions && (
-                        <a
+                        <Link
                             href="/organizations"
-                            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                            className="btn-outline-primary dark-color"
                         >
                             Все школы
-                        </a>
+                        </Link>
                     )}
                 </div>
 
@@ -156,7 +159,9 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                             spaceBetween={16}
                             slidesPerView={1}
                             breakpoints={{
-                                640: { slidesPerView: Math.min(2, slidesPerView) },
+                                640: {
+                                    slidesPerView: Math.min(2, slidesPerView),
+                                },
                                 1024: { slidesPerView },
                             }}
                             onBeforeInit={(swiper) => {
@@ -166,7 +171,9 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                             {items.map((organization) => (
                                 <SwiperSlide key={organization.id}>
                                     <div className="h-full">
-                                        <OrganizationCard organization={organization as any} />
+                                        <OrganizationCard
+                                            organization={organization as any}
+                                        />
                                     </div>
                                 </SwiperSlide>
                             ))}
@@ -179,5 +186,3 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
 };
 
 export default OrganizationsSliderWidget;
-
-

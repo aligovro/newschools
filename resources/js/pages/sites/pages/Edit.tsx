@@ -1,9 +1,9 @@
+import SitePageForm from '@/components/dashboard/pages/sites/SitePageForm';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import SitePageForm from '@/components/dashboard/pages/sites/SitePageForm';
 
 interface Site {
     id: number;
@@ -44,21 +44,23 @@ interface Props {
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Админ панель', href: '/dashboard' },
     { title: 'Сайты', href: '/dashboard/sites' },
 ];
 
-export default function EditSitePage({
-    site,
-    page,
-    parentPages,
-}: Props) {
+export default function EditSitePage({ site, page, parentPages }: Props) {
     const pageBreadcrumbs: BreadcrumbItem[] = [
         ...breadcrumbs,
         { title: site.name, href: `/dashboard/sites/${site.id}` },
         { title: 'Страницы', href: `/dashboard/sites/${site.id}/pages` },
-        { title: page.title, href: `/dashboard/sites/${site.id}/pages/${page.id}` },
-        { title: 'Редактировать' },
+        {
+            title: page.title,
+            href: `/dashboard/sites/${site.id}/pages/${page.id}`,
+        },
+        {
+            title: 'Редактировать',
+            href: '',
+        },
     ];
 
     return (
@@ -90,4 +92,3 @@ export default function EditSitePage({
         </AppLayout>
     );
 }
-

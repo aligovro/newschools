@@ -110,6 +110,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         return true;
     };
 
+    const shouldShowWidget = (widget: WidgetData): boolean => {
+        const rules = (widget.visibility_rules as PositionVisibilityRules) || {};
+        const mode = (rules.mode as 'all' | 'include' | 'exclude') || 'all';
+        const routeKey = getCurrentRouteKey();
+        const routes: string[] = rules.routes || [];
+
+        if (mode === 'all') return true;
+        if (!routeKey) return mode === 'exclude';
+        if (mode === 'include') return routes.includes(routeKey);
+        if (mode === 'exclude') return !routes.includes(routeKey);
+        return true;
+    };
+
     const getLayoutFor = (
         position: WidgetPosition,
     ): { width: string; alignment: string } => {
@@ -205,18 +218,20 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 <div className={`${containerClass} ${alignClass}`}>
                     {positionWidgets.length > 0 && (
                         <div className="space-y-4">
-                            {positionWidgets.map((widget) => (
-                                <div
-                                    key={widget.id}
-                                    className={`widget-container${widget.wrapper_class ? ` ${widget.wrapper_class}` : ''}`}
-                                >
-                                    <MemoWidgetDisplay
-                                        widget={widget}
-                                        isEditable={false}
-                                        useOutputRenderer={true}
-                                    />
-                                </div>
-                            ))}
+                            {positionWidgets
+                                .filter((widget) => shouldShowWidget(widget))
+                                .map((widget) => (
+                                    <div
+                                        key={widget.id}
+                                        className={`widget-container${widget.wrapper_class ? ` ${widget.wrapper_class}` : ''}`}
+                                    >
+                                        <MemoWidgetDisplay
+                                            widget={widget}
+                                            isEditable={false}
+                                            useOutputRenderer={true}
+                                        />
+                                    </div>
+                                ))}
                         </div>
                     )}
                 </div>

@@ -1,3 +1,4 @@
+import ImageUploader from '@/components/dashboard/settings/sites/ImageUploader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -11,10 +12,15 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import UniversalSelect, {
+    SelectOption,
+} from '@/components/ui/universal-select/UniversalSelect';
 import { useUsers } from '@/hooks/useUsers';
+import { apiClient } from '@/lib/api';
 import { CreateUserForm, Role, UpdateUserForm, User } from '@/types/user';
-import { Shield, User as UserIcon, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import { Building2, Shield, User as UserIcon, X } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 interface UserFormProps {
     user?: User | null;
@@ -26,30 +32,76 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
     const { createNewUser, updateExistingUser, isCreating, isUpdating } =
         useUsers();
 
-    const [formData, setFormData] = useState<CreateUserForm>({
+    // Получаем текущего пользователя и терминологию из Inertia props
+    const { props } = usePage<{
+        auth?: { user?: any };
+        terminology?: {
+            organization?: {
+                singular_nominative?: string;
+                singular_genitive?: string;
+                singular_accusative?: string;
+                plural_nominative?: string;
+            };
+        };
+    }>();
+    const currentUser = props.auth?.user || null;
+    const terminology = props.terminology || {};
+    const orgTerm = terminology.organization || {};
+
+    const isSuperAdmin =
+        currentUser?.roles?.some((r: any) => r.name === 'super_admin') || false;
+    const isOrgAdmin =
+        currentUser?.roles?.some((r: any) => r.name === 'organization_admin') ||
+        false;
+    const currentUserOrganizationId =
+        currentUser?.organizations?.[0]?.id || null;
+
+    const [formData, setFormData] = useState<
+        CreateUserForm & { organization_id?: number | null }
+    >({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
         roles: [],
+        photo: null,
+        organization_id: null,
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+    // Состояние для выбора организации
+    const [organizationSearch, setOrganizationSearch] = useState('');
+    const [organizationOptions, setOrganizationOptions] = useState<
+        SelectOption[]
+    >([]);
+    const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(false);
 
     const isEditing = !!user;
 
     useEffect(() => {
         if (user) {
+            // Получаем organization_id из связей пользователя
+            const userOrganizationId =
+                (user as any).organizations?.[0]?.id || null;
             setFormData({
                 name: user.name,
                 email: user.email,
                 password: '',
                 password_confirmation: '',
                 roles: user.roles.map((role) => role.name),
+                photo: user.photo || null,
+                organization_id: userOrganizationId,
             });
+            setPhotoPreview(user.photo || null);
+        } else {
+            setPhotoPreview(null);
+            // Для organization_admin автоматически устанавливаем его организацию при создании
+            // Но это будет происходить при выборе роли, поэтому здесь не устанавливаем
         }
-    }, [user]);
+    }, [user, isOrgAdmin, currentUserOrganizationId]);
 
     const handleInputChange = (field: keyof CreateUserForm, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -58,13 +110,288 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
         }
     };
 
-    const handleRoleToggle = (roleName: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            roles: prev.roles.includes(roleName)
+    const handleRoleToggle = (roleName: string, e?: React.MouseEvent) => {
+        if (e) {
+            e.stopPropagation();
+        }
+
+        console.log('=== handleRoleToggle ===');
+        console.log('roleName:', roleName);
+        console.log('Current formData.roles:', formData.roles);
+
+        setFormData((prev) => {
+            const newRoles = prev.roles.includes(roleName)
                 ? prev.roles.filter((r) => r !== roleName)
-                : [...prev.roles, roleName],
-        }));
+                : [...prev.roles, roleName];
+
+            console.log('New roles after toggle:', newRoles);
+
+            // Если убираем роль организации, убираем и organization_id
+            const organizationRoles = [
+                'organization_admin',
+                'graduate',
+                'sponsor',
+            ];
+            const hasOrgRole = newRoles.some((r) =>
+                organizationRoles.includes(r),
+            );
+            const newOrganizationId = hasOrgRole ? prev.organization_id : null;
+
+            console.log('hasOrgRole:', hasOrgRole);
+            console.log('isOrgAdmin:', isOrgAdmin);
+            console.log(
+                'currentUserOrganizationId:',
+                currentUserOrganizationId,
+            );
+
+            // Если organization_admin и текущий пользователь - админ организации, автоматически ставим его организацию
+            // Для organization_admin всегда используем его организацию
+            if (
+                newRoles.includes('organization_admin') &&
+                isOrgAdmin &&
+                currentUserOrganizationId
+            ) {
+                console.log('Auto-setting organization_id for org admin');
+                return {
+                    ...prev,
+                    roles: newRoles,
+                    organization_id: currentUserOrganizationId,
+                };
+            }
+
+            // Если убираем все роли организации, очищаем organization_id
+            // Если добавляем роль организации и текущий пользователь - organization_admin, используем его организацию
+            let finalOrganizationId = newOrganizationId;
+            if (hasOrgRole && isOrgAdmin && currentUserOrganizationId) {
+                // Для organization_admin всегда используем его организацию
+                finalOrganizationId = currentUserOrganizationId;
+            } else if (hasOrgRole && isSuperAdmin) {
+                // Для super_admin оставляем выбранную организацию или null (пользователь должен выбрать)
+                finalOrganizationId = prev.organization_id;
+            } else if (!hasOrgRole) {
+                // Если нет ролей организации, очищаем
+                finalOrganizationId = null;
+            }
+
+            const newState = {
+                ...prev,
+                roles: newRoles,
+                organization_id: finalOrganizationId,
+            };
+
+            console.log('Final state:', newState);
+
+            return newState;
+        });
+    };
+
+    // Проверяем, нужен ли выбор организации
+    // Выбор организации нужен ТОЛЬКО для super_admin при выборе ролей организации
+    // Для organization_admin - организация подставляется автоматически, селект не показываем
+    const organizationRoles = ['organization_admin', 'graduate', 'sponsor'];
+    const hasOrganizationRole = formData.roles.some((r) =>
+        organizationRoles.includes(r),
+    );
+    // Показываем селект только для super_admin (не для organization_admin) и только если выбрана хотя бы одна роль организации
+    const showOrganizationSelect = isSuperAdmin && hasOrganizationRole;
+
+    // DEBUG: Логи для отладки (после всех объявлений)
+    useEffect(() => {
+        console.log('=== UserForm Debug ===');
+        console.log('currentUser:', currentUser);
+        console.log('currentUser?.roles:', currentUser?.roles);
+        console.log('isSuperAdmin:', isSuperAdmin);
+        console.log('formData.roles:', formData.roles);
+        console.log('organizationRoles:', organizationRoles);
+        console.log('hasOrganizationRole:', hasOrganizationRole);
+        console.log('showOrganizationSelect:', showOrganizationSelect);
+        console.log('formData.organization_id:', formData.organization_id);
+    }, [
+        currentUser,
+        isSuperAdmin,
+        formData.roles,
+        hasOrganizationRole,
+        showOrganizationSelect,
+        formData.organization_id,
+    ]);
+
+    // Загрузка организаций для селекта
+    const loadOrganizations = useCallback(async (search: string = '') => {
+        setIsLoadingOrganizations(true);
+        try {
+            console.log('Loading organizations with search:', search);
+            const response = await apiClient.get('/organizations', {
+                params: {
+                    search: search || undefined,
+                    per_page: 50,
+                    page: 1,
+                },
+            });
+
+            console.log('Organizations response:', response.data);
+
+            // Проверяем разные форматы ответа
+            let orgs = [];
+            if (response.data?.data) {
+                orgs = response.data.data;
+            } else if (Array.isArray(response.data)) {
+                orgs = response.data;
+            } else if (response.data?.data?.data) {
+                orgs = response.data.data.data;
+            }
+
+            console.log('Parsed organizations:', orgs);
+
+            const options: SelectOption[] = orgs.map((org: any) => ({
+                value: org.id,
+                label: org.name,
+                description: org.address || org.email || '',
+            }));
+
+            // Если есть выбранная организация, но её нет в списке - загружаем её отдельно
+            if (formData.organization_id && !options.find(opt => opt.value === formData.organization_id)) {
+                try {
+                    const orgResponse = await apiClient.get(`/organizations/${formData.organization_id}`);
+                    const selectedOrg = orgResponse.data?.data || orgResponse.data;
+                    if (selectedOrg) {
+                        options.unshift({
+                            value: selectedOrg.id,
+                            label: selectedOrg.name,
+                            description: selectedOrg.address || selectedOrg.email || '',
+                        });
+                        console.log('Added selected organization to options:', selectedOrg);
+                    }
+                } catch (orgError) {
+                    console.error('Error loading selected organization:', orgError);
+                }
+            }
+
+            console.log('Organization options:', options);
+            setOrganizationOptions(options);
+        } catch (error: any) {
+            console.error('Error loading organizations:', error);
+            console.error('Error response:', error.response);
+            setOrganizationOptions([]);
+        } finally {
+            setIsLoadingOrganizations(false);
+        }
+    }, [formData.organization_id]);
+
+    // Загрузка организаций при показе селекта или при редактировании пользователя с организацией
+    useEffect(() => {
+        if (showOrganizationSelect) {
+            // Загружаем организации сразу при показе селекта (без задержки, если нет поиска)
+            if (!organizationSearch) {
+                loadOrganizations('');
+            }
+            
+            // Если редактируем пользователя и у него есть организация, загружаем её в опции
+            if (isEditing && user && formData.organization_id && organizationOptions.length === 0) {
+                // Загружаем организации чтобы найти выбранную
+                loadOrganizations('');
+            }
+        }
+    }, [showOrganizationSelect, loadOrganizations, isEditing, user, formData.organization_id, organizationSearch, organizationOptions.length]);
+
+    // Загрузка организаций при изменении поиска с debounce
+    useEffect(() => {
+        if (showOrganizationSelect && organizationSearch) {
+            const timeoutId = setTimeout(() => {
+                loadOrganizations(organizationSearch);
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [organizationSearch, showOrganizationSelect, loadOrganizations]);
+
+    const handlePhotoUpload = async (file: File, serverUrl?: string) => {
+        // Если есть serverUrl, используем его
+        if (serverUrl) {
+            setFormData((prev) => ({ ...prev, photo: serverUrl }));
+            setPhotoPreview(serverUrl);
+        } else {
+            // Загружаем фото на сервер
+            try {
+                const uploadFormData = new FormData();
+                uploadFormData.append('photo', file);
+                
+                const response = await apiClient.post('/users/upload-photo', uploadFormData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+                
+                const photoUrl = response.data?.url || response.data?.photo || response.data?.data?.url;
+                if (photoUrl) {
+                    setFormData((prev) => ({ ...prev, photo: photoUrl }));
+                    setPhotoPreview(photoUrl);
+                } else {
+                    // Если сервер не вернул URL, используем data URL как fallback
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const result = e.target?.result as string;
+                        setPhotoPreview(result);
+                        setFormData((prev) => ({ ...prev, photo: result }));
+                    };
+                    reader.readAsDataURL(file);
+                }
+            } catch (error) {
+                console.error('Error uploading photo:', error);
+                // Fallback на data URL
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const result = e.target?.result as string;
+                    setPhotoPreview(result);
+                    setFormData((prev) => ({ ...prev, photo: result }));
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    };
+
+    const handlePhotoCrop = async (croppedImage: string) => {
+        // Если это data URL (начинается с data:), конвертируем в файл и загружаем
+        if (croppedImage.startsWith('data:')) {
+            try {
+                // Конвертируем data URL в Blob и затем в File
+                const response = await fetch(croppedImage);
+                const blob = await response.blob();
+                const file = new File([blob], 'photo.jpg', { type: blob.type });
+                
+                // Загружаем на сервер
+                const uploadFormData = new FormData();
+                uploadFormData.append('photo', file);
+                
+                const uploadResponse = await apiClient.post('/users/upload-photo', uploadFormData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+                
+                const photoUrl = uploadResponse.data?.url || uploadResponse.data?.photo || uploadResponse.data?.data?.url;
+                if (photoUrl) {
+                    setFormData((prev) => ({ ...prev, photo: photoUrl }));
+                    setPhotoPreview(photoUrl);
+                } else {
+                    // Fallback на data URL если загрузка не удалась
+                    setFormData((prev) => ({ ...prev, photo: croppedImage }));
+                    setPhotoPreview(croppedImage);
+                }
+            } catch (error) {
+                console.error('Error uploading cropped photo:', error);
+                // Fallback на data URL
+                setFormData((prev) => ({ ...prev, photo: croppedImage }));
+                setPhotoPreview(croppedImage);
+            }
+        } else {
+            // Если это уже URL, просто сохраняем
+            setFormData((prev) => ({ ...prev, photo: croppedImage }));
+            setPhotoPreview(croppedImage);
+        }
+    };
+
+    const handlePhotoDelete = () => {
+        setFormData((prev) => ({ ...prev, photo: null }));
+        setPhotoPreview(null);
     };
 
     const validateForm = (): boolean => {
@@ -104,6 +431,12 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
             newErrors.roles = 'Выберите хотя бы одну роль';
         }
 
+        // Проверка выбора организации для ролей организации
+        // Проверяем ТОЛЬКО для super_admin (для organization_admin организация устанавливается автоматически)
+        if (isSuperAdmin && hasOrganizationRole && !formData.organization_id) {
+            newErrors.organization_id = `Необходимо выбрать ${orgTerm.singular_accusative || orgTerm.singular_nominative || 'организацию'}`;
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -119,10 +452,13 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
 
         try {
             if (isEditing) {
-                const updateData: UpdateUserForm = {
+                const updateData: UpdateUserForm & {
+                    organization_id?: number;
+                } = {
                     name: formData.name,
                     email: formData.email,
                     roles: formData.roles,
+                    photo: formData.photo || undefined,
                 };
 
                 if (formData.password) {
@@ -131,12 +467,40 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                         formData.password_confirmation;
                 }
 
+                // Добавляем organization_id если есть роль организации
+                if (formData.organization_id) {
+                    updateData.organization_id = formData.organization_id;
+                }
+
                 await updateExistingUser(user!.id, updateData);
             } else {
-                await createNewUser(formData);
+                // Для organization_admin автоматически используем его организацию
+                // Для super_admin используем выбранную организацию
+                let finalOrganizationId = formData.organization_id;
+
+                // Если текущий пользователь - organization_admin, всегда используем его организацию
+                if (isOrgAdmin && currentUserOrganizationId) {
+                    const hasOrgRole = formData.roles.some((r) =>
+                        organizationRoles.includes(r),
+                    );
+                    if (hasOrgRole) {
+                        finalOrganizationId = currentUserOrganizationId;
+                    }
+                }
+
+                const createData: CreateUserForm & {
+                    organization_id?: number;
+                } = {
+                    ...formData,
+                    organization_id: finalOrganizationId || undefined,
+                };
+
+                await createNewUser(createData);
             }
 
+            // Закрываем форму и перезагружаем данные
             onClose();
+            router.reload({ only: ['users'] });
         } catch (error) {
             console.error('Error saving user:', error);
         } finally {
@@ -147,10 +511,9 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
     const getRoleDisplayName = (roleName: string) => {
         const roleNames: Record<string, string> = {
             super_admin: 'Супер админ',
-            admin: 'Администратор',
-            organization_admin: 'Админ организации',
-            moderator: 'Модератор',
-            editor: 'Редактор',
+            organization_admin: 'Администратор школы',
+            graduate: 'Выпускник',
+            sponsor: 'Спонсор',
             user: 'Пользователь',
         };
         return roleNames[roleName] || roleName;
@@ -159,10 +522,9 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
     const getRoleDescription = (roleName: string) => {
         const descriptions: Record<string, string> = {
             super_admin: 'Полный доступ ко всем функциям системы',
-            admin: 'Управление пользователями и организациями',
-            organization_admin: 'Управление конкретной организацией',
-            moderator: 'Модерация контента и пользователей',
-            editor: 'Создание и редактирование контента',
+            organization_admin: 'Управление конкретной школой',
+            graduate: 'Выпускник школы',
+            sponsor: 'Спонсор школы',
             user: 'Базовые права пользователя',
         };
         return descriptions[roleName] || '';
@@ -170,7 +532,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
 
     return (
         <Dialog open={true} onOpenChange={onClose}>
-            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+            <DialogContent className="max-h-[90vh] w-[95vw] max-w-[1400px] overflow-y-auto sm:!max-w-[1400px] md:!max-w-[1400px] lg:!max-w-[1400px] xl:!max-w-[1400px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         {isEditing ? (
@@ -248,6 +610,24 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                             </div>
                         </div>
 
+                        {/* Фото пользователя */}
+                        <div>
+                            <Label>Фото пользователя</Label>
+                            <div className="mt-2">
+                                <ImageUploader
+                                    onImageUpload={handlePhotoUpload}
+                                    onImageCrop={handlePhotoCrop}
+                                    onImageDelete={handlePhotoDelete}
+                                    existingImageUrl={photoPreview || undefined}
+                                    aspectRatio={1}
+                                    imageType="avatar"
+                                    maxSize={5 * 1024 * 1024}
+                                    className="w-full"
+                                    hidePreview={false}
+                                />
+                            </div>
+                        </div>
+
                         {/* Пароль */}
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
@@ -312,6 +692,67 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                         </div>
                     </div>
 
+                    {/* Выбор организации для ролей организации (только для super_admin) - показывается ПЕРЕД ролями */}
+                    {showOrganizationSelect && (
+                        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                            <Label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <Building2 className="h-4 w-4" />
+                                Выберите{' '}
+                                {orgTerm.singular_accusative ||
+                                    orgTerm.singular_nominative ||
+                                    'организацию'}
+                                <span className="text-red-500">*</span>
+                            </Label>
+                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                Для ролей:{' '}
+                                {formData.roles
+                                    .filter((r) =>
+                                        organizationRoles.includes(r),
+                                    )
+                                    .map((r) => getRoleDisplayName(r))
+                                    .join(', ') ||
+                                    'organization_admin, graduate, sponsor'}
+                            </p>
+                            <div className="mt-3">
+                                <UniversalSelect
+                                    options={organizationOptions}
+                                    value={formData.organization_id || null}
+                                    onChange={(value) => {
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            organization_id: value as
+                                                | number
+                                                | null,
+                                        }));
+                                    }}
+                                    placeholder={`Начните вводить название ${orgTerm.singular_genitive || 'организации'}...`}
+                                    searchPlaceholder={`Поиск ${orgTerm.singular_genitive || 'организации'}...`}
+                                    searchable={true}
+                                    loading={isLoadingOrganizations}
+                                    onSearchChange={setOrganizationSearch}
+                                    searchValue={organizationSearch}
+                                    clearable={true}
+                                    className="w-full"
+                                    emptyMessage={`${orgTerm.plural_nominative || 'Организации'} не найдены`}
+                                    required={true}
+                                />
+                            </div>
+                            {!formData.organization_id && (
+                                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                    Необходимо выбрать{' '}
+                                    {orgTerm.singular_accusative ||
+                                        orgTerm.singular_nominative ||
+                                        'организацию'}
+                                </p>
+                            )}
+                            {errors.organization_id && (
+                                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                    {errors.organization_id}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {/* Роли */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
@@ -327,39 +768,53 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                             </p>
                         )}
 
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                            {roles.map((role) => (
-                                <div
-                                    key={role.id}
-                                    className="flex cursor-pointer items-start space-x-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                                    onClick={() => handleRoleToggle(role.name)}
-                                >
-                                    <Checkbox
-                                        checked={formData.roles.includes(
-                                            role.name,
-                                        )}
-                                        onChange={() =>
-                                            handleRoleToggle(role.name)
-                                        }
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-medium text-gray-900 dark:text-white">
-                                                {getRoleDisplayName(role.name)}
-                                            </span>
-                                            <Badge
-                                                variant="outline"
-                                                className="text-xs"
-                                            >
-                                                {role.name}
-                                            </Badge>
+                        <div className="grid grid-cols-1 gap-3">
+                            {roles.map((role) => {
+                                const isSelected = formData.roles.includes(
+                                    role.name,
+                                );
+                                const isOrganizationRole =
+                                    organizationRoles.includes(role.name);
+
+                                return (
+                                    <div key={role.id} className="space-y-2">
+                                        <div className="flex items-start space-x-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                            <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={(checked) => {
+                                                    if (
+                                                        checked !== isSelected
+                                                    ) {
+                                                        handleRoleToggle(
+                                                            role.name,
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium text-gray-900 dark:text-white">
+                                                        {getRoleDisplayName(
+                                                            role.name,
+                                                        )}
+                                                    </span>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-xs"
+                                                    >
+                                                        {role.name}
+                                                    </Badge>
+                                                </div>
+                                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                    {getRoleDescription(
+                                                        role.name,
+                                                    )}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                            {getRoleDescription(role.name)}
-                                        </p>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {/* Выбранные роли */}

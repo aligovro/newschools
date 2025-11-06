@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Organization;
 use App\Models\User;
-use App\Services\OrganizationCreationService;
-use App\Services\OrganizationSettingsService;
+use App\Services\Organizations\OrganizationCreationService;
+use App\Services\Organizations\OrganizationSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -18,508 +18,499 @@ use Inertia\Inertia;
 
 class OrganizationCreationController extends Controller
 {
-    protected OrganizationCreationService $creationService;
-    protected OrganizationSettingsService $settingsService;
+  protected OrganizationCreationService $creationService;
+  protected OrganizationSettingsService $settingsService;
 
-    public function __construct(
-        OrganizationCreationService $creationService,
-        OrganizationSettingsService $settingsService
-    ) {
-        $this->creationService = $creationService;
-        $this->settingsService = $settingsService;
+  public function __construct(
+    OrganizationCreationService $creationService,
+    OrganizationSettingsService $settingsService
+  ) {
+    $this->creationService = $creationService;
+    $this->settingsService = $settingsService;
+  }
+
+  /**
+   * Показать форму создания организации
+   */
+  public function create()
+  {
+    // Получаем только минимальные справочные данные
+    $referenceData = [
+      'organizationTypes' => $this->settingsService->getOrganizationTypes(),
+      // Загружаем только первые 20 регионов для начального отображения
+      'regions' => \App\Models\Region::select('id', 'name', 'code')
+        ->orderBy('name')
+        ->limit(20)
+        ->get(),
+      'availableUsers' => User::select('id', 'name', 'email')
+        ->where('is_active', true)
+        ->limit(20)
+        ->get(),
+    ];
+
+    return Inertia::render('organizations/CreateOrganization', [
+      'referenceData' => $referenceData,
+    ]);
+  }
+
+  /**
+   * Создать организацию
+   */
+  public function store(Request $request)
+  {
+    Log::info('[OrgCreate] Request meta', [
+      'method' => $request->method(),
+      'content_type' => $request->header('Content-Type'),
+      'files_count' => count($request->allFiles()),
+      'file_keys' => array_keys($request->allFiles()),
+    ]);
+    Log::info('[OrgCreate] Request all (raw)', $request->all());
+    $validator = Validator::make($request->all(), [
+      // Основные данные
+      'name' => 'required|string|max:255',
+      'slug' => 'nullable|string|max:255|unique:organizations,slug',
+      'description' => 'nullable|string|max:1000',
+      'type' => 'required|string|in:school',
+      'status' => 'nullable|string|in:active,inactive,pending',
+
+      // Контактная информация
+      'address' => 'nullable|string|max:500',
+      'phone' => 'nullable|string|max:50',
+      'email' => 'nullable|email|max:255',
+      'website' => 'nullable|url|max:255',
+
+      // Локация
+      'region_id' => 'nullable|exists:regions,id',
+      'city_id' => 'nullable|exists:cities,id',
+      'settlement_id' => 'nullable|exists:settlements,id',
+      'city_name' => 'nullable|string|max:255',
+      'latitude' => 'nullable|numeric|between:-90,90',
+      'longitude' => 'nullable|numeric|between:-180,180',
+
+      // Медиа
+      'logo' => 'nullable|file|mimes:jpeg,png,jpg,webp,svg|max:5120', // 5MB для поддержки SVG
+      'images' => 'nullable|array|max:10',
+      'images.*' => 'file|image|mimes:jpeg,png,jpg,webp|max:2048',
+
+      // Дополнительные данные
+      'founded_at' => 'nullable|date',
+      'is_public' => 'nullable|boolean',
+
+      // Опционально: создание сайта
+      'create_site' => 'nullable|boolean',
+    ]);
+
+    if ($validator->fails()) {
+      Log::warning('[OrgCreate] Validation failed', [
+        'errors' => $validator->errors()->toArray(),
+      ]);
+      return redirect()->back()
+        ->withErrors($validator)
+        ->withInput();
     }
 
-    /**
-     * Показать форму создания организации
-     */
-    public function create()
-    {
-        // Получаем только минимальные справочные данные
-        $referenceData = [
-            'organizationTypes' => $this->settingsService->getOrganizationTypes(),
-            // Загружаем только первые 20 регионов для начального отображения
-            'regions' => \App\Models\Region::select('id', 'name', 'code')
-                ->orderBy('name')
-                ->limit(20)
-                ->get(),
-            'availableUsers' => User::select('id', 'name', 'email')
-                ->where('is_active', true)
-                ->limit(20)
-                ->get(),
+    try {
+      // Получаем данные запроса
+      $data = $request->except(['create_gallery', 'create_slider', 'create_site', 'site_template']);
+      Log::info('[OrgCreate] Data after except (pre-files)', $data);
+
+      // Обрабатываем загрузку логотипа
+      if ($request->hasFile('logo')) {
+        $logoPath = $request->file('logo')->store('organizations/logos', 'public');
+        $data['logo'] = $logoPath;
+      }
+
+      // Обрабатываем загрузку изображений
+      if ($request->hasFile('images')) {
+        $imagePaths = [];
+        foreach ($request->file('images') as $image) {
+          $imagePath = $image->store('organizations/images', 'public');
+          $imagePaths[] = $imagePath;
+        }
+        $data['images'] = $imagePaths;
+      }
+      Log::info('[OrgCreate] Data before create', $data);
+
+      // Создаем организацию
+      $organization = $this->creationService->createOrganization($data);
+      Log::info('[OrgCreate] Organization created', [
+        'organization_id' => $organization?->id,
+      ]);
+
+      // Сохраняем платежные настройки, если переданы
+      $paymentSettingsRaw = $request->get('payment_settings');
+      Log::info('[OrgCreate] payment_settings raw', ['value' => $paymentSettingsRaw]);
+      if (!empty($paymentSettingsRaw)) {
+        $paymentSettings = is_array($paymentSettingsRaw)
+          ? $paymentSettingsRaw
+          : (is_string($paymentSettingsRaw)
+            ? json_decode($paymentSettingsRaw, true)
+            : []);
+
+        if (is_array($paymentSettings)) {
+          // Нормализуем легаси ключи к единому формату
+          if (isset($paymentSettings['enabled_methods']) && !isset($paymentSettings['enabled_gateways'])) {
+            $paymentSettings['enabled_gateways'] = $paymentSettings['enabled_methods'];
+            unset($paymentSettings['enabled_methods']);
+          }
+          if (isset($paymentSettings['min_amount']) && !isset($paymentSettings['donation_min_amount'])) {
+            $paymentSettings['donation_min_amount'] = (int) $paymentSettings['min_amount'];
+            unset($paymentSettings['min_amount']);
+          }
+          if (isset($paymentSettings['max_amount']) && !isset($paymentSettings['donation_max_amount'])) {
+            $paymentSettings['donation_max_amount'] = (int) $paymentSettings['max_amount'];
+            unset($paymentSettings['max_amount']);
+          }
+
+          Log::info('[OrgCreate] payment_settings normalized', $paymentSettings);
+          $this->settingsService->updateSettings($organization, [
+            'payment_settings' => $paymentSettings,
+          ]);
+          Log::info('[OrgCreate] payment_settings saved');
+        }
+      }
+
+      // Создаем сайт если запрошено
+      if ($request->boolean('create_site')) {
+        $siteData = [
+          'title' => $organization->name,
+          'slug' => $organization->slug,
+          'is_primary' => true,
+          'is_published' => false,
+          'template' => $request->get('site_template', 'default'),
         ];
 
-        return Inertia::render('organizations/CreateOrganization', [
-            'referenceData' => $referenceData,
-        ]);
+        $this->creationService->createOrganizationSite($organization, $siteData);
+      }
+
+      // Очищаем кеш справочных данных
+      Cache::forget('organization_creation_reference_data');
+
+      Log::info('[OrgCreate] Redirecting to organizations.edit', ['id' => $organization->id]);
+      return redirect()
+        ->route('organizations.edit', ['organization' => $organization->id])
+        ->with('success', 'Организация успешно создана');
+    } catch (\Exception $e) {
+      Log::error('[OrgCreate] Exception', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+      return redirect()->back()
+        ->withErrors(['general' => 'Ошибка создания организации: ' . $e->getMessage()])
+        ->with('error', 'Ошибка создания организации: ' . $e->getMessage())
+        ->withInput();
+    }
+  }
+
+  /**
+   * Показать форму создания сайта для организации
+   */
+  public function createSite(Organization $organization)
+  {
+    // Проверяем, есть ли уже сайт у организации
+    $existingSite = $organization->sites()->where('is_primary', true)->first();
+
+    if ($existingSite) {
+      // Если сайт уже существует, перенаправляем на редактирование
+      return redirect()->route('organization.admin.sites.builder', [
+        'organization' => $organization,
+        'site' => $existingSite
+      ]);
     }
 
-    /**
-     * Создать организацию
-     */
-    public function store(Request $request)
-    {
-        Log::info('[OrgCreate] Request meta', [
-            'method' => $request->method(),
-            'content_type' => $request->header('Content-Type'),
-            'files_count' => count($request->allFiles()),
-            'file_keys' => array_keys($request->allFiles()),
-        ]);
-        Log::info('[OrgCreate] Request all (raw)', $request->all());
-        $validator = Validator::make($request->all(), [
-            // Основные данные
-            'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:organizations,slug',
-            'description' => 'nullable|string|max:1000',
-            'type' => 'required|string|in:school',
-            'status' => 'nullable|string|in:active,inactive,pending',
+    $templates = Cache::remember('site_templates', 3600, function () {
+      return [
+        'default' => [
+          'name' => 'Стандартный',
+          'description' => 'Классический макет с баннером и статистикой',
+          'preview' => '/images/templates/default.jpg',
+        ]
+      ];
+    });
 
-            // Контактная информация
-            'address' => 'nullable|string|max:500',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'website' => 'nullable|url|max:255',
+    return Inertia::render('organizations/CreateSite', [
+      'organization' => $organization->only(['id', 'name', 'slug', 'description']),
+      'templates' => $templates,
+    ]);
+  }
 
-            // Локация
-            'region_id' => 'nullable|exists:regions,id',
-            'city_id' => 'nullable|exists:cities,id',
-            'settlement_id' => 'nullable|exists:settlements,id',
-            'city_name' => 'nullable|string|max:255',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
+  /**
+   * Создать сайт для организации
+   */
+  public function storeSite(Request $request, Organization $organization): JsonResponse
+  {
+    $validator = Validator::make($request->all(), [
+      'name' => 'required|string|max:255',
+      'slug' => 'nullable|string|max:255',
+      'description' => 'nullable|string|max:1000',
+      'domain' => 'nullable|string|max:255',
+      'template' => 'required|string|in:default,modern,classic',
+    ]);
 
-            // Медиа
-            'logo' => 'nullable|file|mimes:jpeg,png,jpg,webp,svg|max:5120', // 5MB для поддержки SVG
-            'images' => 'nullable|array|max:10',
-            'images.*' => 'file|image|mimes:jpeg,png,jpg,webp|max:2048',
-
-            // Дополнительные данные
-            'founded_at' => 'nullable|date',
-            'is_public' => 'nullable|boolean',
-
-            // Администратор
-            'admin_user_id' => 'nullable|exists:users,id',
-
-            // Опционально: создание сайта
-            'create_site' => 'nullable|boolean',
-        ]);
-
-        if ($validator->fails()) {
-            Log::warning('[OrgCreate] Validation failed', [
-                'errors' => $validator->errors()->toArray(),
-            ]);
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        try {
-            // Получаем данные запроса
-            $data = $request->except(['admin_user_id', 'create_gallery', 'create_slider', 'create_site', 'site_template']);
-            Log::info('[OrgCreate] Data after except (pre-files)', $data);
-
-            // Обрабатываем загрузку логотипа
-            if ($request->hasFile('logo')) {
-                $logoPath = $request->file('logo')->store('organizations/logos', 'public');
-                $data['logo'] = $logoPath;
-            }
-
-            // Обрабатываем загрузку изображений
-            if ($request->hasFile('images')) {
-                $imagePaths = [];
-                foreach ($request->file('images') as $image) {
-                    $imagePath = $image->store('organizations/images', 'public');
-                    $imagePaths[] = $imagePath;
-                }
-                $data['images'] = $imagePaths;
-            }
-            Log::info('[OrgCreate] Data before create', $data);
-
-            // Получаем пользователя-администратора
-            $adminUser = null;
-            if ($request->filled('admin_user_id')) {
-                $adminUser = User::find($request->admin_user_id);
-            }
-
-            // Создаем организацию
-            $organization = $this->creationService->createOrganization($data, $adminUser);
-            Log::info('[OrgCreate] Organization created', [
-                'organization_id' => $organization?->id,
-            ]);
-
-            // Сохраняем платежные настройки, если переданы
-            $paymentSettingsRaw = $request->get('payment_settings');
-            Log::info('[OrgCreate] payment_settings raw', ['value' => $paymentSettingsRaw]);
-            if (!empty($paymentSettingsRaw)) {
-                $paymentSettings = is_array($paymentSettingsRaw)
-                    ? $paymentSettingsRaw
-                    : (is_string($paymentSettingsRaw)
-                        ? json_decode($paymentSettingsRaw, true)
-                        : []);
-
-                if (is_array($paymentSettings)) {
-                    // Нормализуем легаси ключи к единому формату
-                    if (isset($paymentSettings['enabled_methods']) && !isset($paymentSettings['enabled_gateways'])) {
-                        $paymentSettings['enabled_gateways'] = $paymentSettings['enabled_methods'];
-                        unset($paymentSettings['enabled_methods']);
-                    }
-                    if (isset($paymentSettings['min_amount']) && !isset($paymentSettings['donation_min_amount'])) {
-                        $paymentSettings['donation_min_amount'] = (int) $paymentSettings['min_amount'];
-                        unset($paymentSettings['min_amount']);
-                    }
-                    if (isset($paymentSettings['max_amount']) && !isset($paymentSettings['donation_max_amount'])) {
-                        $paymentSettings['donation_max_amount'] = (int) $paymentSettings['max_amount'];
-                        unset($paymentSettings['max_amount']);
-                    }
-
-                    Log::info('[OrgCreate] payment_settings normalized', $paymentSettings);
-                    $this->settingsService->updateSettings($organization, [
-                        'payment_settings' => $paymentSettings,
-                    ]);
-                    Log::info('[OrgCreate] payment_settings saved');
-                }
-            }
-
-            // Создаем сайт если запрошено
-            if ($request->boolean('create_site')) {
-                $siteData = [
-                    'title' => $organization->name,
-                    'slug' => $organization->slug,
-                    'is_primary' => true,
-                    'is_published' => false,
-                    'template' => $request->get('site_template', 'default'),
-                ];
-
-                $this->creationService->createOrganizationSite($organization, $siteData);
-            }
-
-            // Очищаем кеш справочных данных
-            Cache::forget('organization_creation_reference_data');
-
-            Log::info('[OrgCreate] Redirecting to organizations.edit', ['id' => $organization->id]);
-            return redirect()
-                ->route('organizations.edit', ['organization' => $organization->id])
-                ->with('success', 'Организация успешно создана');
-        } catch (\Exception $e) {
-            Log::error('[OrgCreate] Exception', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return redirect()->back()
-                ->withErrors(['general' => 'Ошибка создания организации: ' . $e->getMessage()])
-                ->with('error', 'Ошибка создания организации: ' . $e->getMessage())
-                ->withInput();
-        }
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => $validator->errors()
+      ], 422);
     }
 
-    /**
-     * Показать форму создания сайта для организации
-     */
-    public function createSite(Organization $organization)
-    {
-        // Проверяем, есть ли уже сайт у организации
-        $existingSite = $organization->sites()->where('is_primary', true)->first();
+    try {
+      $siteData = $request->all();
 
-        if ($existingSite) {
-            // Если сайт уже существует, перенаправляем на редактирование
-            return redirect()->route('organization.admin.sites.builder', [
-                'organization' => $organization,
-                'site' => $existingSite
-            ]);
-        }
+      $site = $this->creationService->createOrganizationSite($organization, $siteData);
 
-        $templates = Cache::remember('site_templates', 3600, function () {
-            return [
-                'default' => [
-                    'name' => 'Стандартный',
-                    'description' => 'Классический макет с баннером и статистикой',
-                    'preview' => '/images/templates/default.jpg',
-                ]
-            ];
-        });
+      return response()->json([
+        'message' => 'Сайт успешно создан',
+        'site' => $site,
+        'redirect_url' => route('organization.admin.sites.builder', [
+          'organization' => $organization,
+          'site' => $site
+        ]),
+      ], 201);
+    } catch (\Exception $e) {
+      return response()->json([
+        'message' => 'Ошибка создания сайта: ' . $e->getMessage()
+      ], 500);
+    }
+  }
 
-        return Inertia::render('organizations/CreateSite', [
-            'organization' => $organization->only(['id', 'name', 'slug', 'description']),
-            'templates' => $templates,
-        ]);
+  /**
+   * Проверить доступность slug
+   */
+  public function checkSlug(Request $request): JsonResponse
+  {
+    $validator = Validator::make($request->all(), [
+      'slug' => 'required|string|max:255|regex:/^[a-z0-9\-]+$/',
+      'organization_id' => 'nullable|exists:organizations,id',
+    ]);
+
+    if ($validator->fails()) {
+      return response()->json([
+        'available' => false,
+        'message' => 'Некорректный формат slug'
+      ]);
     }
 
-    /**
-     * Создать сайт для организации
-     */
-    public function storeSite(Request $request, Organization $organization): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'domain' => 'nullable|string|max:255',
-            'template' => 'required|string|in:default,modern,classic',
-        ]);
+    $query = Organization::where('slug', $request->slug);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            $siteData = $request->all();
-
-            $site = $this->creationService->createOrganizationSite($organization, $siteData);
-
-            return response()->json([
-                'message' => 'Сайт успешно создан',
-                'site' => $site,
-                'redirect_url' => route('organization.admin.sites.builder', [
-                    'organization' => $organization,
-                    'site' => $site
-                ]),
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Ошибка создания сайта: ' . $e->getMessage()
-            ], 500);
-        }
+    if ($request->filled('organization_id')) {
+      $query->where('id', '!=', $request->organization_id);
     }
 
-    /**
-     * Проверить доступность slug
-     */
-    public function checkSlug(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'slug' => 'required|string|max:255|regex:/^[a-z0-9\-]+$/',
-            'organization_id' => 'nullable|exists:organizations,id',
-        ]);
+    $available = !$query->exists();
 
-        if ($validator->fails()) {
-            return response()->json([
-                'available' => false,
-                'message' => 'Некорректный формат slug'
-            ]);
-        }
+    return response()->json([
+      'available' => $available,
+      'message' => $available ? 'Slug доступен' : 'Slug уже используется'
+    ]);
+  }
 
-        $query = Organization::where('slug', $request->slug);
+  /**
+   * Получить регионы с поиском и пагинацией
+   */
+  public function getRegions(Request $request): JsonResponse
+  {
+    $validator = Validator::make($request->all(), [
+      'search' => 'nullable|string|max:255',
+      'per_page' => 'nullable|integer|min:1|max:50',
+    ]);
 
-        if ($request->filled('organization_id')) {
-            $query->where('id', '!=', $request->organization_id);
-        }
-
-        $available = !$query->exists();
-
-        return response()->json([
-            'available' => $available,
-            'message' => $available ? 'Slug доступен' : 'Slug уже используется'
-        ]);
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => $validator->errors()
+      ], 422);
     }
 
-    /**
-     * Получить регионы с поиском и пагинацией
-     */
-    public function getRegions(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'search' => 'nullable|string|max:255',
-            'per_page' => 'nullable|integer|min:1|max:50',
-        ]);
+    $search = $request->get('search', '');
+    $perPage = $request->get('per_page', 20);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+    $query = \App\Models\Region::select('id', 'name', 'code')
+      ->orderBy('name');
 
-        $search = $request->get('search', '');
-        $perPage = $request->get('per_page', 20);
-
-        $query = \App\Models\Region::select('id', 'name', 'code')
-            ->orderBy('name');
-
-        if ($search) {
-            $query->where('name', 'like', "%{$search}%");
-        }
-
-        $regions = $query->paginate($perPage);
-
-        return response()->json([
-            'data' => $regions->items(),
-            'current_page' => $regions->currentPage(),
-            'last_page' => $regions->lastPage(),
-            'per_page' => $regions->perPage(),
-            'total' => $regions->total(),
-        ]);
+    if ($search) {
+      $query->where('name', 'like', "%{$search}%");
     }
 
-    /**
-     * Получить города по региону
-     */
-    public function getCitiesByRegion(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'region_id' => 'nullable|exists:regions,id',
-        ]);
+    $regions = $query->paginate($perPage);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+    return response()->json([
+      'data' => $regions->items(),
+      'current_page' => $regions->currentPage(),
+      'last_page' => $regions->lastPage(),
+      'per_page' => $regions->perPage(),
+      'total' => $regions->total(),
+    ]);
+  }
 
-        // Если region_id не передан, возвращаем пустой массив
-        if (!$request->region_id) {
-            return response()->json([]);
-        }
+  /**
+   * Получить города по региону
+   */
+  public function getCitiesByRegion(Request $request): JsonResponse
+  {
+    $validator = Validator::make($request->all(), [
+      'region_id' => 'nullable|exists:regions,id',
+    ]);
 
-        $cities = Cache::remember("cities_region_{$request->region_id}", 3600, function () use ($request) {
-            return \App\Models\City::where('region_id', $request->region_id)
-                ->select('id', 'name')
-                ->orderBy('name')
-                ->get();
-        });
-
-        return response()->json($cities);
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => $validator->errors()
+      ], 422);
     }
 
-    /**
-     * Получить населенные пункты по городу
-     */
-    public function getSettlementsByCity(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'city_id' => 'nullable|exists:cities,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        // Если city_id не передан, возвращаем пустой массив
-        if (!$request->city_id) {
-            return response()->json([]);
-        }
-
-        $settlements = Cache::remember("settlements_city_{$request->city_id}", 3600, function () use ($request) {
-            return \App\Models\Settlement::where('city_id', $request->city_id)
-                ->select('id', 'name')
-                ->orderBy('name')
-                ->get();
-        });
-
-        return response()->json($settlements);
+    // Если region_id не передан, возвращаем пустой массив
+    if (!$request->region_id) {
+      return response()->json([]);
     }
 
-    /**
-     * Загрузить логотип
-     */
-    public function uploadLogo(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'logo' => 'required|mimes:jpeg,png,jpg,webp,svg|max:5120', // 5MB для поддержки SVG
-        ]);
+    $cities = Cache::remember("cities_region_{$request->region_id}", 3600, function () use ($request) {
+      return \App\Models\City::where('region_id', $request->region_id)
+        ->select('id', 'name')
+        ->orderBy('name')
+        ->get();
+    });
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+    return response()->json($cities);
+  }
 
-        try {
-            $path = $request->file('logo')->store('organizations/logos', 'public');
+  /**
+   * Получить населенные пункты по городу
+   */
+  public function getSettlementsByCity(Request $request): JsonResponse
+  {
+    $validator = Validator::make($request->all(), [
+      'city_id' => 'nullable|exists:cities,id',
+    ]);
 
-            return response()->json([
-                'message' => 'Логотип загружен',
-                'url' => Storage::url($path),
-                'path' => $path,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Ошибка загрузки логотипа: ' . $e->getMessage()
-            ], 500);
-        }
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => $validator->errors()
+      ], 422);
     }
 
-    /**
-     * Загрузить изображения
-     */
-    public function uploadImages(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'images' => 'required|array|max:10',
-            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            $uploadedImages = [];
-
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('organizations/images', 'public');
-                $uploadedImages[] = [
-                    'url' => Storage::url($path),
-                    'path' => $path,
-                ];
-            }
-
-            return response()->json([
-                'message' => 'Изображения загружены',
-                'images' => $uploadedImages,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Ошибка загрузки изображений: ' . $e->getMessage()
-            ], 500);
-        }
+    // Если city_id не передан, возвращаем пустой массив
+    if (!$request->city_id) {
+      return response()->json([]);
     }
 
-    /**
-     * Получить пользователей с поиском и пагинацией
-     */
-    public function getUsers(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'search' => 'nullable|string|max:255',
-            'per_page' => 'nullable|integer|min:1|max:50',
-        ]);
+    $settlements = Cache::remember("settlements_city_{$request->city_id}", 3600, function () use ($request) {
+      return \App\Models\Settlement::where('city_id', $request->city_id)
+        ->select('id', 'name')
+        ->orderBy('name')
+        ->get();
+    });
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+    return response()->json($settlements);
+  }
 
-        $search = $request->get('search', '');
-        $perPage = $request->get('per_page', 20);
+  /**
+   * Загрузить логотип
+   */
+  public function uploadLogo(Request $request): JsonResponse
+  {
+    $validator = Validator::make($request->all(), [
+      'logo' => 'required|mimes:jpeg,png,jpg,webp,svg|max:5120', // 5MB для поддержки SVG
+    ]);
 
-        $query = User::select('id', 'name', 'email')
-            ->where('is_active', true)
-            ->orderBy('name');
-
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        $users = $query->paginate($perPage);
-
-        return response()->json([
-            'data' => $users->items(),
-            'current_page' => $users->currentPage(),
-            'last_page' => $users->lastPage(),
-            'per_page' => $users->perPage(),
-            'total' => $users->total(),
-        ]);
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => $validator->errors()
+      ], 422);
     }
+
+    try {
+      $path = $request->file('logo')->store('organizations/logos', 'public');
+
+      return response()->json([
+        'message' => 'Логотип загружен',
+        'url' => Storage::url($path),
+        'path' => $path,
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'message' => 'Ошибка загрузки логотипа: ' . $e->getMessage()
+      ], 500);
+    }
+  }
+
+  /**
+   * Загрузить изображения
+   */
+  public function uploadImages(Request $request): JsonResponse
+  {
+    $validator = Validator::make($request->all(), [
+      'images' => 'required|array|max:10',
+      'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+    ]);
+
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => $validator->errors()
+      ], 422);
+    }
+
+    try {
+      $uploadedImages = [];
+
+      foreach ($request->file('images') as $image) {
+        $path = $image->store('organizations/images', 'public');
+        $uploadedImages[] = [
+          'url' => Storage::url($path),
+          'path' => $path,
+        ];
+      }
+
+      return response()->json([
+        'message' => 'Изображения загружены',
+        'images' => $uploadedImages,
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'message' => 'Ошибка загрузки изображений: ' . $e->getMessage()
+      ], 500);
+    }
+  }
+
+  /**
+   * Получить пользователей с поиском и пагинацией
+   */
+  public function getUsers(Request $request): JsonResponse
+  {
+    $validator = Validator::make($request->all(), [
+      'search' => 'nullable|string|max:255',
+      'per_page' => 'nullable|integer|min:1|max:50',
+    ]);
+
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => $validator->errors()
+      ], 422);
+    }
+
+    $search = $request->get('search', '');
+    $perPage = $request->get('per_page', 20);
+
+    $query = User::select('id', 'name', 'email')
+      ->where('is_active', true)
+      ->orderBy('name');
+
+    if ($search) {
+      $query->where(function ($q) use ($search) {
+        $q->where('name', 'like', "%{$search}%")
+          ->orWhere('email', 'like', "%{$search}%");
+      });
+    }
+
+    $users = $query->paginate($perPage);
+
+    return response()->json([
+      'data' => $users->items(),
+      'current_page' => $users->currentPage(),
+      'last_page' => $users->lastPage(),
+      'per_page' => $users->perPage(),
+      'total' => $users->total(),
+    ]);
+  }
 }

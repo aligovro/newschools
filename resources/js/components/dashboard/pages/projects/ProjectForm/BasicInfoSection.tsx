@@ -1,3 +1,4 @@
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +23,7 @@ export function BasicInfoSection({
     data,
     errors,
     categories,
+    projectCategories = [],
     onDataChange,
 }: BasicInfoSectionProps) {
     const categoryOptions: CategoryOption[] = Object.entries(categories).map(
@@ -30,6 +32,14 @@ export function BasicInfoSection({
             label,
         }),
     );
+
+    const handleCategoryToggle = (categoryId: number) => {
+        const currentIds = data.category_ids || [];
+        const newIds = currentIds.includes(categoryId)
+            ? currentIds.filter((id) => id !== categoryId)
+            : [...currentIds, categoryId];
+        onDataChange('category_ids', newIds);
+    };
 
     return (
         <div className="create-organization__section">
@@ -114,6 +124,59 @@ export function BasicInfoSection({
                         />
                     </div>
                 </div>
+
+                {projectCategories.length > 0 && (
+                    <div className="create-organization__field-group">
+                        <div className="create-organization__field">
+                            <Label>
+                                Категории проекта
+                                <span className="text-muted-foreground">
+                                    {' '}
+                                    (можно выбрать несколько)
+                                </span>
+                            </Label>
+                            <div className="mt-2 space-y-2">
+                                {projectCategories.map((category) => {
+                                    const isChecked = (
+                                        data.category_ids || []
+                                    ).includes(category.id);
+                                    return (
+                                        <div
+                                            key={category.id}
+                                            className="flex items-center space-x-2"
+                                        >
+                                            <Checkbox
+                                                id={`category-${category.id}`}
+                                                checked={isChecked}
+                                                onCheckedChange={() =>
+                                                    handleCategoryToggle(
+                                                        category.id,
+                                                    )
+                                                }
+                                            />
+                                            <Label
+                                                htmlFor={`category-${category.id}`}
+                                                className="cursor-pointer font-normal"
+                                            >
+                                                {category.name}
+                                                {category.description && (
+                                                    <span className="ml-2 text-sm text-muted-foreground">
+                                                        ({category.description})
+                                                    </span>
+                                                )}
+                                            </Label>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {errors.category_ids && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {errors.category_ids}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 <div className="create-organization__field-group">
                     <div className="create-organization__field">

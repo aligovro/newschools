@@ -126,7 +126,7 @@ export default function AllProjectsIndex({
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
+            title: 'Админ панель',
             href: '/dashboard',
         },
         {
@@ -166,8 +166,8 @@ export default function AllProjectsIndex({
                             />
                             <Select
                                 value={statusFilter}
-                                onChange={(e) =>
-                                    setStatusFilter(e.target.value)
+                                onValueChange={(value) =>
+                                    setStatusFilter(value)
                                 }
                             >
                                 <option value="">Все статусы</option>
@@ -179,11 +179,14 @@ export default function AllProjectsIndex({
                             </Select>
                             <Select
                                 value={orgFilter}
-                                onChange={(e) => setOrgFilter(e.target.value)}
+                                onValueChange={(value) => setOrgFilter(value)}
                             >
                                 <option value="">Все организации</option>
                                 {organizations.map((org) => (
-                                    <option key={org.id} value={org.id}>
+                                    <option
+                                        key={org.id}
+                                        value={org.id.toString()}
+                                    >
                                         {org.name}
                                     </option>
                                 ))}

@@ -52,7 +52,7 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
+            title: 'Админ панель',
             href: '/dashboard',
         },
         {

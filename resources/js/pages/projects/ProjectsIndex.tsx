@@ -120,7 +120,7 @@ export default function ProjectsIndex({
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
+            title: 'Админ панель',
             href: '/dashboard',
         },
         {

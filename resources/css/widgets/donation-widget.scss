@@ -297,16 +297,6 @@
     }
   }
 
-  // Адаптивность
-  @media (max-width: 768px) {
-    .preset-amounts {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .payment-methods {
-      grid-template-columns: 1fr;
-    }
-  }
 
   // Цветовые схемы
   &.dark-theme {
@@ -418,11 +408,6 @@
     }
   }
 
-  @media (max-width: 480px) {
-    left: 10px !important;
-    right: 10px !important;
-    max-width: none;
-  }
 }
 
 // Модальное окно виджета

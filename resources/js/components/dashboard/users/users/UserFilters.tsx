@@ -182,10 +182,9 @@ const UserFilters: React.FC<UserFiltersProps> = ({
 const getRoleDisplayName = (roleName: string) => {
     const roleNames: Record<string, string> = {
         super_admin: 'Супер админ',
-        admin: 'Администратор',
-        organization_admin: 'Админ организации',
-        moderator: 'Модератор',
-        editor: 'Редактор',
+        organization_admin: 'Администратор школы',
+        graduate: 'Выпускник',
+        sponsor: 'Спонсор',
         user: 'Пользователь',
     };
     return roleNames[roleName] || roleName;

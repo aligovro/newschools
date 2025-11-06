@@ -14,6 +14,12 @@ interface GeneralTabProps {
     data: ProjectFormData;
     errors: Record<string, string>;
     categories: Record<string, string>;
+    projectCategories?: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        description?: string;
+    }>;
     paymentSettings: PaymentSettings;
     onDataChange: (key: keyof ProjectFormData, value: unknown) => void;
     onPaymentChange: (key: keyof PaymentSettings, value: unknown) => void;
@@ -28,6 +34,7 @@ export default function GeneralTab({
     data,
     errors,
     categories,
+    projectCategories = [],
     paymentSettings,
     onDataChange,
     onPaymentChange,
@@ -44,6 +51,7 @@ export default function GeneralTab({
                     data={data}
                     errors={errors}
                     categories={categories}
+                    projectCategories={projectCategories}
                     onDataChange={onDataChange}
                 />
 

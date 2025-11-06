@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
 import { router } from '@inertiajs/react';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Autoplay,
     EffectCube,
@@ -406,6 +407,7 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
     style,
 }) => {
     const config = widget.config as HeroOutputConfig;
+    const [imagesLoaded, setImagesLoaded] = useState(false);
 
     const {
         height = '600px',
@@ -468,7 +470,92 @@ export const HeroOutput: React.FC<WidgetOutputProps> = ({
         return [];
     }, [widget, slides]);
 
+    // Check if images are loaded
+    useEffect(() => {
+        // Reset loading state when slides change
+        setImagesLoaded(false);
+
+        if (currentSlides.length === 0) {
+            setImagesLoaded(true);
+            return;
+        }
+
+        const imageUrls = currentSlides
+            .map((slide: HeroSlide) => slide.backgroundImage)
+            .filter((url: string | undefined | null): url is string => {
+                if (!url || typeof url !== 'string') return false;
+                return !url.startsWith('blob:');
+            });
+
+        if (imageUrls.length === 0) {
+            // No images to load, mark as loaded
+            setImagesLoaded(true);
+            return;
+        }
+
+        let isCancelled = false;
+
+        const imagePromises = imageUrls.map((url: string) => {
+            return new Promise<void>((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    if (!isCancelled) resolve();
+                };
+                img.onerror = () => {
+                    // Even if image fails, count it as "loaded" to not block rendering
+                    if (!isCancelled) resolve();
+                };
+                img.src = url;
+            });
+        });
+
+        // Set a timeout to show content even if images take too long
+        const timeout = setTimeout(() => {
+            if (!isCancelled) {
+                setImagesLoaded(true);
+            }
+        }, 3000);
+
+        Promise.all(imagePromises)
+            .then(() => {
+                if (!isCancelled) {
+                    clearTimeout(timeout);
+                    setImagesLoaded(true);
+                }
+            })
+            .catch(() => {
+                if (!isCancelled) {
+                    clearTimeout(timeout);
+                    setImagesLoaded(true);
+                }
+            });
+
+        // Cleanup function
+        return () => {
+            isCancelled = true;
+            clearTimeout(timeout);
+        };
+    }, [currentSlides]);
+
     if (currentSlides.length === 0) return null;
+
+    // Show skeleton while images are loading
+    if (!imagesLoaded) {
+        return (
+            <div
+                className={`hero-output ${className || ''} ${css_class || ''}`}
+                style={style}
+            >
+                <Skeleton
+                    className="w-full"
+                    style={{
+                        height: height || '600px',
+                        borderRadius: '0.375rem',
+                    }}
+                />
+            </div>
+        );
+    }
 
     return (
         <div

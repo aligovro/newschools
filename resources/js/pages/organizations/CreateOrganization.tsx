@@ -6,7 +6,7 @@ import { Head } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Админ панель', href: '/dashboard' },
     { title: 'Организации', href: '/dashboard/organizations' },
     { title: 'Создать организацию', href: '/dashboard/organizations/create' },
 ];
@@ -31,19 +31,19 @@ export default function CreateOrganization({ referenceData }: Props) {
             <Head title="Создать организацию" />
             <div className="p-6">
                 <div className="mb-4 flex items-center space-x-4">
-                        <Button
-                            variant="ghost"
-                            onClick={() => window.history.back()}
-                        >
+                    <Button
+                        variant="ghost"
+                        onClick={() => window.history.back()}
+                    >
                         <ArrowLeft className="mr-2 h-4 w-4" /> Назад
-                        </Button>
-                        <div>
+                    </Button>
+                    <div>
                         <h1 className="text-xl font-semibold">
-                                Создать организацию
-                            </h1>
+                            Создать организацию
+                        </h1>
                         <p className="text-sm text-muted-foreground">
                             Зарегистрировать новую организацию
-                            </p>
+                        </p>
                     </div>
                 </div>
                 <OrganizationForm

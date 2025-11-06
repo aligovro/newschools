@@ -186,7 +186,7 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
                       <img
                           src={col.icon}
                           alt={col.label}
-                          className="h-12 w-12 object-contain"
+                          className="h-22 w-22 object-contain"
                       />
                   ) : (
                       defaultIcons[index]
@@ -231,28 +231,13 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
                         {statsItems.map((item, index) => (
                             <div
                                 key={index}
-                                className="flex items-end justify-between rounded-lg bg-white p-6"
+                                className="flex items-end rounded-lg bg-white p-6"
                             >
-                                <div className="flex-1">
-                                    <div
-                                        className="mb-2"
-                                        style={{
-                                            fontWeight: 700,
-                                            fontSize: '28px',
-                                            lineHeight: '120%',
-                                            color: '#1a1a1a',
-                                        }}
-                                    >
+                                <div>
+                                    <div className="alumni-stats-output__value mb-2">
                                         {item.value} {item.label}
                                     </div>
-                                    <span
-                                        style={{
-                                            fontWeight: 500,
-                                            fontSize: '18px',
-                                            lineHeight: '120%',
-                                            color: '#1a1a1a',
-                                        }}
-                                    >
+                                    <span className="alumni-stats-output__subtitle">
                                         {item.subtitle}
                                     </span>
                                 </div>

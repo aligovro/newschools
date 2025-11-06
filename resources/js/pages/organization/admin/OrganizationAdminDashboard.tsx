@@ -46,7 +46,7 @@ export default function OrganizationAdminDashboard({
 }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
+            title: 'Админ панель',
             href: '/dashboard',
         },
         {

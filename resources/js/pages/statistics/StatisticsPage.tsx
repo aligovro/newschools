@@ -6,7 +6,7 @@ import { BarChart3 } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Админ панель',
         href: dashboard().url,
     },
     {

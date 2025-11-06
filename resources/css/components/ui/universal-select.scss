@@ -415,19 +415,4 @@
     --color-shadow-light: rgba(0, 0, 0, 0.05);
 }
 
-// Responsive
-@media (max-width: 640px) {
-    .universal-select {
-        &__dropdown {
-            max-height: 50vh;
-        }
-
-        &__option {
-            padding: 0.75rem;
-        }
-
-        &__search {
-            padding: 1rem;
-        }
-    }
-}
+// Адаптивность перенесена в _media.scss
