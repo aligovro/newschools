@@ -52,12 +52,18 @@ class HandleInertiaRequests extends Middleware
       ? $settings->getTerminologyForOrganization($organizationId)
       : $settings->getTerminology();
 
+    // Загружаем пользователя с ролями и организациями
+    $user = $request->user();
+    if ($user) {
+      $user->load(['roles', 'permissions', 'organizations']);
+    }
+
     return [
       ...parent::share($request),
       'name' => config('app.name'),
       'quote' => ['message' => trim($message), 'author' => trim($author)],
       'auth' => [
-        'user' => $request->user(),
+        'user' => $user,
       ],
       'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
       'terminology' => $terminology,

@@ -4,12 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import {
-    Edit,
-    FileText,
-    Home,
-    Trash2,
-} from 'lucide-react';
+import { Edit, Home, Trash2 } from 'lucide-react';
 
 interface Site {
     id: number;
@@ -55,11 +50,14 @@ interface Props {
 
 export default function ShowSitePage({ site, page }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Админ панель', href: '/dashboard' },
         { title: 'Сайты', href: '/dashboard/sites' },
         { title: site.name, href: `/dashboard/sites/${site.id}` },
         { title: 'Страницы', href: `/dashboard/sites/${site.id}/pages` },
-        { title: page.title },
+        {
+            title: page.title,
+            href: '',
+        },
     ];
 
     const getStatusBadge = (status: string) => {
@@ -133,7 +131,7 @@ export default function ShowSitePage({ site, page }: Props) {
                 {/* Page Info */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Main Content */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="space-y-6 lg:col-span-2">
                         {/* Images */}
                         {page.image && (
                             <Card>
@@ -141,7 +139,7 @@ export default function ShowSitePage({ site, page }: Props) {
                                     <img
                                         src={page.image || ''}
                                         alt={page.title}
-                                        className="w-full h-64 object-cover rounded-t-lg"
+                                        className="h-64 w-full rounded-t-lg object-cover"
                                     />
                                 </CardContent>
                             </Card>
@@ -188,7 +186,9 @@ export default function ShowSitePage({ site, page }: Props) {
                         {page.images && page.images.length > 0 && (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Дополнительные изображения</CardTitle>
+                                    <CardTitle>
+                                        Дополнительные изображения
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -197,7 +197,7 @@ export default function ShowSitePage({ site, page }: Props) {
                                                 key={index}
                                                 src={imageUrl}
                                                 alt={`${page.title} - ${index + 1}`}
-                                                className="w-full h-32 object-cover rounded"
+                                                className="h-32 w-full rounded object-cover"
                                             />
                                         ))}
                                     </div>
@@ -217,7 +217,7 @@ export default function ShowSitePage({ site, page }: Props) {
                                             <Link
                                                 key={child.id}
                                                 href={`/dashboard/sites/${site.id}/pages/${child.id}`}
-                                                className="flex items-center justify-between rounded p-2 hover:bg-muted"
+                                                className="hover:bg-muted flex items-center justify-between rounded p-2"
                                             >
                                                 <span>{child.title}</span>
                                                 <Badge variant="outline">
@@ -243,7 +243,9 @@ export default function ShowSitePage({ site, page }: Props) {
                                     <h4 className="mb-1 text-sm font-medium text-muted-foreground">
                                         URL (slug)
                                     </h4>
-                                    <p className="text-sm">/{page.slug || '(не указан)'}</p>
+                                    <p className="text-sm">
+                                        /{page.slug || '(не указан)'}
+                                    </p>
                                 </div>
                                 {page.template && (
                                     <div>
@@ -262,7 +264,7 @@ export default function ShowSitePage({ site, page }: Props) {
                                         </h4>
                                         <Link
                                             href={`/dashboard/sites/${site.id}/pages/${page.parent.id}`}
-                                            className="text-primary text-sm hover:underline"
+                                            className="text-sm text-primary hover:underline"
                                         >
                                             {page.parent.title}
                                         </Link>
@@ -272,9 +274,7 @@ export default function ShowSitePage({ site, page }: Props) {
                                     <h4 className="mb-1 text-sm font-medium text-muted-foreground">
                                         Порядок сортировки
                                     </h4>
-                                    <p className="text-sm">
-                                        {page.sort_order}
-                                    </p>
+                                    <p className="text-sm">{page.sort_order}</p>
                                 </div>
                                 <div>
                                     <h4 className="mb-1 text-sm font-medium text-muted-foreground">
@@ -322,7 +322,9 @@ export default function ShowSitePage({ site, page }: Props) {
                             </CardHeader>
                             <CardContent className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm">Главная страница</span>
+                                    <span className="text-sm">
+                                        Главная страница
+                                    </span>
                                     <Badge
                                         variant={
                                             page.is_homepage
@@ -346,9 +348,7 @@ export default function ShowSitePage({ site, page }: Props) {
                                     </Badge>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm">
-                                        В навигации
-                                    </span>
+                                    <span className="text-sm">В навигации</span>
                                     <Badge
                                         variant={
                                             page.show_in_navigation
@@ -367,4 +367,3 @@ export default function ShowSitePage({ site, page }: Props) {
         </AppLayout>
     );
 }
-

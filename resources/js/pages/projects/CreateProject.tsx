@@ -9,16 +9,29 @@ interface Organization {
     };
 }
 
+interface ProjectCategory {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+}
+
 interface Props {
     organization: Organization;
     categories: Record<string, string>;
+    projectCategories?: ProjectCategory[];
 }
 
-export default function CreateProject({ organization, categories }: Props) {
+export default function CreateProject({
+    organization,
+    categories,
+    projectCategories = [],
+}: Props) {
     return (
         <ProjectForm
             organization={organization}
             categories={categories}
+            projectCategories={projectCategories}
             isEdit={false}
         />
     );

@@ -103,6 +103,22 @@
 }
 
 // Анимации
+@keyframes skeleton-pulsate {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.skeleton-pulsate {
+    animation: skeleton-pulsate 1.5s ease-in-out 0.5s infinite;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -116,18 +132,6 @@
 
 .fade-in {
     animation: fadeIn $transition-slow ease-out;
-}
-
-// Адаптивность
-@media (max-width: 768px) {
-    .custom-button {
-        padding: $spacing-sm;
-        font-size: 0.875rem;
-    }
-
-    .gradient-card {
-        padding: $spacing-md;
-    }
 }
 
 // ========================================

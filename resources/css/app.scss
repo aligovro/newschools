@@ -17,6 +17,7 @@
 @import './widgets/menu-widget.scss';
 @import './widgets/auth-menu-widget.scss';
 @import './widgets/hero-widget.scss';
+@import './widgets/alumni-stats-widget.scss';
 
 // Import UI components
 @import './components/ui/universal-select.scss';
@@ -64,6 +65,9 @@
 
 /* Custom styles */
 @import 'custom';
+
+/* Media queries - адаптивность */
+@import '_media';
 
 /* Sidebar styles */
 @import 'components/sidebar.scss';

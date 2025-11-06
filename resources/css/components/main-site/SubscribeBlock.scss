@@ -67,7 +67,7 @@
 .subscribe-block__subscribe-button {
     width: 36px;
     height: 36px;
-    background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+    background: $accent-gradient;
     border-radius: 50%;
     color: white;
     transition:

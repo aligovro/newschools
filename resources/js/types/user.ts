@@ -4,6 +4,7 @@ export interface User {
     name: string;
     email: string;
     email_verified_at: string | null;
+    photo: string | null;
     created_at: string;
     updated_at: string;
     roles: Role[];
@@ -33,7 +34,9 @@ export interface CreateUserForm {
     email: string;
     password: string;
     password_confirmation: string;
+    photo?: string | null;
     roles: string[];
+    organization_id?: number | null;
 }
 
 export interface UpdateUserForm {
@@ -41,7 +44,9 @@ export interface UpdateUserForm {
     email?: string;
     password?: string;
     password_confirmation?: string;
+    photo?: string | null;
     roles?: string[];
+    organization_id?: number | null;
 }
 
 export interface CreateRoleForm {

@@ -27,7 +27,7 @@ import {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Админ панель',
         href: dashboard().url,
     },
 ];
@@ -59,7 +59,9 @@ const getQuickActions = (terminology: any, mainSiteId?: number | null) => [
     {
         title: 'Управление главным сайтом',
         description: 'Конструктор и настройки главного сайта',
-        href: mainSiteId ? `/dashboard/sites/${mainSiteId}` : '/dashboard/sites',
+        href: mainSiteId
+            ? `/dashboard/sites/${mainSiteId}`
+            : '/dashboard/sites',
         icon: Globe,
         color: 'bg-indigo-500',
     },

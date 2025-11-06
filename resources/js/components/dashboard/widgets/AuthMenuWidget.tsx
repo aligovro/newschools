@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSelector } from '@/store';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -42,6 +43,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         string,
         unknown
     > | null>(null);
+    const [isCheckingSession, setIsCheckingSession] = useState(false);
 
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
@@ -78,19 +80,35 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
     useEffect(() => {
         const needSessionFetch =
             !isAuthenticated && !localStorage.getItem('token');
-        if (!needSessionFetch) return;
+        if (!needSessionFetch) {
+            setIsCheckingSession(false);
+            return;
+        }
         let cancelled = false;
+        setIsCheckingSession(true);
         (async () => {
             try {
                 const res = await fetch('/api/public/session-user', {
                     credentials: 'include',
                 });
-                if (!res.ok) return;
+                if (!res.ok) {
+                    if (!cancelled) {
+                        setIsCheckingSession(false);
+                        setSessionUser(null);
+                    }
+                    return;
+                }
                 const data = await res.json();
                 const isValidUser = data && typeof data.id === 'number';
-                if (!cancelled) setSessionUser(isValidUser ? data : null);
+                if (!cancelled) {
+                    setSessionUser(isValidUser ? data : null);
+                    setIsCheckingSession(false);
+                }
             } catch {
-                // ignore
+                if (!cancelled) {
+                    setIsCheckingSession(false);
+                    setSessionUser(null);
+                }
             }
         })();
         return () => {
@@ -189,6 +207,16 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
     const extraButtonUrl = String(cfg.extraButtonUrl ?? '');
     const loginButtonText = String(cfg.loginText ?? 'Войти');
     const registerButtonText = String(cfg.registerText ?? 'Регистрация');
+
+    // Показываем скелетон во время проверки сессии
+    if (isCheckingSession) {
+        return (
+            <div className="auth-menu-widget flex items-center justify-end gap-2">
+                <Skeleton className="h-9 w-28" />
+                <Skeleton className="h-9 w-48" />
+            </div>
+        );
+    }
 
     return (
         <div className="auth-menu-widget flex items-center justify-end gap-2">
@@ -373,55 +401,72 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                     </Dialog>
                 </>
             ) : (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <button
-                            className="dropdown-menu-trigger auth-btn btn-outline-primary gap-2"
-                            type="button"
-                        >
-                            {/* Показываем аватар только если есть картинка и showAvatar не отключён */}
-                            {Boolean((cfg.showAvatar ?? true) && avatarUrl) && (
-                                <Avatar className="h-6 w-6">
-                                    <AvatarImage src={avatarUrl} alt={displayName} />
-                                    <AvatarFallback className="hidden" />
-                                </Avatar>
-                            )}
-                            {Boolean(cfg.showName ?? true) && (
-                                <span className="text-sm text-gray-800">
-                                    {displayName}
-                                </span>
-                            )}
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="min-w-[220px]">
-                        {isSuperAdmin && (
-                            <DropdownMenuItem asChild>
-                                <a href="/dashboard">Панель управления</a>
-                            </DropdownMenuItem>
-                        )}
-                        {isOrgAdmin && (
-                            <DropdownMenuItem asChild>
-                                <a href="/organization/admin">
-                                    Админка организации
-                                </a>
-                            </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem asChild>
-                            <a href="/profile">Профиль</a>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <a href="/settings">Настройки</a>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
+                <>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                             <button
-                                onClick={handleLogout}
-                                className="w-full text-left"
+                                type="button"
+                                className="btn-outline-primary"
                             >
-                                Выйти
+                                {/* Показываем аватар только если есть картинка и showAvatar не отключён */}
+                                {Boolean(
+                                    (cfg.showAvatar ?? true) && avatarUrl,
+                                ) && (
+                                    <Avatar className="h-6 w-6">
+                                        <AvatarImage
+                                            src={avatarUrl}
+                                            alt={displayName}
+                                        />
+                                        <AvatarFallback className="hidden" />
+                                    </Avatar>
+                                )}
+                                {Boolean(cfg.showName ?? true) && (
+                                    <span>{displayName}</span>
+                                )}
                             </button>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className="min-w-[220px]"
+                        >
+                            {isSuperAdmin && (
+                                <DropdownMenuItem asChild>
+                                    <a href="/dashboard">Панель управления</a>
+                                </DropdownMenuItem>
+                            )}
+                            {isOrgAdmin && (
+                                <DropdownMenuItem asChild>
+                                    <a href="/organization/admin">
+                                        Админка организации
+                                    </a>
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem asChild>
+                                <a href="/profile">Профиль</a>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <a href="/settings">Настройки</a>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full text-left"
+                                >
+                                    Выйти
+                                </button>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {showExtraButton && extraButtonUrl && (
+                        <a
+                            href={extraButtonUrl}
+                            className="btn-accent auth-btn extra-btn"
+                        >
+                            {extraButtonText}
+                        </a>
+                    )}
+                </>
             )}
         </div>
     );

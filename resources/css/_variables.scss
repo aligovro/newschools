@@ -83,14 +83,6 @@ $transition-slow: 0.5s ease-in-out;
     cursor: pointer;
     text-decoration: none;
     transition: all 0.2s ease;
-
-    &:hover {
-        transform: translateY(-1px);
-    }
-
-    &:active {
-        transform: translateY(0);
-    }
 }
 
 @mixin button-outline {
@@ -99,6 +91,7 @@ $transition-slow: 0.5s ease-in-out;
     background: transparent;
     border: none;
     color: $dark-color;
+    outline: none;
 
     &::before {
         content: '';

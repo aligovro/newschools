@@ -50,7 +50,7 @@ interface Props {
 export default function ShowProject({ organization, project }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
+            title: 'Админ панель',
             href: '/dashboard',
         },
         {

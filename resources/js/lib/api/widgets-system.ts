@@ -258,4 +258,31 @@ export const widgetsSystemApi = {
                 >
             >(`/dashboard/sites/${siteId}/positions/pages`)
             .then((response) => response.data),
+
+    // ПОЛУЧЕНИЕ/СОХРАНЕНИЕ НАСТРОЕК ВИДЖЕТА ДЛЯ САЙТА
+    getWidgetSettings: (
+        siteId: number,
+        widgetId: string,
+    ): Promise<
+        SimpleSuccessResponse<{
+            widget: unknown;
+            settings: { visibility_rules?: PositionVisibilityRules } | null;
+        }>
+    > =>
+        apiClient
+            .get(
+                `/dashboard/sites/${siteId}/widgets/${widgetId}/settings`,
+            )
+            .then((response) => response.data),
+
+    saveWidgetSettings: (
+        siteId: number,
+        widgetId: string,
+        payload: {
+            visibility?: PositionVisibilityRules;
+        },
+    ): Promise<SimpleSuccessResponse<{ visibility_rules?: PositionVisibilityRules }>> =>
+        apiClient
+            .put(`/dashboard/sites/${siteId}/widgets/${widgetId}/settings`, payload)
+            .then((response) => response.data),
 };

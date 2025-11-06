@@ -6,6 +6,13 @@ interface Organization {
     slug: string;
 }
 
+interface ProjectCategory {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+}
+
 interface Project {
     id: number;
     title: string;
@@ -23,24 +30,28 @@ interface Project {
     gallery?: string[];
     tags?: any[];
     beneficiaries?: any[];
+    categories?: ProjectCategory[];
 }
 
 interface Props {
     organization: Organization;
     project: Project;
     categories: Record<string, string>;
+    projectCategories?: ProjectCategory[];
 }
 
 export default function EditProject({
     organization,
     project,
     categories,
+    projectCategories = [],
 }: Props) {
     return (
         <ProjectForm
             organization={organization}
             project={project}
             categories={categories}
+            projectCategories={projectCategories}
             isEdit={true}
         />
     );

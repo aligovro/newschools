@@ -258,41 +258,6 @@
     transform: rotate(225deg);
 }
 
-// Responsive Design
-@media (max-width: 768px) {
-    .organization-menu.menu-header {
-        .menu-list {
-            flex-direction: column;
-            gap: 0;
-        }
-
-        .menu-item {
-            width: 100%;
-
-            .menu-link {
-                padding: 1rem;
-                border-bottom: 1px solid #e5e7eb;
-            }
-
-            .submenu {
-                position: static;
-                opacity: 1;
-                visibility: visible;
-                transform: none;
-                box-shadow: none;
-                border: none;
-                background: #f9fafb;
-                margin: 0;
-                border-radius: 0;
-
-                .menu-item .menu-link {
-                    padding: 0.75rem 1rem 0.75rem 2rem;
-                }
-            }
-        }
-    }
-}
-
 // Loading State
 .menu-loading {
     .animate-pulse {

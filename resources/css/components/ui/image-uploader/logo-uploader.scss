@@ -477,37 +477,4 @@
     --color-shadow: rgba(0, 0, 0, 0.1);
 }
 
-// Responsive
-@media (max-width: 640px) {
-    .logo-uploader {
-        &__modal-content {
-            width: 95vw;
-            max-height: 95vh;
-        }
-
-        &__crop-container {
-            padding: 1rem;
-        }
-
-        &__crop-image {
-            max-height: 15rem;
-        }
-
-        &__controls {
-            padding: 1rem;
-        }
-
-        &__modal-header {
-            padding: 1rem;
-        }
-
-        &__modal-actions {
-            padding: 1rem;
-            flex-direction: column;
-        }
-
-        &__modal-button {
-            justify-content: center;
-        }
-    }
-}
+// Адаптивность перенесена в _media.scss

@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 
 use App\Models\Organization;
-use App\Services\OrganizationSettingsService;
+use App\Services\Organizations\OrganizationSettingsService;
+
 use App\Http\Resources\OrganizationResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;

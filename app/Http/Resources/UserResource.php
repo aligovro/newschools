@@ -24,6 +24,18 @@ class UserResource extends JsonResource
       'permissions' => $this->whenLoaded('permissions', function () {
         return $this->permissions->map(fn($p) => ['id' => $p->id, 'name' => $p->name]);
       }),
+      'photo' => $this->photo,
+      'email_verified_at' => optional($this->email_verified_at)->toISOString(),
+      'organizations' => $this->whenLoaded('organizations', function () {
+        return $this->organizations->map(fn($org) => [
+          'id' => $org->id,
+          'name' => $org->name,
+          'pivot' => [
+            'role' => $org->pivot->role ?? null,
+            'status' => $org->pivot->status ?? null,
+          ],
+        ]);
+      }),
     ];
   }
 }

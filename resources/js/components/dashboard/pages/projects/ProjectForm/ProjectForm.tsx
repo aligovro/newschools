@@ -30,6 +30,7 @@ type StageRequestPayload = {
 export default function ProjectForm({
     organization,
     categories,
+    projectCategories = [],
     project,
     isEdit = false,
 }: ProjectFormProps) {
@@ -139,6 +140,7 @@ export default function ProjectForm({
             short_description: project?.short_description || '',
             description: project?.description || '',
             category: project?.category || '',
+            category_ids: project?.categories?.map((cat) => cat.id) || [],
             target_amount: project ? project.target_amount / 100 : null,
             start_date: project?.start_date || null,
             end_date: project?.end_date || null,
@@ -445,7 +447,7 @@ export default function ProjectForm({
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
+            title: 'Админ панель',
             href: '/dashboard',
         },
         {
@@ -534,6 +536,7 @@ export default function ProjectForm({
                             data={data}
                             errors={errors}
                             categories={categories}
+                            projectCategories={projectCategories}
                             paymentSettings={paymentSettings}
                             onDataChange={handleDataChange}
                             onPaymentChange={handlePaymentChange}

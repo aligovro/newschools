@@ -172,7 +172,7 @@ export default function OrganizationSearch({
     };
 
     return (
-        <section className="organization-search relative py-8">
+        <section className="organization-search relative py-4">
             <form onSubmit={handleSearchSubmit} className="relative mb-8">
                 <div className="flex flex-col gap-4 md:flex-row">
                     {/* Селектор города (опционально) */}

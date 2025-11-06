@@ -20,6 +20,11 @@ import {
     StylingConfig,
     StylingPanel,
 } from '@/components/dashboard/widgets/common/StylingPanel';
+import { VisibilityPanel } from '@/components/dashboard/widgets/common/VisibilityPanel';
+import {
+    widgetsSystemApi,
+    type PositionVisibilityRules,
+} from '@/lib/api/widgets-system';
 import {
     convertConfigsToConfig,
     type WidgetConfig,
@@ -40,11 +45,11 @@ import { HeroWidgetModal } from './modals/HeroWidgetModal';
 import { HtmlWidgetModal } from './modals/HtmlWidgetModal';
 import { ImageWidgetModal } from './modals/ImageWidgetModal';
 import { MenuWidgetModal } from './modals/MenuWidgetModal';
+import { OrganizationSearchWidgetModal } from './modals/OrganizationSearchWidgetModal';
 import { ProjectsWidgetModal } from './modals/ProjectsWidgetModal';
 import { ReferralLeaderboardWidgetModal } from './modals/ReferralLeaderboardWidgetModal';
 import { SliderWidgetModal } from './modals/SliderWidgetModal';
 import { SubscribeBlockWidgetModal } from './modals/SubscribeBlockWidgetModal';
-import { OrganizationSearchWidgetModal } from './modals/OrganizationSearchWidgetModal';
 import { TextWidgetModal } from './modals/TextWidgetModal';
 
 interface WidgetEditModalProps {
@@ -83,6 +88,9 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
     );
     const [savingError, setSavingError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [visibilityRules, setVisibilityRules] = useState<
+        PositionVisibilityRules | undefined
+    >(undefined);
 
     const handleSetPendingConfig = useCallback(
         (config: WidgetConfig | null) => {
@@ -122,15 +130,35 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 previousWidgetIdRef.current = widget.id;
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [widget, isOpen, handleSetPendingConfig]);
-    
+
     // Сбрасываем предыдущий ID при закрытии модального окна
     useEffect(() => {
         if (!isOpen) {
             previousWidgetIdRef.current = null;
         }
     }, [isOpen]);
+
+    // Загружаем настройки видимости при открытии модального окна
+    useEffect(() => {
+        if (widget && isOpen && siteId) {
+            widgetsSystemApi
+                .getWidgetSettings(siteId, widget.id)
+                .then((res) => {
+                    if (res.success && res.data?.settings?.visibility_rules) {
+                        setVisibilityRules(res.data.settings.visibility_rules);
+                    } else {
+                        setVisibilityRules({ mode: 'all' });
+                    }
+                })
+                .catch(() => {
+                    setVisibilityRules({ mode: 'all' });
+                });
+        } else if (!isOpen) {
+            // Сбрасываем настройки при закрытии модального окна
+            setVisibilityRules(undefined);
+        }
+    }, [widget, isOpen, siteId]);
 
     // Мемоизированная функция сохранения
     const handleSave = useCallback(async () => {
@@ -144,6 +172,25 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             // Сначала сохраняем конфигурацию, если есть изменения
             if (onSaveConfig && _pendingConfig) {
                 await onSaveConfig(widget.id, _pendingConfig);
+            }
+
+            // Сохраняем настройки видимости, если они были изменены
+            if (siteId && visibilityRules !== undefined) {
+                try {
+                    await widgetsSystemApi.saveWidgetSettings(
+                        siteId,
+                        widget.id,
+                        {
+                            visibility: visibilityRules,
+                        },
+                    );
+                } catch (visibilityError) {
+                    console.error(
+                        'Error saving widget visibility settings:',
+                        visibilityError,
+                    );
+                    // Не прерываем сохранение основного виджета, если ошибка только в видимости
+                }
             }
 
             // Затем сохраняем основные данные виджета
@@ -194,6 +241,8 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         onSave,
         onClose,
         isSaving,
+        siteId,
+        visibilityRules,
     ]);
 
     // Мемоизированная функция изменения полей
@@ -209,7 +258,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
 
         // Используем widget_slug или slug для определения типа виджета
         const widgetSlug = widget.widget_slug || (widget as any).slug || '';
-        
+
         switch (widgetSlug) {
             case 'text': {
                 return (
@@ -420,7 +469,9 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
         [widget],
     );
 
-    const [activeTab, setActiveTab] = useState<'editor' | 'styling'>('editor');
+    const [activeTab, setActiveTab] = useState<
+        'editor' | 'styling' | 'visibility'
+    >('editor');
     const stylingConfig = (formData.config?.styling || {}) as StylingConfig;
 
     if (!widget) return null;
@@ -447,6 +498,12 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                         onClick={() => setActiveTab('styling')}
                     >
                         Стилизация
+                    </button>
+                    <button
+                        className={`form-widget-editor__tab ${activeTab === 'visibility' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('visibility')}
+                    >
+                        Видимость
                     </button>
                 </div>
 
@@ -490,7 +547,7 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                         ) : (
                             renderStandardFields
                         )
-                    ) : (
+                    ) : activeTab === 'styling' ? (
                         <div className="space-y-4">
                             <div className="rounded-lg border bg-white p-4">
                                 <h4 className="mb-3 text-sm font-semibold text-gray-700">
@@ -543,6 +600,24 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                                         (widget-container)
                                     </p>
                                 </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="rounded-lg border bg-white p-4">
+                                <h4 className="mb-3 text-sm font-semibold text-gray-700">
+                                    Настройки видимости виджета
+                                </h4>
+                                {widget && siteId && (
+                                    <VisibilityPanel
+                                        siteId={siteId}
+                                        widgetId={widget.id}
+                                        value={visibilityRules}
+                                        onChange={(val) => {
+                                            setVisibilityRules(val);
+                                        }}
+                                    />
+                                )}
                             </div>
                         </div>
                     )}

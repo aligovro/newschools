@@ -28,7 +28,7 @@ import {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Админ панель',
         href: dashboard().url,
     },
     {
@@ -69,7 +69,9 @@ export default function SettingsPage({
             title: 'Конструктор главного сайта',
             description: 'Редактирование и настройка главного сайта',
             icon: Globe,
-            href: mainSiteId ? `/dashboard/sites/${mainSiteId}/builder` : '/dashboard/sites',
+            href: mainSiteId
+                ? `/dashboard/sites/${mainSiteId}/builder`
+                : '/dashboard/sites',
             color: 'bg-green-500',
             status: 'active',
             features: [

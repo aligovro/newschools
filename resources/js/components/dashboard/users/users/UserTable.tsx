@@ -1,3 +1,4 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +17,7 @@ import {
 } from '@/components/ui/table';
 import { useUsers } from '@/hooks/useUsers';
 import { User } from '@/types/user';
-import { Edit, MoreHorizontal, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Edit, MoreHorizontal, Trash2 } from 'lucide-react';
 import React from 'react';
 
 interface UserTableProps {
@@ -75,13 +76,11 @@ const UserTable: React.FC<UserTableProps> = ({
         switch (roleName) {
             case 'super_admin':
                 return 'destructive';
-            case 'admin':
-                return 'default';
             case 'organization_admin':
                 return 'secondary';
-            case 'moderator':
+            case 'graduate':
                 return 'outline';
-            case 'editor':
+            case 'sponsor':
                 return 'outline';
             case 'user':
                 return 'outline';
@@ -93,10 +92,9 @@ const UserTable: React.FC<UserTableProps> = ({
     const getRoleDisplayName = (roleName: string) => {
         const roleNames: Record<string, string> = {
             super_admin: 'Супер админ',
-            admin: 'Администратор',
-            organization_admin: 'Админ организации',
-            moderator: 'Модератор',
-            editor: 'Редактор',
+            organization_admin: 'Администратор школы',
+            graduate: 'Выпускник',
+            sponsor: 'Спонсор',
             user: 'Пользователь',
         };
         return roleNames[roleName] || roleName;
@@ -144,13 +142,17 @@ const UserTable: React.FC<UserTableProps> = ({
                                 <TableRow key={user.id}>
                                     <TableCell>
                                         <div className="flex items-center space-x-3">
-                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
-                                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage
+                                                    src={user.photo || undefined}
+                                                    alt={user.name}
+                                                />
+                                                <AvatarFallback className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
                                                     {user.name
                                                         .charAt(0)
                                                         .toUpperCase()}
-                                                </span>
-                                            </div>
+                                                </AvatarFallback>
+                                            </Avatar>
                                             <div>
                                                 <div className="font-medium text-gray-900 dark:text-white">
                                                     {user.name}
@@ -223,31 +225,6 @@ const UserTable: React.FC<UserTableProps> = ({
                                                 >
                                                     <Edit className="mr-2 h-4 w-4" />
                                                     Редактировать
-                                                </DropdownMenuItem>
-
-                                                {/* Быстрое управление ролями */}
-                                                <DropdownMenuItem
-                                                    onClick={() =>
-                                                        handleRoleToggle(
-                                                            user,
-                                                            'admin',
-                                                        )
-                                                    }
-                                                >
-                                                    {user.roles.some(
-                                                        (r) =>
-                                                            r.name === 'admin',
-                                                    ) ? (
-                                                        <>
-                                                            <UserX className="mr-2 h-4 w-4" />
-                                                            Убрать админа
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <UserCheck className="mr-2 h-4 w-4" />
-                                                            Сделать админом
-                                                        </>
-                                                    )}
                                                 </DropdownMenuItem>
 
                                                 <DropdownMenuItem

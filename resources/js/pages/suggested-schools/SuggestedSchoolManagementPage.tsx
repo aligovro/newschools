@@ -15,19 +15,18 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import {
     Building2,
-    Edit,
+    CheckCircle2,
+    Clock,
     MapPin,
     Search,
     Trash2,
-    CheckCircle2,
     XCircle,
-    Clock,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Админ панель',
         href: dashboard().url,
     },
     {
@@ -204,7 +203,9 @@ export default function SuggestedSchoolManagementPage({
                                         <SelectValue placeholder="Все статусы" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Все статусы</SelectItem>
+                                        <SelectItem value="">
+                                            Все статусы
+                                        </SelectItem>
                                         <SelectItem value="pending">
                                             Ожидает рассмотрения
                                         </SelectItem>
@@ -258,7 +259,8 @@ export default function SuggestedSchoolManagementPage({
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold">
-                                Список предложенных школ ({suggestedSchools.total})
+                                Список предложенных школ (
+                                {suggestedSchools.total})
                             </h2>
                         </div>
                     </CardHeader>
@@ -286,7 +288,9 @@ export default function SuggestedSchoolManagementPage({
                                                 {school.city_name && (
                                                     <div className="flex items-center gap-2">
                                                         <MapPin className="h-4 w-4" />
-                                                        <span>{school.city_name}</span>
+                                                        <span>
+                                                            {school.city_name}
+                                                        </span>
                                                     </div>
                                                 )}
                                                 {school.address && (
@@ -430,4 +434,3 @@ export default function SuggestedSchoolManagementPage({
         </AppLayout>
     );
 }
-

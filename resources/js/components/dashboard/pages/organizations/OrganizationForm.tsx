@@ -1,7 +1,7 @@
-import YandexMap from '@/components/maps/YandexMap';
 import PaymentGatewaysSettings, {
     type PaymentGatewaysSettingsValue,
 } from '@/components/dashboard/payments/PaymentGatewaysSettings';
+import YandexMap from '@/components/maps/YandexMap';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import LogoUploader from '@/components/ui/image-uploader/LogoUploader';
@@ -129,18 +129,74 @@ export default function OrganizationForm({
     );
 
     const cascadeData = useCascadeSelectData();
+    const adminUserFromProps = (organization as any)?.admin_user;
+    // Получаем ID админа из объекта admin_user
+    const adminUserIdFromProps = adminUserFromProps?.id ?? null;
+
+    const [adminUserId, setAdminUserId] = useState<number | null>(
+        adminUserIdFromProps,
+    );
+
+    // Синхронизируем состояние с пропсами
+    useEffect(() => {
+        if (adminUserIdFromProps !== adminUserId) {
+            setAdminUserId(adminUserIdFromProps);
+        }
+    }, [adminUserIdFromProps]);
+
+    // Создаем опцию для админа, если он назначен
+    const adminUserOption = useMemo(() => {
+        if (
+            adminUserFromProps &&
+            adminUserFromProps.id &&
+            adminUserFromProps.name
+        ) {
+            return {
+                value: adminUserFromProps.id,
+                label: adminUserFromProps.name,
+                description: adminUserFromProps.email || '',
+            };
+        }
+        return null;
+    }, [adminUserFromProps]);
+
     const usersData = useGeoSelectData({
         endpoint: '/dashboard/api/users',
-        transformResponse: (data: unknown[]) =>
-            data.map((item: any) => ({
+        transformResponse: (data: unknown[]) => {
+            return data.map((item: any) => ({
                 value: item.id,
                 label: item.name,
                 description: item.email,
-            })),
+            }));
+        },
     });
-    const [adminUserId, setAdminUserId] = useState<number | null>(
-        (organization as any)?.admin_user_id ?? null,
-    );
+
+    // Объединяем опции пользователей с опцией админа, если он есть
+    // Админ всегда должен быть в начале списка, даже если его нет в текущей пагинации
+    const usersOptionsWithAdmin = useMemo(() => {
+        const allOptions = [...usersData.options];
+
+        // Если админ назначен, добавляем его в начало списка
+        if (adminUserOption) {
+            // Проверяем, есть ли админ уже в списке
+            const adminIndex = allOptions.findIndex(
+                (opt) => opt.value === adminUserOption.value,
+            );
+
+            if (adminIndex === -1) {
+                // Админа нет в списке - добавляем в начало
+                return [adminUserOption, ...allOptions];
+            } else if (adminIndex > 0) {
+                // Админ есть, но не в начале - перемещаем в начало
+                const updatedOptions = [...allOptions];
+                updatedOptions.splice(adminIndex, 1);
+                return [adminUserOption, ...updatedOptions];
+            }
+            // Админ уже в начале - оставляем как есть
+        }
+
+        return allOptions;
+    }, [usersData.options, adminUserOption]);
     const [regionLoaded, setRegionLoaded] = useState(false);
     const [cityLoaded, setCityLoaded] = useState(false);
 
@@ -189,7 +245,7 @@ export default function OrganizationForm({
     // УДАЛЕНЫ эффекты ensureRegionInOptions / ensureCityInOptions, чтобы не мутировать options напрямую
 
     const [logoValue, setLogoValue] = useState<string | File | null>(
-        organization?.logo ? `/storage/${organization.logo}` : null,
+        organization?.logo || null,
     );
     const initialGallery: UploadedImage[] = useMemo(
         () =>
@@ -717,16 +773,22 @@ export default function OrganizationForm({
                     <div className="rounded-lg border bg-white p-4">
                         <Label className="mb-2 block">Администратор</Label>
                         <UniversalSelect
-                            {...usersData}
+                            options={usersOptionsWithAdmin}
                             value={adminUserId}
                             onChange={(value) =>
-                                setAdminUserId(value as number)
+                                setAdminUserId(value as number | null)
                             }
                             error={undefined}
                             label="Назначить администратора"
                             placeholder="Выберите пользователя"
                             searchable
                             clearable
+                            loading={usersData.loading}
+                            hasMore={usersData.hasMore}
+                            onLoadMore={usersData.loadMore}
+                            loadingMore={usersData.loadingMore}
+                            onSearch={usersData.setSearch}
+                            searchValue={usersData.search}
                         />
                         <p className="mt-2 text-xs text-muted-foreground">
                             Администратор может быть назначен позже

@@ -769,6 +769,78 @@ class SiteController extends Controller
     }
 
     /**
+     * Сохранить настройки видимости виджета
+     */
+    public function saveWidgetSettings(Request $request, $site, int $widgetId): JsonResponse
+    {
+        $request->validate([
+            'visibility' => 'nullable|array',
+        ]);
+
+        try {
+            $siteModel = $this->getSite($site);
+            $widget = \App\Models\SiteWidget::where('id', $widgetId)
+                ->where('site_id', $siteModel->id)
+                ->firstOrFail();
+
+            $settings = \App\Models\SiteWidgetSetting::updateOrCreate(
+                [
+                    'site_id' => $siteModel->id,
+                    'widget_id' => $widgetId,
+                ],
+                [
+                    'visibility_rules' => $request->input('visibility', []),
+                ]
+            );
+
+            // Сбрасываем кеш виджетов и настроек для этого сайта
+            Cache::forget("site_widgets_config_{$siteModel->id}");
+            Cache::forget("site_widget_settings_{$siteModel->id}");
+
+            return response()->json([
+                'success' => true,
+                'data' => $settings,
+                'message' => 'Настройки виджета сохранены',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении настроек виджета: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Получить настройки видимости виджета
+     */
+    public function getWidgetSettings(Request $request, $site, int $widgetId): JsonResponse
+    {
+        try {
+            $siteModel = $this->getSite($site);
+            $widget = \App\Models\SiteWidget::where('id', $widgetId)
+                ->where('site_id', $siteModel->id)
+                ->firstOrFail();
+
+            $settings = \App\Models\SiteWidgetSetting::where('site_id', $siteModel->id)
+                ->where('widget_id', $widgetId)
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'widget' => $widget,
+                    'settings' => $settings,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при получении настроек виджета: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Опубликованные страницы сайта
      */
     public function getSitePages(Request $request, $site): JsonResponse

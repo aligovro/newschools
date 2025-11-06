@@ -14,13 +14,14 @@
 
 /* Sidebar styles */
 .sidebar-container {
-    display: none;
+    display: block;
     position: relative;
 }
 
-@media (min-width: 768px) {
+/* Скрываем сайдбар на мобильных устройствах */
+@media (max-width: 767px) {
     .sidebar-container {
-        display: block;
+        display: none;
     }
 }
 
@@ -66,13 +67,19 @@
     min-height: 100vh;
     flex: 1;
     flex-direction: column;
-    margin-left: 0;
+    margin-left: 1rem; /* Отступ для сайдбара */
+    transition: margin-left 0.2s ease;
 }
 
-@media (min-width: 768px) {
-    /* Когда сайдбар свернут */
-    body.sidebar-collapsed .sidebar-main {
-        margin-left: 3rem; /* 48px - ширина свернутого сайдбара */
+/* Отступ для свернутого сайдбара */
+body.sidebar-collapsed .sidebar-main {
+    margin-left: 3rem;
+}
+
+/* На мобильных устройствах убираем отступ */
+@media (max-width: 767px) {
+    .sidebar-main {
+        margin-left: 0;
     }
 }
 

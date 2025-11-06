@@ -27,6 +27,11 @@ export interface WidgetData {
     position_name: string;
     position_slug: string;
     wrapper_class?: string;
+    visibility_rules?: {
+        mode?: 'all' | 'include' | 'exclude';
+        routes?: string[];
+        pages?: Array<{ id: number; slug: string } | number | string>;
+    };
     created_at: string;
     updated_at?: string;
     configs: Array<{

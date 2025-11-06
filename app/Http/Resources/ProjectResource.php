@@ -52,6 +52,18 @@ class ProjectResource extends JsonResource
       'status' => $this->status,
       'featured' => (bool) $this->featured,
 
+      // Категории проекта (many-to-many)
+      'categories' => $this->whenLoaded('categories', function () {
+        return $this->categories->map(function ($category) {
+          return [
+            'id' => $category->id,
+            'name' => $category->name,
+            'slug' => $category->slug,
+            'description' => $category->description,
+          ];
+        });
+      }),
+
       // Даты
       'start_date' => $this->when($this->start_date, fn() => $this->start_date?->format('Y-m-d')),
       'end_date' => $this->when($this->end_date, fn() => $this->end_date?->format('Y-m-d')),

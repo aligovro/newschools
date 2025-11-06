@@ -17,6 +17,13 @@ export interface ProjectStage {
     gallery?: string[];
 }
 
+export interface ProjectCategory {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+}
+
 export interface Project {
     id?: number;
     title: string;
@@ -37,6 +44,7 @@ export interface Project {
     has_stages?: boolean;
     stages?: ProjectStage[];
     payment_settings?: PaymentSettings;
+    categories?: ProjectCategory[];
 }
 
 export interface PaymentSettings {
@@ -56,6 +64,7 @@ export interface ProjectFormData {
     short_description: string;
     description: string;
     category: string;
+    category_ids: number[];
     target_amount: number | null;
     start_date: string | null;
     end_date: string | null;
@@ -98,6 +107,7 @@ export interface UploadedImage {
 export interface ProjectFormProps {
     organization: Organization;
     categories: Record<string, string>;
+    projectCategories?: ProjectCategory[];
     project?: Project;
     isEdit?: boolean;
 }
@@ -106,6 +116,7 @@ export interface BasicInfoSectionProps {
     data: ProjectFormData;
     errors: Record<string, string>;
     categories: Record<string, string>;
+    projectCategories?: ProjectCategory[];
     onDataChange: (key: keyof ProjectFormData, value: unknown) => void;
 }
 

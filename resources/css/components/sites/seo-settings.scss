@@ -139,25 +139,5 @@
     }
 }
 
-// Responsive design
-@media (max-width: 768px) {
-    .seo-settings {
-        &__title {
-            font-size: 1.5rem;
-        }
-
-        &__section {
-            padding: 1rem;
-        }
-
-        &__actions {
-            flex-direction: column;
-
-            .seo-settings__button {
-                width: 100%;
-            }
-        }
-    }
-}
-
 // Темная тема автоматически обрабатывается через CSS переменные в _colors.scss
+// Адаптивность перенесена в _media.scss
