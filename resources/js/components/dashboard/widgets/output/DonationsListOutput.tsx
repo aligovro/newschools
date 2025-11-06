@@ -14,6 +14,7 @@ export const DonationsListOutput: React.FC<WidgetOutputProps> = ({
 
     const {
         title = 'Последние пожертвования',
+        show_title = true, // По умолчанию true для обратной совместимости
         subtitle = '',
         donations = [],
         limit = 10,
@@ -150,7 +151,7 @@ export const DonationsListOutput: React.FC<WidgetOutputProps> = ({
             className={`donations-list-output ${className || ''}`}
             style={style}
         >
-            {title && (
+            {title && show_title && (
                 <h2 className="mb-4 text-2xl font-bold text-gray-900">
                     {title}
                 </h2>

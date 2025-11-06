@@ -1,6 +1,7 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
+import ProjectStageCard from '@/components/projects/ProjectStageCard';
 import MainLayout from '@/layouts/MainLayout';
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
@@ -163,213 +164,53 @@ export default function ProjectShow({
                     </div>
                 )}
 
-                <article className="rounded-lg bg-white shadow-sm">
-                    <div className="p-8">
-                        {project.organization && (
-                            <p className="mb-4 text-gray-600">
-                                <Link
-                                    href={`/organization/${project.organization.slug}`}
-                                    className="hover:text-blue-600"
-                                >
-                                    {project.organization.name}
-                                </Link>
-                            </p>
-                        )}
+                {project.organization && (
+                    <p className="mb-4 text-gray-600">
+                        <Link
+                            href={`/organization/${project.organization.slug}`}
+                            className="hover:text-blue-600"
+                        >
+                            {project.organization.name}
+                        </Link>
+                    </p>
+                )}
 
-                        {!project.gallery && project.image && (
-                            <div className="mb-6">
-                                <img
-                                    src={project.image}
-                                    alt={project.title}
-                                    className="h-64 w-full rounded-lg object-cover"
-                                />
-                            </div>
-                        )}
+                {!project.gallery && project.image && (
+                    <div className="mb-6">
+                        <img
+                            src={project.image}
+                            alt={project.title}
+                            className="h-64 w-full rounded-lg object-cover"
+                        />
+                    </div>
+                )}
 
-                        {project.description && (
-                            <div
-                                className="prose prose-lg max-w-none"
-                                dangerouslySetInnerHTML={{
-                                    __html: project.description,
-                                }}
-                            />
-                        )}
+                {project.description && (
+                    <div
+                        className="prose prose-lg max-w-none"
+                        dangerouslySetInnerHTML={{
+                            __html: project.description,
+                        }}
+                    />
+                )}
 
-                        <div className="mt-8 rounded-lg bg-gray-50 p-6">
-                            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                                Прогресс сбора
+                {project.has_stages &&
+                    project.stages &&
+                    project.stages.length > 0 && (
+                        <div className="mt-8">
+                            <h3 className="mb-6 text-xl font-semibold text-gray-900">
+                                Этапы проекта
                             </h3>
-                            <div className="mb-2 flex justify-between text-sm text-gray-600">
-                                <span>Собрано</span>
-                                <span className="font-semibold text-gray-900">
-                                    {project.formatted_collected_amount ||
-                                        new Intl.NumberFormat('ru-RU', {
-                                            style: 'currency',
-                                            currency: 'RUB',
-                                            minimumFractionDigits: 0,
-                                        }).format(
-                                            project.collected_amount_rubles,
-                                        )}
-                                </span>
-                            </div>
-                            <div className="mb-4">
-                                <div className="h-4 w-full rounded-full bg-gray-200">
-                                    <div
-                                        className="h-4 rounded-full bg-green-500"
-                                        style={{
-                                            width: `${project.progress_percentage}%`,
-                                        }}
+                            <div className="space-y-6">
+                                {project.stages.map((stage) => (
+                                    <ProjectStageCard
+                                        key={stage.id}
+                                        stage={stage}
                                     />
-                                </div>
-                            </div>
-                            <div className="flex justify-between text-sm text-gray-600">
-                                <span>Цель</span>
-                                <span className="font-semibold text-gray-900">
-                                    {project.formatted_target_amount ||
-                                        new Intl.NumberFormat('ru-RU', {
-                                            style: 'currency',
-                                            currency: 'RUB',
-                                            minimumFractionDigits: 0,
-                                        }).format(project.target_amount_rubles)}
-                                </span>
-                            </div>
-                            <div className="mt-4">
-                                <a
-                                    href="#donate"
-                                    className="btn-accent inline-flex items-center justify-center rounded-lg px-6 py-3 text-white"
-                                >
-                                    Помочь проекту
-                                </a>
+                                ))}
                             </div>
                         </div>
-
-                        {project.has_stages &&
-                            project.stages &&
-                            project.stages.length > 0 && (
-                                <div className="mt-8">
-                                    <h3 className="mb-6 text-xl font-semibold text-gray-900">
-                                        Этапы проекта
-                                    </h3>
-                                    <div className="space-y-6">
-                                        {project.stages.map((stage, index) => {
-                                            const getStatusColor = () => {
-                                                if (stage.is_completed)
-                                                    return 'bg-green-100 text-green-800 border-green-300';
-                                                if (stage.is_active)
-                                                    return 'bg-blue-100 text-blue-800 border-blue-300';
-                                                return 'bg-gray-100 text-gray-800 border-gray-300';
-                                            };
-                                            const getStatusLabel = () => {
-                                                if (stage.is_completed)
-                                                    return 'Завершен';
-                                                if (stage.is_active)
-                                                    return 'Активен';
-                                                return 'Ожидает';
-                                            };
-
-                                            return (
-                                                <div
-                                                    key={stage.id}
-                                                    className="rounded-lg border p-6"
-                                                >
-                                                    <div className="mb-4 flex items-center justify-between">
-                                                        <h4 className="text-lg font-semibold text-gray-900">
-                                                            {index + 1} этап
-                                                            проекта:{' '}
-                                                            {stage.title}
-                                                        </h4>
-                                                        <span
-                                                            className={`rounded-full border px-3 py-1 text-xs font-semibold ${getStatusColor()}`}
-                                                        >
-                                                            {getStatusLabel()}
-                                                        </span>
-                                                    </div>
-
-                                                    {stage.image && (
-                                                        <div className="mb-4">
-                                                            <img
-                                                                src={
-                                                                    stage.image
-                                                                }
-                                                                alt={
-                                                                    stage.title
-                                                                }
-                                                                className="h-48 w-full rounded-lg object-cover"
-                                                            />
-                                                        </div>
-                                                    )}
-
-                                                    {stage.description && (
-                                                        <div
-                                                            className="prose prose-sm mb-4 max-w-none"
-                                                            dangerouslySetInnerHTML={{
-                                                                __html: stage.description,
-                                                            }}
-                                                        />
-                                                    )}
-
-                                                    {stage.gallery &&
-                                                        stage.gallery.length >
-                                                            0 && (
-                                                            <div className="mb-4">
-                                                                <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                                                                    {stage.gallery.map(
-                                                                        (
-                                                                            img,
-                                                                            imgIndex,
-                                                                        ) => (
-                                                                            <img
-                                                                                key={
-                                                                                    imgIndex
-                                                                                }
-                                                                                src={
-                                                                                    img
-                                                                                }
-                                                                                alt={`${stage.title} - ${imgIndex + 1}`}
-                                                                                className="h-24 w-full rounded-lg object-cover"
-                                                                            />
-                                                                        ),
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                    <div className="rounded-lg bg-gray-50 p-4">
-                                                        <div className="mb-2 flex justify-between text-sm text-gray-600">
-                                                            <span>Собрано</span>
-                                                            <span className="font-semibold text-gray-900">
-                                                                {
-                                                                    stage.formatted_collected_amount
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                        <div className="mb-4">
-                                                            <div className="h-3 w-full rounded-full bg-gray-200">
-                                                                <div
-                                                                    className="h-3 rounded-full bg-green-500"
-                                                                    style={{
-                                                                        width: `${stage.progress_percentage}%`,
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex justify-between text-sm text-gray-600">
-                                                            <span>Цель</span>
-                                                            <span className="font-semibold text-gray-900">
-                                                                {
-                                                                    stage.formatted_target_amount
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                    </div>
-                </article>
+                    )}
             </div>
         </MainLayout>
     );

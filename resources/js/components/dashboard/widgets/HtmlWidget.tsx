@@ -3,6 +3,7 @@ import React from 'react';
 interface HtmlWidgetProps {
     config?: {
         title?: string;
+        show_title?: boolean; // Показывать заголовок на сайте
         htmlContent?: string;
         enableScripts?: boolean;
         enableStyles?: boolean;
@@ -20,6 +21,7 @@ interface HtmlWidgetProps {
 export const HtmlWidget: React.FC<HtmlWidgetProps> = ({ config = {} }) => {
     const {
         title,
+        show_title = true, // По умолчанию true для обратной совместимости
         htmlContent = '',
         enableScripts = true,
         enableStyles = true,
@@ -73,7 +75,7 @@ export const HtmlWidget: React.FC<HtmlWidgetProps> = ({ config = {} }) => {
 
     return (
         <div className="html-widget-container">
-            {title && (
+            {title && show_title && (
                 <h3 className="html-widget-title mb-3 text-lg font-semibold">
                     {title}
                 </h3>

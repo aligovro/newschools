@@ -1,6 +1,7 @@
 import { ColorPicker } from '@/components/ui/ColorPicker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -91,6 +92,7 @@ export const HtmlWidgetModal: React.FC<HtmlWidgetModalProps> = ({
     // Локальное состояние для формы
     const [formData, setFormData] = useState({
         title: (fromCfg.title as string) || '',
+        show_title: (fromCfg.show_title as boolean) ?? true, // По умолчанию true для обратной совместимости
         htmlContent: (fromCfg.htmlContent as string) || '',
         enableScripts: (fromCfg.enableScripts as boolean) || true,
         enableStyles: (fromCfg.enableStyles as boolean) || true,
@@ -108,6 +110,7 @@ export const HtmlWidgetModal: React.FC<HtmlWidgetModalProps> = ({
     React.useEffect(() => {
         setFormData({
             title: (fromCfg.title as string) || '',
+            show_title: (fromCfg.show_title as boolean) ?? true,
             htmlContent: (fromCfg.htmlContent as string) || '',
             enableScripts: (fromCfg.enableScripts as boolean) || true,
             enableStyles: (fromCfg.enableStyles as boolean) || true,
@@ -194,19 +197,15 @@ export const HtmlWidgetModal: React.FC<HtmlWidgetModalProps> = ({
                 </TabsList>
 
                 <TabsContent value="content" className="space-y-4">
-                    <div>
-                        <Label htmlFor="html_title">
-                            Заголовок (опционально)
-                        </Label>
-                        <Input
-                            id="html_title"
-                            value={formData.title}
-                            onChange={(e) =>
-                                updateFormData('title', e.target.value)
+                    <TitleField
+                        title={formData.title}
+                        showTitle={formData.show_title}
+                        onTitleChange={(title) => updateFormData('title', title)}
+                        onShowTitleChange={(showTitle) =>
+                            updateFormData('show_title', showTitle)
                             }
                             placeholder="Введите заголовок"
                         />
-                    </div>
 
                     <div>
                         <div className="mb-2 flex items-center justify-between">

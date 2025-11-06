@@ -92,7 +92,8 @@ export const useEditorContent = ({
     }
 
     // Очищаем контент от элементов ресайза перед сохранением
-    const cleanContent = cleanContentForOutput(content);
+    // Также санитизируем HTML для закрытия незакрытых тегов и валидации структуры
+    const cleanContent = cleanContentForOutput(content, isAdminRef.current);
 
     if (cleanContent !== lastContentRef.current) {
       lastContentRef.current = cleanContent;
@@ -133,7 +134,7 @@ export const useEditorContent = ({
       // Также сразу читаем текущее содержимое и сохраняем
       if (editorRef.current) {
         const content = isHtmlMode ? editorRef.current.innerText : editorRef.current.innerHTML;
-        const cleanContent = cleanContentForOutput(content);
+        const cleanContent = cleanContentForOutput(content, isAdminRef.current);
         if (cleanContent !== lastContentRef.current) {
           lastContentRef.current = cleanContent;
           onChangeRef.current(cleanContent);
@@ -157,7 +158,7 @@ export const useEditorContent = ({
     debouncedOnChange.flush();
 
     const content = isHtmlMode ? editorRef.current.innerText : editorRef.current.innerHTML;
-    const cleanContent = cleanContentForOutput(content);
+    const cleanContent = cleanContentForOutput(content, isAdminRef.current);
 
     if (cleanContent !== lastContentRef.current) {
       lastContentRef.current = cleanContent;

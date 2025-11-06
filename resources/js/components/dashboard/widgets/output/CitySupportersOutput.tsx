@@ -13,6 +13,7 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
 
     const {
         title = 'Топ поддерживающих городов',
+        show_title = true, // По умолчанию true для обратной совместимости
         subtitle = '',
         regions = [],
         limit = 7,
@@ -260,7 +261,7 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
             className={`city-supporters-output ${className || ''}`}
             style={style}
         >
-            {title && (
+            {title && show_title && (
                 <h2 className="mb-4 text-2xl font-bold text-gray-900">
                     {title}
                 </h2>

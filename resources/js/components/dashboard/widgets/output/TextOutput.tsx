@@ -11,6 +11,7 @@ export const TextOutput: React.FC<WidgetOutputProps> = ({
     const {
         title = '',
         content = '',
+        show_title = true, // По умолчанию true для обратной совместимости
         fontSize = '16px',
         textAlign = 'left',
         backgroundColor = 'transparent',
@@ -80,7 +81,7 @@ export const TextOutput: React.FC<WidgetOutputProps> = ({
             className={`text-output ${className || ''}`}
             style={containerStyle}
         >
-            {title && (
+            {title && show_title && (
                 <h2 className="text-2xl font-bold" style={titleStyle}>
                     {title}
                 </h2>

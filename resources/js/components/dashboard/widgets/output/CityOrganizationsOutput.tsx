@@ -14,6 +14,7 @@ export const CityOrganizationsOutput: React.FC<WidgetOutputProps> = ({
             <OrganizationsSliderWidget
                 config={{
                     title: cfg.title || 'Школы города',
+                    show_title: (cfg.show_title as boolean) ?? true,
                     city_id: cfg.city_id as number,
                     limit: (cfg.limit as number) || 9,
                     slidesPerView: (cfg.slidesPerView as number) || 3,

@@ -11,6 +11,7 @@ export const ProjectsOutput: React.FC<WidgetOutputProps> = ({
 
     const {
         title = '',
+        show_title = true, // По умолчанию true для обратной совместимости
         projects = [],
         limit = 0,
         columns = 3,
@@ -277,11 +278,13 @@ export const ProjectsOutput: React.FC<WidgetOutputProps> = ({
 
     return (
         <div className={`projects-output ${className || ''}`} style={style}>
-            {(title || (config as any).showHeaderActions) && (
+            {((title && show_title) || (config as any).showHeaderActions) && (
                 <div className="mb-6 flex items-center justify-between">
+                    {title && show_title && (
                     <h2 className="text-2xl font-bold text-gray-900">
-                        {title || 'Проекты школ'}
+                            {title}
                     </h2>
+                    )}
                     {showHeaderActions && (
                         <Link
                             href={

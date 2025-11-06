@@ -10,6 +10,7 @@ export const ReferralLeaderboardOutput: React.FC<WidgetOutputProps> = ({
 
     const {
         title = 'Лидеры по приглашениям',
+        show_title = true, // По умолчанию true для обратной совместимости
         subtitle = '',
         leaderboard = [],
         limit = 10,
@@ -166,7 +167,7 @@ export const ReferralLeaderboardOutput: React.FC<WidgetOutputProps> = ({
             className={`referral-leaderboard-output ${className || ''}`}
             style={style}
         >
-            {title && (
+            {title && show_title && (
                 <h2 className="mb-4 text-2xl font-bold text-gray-900">
                     {title}
                 </h2>

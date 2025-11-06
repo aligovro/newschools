@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Organization;
 use App\Models\Domain;
+use App\Models\Site;
 use App\Http\Resources\UserBriefResource;
 use App\Http\Resources\OrganizationResource;
 use App\Support\InertiaResource;
 use App\Services\GlobalSettingsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -76,6 +78,28 @@ class DashboardController extends Controller
             'terminology' => $terminology,
             'favicon' => $favicon,
             'mainSiteId' => $mainSiteId,
+        ]);
+    }
+
+    /**
+     * Страница статистики
+     */
+    public function statistics()
+    {
+        return Inertia::render('statistics/StatisticsPage');
+    }
+
+    /**
+     * Страница настроек
+     */
+    public function settings(GlobalSettingsService $globalSettings)
+    {
+        $mainSite = Site::where('site_type', 'main')->first();
+        
+        return Inertia::render('settings/SettingsPage', [
+            'globalSettings' => $globalSettings->getSettings(),
+            'userSettings' => Auth::user(),
+            'mainSiteId' => $mainSite?->id,
         ]);
     }
 }

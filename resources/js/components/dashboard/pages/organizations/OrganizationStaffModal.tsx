@@ -8,11 +8,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import LogoUploader from '@/components/ui/image-uploader/LogoUploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import LogoUploader from '@/components/ui/image-uploader/LogoUploader';
-import { Link } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import type { OrganizationDirector, StaffFormData } from './types';
 
 interface OrganizationStaffModalProps {
@@ -37,14 +37,61 @@ export default function OrganizationStaffModal({
     onSubmit,
     isEditing,
     organizationId,
-    director,
+    director: _initialDirector,
 }: OrganizationStaffModalProps) {
+    // При создании нового сотрудника не используем initialDirector, проверяем через API
+    // При редактировании используем initialDirector только если редактируемый сотрудник не директор
+    const [currentDirector, setCurrentDirector] = useState<
+        OrganizationDirector | undefined
+    >(undefined);
+    const [isCheckingDirector, setIsCheckingDirector] = useState(false);
+
+    // Сбрасываем директора при открытии модалки
+    useEffect(() => {
+        if (open) {
+            // При создании нового сотрудника всегда сбрасываем
+            // При редактировании тоже сбрасываем, проверка будет при клике на галочку
+            setCurrentDirector(undefined);
+        }
+    }, [open]);
+
+    // Проверяем директора при изменении галочки
+    const handleDirectorChange = async (checked: boolean) => {
+        onFormDataChange('is_director', checked === true);
+
+        if (checked) {
+            // Всегда проверяем через API при установке галочки
+            setIsCheckingDirector(true);
+            setCurrentDirector(undefined); // Сбрасываем перед проверкой
+            try {
+                const response = await fetch(
+                    `/dashboard/organizations/${organizationId}/staff/check-director`,
+                );
+                const data = await response.json();
+                if (data.has_director && data.director) {
+                    setCurrentDirector(data.director);
+                } else {
+                    setCurrentDirector(undefined);
+                }
+            } catch (error) {
+                console.error('Error checking director:', error);
+                setCurrentDirector(undefined);
+            } finally {
+                setIsCheckingDirector(false);
+            }
+        } else {
+            setCurrentDirector(undefined);
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+            <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto sm:max-w-6xl">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEditing ? 'Редактировать персонал' : 'Добавить персонал'}
+                        {isEditing
+                            ? 'Редактировать персонал'
+                            : 'Добавить персонал'}
                     </DialogTitle>
                     <DialogDescription>
                         Заполните информацию о сотруднике организации
@@ -56,31 +103,24 @@ export default function OrganizationStaffModal({
                             <Checkbox
                                 id="is_director"
                                 checked={formData.is_director}
-                                onCheckedChange={(checked) =>
-                                    onFormDataChange(
-                                        'is_director',
-                                        checked === true,
-                                    )
-                                }
+                                disabled={isCheckingDirector}
+                                onCheckedChange={handleDirectorChange}
                             />
                             <Label htmlFor="is_director">
                                 Директор организации
                             </Label>
                         </div>
 
-                        {director && formData.is_director && !isEditing && (
-                            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
-                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                    У данной организации уже есть директор:{' '}
-                                    <Link
-                                        href={`/dashboard/organizations/${organizationId}/staff/${director.id}`}
-                                        className="font-medium underline"
-                                    >
-                                        {director.full_name}
-                                    </Link>
-                                </p>
-                            </div>
-                        )}
+                        {currentDirector &&
+                            formData.is_director &&
+                            !isEditing && (
+                                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
+                                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                        У данной организации уже есть директор:{' '}
+                                        <i>{currentDirector.full_name}</i>
+                                    </p>
+                                </div>
+                            )}
 
                         <div className="grid grid-cols-3 gap-4">
                             <div>
@@ -199,4 +239,3 @@ export default function OrganizationStaffModal({
         </Dialog>
     );
 }
-

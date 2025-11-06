@@ -195,87 +195,87 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
     // Показываем селект только для super_admin (не для organization_admin) и только если выбрана хотя бы одна роль организации
     const showOrganizationSelect = isSuperAdmin && hasOrganizationRole;
 
-    // DEBUG: Логи для отладки (после всех объявлений)
-    useEffect(() => {
-        console.log('=== UserForm Debug ===');
-        console.log('currentUser:', currentUser);
-        console.log('currentUser?.roles:', currentUser?.roles);
-        console.log('isSuperAdmin:', isSuperAdmin);
-        console.log('formData.roles:', formData.roles);
-        console.log('organizationRoles:', organizationRoles);
-        console.log('hasOrganizationRole:', hasOrganizationRole);
-        console.log('showOrganizationSelect:', showOrganizationSelect);
-        console.log('formData.organization_id:', formData.organization_id);
-    }, [
-        currentUser,
-        isSuperAdmin,
-        formData.roles,
-        hasOrganizationRole,
-        showOrganizationSelect,
-        formData.organization_id,
-    ]);
-
     // Загрузка организаций для селекта
-    const loadOrganizations = useCallback(async (search: string = '') => {
-        setIsLoadingOrganizations(true);
-        try {
-            console.log('Loading organizations with search:', search);
-            const response = await apiClient.get('/organizations', {
-                params: {
-                    search: search || undefined,
-                    per_page: 50,
-                    page: 1,
-                },
-            });
+    const loadOrganizations = useCallback(
+        async (search: string = '') => {
+            setIsLoadingOrganizations(true);
+            try {
+                console.log('Loading organizations with search:', search);
+                const response = await apiClient.get('/organizations', {
+                    params: {
+                        search: search || undefined,
+                        per_page: 50,
+                        page: 1,
+                    },
+                });
 
-            console.log('Organizations response:', response.data);
+                console.log('Organizations response:', response.data);
 
-            // Проверяем разные форматы ответа
-            let orgs = [];
-            if (response.data?.data) {
-                orgs = response.data.data;
-            } else if (Array.isArray(response.data)) {
-                orgs = response.data;
-            } else if (response.data?.data?.data) {
-                orgs = response.data.data.data;
-            }
-
-            console.log('Parsed organizations:', orgs);
-
-            const options: SelectOption[] = orgs.map((org: any) => ({
-                value: org.id,
-                label: org.name,
-                description: org.address || org.email || '',
-            }));
-
-            // Если есть выбранная организация, но её нет в списке - загружаем её отдельно
-            if (formData.organization_id && !options.find(opt => opt.value === formData.organization_id)) {
-                try {
-                    const orgResponse = await apiClient.get(`/organizations/${formData.organization_id}`);
-                    const selectedOrg = orgResponse.data?.data || orgResponse.data;
-                    if (selectedOrg) {
-                        options.unshift({
-                            value: selectedOrg.id,
-                            label: selectedOrg.name,
-                            description: selectedOrg.address || selectedOrg.email || '',
-                        });
-                        console.log('Added selected organization to options:', selectedOrg);
-                    }
-                } catch (orgError) {
-                    console.error('Error loading selected organization:', orgError);
+                // Проверяем разные форматы ответа
+                let orgs = [];
+                if (response.data?.data) {
+                    orgs = response.data.data;
+                } else if (Array.isArray(response.data)) {
+                    orgs = response.data;
+                } else if (response.data?.data?.data) {
+                    orgs = response.data.data.data;
                 }
-            }
 
-            console.log('Organization options:', options);
-            setOrganizationOptions(options);
-        } catch (error: any) {
-            console.error('Error loading organizations:', error);
-            console.error('Error response:', error.response);
-            setOrganizationOptions([]);
-        } finally {
-            setIsLoadingOrganizations(false);
-        }
-    }, [formData.organization_id]);
+                console.log('Parsed organizations:', orgs);
+
+                const options: SelectOption[] = orgs.map((org: any) => ({
+                    value: org.id,
+                    label: org.name,
+                    description: org.address || org.email || '',
+                }));
+
+                // Если есть выбранная организация, но её нет в списке - загружаем её отдельно
+                if (
+                    formData.organization_id &&
+                    !options.find(
+                        (opt) => opt.value === formData.organization_id,
+                    )
+                ) {
+                    try {
+                        const orgResponse = await apiClient.get(
+                            `/organizations/${formData.organization_id}`,
+                        );
+                        const selectedOrg =
+                            orgResponse.data?.data || orgResponse.data;
+                        if (selectedOrg) {
+                            options.unshift({
+                                value: selectedOrg.id,
+                                label: selectedOrg.name,
+                                description:
+                                    selectedOrg.address ||
+                                    selectedOrg.email ||
+                                    '',
+                            });
+                            console.log(
+                                'Added selected organization to options:',
+                                selectedOrg,
+                            );
+                        }
+                    } catch (orgError) {
+                        console.error(
+                            'Error loading selected organization:',
+                            orgError,
+                        );
+                    }
+                }
+
+                console.log('Organization options:', options);
+                setOrganizationOptions(options);
+            } catch (error: any) {
+                console.error('Error loading organizations:', error);
+                console.error('Error response:', error.response);
+                setOrganizationOptions([]);
+            } finally {
+                setIsLoadingOrganizations(false);
+            }
+        },
+        [formData.organization_id],
+    );
 
     // Загрузка организаций при показе селекта или при редактировании пользователя с организацией
     useEffect(() => {
@@ -284,14 +284,27 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
             if (!organizationSearch) {
                 loadOrganizations('');
             }
-            
+
             // Если редактируем пользователя и у него есть организация, загружаем её в опции
-            if (isEditing && user && formData.organization_id && organizationOptions.length === 0) {
+            if (
+                isEditing &&
+                user &&
+                formData.organization_id &&
+                organizationOptions.length === 0
+            ) {
                 // Загружаем организации чтобы найти выбранную
                 loadOrganizations('');
             }
         }
-    }, [showOrganizationSelect, loadOrganizations, isEditing, user, formData.organization_id, organizationSearch, organizationOptions.length]);
+    }, [
+        showOrganizationSelect,
+        loadOrganizations,
+        isEditing,
+        user,
+        formData.organization_id,
+        organizationSearch,
+        organizationOptions.length,
+    ]);
 
     // Загрузка организаций при изменении поиска с debounce
     useEffect(() => {
@@ -313,14 +326,21 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
             try {
                 const uploadFormData = new FormData();
                 uploadFormData.append('photo', file);
-                
-                const response = await apiClient.post('/users/upload-photo', uploadFormData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
+
+                const response = await apiClient.post(
+                    '/users/upload-photo',
+                    uploadFormData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
                     },
-                });
-                
-                const photoUrl = response.data?.url || response.data?.photo || response.data?.data?.url;
+                );
+
+                const photoUrl =
+                    response.data?.url ||
+                    response.data?.photo ||
+                    response.data?.data?.url;
                 if (photoUrl) {
                     setFormData((prev) => ({ ...prev, photo: photoUrl }));
                     setPhotoPreview(photoUrl);
@@ -356,18 +376,25 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                 const response = await fetch(croppedImage);
                 const blob = await response.blob();
                 const file = new File([blob], 'photo.jpg', { type: blob.type });
-                
+
                 // Загружаем на сервер
                 const uploadFormData = new FormData();
                 uploadFormData.append('photo', file);
-                
-                const uploadResponse = await apiClient.post('/users/upload-photo', uploadFormData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
+
+                const uploadResponse = await apiClient.post(
+                    '/users/upload-photo',
+                    uploadFormData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
                     },
-                });
-                
-                const photoUrl = uploadResponse.data?.url || uploadResponse.data?.photo || uploadResponse.data?.data?.url;
+                );
+
+                const photoUrl =
+                    uploadResponse.data?.url ||
+                    uploadResponse.data?.photo ||
+                    uploadResponse.data?.data?.url;
                 if (photoUrl) {
                     setFormData((prev) => ({ ...prev, photo: photoUrl }));
                     setPhotoPreview(photoUrl);

@@ -106,7 +106,7 @@ class OrganizationSiteController extends Controller
         $this->createDefaultWidgets($site);
 
         return redirect()
-            ->route('organization.admin.sites.builder', [
+            ->route('organizations.sites.builder', [
                 'organization' => $organization,
                 'site' => $site,
             ])
@@ -155,7 +155,7 @@ class OrganizationSiteController extends Controller
         ]);
 
         return redirect()
-            ->route('organization.admin.sites.index', ['organization' => $organization])
+            ->route('organizations.sites.index', ['organization' => $organization])
             ->with('success', 'Сайт успешно обновлен!');
     }
 
@@ -167,7 +167,7 @@ class OrganizationSiteController extends Controller
         $site->delete();
 
         return redirect()
-            ->route('organization.admin.sites.index', ['organization' => $organization])
+            ->route('organizations.sites.index', ['organization' => $organization])
             ->with('success', 'Сайт успешно удален!');
     }
 
@@ -275,7 +275,7 @@ class OrganizationSiteController extends Controller
         $site->update(['status' => 'published']);
 
         return redirect()
-            ->route('organization.admin.sites.index', ['organization' => $organization])
+            ->route('organizations.sites.index', ['organization' => $organization])
             ->with('success', 'Сайт успешно опубликован!');
     }
 
@@ -287,7 +287,7 @@ class OrganizationSiteController extends Controller
         $site->update(['status' => 'draft']);
 
         return redirect()
-            ->route('organization.admin.sites.index', ['organization' => $organization])
+            ->route('organizations.sites.index', ['organization' => $organization])
             ->with('success', 'Сайт снят с публикации!');
     }
 
@@ -299,7 +299,7 @@ class OrganizationSiteController extends Controller
         $site->update(['status' => 'archived']);
 
         return redirect()
-            ->route('organization.admin.sites.index', ['organization' => $organization])
+            ->route('organizations.sites.index', ['organization' => $organization])
             ->with('success', 'Сайт перемещен в архив!');
     }
 
@@ -311,7 +311,7 @@ class OrganizationSiteController extends Controller
         $site->update(['is_maintenance_mode' => true]);
 
         return redirect()
-            ->route('organization.admin.sites.index', ['organization' => $organization])
+            ->route('organizations.sites.index', ['organization' => $organization])
             ->with('success', 'Режим технических работ включен!');
     }
 
@@ -323,7 +323,7 @@ class OrganizationSiteController extends Controller
         $site->update(['is_maintenance_mode' => false]);
 
         return redirect()
-            ->route('organization.admin.sites.index', ['organization' => $organization])
+            ->route('organizations.sites.index', ['organization' => $organization])
             ->with('success', 'Режим технических работ отключен!');
     }
 
@@ -347,7 +347,7 @@ class OrganizationSiteController extends Controller
         ]);
 
         return redirect()
-            ->route('organization.admin.sites.edit', [
+            ->route('organizations.sites.edit', [
                 'organization' => $organization,
                 'site' => $site,
             ])
@@ -375,7 +375,7 @@ class OrganizationSiteController extends Controller
         ]);
 
         return redirect()
-            ->route('organization.admin.sites.edit', [
+            ->route('organizations.sites.edit', [
                 'organization' => $organization,
                 'site' => $site,
             ])
@@ -391,7 +391,7 @@ class OrganizationSiteController extends Controller
         $page->delete();
 
         return redirect()
-            ->route('organization.admin.sites.edit', [
+            ->route('organizations.sites.edit', [
                 'organization' => $organization,
                 'site' => $site,
             ])
@@ -407,7 +407,7 @@ class OrganizationSiteController extends Controller
         $page->update(['is_published' => true]);
 
         return redirect()
-            ->route('organization.admin.sites.edit', [
+            ->route('organizations.sites.edit', [
                 'organization' => $organization,
                 'site' => $site,
             ])
@@ -423,7 +423,7 @@ class OrganizationSiteController extends Controller
         $page->update(['is_published' => false]);
 
         return redirect()
-            ->route('organization.admin.sites.edit', [
+            ->route('organizations.sites.edit', [
                 'organization' => $organization,
                 'site' => $site,
             ])

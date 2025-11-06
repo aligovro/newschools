@@ -2,64 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Site;
-use App\Models\SiteTemplate;
-use App\Models\WidgetPosition;
+use App\Http\Controllers\Concerns\HasSiteWidgets;
 use App\Models\Organization;
-use App\Models\Project;
-use App\Services\WidgetDataService;
+use App\Http\Resources\OrganizationStaffResource;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Cache;
 
 class MainSiteController extends Controller
 {
-    private function getSiteWidgetsAndPositions()
-    {
-        $site = Site::where('site_type', 'main')->published()->first();
-
-        if (!$site) {
-            abort(404, 'Главный сайт не настроен');
-        }
-
-        /** @var WidgetDataService $widgetDataService */
-        $widgetDataService = app(WidgetDataService::class);
-        $widgetsConfig = Cache::remember("site_widgets_config_{$site->id}", 300, function () use ($widgetDataService, $site) {
-            return $widgetDataService->getSiteWidgetsWithData($site->id);
-        });
-
-        $positions = Cache::remember("site_positions_{$site->template}", 600, function () use ($site) {
-            $template = SiteTemplate::where('slug', $site->template)->first();
-            $query = WidgetPosition::active()->ordered();
-            if ($template) {
-                $query->where(function ($q) use ($template) {
-                    $q->where('template_id', $template->id)->orWhereNull('template_id');
-                });
-            }
-            return $query->get();
-        });
-
-        $positionSettings = Cache::remember("site_position_settings_{$site->id}", 300, function () use ($site) {
-            return \App\Models\SitePositionSetting::where('site_id', $site->id)->get();
-        });
-
-        return [
-            'site' => [
-                'id' => $site->id,
-                'name' => $site->name,
-                'slug' => $site->slug,
-                'description' => $site->description,
-                'favicon' => $site->getFaviconUrlAttribute(),
-                'template' => $site->template,
-                'site_type' => $site->site_type,
-                'widgets_config' => $widgetsConfig,
-                'seo_config' => $site->seo_config ?? [],
-                'layout_config' => $site->layout_config ?? [],
-            ],
-            'positions' => $positions,
-            'position_settings' => $positionSettings,
-        ];
-    }
+    use HasSiteWidgets;
 
     public function index(Request $request)
     {
@@ -70,7 +21,16 @@ class MainSiteController extends Controller
 
     public function organizations(Request $request)
     {
-        $query = Organization::with(['region', 'city', 'adminUser'])
+        $query = Organization::with([
+            'region',
+            'city',
+            'director' => function ($query) {
+                $query->whereNull('deleted_at');
+            },
+            'users' => function ($query) {
+                $query->wherePivot('role', 'organization_admin');
+            }
+        ])
             ->where('status', 'active')
             ->where('is_public', true)
             ->withCount([
@@ -127,9 +87,16 @@ class MainSiteController extends Controller
             // Форматируем суммы из копеек в рубли
             $org->donations_total = $org->donations_total ? $org->donations_total / 100 : 0;
             $org->donations_collected = $org->donations_collected ? $org->donations_collected / 100 : 0;
-            // Директор из adminUser
-            if ($org->adminUser) {
-                $org->director_name = $org->adminUser->name ?? null;
+            // Директор теперь берется из organization_staff через связь director
+            if ($org->director) {
+                // Преобразуем директора в нужный формат через Resource
+                $org->director = (new OrganizationStaffResource($org->director))->toArray(request());
+            } else {
+                // Оставляем director_name для обратной совместимости, если директор не найден в staff
+                $adminUser = $org->users->first();
+                if ($adminUser) {
+                    $org->director_name = $adminUser->name ?? null;
+                }
             }
             return $org;
         });
@@ -196,81 +163,6 @@ class MainSiteController extends Controller
         return Inertia::render('main-site/OrganizationShow', array_merge($data, [
             'organization' => $organizationData,
             'organizationId' => $organization->id, // Передаем organizationId для виджетов
-        ]));
-    }
-
-    public function projects(Request $request)
-    {
-        $query = Project::with(['organization', 'organization.region'])
-            ->where('status', 'active');
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
-        }
-
-        $projects = $query->orderBy('created_at', 'desc')->paginate(12);
-
-        $data = $this->getSiteWidgetsAndPositions();
-
-        return Inertia::render('main-site/Projects', array_merge($data, [
-            'projects' => $projects,
-            'filters' => $request->only(['search', 'category']),
-        ]));
-    }
-
-    public function project($slug)
-    {
-        $project = Project::where('slug', $slug)
-            ->where('status', 'active')
-            ->with(['organization', 'organization.region'])
-            ->firstOrFail();
-
-        // Подготавливаем галерею изображений
-        $gallery = [];
-        if (!empty($project->gallery) && is_array($project->gallery)) {
-            $gallery = array_map(function ($image) {
-                return '/storage/' . ltrim($image, '/');
-            }, $project->gallery);
-        }
-
-        // Подготавливаем данные проекта для отображения
-        $projectData = [
-            'id' => $project->id,
-            'title' => $project->title,
-            'slug' => $project->slug,
-            'description' => $project->description,
-            'short_description' => $project->short_description,
-            'image' => $project->image ? '/storage/' . ltrim($project->image, '/') : null,
-            'gallery' => $gallery,
-            'target_amount_rubles' => $project->target_amount_rubles ?? ($project->target_amount / 100),
-            'collected_amount_rubles' => $project->collected_amount_rubles ?? ($project->collected_amount / 100),
-            'progress_percentage' => $project->progress_percentage ?? 0,
-            'has_stages' => $project->has_stages ?? false,
-            'stages' => $project->stages ?? [],
-            'category' => $project->category,
-            'start_date' => $project->start_date,
-            'end_date' => $project->end_date,
-            'beneficiaries' => $project->beneficiaries ?? [],
-            'progress_updates' => $project->progress_updates ?? [],
-            'organization' => $project->organization ? [
-                'id' => $project->organization->id,
-                'name' => $project->organization->name,
-                'slug' => $project->organization->slug,
-            ] : null,
-        ];
-
-        $data = $this->getSiteWidgetsAndPositions();
-
-        return Inertia::render('main-site/ProjectShow', array_merge($data, [
-            'project' => $projectData,
         ]));
     }
 }

@@ -5,6 +5,7 @@ export function SubscribeBlockOutput({ widget }: WidgetOutputProps) {
     const config = widget.config as
         | {
               mainTitle?: string;
+              show_title?: boolean;
               subtitle?: string;
               backgroundGradient?: string;
               backgroundImage?: string;

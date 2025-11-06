@@ -17,6 +17,7 @@ interface Organization {
 interface SubscribeBlockProps {
     config?: {
         mainTitle?: string;
+        show_title?: boolean; // Показывать заголовок на сайте
         subtitle?: string;
         backgroundGradient?: string;
         backgroundImage?: string;
@@ -41,6 +42,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
     // Настройки из конфига с дефолтными значениями
     const mainTitle =
         config.mainTitle || 'Подпишись на постоянную поддержку своей школы';
+    const show_title = config.show_title ?? true; // По умолчанию true для обратной совместимости
     const subtitle =
         config.subtitle ||
         'Подписка поможет закрывать регулярные нужды школы и реализовывать проекты';
@@ -174,14 +176,20 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
             {/* Контент */}
             <div className="relative z-10 flex h-full flex-col">
                 {/* Заголовки */}
-                <div className="mb-8 p-8 pb-0 md:p-12">
-                    <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
-                        {mainTitle}
-                    </h2>
-                    <p className="text-lg text-white/90 md:text-xl">
-                        {subtitle}
-                    </p>
-                </div>
+                {(mainTitle && show_title) || subtitle ? (
+                    <div className="mb-8 p-8 pb-0 md:p-12">
+                        {mainTitle && show_title && (
+                            <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
+                                {mainTitle}
+                            </h2>
+                        )}
+                        {subtitle && (
+                            <p className="text-lg text-white/90 md:text-xl">
+                                {subtitle}
+                            </p>
+                        )}
+                    </div>
+                ) : null}
 
                 {/* Форма поиска */}
                 <form

@@ -205,11 +205,14 @@ class OrganizationCreationController extends Controller
   public function createSite(Organization $organization)
   {
     // Проверяем, есть ли уже сайт у организации
-    $existingSite = $organization->sites()->where('is_primary', true)->first();
+    $existingSite = $organization->sites()
+      ->where('site_type', 'organization')
+      ->orderBy('created_at', 'asc')
+      ->first();
 
     if ($existingSite) {
       // Если сайт уже существует, перенаправляем на редактирование
-      return redirect()->route('organization.admin.sites.builder', [
+      return redirect()->route('organizations.sites.builder', [
         'organization' => $organization,
         'site' => $existingSite
       ]);
@@ -259,7 +262,7 @@ class OrganizationCreationController extends Controller
       return response()->json([
         'message' => 'Сайт успешно создан',
         'site' => $site,
-        'redirect_url' => route('organization.admin.sites.builder', [
+        'redirect_url' => route('organizations.sites.builder', [
           'organization' => $organization,
           'site' => $site
         ]),

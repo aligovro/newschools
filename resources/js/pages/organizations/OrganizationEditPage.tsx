@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, Globe, Plus } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -56,6 +56,12 @@ interface Organization {
     region?: Region;
     city?: City;
     settlement?: Settlement;
+    primary_site?: {
+        id: number;
+    } | null;
+    sites?: Array<{
+        id: number;
+    }>;
 }
 
 interface Props {
@@ -79,7 +85,40 @@ export default function OrganizationEditPage({
     organizationSettings,
 }: Props) {
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout
+            breadcrumbs={breadcrumbs}
+            headerActions={
+                <div className="flex items-center gap-2">
+                    {organization.primary_site || (organization.sites && organization.sites.length > 0) ? (
+                        <Link
+                            href={`/dashboard/organizations/${organization.id}/sites/${
+                                organization.primary_site?.id || organization.sites?.[0]?.id
+                            }/builder`}
+                        >
+                            <Button variant="default" size="sm">
+                                <Globe className="mr-2 h-4 w-4" />
+                                Конструктор сайта
+                            </Button>
+                        </Link>
+                    ) : (
+                        <Link
+                            href={`/dashboard/organizations/${organization.id}/sites/create`}
+                        >
+                            <Button variant="default" size="sm">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Создать сайт
+                            </Button>
+                        </Link>
+                    )}
+                    <Link href={`/dashboard/organizations/${organization.id}`}>
+                        <Button variant="outline" size="sm">
+                            <Eye className="mr-2 h-4 w-4" />
+                            Просмотр
+                        </Button>
+                    </Link>
+                </div>
+            }
+        >
             <Head title={`Редактировать ${organization.name}`} />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">

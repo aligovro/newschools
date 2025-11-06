@@ -8,7 +8,11 @@ export const ContactOutput: React.FC<WidgetOutputProps> = ({
 }) => {
     const config = widget.config as ContactOutputConfig;
 
-    const { title = 'Контакты', contactInfo = {} } = config;
+    const {
+        title = 'Контакты',
+        show_title = true, // По умолчанию true для обратной совместимости
+        contactInfo = {},
+    } = config;
 
     const {
         phone = '',
@@ -61,7 +65,7 @@ export const ContactOutput: React.FC<WidgetOutputProps> = ({
 
     return (
         <div className={`contact-output ${className || ''}`} style={style}>
-            {title && (
+            {title && show_title && (
                 <h2 className="mb-6 text-2xl font-bold text-gray-900">
                     {title}
                 </h2>

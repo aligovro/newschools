@@ -12,7 +12,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { ArrowLeft, Edit, Globe, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -123,7 +123,28 @@ export default function OrganizationShowPage({ organization }: Props) {
                     </div>
                     <div className="flex items-center gap-2">
                         <StatusBadge status={organization.status} />
-                        <div className="flex space-x-1">
+                        <div className="flex items-center gap-2">
+                            {organization.primary_site || (organization.sites && organization.sites.length > 0) ? (
+                                <Link
+                                    href={`/dashboard/organizations/${organization.id}/sites/${
+                                        organization.primary_site?.id || organization.sites?.[0]?.id
+                                    }/builder`}
+                                >
+                                    <Button variant="default" size="sm">
+                                        <Globe className="mr-2 h-4 w-4" />
+                                        Конструктор сайта
+                                    </Button>
+                                </Link>
+                            ) : (
+                                <Link
+                                    href={`/dashboard/organizations/${organization.id}/sites/create`}
+                                >
+                                    <Button variant="default" size="sm">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Создать сайт
+                                    </Button>
+                                </Link>
+                            )}
                             <Link
                                 href={`/dashboard/organizations/${organization.id}/edit`}
                             >

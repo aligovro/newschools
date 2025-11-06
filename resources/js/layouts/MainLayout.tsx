@@ -111,7 +111,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     };
 
     const shouldShowWidget = (widget: WidgetData): boolean => {
-        const rules = (widget.visibility_rules as PositionVisibilityRules) || {};
+        const rules =
+            (widget.visibility_rules as PositionVisibilityRules) || {};
         const mode = (rules.mode as 'all' | 'include' | 'exclude') || 'all';
         const routeKey = getCurrentRouteKey();
         const routes: string[] = rules.routes || [];
@@ -374,7 +375,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
                 {/* Main Content */}
                 <main className="site-main">
-                    <div className="container mx-auto px-4 py-8">
+                    <div className="container mx-auto px-4">
                         {(() => {
                             const sidebarPositions = positionsByArea.sidebar;
 
@@ -477,7 +478,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                         const { footerCols, footerOther } = positionsByArea;
 
                         return (
-                            <div className="space-y-6">
+                            <div className="footer-container">
                                 {footerCols.length > 0 && (
                                     <div className="container mx-auto px-4">
                                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import { type WidgetConfig } from '@/utils/widgetConfigUtils';
 import React from 'react';
 import type { WidgetData } from '../types';
@@ -74,20 +75,15 @@ export const AlumniStatsWidgetModal: React.FC<AlumniStatsWidgetModalProps> = ({
                     <CardTitle className="text-sm">Общие настройки</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div>
-                        <Label htmlFor="title">Заголовок (опционально)</Label>
-                        <Input
-                            id="title"
-                            value={(config.title as string) || ''}
-                            onChange={(e) =>
-                                handleChange('title', e.target.value)
+                    <TitleField
+                        title={(config.title as string) || ''}
+                        showTitle={(config.show_title as boolean) ?? true}
+                        onTitleChange={(title) => handleChange('title', title)}
+                        onShowTitleChange={(showTitle) =>
+                            handleChange('show_title', showTitle)
                             }
                             placeholder="Например: Наша поддержка"
                         />
-                        <p className="mt-1 text-xs text-gray-500">
-                            Оставьте пустым, чтобы не показывать заголовок
-                        </p>
-                    </div>
 
                     <div>
                         <Label htmlFor="organization_id">

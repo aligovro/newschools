@@ -11,6 +11,7 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
 
     const mapped = {
         title: config.title,
+        show_title: config.show_title ?? true, // По умолчанию true для обратной совместимости
         description: config.description,
         preset_amounts: config.suggestedAmounts,
         min_amount: config.minAmount,

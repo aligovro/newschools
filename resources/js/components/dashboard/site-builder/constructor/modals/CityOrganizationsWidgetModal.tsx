@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import React from 'react';
 import type { WidgetData } from '../../types';
 import type { WidgetConfig } from '@/utils/widgetConfigUtils';
@@ -33,15 +34,15 @@ export const CityOrganizationsWidgetModal: React.FC<Props> = ({
                     <CardTitle className="text-sm">Настройки виджета</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div>
-                        <Label htmlFor="title">Заголовок</Label>
-                        <Input
-                            id="title"
-                            value={(config.title as string) || 'Школы города'}
-                            onChange={(e) => handleChange('title', e.target.value)}
-                            placeholder="Школы города"
-                        />
-                    </div>
+                    <TitleField
+                        title={(config.title as string) || 'Школы города'}
+                        showTitle={(config.show_title as boolean) ?? true}
+                        onTitleChange={(title) => handleChange('title', title)}
+                        onShowTitleChange={(showTitle) =>
+                            handleChange('show_title', showTitle)
+                        }
+                        placeholder="Школы города"
+                    />
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div>

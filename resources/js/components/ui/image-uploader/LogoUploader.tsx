@@ -203,7 +203,8 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
             );
             setCrop(initial);
         } else {
-            setCrop({ unit: '%', x: 10, y: 10, width: 80, height: 80 });
+            // Свободная рамка - занимает всю область изображения
+            setCrop({ unit: '%', x: 0, y: 0, width: 100, height: 100 });
         }
     }, [aspectRatio]);
 
@@ -218,9 +219,19 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error('No 2d context');
 
-        const scaleX = image.naturalWidth / image.width;
-        const scaleY = image.naturalHeight / image.height;
+        // Используем натуральные размеры изображения для точных расчетов
+        const naturalWidth = image.naturalWidth;
+        const naturalHeight = image.naturalHeight;
+        
+        // Получаем отрендеренные размеры (с учетом CSS трансформаций)
+        const displayWidth = image.width;
+        const displayHeight = image.height;
 
+        // Вычисляем масштаб между отрендеренным и натуральным размером
+        const scaleX = naturalWidth / displayWidth;
+        const scaleY = naturalHeight / displayHeight;
+
+        // Применяем масштаб к координатам обрезки
         const cropX = crop.x * scaleX;
         const cropY = crop.y * scaleY;
         const cropW = crop.width * scaleX;
@@ -252,40 +263,42 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
 
     // Применение кропа
     const handleCropComplete = useCallback(async () => {
-        if (!completedCrop || !imgSrc) return;
+        if (!completedCrop || !imgSrc || !imgRef.current) return;
 
-        const image = new Image();
-        image.crossOrigin = 'anonymous';
-        image.src = imgSrc;
+        try {
+            setIsUploading(true);
 
-        image.onload = async () => {
-            try {
-                setIsUploading(true);
-
-                const blob = await getCroppedImg(image, completedCrop, rotate, scale);
-                if (!blob) return;
-
-                const file = new File([blob], 'logo-cropped.jpg', {
-                    type: 'image/jpeg',
-                });
-
-                let finalUrl: string;
-
-                if (onUpload) {
-                    finalUrl = await onUpload(file);
-                } else {
-                    finalUrl = URL.createObjectURL(blob);
-                }
-
-                setPreviewUrl(finalUrl);
-                onChange(file, finalUrl);
-                setShowCropModal(false);
-            } catch (error) {
-                setUploadError(error instanceof Error ? error.message : 'Ошибка обработки изображения');
-            } finally {
-                setIsUploading(false);
+            // Используем уже загруженное изображение из ref вместо создания нового
+            const image = imgRef.current;
+            
+            // Убеждаемся, что изображение полностью загружено
+            if (!image.complete || image.naturalWidth === 0 || image.naturalHeight === 0) {
+                throw new Error('Изображение еще не загружено');
             }
-        };
+
+            const blob = await getCroppedImg(image, completedCrop, rotate, scale);
+            if (!blob) return;
+
+            const file = new File([blob], 'logo-cropped.jpg', {
+                type: 'image/jpeg',
+            });
+
+            let finalUrl: string;
+
+            if (onUpload) {
+                finalUrl = await onUpload(file);
+            } else {
+                finalUrl = URL.createObjectURL(blob);
+            }
+
+            setPreviewUrl(finalUrl);
+            onChange(file, finalUrl);
+            setShowCropModal(false);
+        } catch (error) {
+            setUploadError(error instanceof Error ? error.message : 'Ошибка обработки изображения');
+        } finally {
+            setIsUploading(false);
+        }
     }, [completedCrop, imgSrc, rotate, scale, onUpload, onChange]);
 
     // Отмена кропа
@@ -475,6 +488,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
                                 aspect={aspectRatio}
                             >
                                 <img
+                                    ref={imgRef}
                                     alt="Crop me"
                                     src={imgSrc}
                                     onLoad={onImageLoad}

@@ -4,6 +4,28 @@ interface UseImageResizingProps {
   handleEditImage: (img: HTMLImageElement) => void;
 }
 
+/**
+ * Проверяет, является ли изображение SVG
+ */
+const isSvgImage = (img: HTMLImageElement): boolean => {
+  if (!img || !img.src) return false;
+  
+  const urlPath = img.src.split('?')[0]; // Убираем query параметры
+  const urlLower = urlPath.toLowerCase();
+  
+  // Проверяем по расширению файла в URL
+  if (urlLower.endsWith('.svg')) {
+    return true;
+  }
+  
+  // Проверяем по data URL
+  if (urlLower.startsWith('data:image/svg+xml')) {
+    return true;
+  }
+  
+  return false;
+};
+
 export interface UseImageResizingReturn {
   createResizeHandles: (img: HTMLImageElement) => void;
   handleImageResize: (img: HTMLImageElement) => () => void;
@@ -21,6 +43,11 @@ export const useImageResizing = ({
   const createResizeHandles = useCallback(
     (img: HTMLImageElement) => {
       if (!img || !img.src || img.complete === false) {
+        return;
+      }
+
+      // Для SVG не создаем маркеры ресайза
+      if (isSvgImage(img)) {
         return;
       }
 
@@ -328,6 +355,11 @@ export const useImageResizing = ({
   // Инициализация ресайза для изображения
   const initializeImageResize = useCallback(
     (img: HTMLImageElement) => {
+      // Для SVG не инициализируем ресайз
+      if (isSvgImage(img)) {
+        return;
+      }
+
       createResizeHandles(img);
 
       setTimeout(() => {

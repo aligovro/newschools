@@ -10,6 +10,7 @@ export const FormOutput: React.FC<WidgetOutputProps> = ({
 
     const {
         title = '',
+        show_title = true, // По умолчанию true для обратной совместимости
         description = '',
         fields = [],
         submitText = 'Отправить',
@@ -282,7 +283,7 @@ export const FormOutput: React.FC<WidgetOutputProps> = ({
 
     return (
         <div className={`form-output ${className || ''}`} style={style}>
-            {title && (
+            {title && show_title && (
                 <h2 className="mb-4 text-2xl font-bold text-gray-900">
                     {title}
                 </h2>

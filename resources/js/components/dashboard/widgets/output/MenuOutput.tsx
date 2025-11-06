@@ -12,6 +12,7 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
 
     const {
         title = '',
+        show_title = true, // По умолчанию true для обратной совместимости
         items = [],
         orientation = 'row',
         style: menuStyle = 'default',
@@ -108,7 +109,7 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
             className={`menu-output ${getStyleClasses(menuStyle)} ${className || ''}`}
             style={style}
         >
-            {title && (
+            {title && show_title && (
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">
                     {title}
                 </h2>

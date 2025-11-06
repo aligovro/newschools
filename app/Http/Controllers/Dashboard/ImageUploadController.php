@@ -176,6 +176,60 @@ class ImageUploadController extends Controller
     }
 
     /**
+     * Загрузить изображение для текстового виджета
+     */
+    public function uploadTextWidgetImage(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|mimes:jpeg,png,jpg,gif,webp,svg|max:10240'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $file = $request->file('image');
+
+            $validationErrors = $this->imageService->validateImage($file);
+            if (!empty($validationErrors)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка валидации изображения',
+                    'errors' => $validationErrors
+                ], 422);
+            }
+
+            $result = $this->imageService->processTextWidgetImage($file);
+
+            // Возвращаем только путь без домена (начинается с /storage/)
+            $imagePath = '/storage/' . $result['original'];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Изображение текстового виджета успешно загружено',
+                'data' => [
+                    'original' => $imagePath,
+                    'url' => $imagePath,
+                    'filename' => $result['filename'],
+                    'original_name' => $result['original_name'],
+                    'size' => $result['size'],
+                    'dimensions' => $result['dimensions']
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при загрузке изображения: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Удалить изображение
      */
     public function deleteImage(Request $request): JsonResponse

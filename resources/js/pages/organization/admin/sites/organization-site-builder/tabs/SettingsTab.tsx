@@ -92,7 +92,7 @@ export default function SettingsTab({
                         href={
                             isMainSite
                                 ? '/dashboard/sites'
-                                : `/dashboard/organization/${organization.id}/admin/sites`
+                                : `/dashboard/organizations/${organization.id}/sites`
                         }
                     >
                         <Button type="button" variant="outline">

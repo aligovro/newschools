@@ -199,20 +199,20 @@ export default function OrganizationSiteBuilder({
                   }
                 : {
                       title: 'Сайты',
-                      href: `/dashboard/organization/${organization.id}/admin/sites`,
+                      href: `/dashboard/organizations/${organization.id}/sites`,
                   },
             isCreateMode
                 ? {
                       title: 'Создать сайт',
                       href: isMainSite
                           ? '/dashboard/sites/create'
-                          : `/dashboard/organization/${organization.id}/admin/sites/create`,
+                          : `/dashboard/organizations/${organization.id}/sites/create`,
                   }
                 : {
                       title: site.name,
                       href: isMainSite
                           ? `/dashboard/sites/${site.id}/builder`
-                          : `/dashboard/organization/${organization.id}/admin/sites/${site.id}/builder`,
+                          : `/dashboard/organizations/${organization.id}/sites/${site.id}/builder`,
                   },
         ],
         [
@@ -284,7 +284,7 @@ export default function OrganizationSiteBuilder({
             e.preventDefault();
             const createUrl = isMainSite
                 ? '/dashboard/sites'
-                : `/dashboard/organization/${organization.id}/admin/sites`;
+                : `/dashboard/organizations/${organization.id}/sites`;
             postCreate(createUrl);
         },
         [organization.id, postCreate, isMainSite],
@@ -307,7 +307,7 @@ export default function OrganizationSiteBuilder({
                                 href={
                                     isMainSite
                                         ? '/dashboard/sites'
-                                        : `/dashboard/organization/${organization.id}/admin/sites`
+                                        : `/dashboard/organizations/${organization.id}/sites`
                                 }
                             >
                                 <Button variant="ghost" size="sm">
@@ -346,7 +346,7 @@ export default function OrganizationSiteBuilder({
                                         e.preventDefault();
                                         const createUrl = isMainSite
                                             ? '/dashboard/sites'
-                                            : `/dashboard/organization/${organization.id}/admin/sites`;
+                                            : `/dashboard/organizations/${organization.id}/sites`;
                                         postCreate(createUrl);
                                     }}
                                 >
@@ -446,7 +446,7 @@ export default function OrganizationSiteBuilder({
                                         href={
                                             isMainSite
                                                 ? '/dashboard/sites'
-                                                : `/dashboard/organization/${organization.id}/admin/sites`
+                                                : `/dashboard/organizations/${organization.id}/sites`
                                         }
                                     >
                                         <Button type="button" variant="outline">

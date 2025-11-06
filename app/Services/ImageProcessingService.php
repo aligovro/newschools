@@ -124,6 +124,98 @@ class ImageProcessingService
     }
 
     /**
+     * Обработать изображение для текстового виджета
+     * Сохраняет как есть, если размеры <= 1000px, иначе режет до 1000px с сохранением пропорций
+     */
+    public function processTextWidgetImage(UploadedFile $file): array
+    {
+        $originalName = $file->getClientOriginalName();
+        $extension = $file->getClientOriginalExtension();
+        $filename = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '_' . time() . '.' . $extension;
+        $directory = 'text-widgets';
+        $maxDimension = 1000;
+
+        // Создаем директорию если не существует
+        if (!Storage::disk('public')->exists($directory)) {
+            Storage::disk('public')->makeDirectory($directory, 0755, true);
+        }
+
+        // SVG обрабатываем как есть без ресайза/сжатия
+        if (strtolower($extension) === 'svg' || $file->getMimeType() === 'image/svg+xml') {
+            $path = $directory . '/' . $filename;
+            Storage::disk('public')->putFileAs($directory, $file, $filename);
+            return [
+                'original' => $path,
+                'thumbnails' => [],
+                'filename' => $filename,
+                'original_name' => $originalName,
+                'size' => $file->getSize(),
+                'dimensions' => [
+                    'width' => null,
+                    'height' => null,
+                ],
+            ];
+        }
+
+        // Обрабатываем растровое изображение
+        $image = $this->imageManager->read($file->getPathname());
+        $originalWidth = $image->width();
+        $originalHeight = $image->height();
+
+        // Вычисляем финальные размеры
+        $finalWidth = $originalWidth;
+        $finalHeight = $originalHeight;
+
+        // Проверяем, нужно ли резать изображение
+        if ($originalWidth > $maxDimension || $originalHeight > $maxDimension) {
+            // Находим максимальную сторону
+            $maxSide = max($originalWidth, $originalHeight);
+            
+            // Вычисляем коэффициент масштабирования
+            $scale = $maxDimension / $maxSide;
+            
+            // Вычисляем новые размеры с сохранением пропорций
+            $finalWidth = (int) round($originalWidth * $scale);
+            $finalHeight = (int) round($originalHeight * $scale);
+
+            // Ресайзим изображение с сохранением пропорций
+            $image->scale($finalWidth, $finalHeight);
+        }
+
+        // Сохраняем изображение с сохранением оригинального формата (если возможно) или конвертируем в JPEG
+        $quality = 85; // Качество для текстового виджета
+        
+        // Определяем формат сохранения и обновляем расширение файла при необходимости
+        if (in_array(strtolower($extension), ['png', 'webp'])) {
+            if (strtolower($extension) === 'png') {
+                $image->toPng();
+            } else {
+                $image->toWebp($quality);
+            }
+        } else {
+            // Конвертируем в JPEG для всех остальных форматов
+            $image->toJpeg($quality);
+            // Обновляем имя файла с правильным расширением
+            $filename = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '_' . time() . '.jpg';
+        }
+        
+        $path = $directory . '/' . $filename;
+        Storage::disk('public')->put($path, $image->encode());
+
+        return [
+            'original' => $path,
+            'thumbnails' => [],
+            'filename' => $filename,
+            'original_name' => $originalName,
+            'size' => Storage::disk('public')->size($path),
+            'dimensions' => [
+                'width' => $finalWidth,
+                'height' => $finalHeight,
+            ],
+        ];
+    }
+
+    /**
      * Изменить размер изображения
      */
     private function resizeImage($image, array $config): \Intervention\Image\Image
@@ -176,7 +268,7 @@ class ImageProcessingService
     {
         return match ($size) {
             'original' => 95,
-            'logo', 'slider', 'gallery' => 85,
+            'logo', 'slider', 'gallery', 'content' => 85,
             'thumbnail' => 75,
             'small' => 70,
             default => 80
@@ -188,7 +280,7 @@ class ImageProcessingService
      */
     private function ensureDirectoriesExist(string $directory): void
     {
-        $sizes = ['original', 'logo', 'slider', 'gallery', 'thumbnail', 'small'];
+        $sizes = ['original', 'logo', 'slider', 'gallery', 'content', 'thumbnail', 'small'];
 
         foreach ($sizes as $size) {
             $path = $directory . '/' . $size;
@@ -203,7 +295,17 @@ class ImageProcessingService
      */
     public function deleteImage(string $filename, string $directory): bool
     {
-        $sizes = ['original', 'logo', 'slider', 'gallery', 'thumbnail', 'small'];
+        // Для текстового виджета файлы сохраняются без префиксов размеров
+        if ($directory === 'text-widgets') {
+            $path = $directory . '/' . $filename;
+            if (Storage::disk('public')->exists($path)) {
+                return Storage::disk('public')->delete($path);
+            }
+            return false;
+        }
+
+        // Для остальных типов удаляем все варианты с префиксами
+        $sizes = ['original', 'logo', 'slider', 'gallery', 'content', 'thumbnail', 'small'];
         $deleted = true;
 
         foreach ($sizes as $size) {

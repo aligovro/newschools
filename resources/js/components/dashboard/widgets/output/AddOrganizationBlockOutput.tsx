@@ -5,6 +5,7 @@ export function AddOrganizationBlockOutput({ widget }: WidgetOutputProps) {
     const config = widget.config as
         | {
               title?: string;
+              show_title?: boolean;
               subtitle?: string;
               description?: string;
               submitButtonText?: string;
