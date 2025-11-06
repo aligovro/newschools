@@ -1,0 +1,200 @@
+@import '../../variables';
+
+.project-stage-card {
+    border: 1px solid #e8ecf3;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: white;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    padding: 10px;
+
+    &:hover {
+        border-color: #d0d5e0;
+    }
+
+    .project-stage-image-wrapper {
+        position: relative;
+        width: 40%;
+        min-width: 40%;
+        flex-shrink: 0;
+        border-radius: 3px;
+        overflow: hidden;
+        height: 190px;
+        align-self: flex-start;
+
+        img {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+        }
+    }
+
+    &:hover .project-stage-image-wrapper img {
+        transform: scale(1.05);
+    }
+
+    .project-stage-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        min-width: 0;
+    }
+
+    .project-stage-header {
+        margin-bottom: 20px;
+    }
+
+    .project-stage-number {
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 130%;
+        color: #6b7280;
+        margin-bottom: 8px;
+    }
+
+    .project-stage-title {
+        font-weight: 600;
+        font-size: 20px;
+        line-height: 120%;
+        color: #1a1a1a;
+        margin-bottom: 12px;
+    }
+
+    .project-stage-description {
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 140%;
+        color: #6b7280;
+
+        // Стили для HTML контента
+        p {
+            margin: 0 0 8px 0;
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+        ul,
+        ol {
+            margin: 0 0 8px 0;
+            padding-left: 20px;
+        }
+        a {
+            color: inherit;
+            text-decoration: underline;
+        }
+    }
+
+    .project-stage-donation-section {
+        margin-bottom: 20px;
+    }
+
+    .project-stage-donation-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .project-stage-donation-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 130%;
+        color: #6b7280;
+    }
+
+    .project-stage-donation-progress-wrapper {
+        margin-bottom: 8px;
+    }
+
+    .project-stage-donation-progress-bar {
+        height: 3px;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .project-stage-donation-progress-fill {
+        height: 100%;
+        background: $accent-gradient;
+        border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+
+    .project-stage-donation-amounts {
+        display: flex;
+        justify-content: space-between;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 120%;
+        color: #1a1a1a;
+    }
+
+    .project-stage-donation-target {
+        color: #1a1a1a;
+    }
+
+    .project-stage-donation-collected {
+        background: $accent-gradient;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .project-stage-action-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .project-stage-help-button {
+        border-radius: 10px;
+        padding: 12px 16px;
+        min-width: 136px;
+        height: 34px;
+        background: $accent-gradient;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 120%;
+
+        &:hover {
+            filter: brightness(0.95);
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+    }
+
+    // Responsive design
+    @media (max-width: 768px) {
+        flex-direction: column;
+
+        .project-stage-image-wrapper {
+            width: 100%;
+            min-width: 100%;
+            height: 200px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .project-stage-content {
+            padding: 16px;
+        }
+    }
+}

@@ -61,6 +61,7 @@ export interface HeroSlide {
 // Text widget types
 export interface TextOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     content?: string;
     fontSize?: string;
     textAlign?: 'left' | 'center' | 'right';
@@ -107,6 +108,7 @@ export interface StatItem {
 
 export interface StatsOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     stats?: StatItem[];
     columns?: number;
     layout?: 'grid' | 'list' | 'carousel';
@@ -127,6 +129,7 @@ export interface Project {
 
 export interface ProjectsOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     projects?: Project[];
     limit?: number;
     columns?: number;
@@ -155,6 +158,7 @@ export interface ContactInfo {
 
 export interface ContactOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     contactInfo?: ContactInfo;
 }
 
@@ -169,6 +173,7 @@ export interface MenuItem {
 
 export interface MenuOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     items?: MenuItem[];
     orientation?: 'row' | 'column';
     style?: 'default' | 'minimal' | 'modern';
@@ -200,6 +205,7 @@ export interface FormField {
 
 export interface FormOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     description?: string;
     fields?: FormField[];
     submitText?: string;
@@ -210,6 +216,7 @@ export interface FormOutputConfig {
 // Donation widget types
 export interface DonationOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     description?: string;
     minAmount?: number;
     maxAmount?: number;
@@ -235,6 +242,7 @@ export interface DonationItem {
 
 export interface DonationsListOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     subtitle?: string;
     donations?: DonationItem[];
     limit?: number;
@@ -248,6 +256,7 @@ export interface DonationsListOutputConfig {
 // City supporters widget types
 export interface CitySupportersOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     subtitle?: string;
     regions?: Array<{
         id: string | number;
@@ -265,6 +274,7 @@ export interface CitySupportersOutputConfig {
 // Referral leaderboard widget types
 export interface ReferralLeaderboardOutputConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     subtitle?: string;
     leaderboard?: Array<{
         id: string | number;

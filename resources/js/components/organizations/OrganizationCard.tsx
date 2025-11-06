@@ -1,3 +1,4 @@
+import '@css/components/organizations/organization-card.scss';
 import { Link, router } from '@inertiajs/react';
 import { FolderKanban, HandHeart, User, Users } from 'lucide-react';
 
@@ -17,9 +18,16 @@ interface School {
     sponsors_count?: number;
     projects_count?: number;
     director?: {
-        name: string;
+        id: number;
+        full_name: string;
+        last_name: string;
+        first_name: string;
+        middle_name?: string | null;
+        position: string;
+        is_director: boolean;
+        photo?: string | null;
     };
-    director_name?: string | null;
+    director_name?: string | null; // Для обратной совместимости
 }
 
 interface OrganizationCardProps {
@@ -58,15 +66,23 @@ export default function OrganizationCard({
             : 0;
 
     const directorName =
-        organization.director?.name || organization.director_name || null;
+        organization.director?.full_name || organization.director_name || null;
 
     return (
-        <Link
-            href={organizationUrl}
-            className="group block overflow-hidden rounded-xl bg-white shadow-lg transition-shadow duration-300 hover:shadow-xl"
-        >
+        <Link href={organizationUrl} className="organization-card group block">
+            <div className="p-4 pb-0">
+                {/* Address */}
+                {fullAddress && (
+                    <div className="organization-address mb-2">
+                        {fullAddress}
+                    </div>
+                )}
+                {/* School Name */}
+                <h3 className="organization-name mb-4">{organization.name}</h3>
+            </div>
+
             {/* School Image */}
-            <div className="relative h-48 bg-gradient-to-br from-blue-400 to-indigo-600">
+            <div className="organization-image-wrapper relative bg-gradient-to-br from-blue-400 to-indigo-600">
                 {organization.image ? (
                     <img
                         src={organization.image}
@@ -88,80 +104,79 @@ export default function OrganizationCard({
                         </div>
                     </div>
                 )}
-                <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div className="organization-image-gradient"></div>
+
+                {/* Donation Info Overlay */}
+                <div className="organization-donation-overlay">
+                    <div className="organization-donation-info">
+                        <div className="organization-donation-labels">
+                            <span>Нужды школы</span>
+                            <span>Собрали</span>
+                        </div>
+                        <div className="organization-donation-progress-wrapper">
+                            <div className="organization-donation-progress-bar">
+                                {targetAmount > 0 && (
+                                    <div
+                                        className="organization-donation-progress-fill"
+                                        style={{
+                                            width: `${Math.min(progressPercentage, 100)}%`,
+                                        }}
+                                    ></div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="organization-donation-amounts">
+                            <span className="organization-donation-target">
+                                {formatCurrency(targetAmount)}
+                            </span>
+                            <span className="organization-donation-collected">
+                                {formatCurrency(collectedAmount)}
+                            </span>
+                        </div>
+                    </div>
+                    <button
+                        className="organization-help-button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            router.visit(organizationUrl);
+                        }}
+                        type="button"
+                    >
+                        Помочь
+                    </button>
+                </div>
             </div>
 
-            <div className="p-6">
-                {/* Address */}
-                {fullAddress && (
-                    <div className="mb-2 text-sm font-medium text-gray-500">
-                        {fullAddress}
-                    </div>
-                )}
-                {/* School Name */}
-                <h3 className="mb-4 text-xl font-bold text-gray-900">
-                    {organization.name}
-                </h3>
-
-                {/* Progress Section */}
-                <div className="mb-4 rounded-lg bg-gray-50 p-4">
-                    <div className="mb-3 flex justify-between text-xs font-medium text-gray-600">
-                        <span>Нужды школы</span>
-                        <span>Собрали</span>
-                    </div>
-                    <div className="mb-2 flex justify-between text-lg font-bold">
-                        <span className="text-gray-900">
-                            {formatCurrency(targetAmount)}
-                        </span>
-                        <span className="text-blue-600">
-                            {formatCurrency(collectedAmount)}
-                        </span>
-                    </div>
-                    {/* Progress Bar */}
-                    {targetAmount > 0 && (
-                        <div className="h-2 w-full rounded-full bg-gray-200">
-                            <div
-                                className="h-2 rounded-full bg-blue-600 transition-all duration-300"
-                                style={{
-                                    width: `${Math.min(progressPercentage, 100)}%`,
-                                }}
-                            ></div>
-                        </div>
-                    )}
-                </div>
-
+            <div className="p-4">
                 {/* Statistics */}
-                <div className="mb-4 grid grid-cols-3 gap-4 border-t border-gray-200 pt-4">
-                    <div className="text-center">
+                <div className="mb-4 grid grid-cols-3 gap-4">
+                    <div className="organization-stat-item">
                         <div className="mb-1 flex items-center justify-center text-gray-400">
                             <Users className="h-5 w-5" />
                         </div>
-                        <div className="text-sm font-medium text-gray-600">
+                        <div className="organization-stat-label">
                             Выпускники
                         </div>
-                        <div className="text-lg font-bold text-gray-900">
+                        <div className="organization-stat-value">
                             {formatNumber(organization.members_count || 0)}
                         </div>
                     </div>
-                    <div className="text-center">
+                    <div className="organization-stat-item">
                         <div className="mb-1 flex items-center justify-center text-gray-400">
                             <HandHeart className="h-5 w-5" />
                         </div>
-                        <div className="text-sm font-medium text-gray-600">
-                            Спонсоры
-                        </div>
-                        <div className="text-lg font-bold text-gray-900">
+                        <div className="organization-stat-label">Спонсоры</div>
+                        <div className="organization-stat-value">
                             {formatNumber(organization.sponsors_count || 0)}
                         </div>
                     </div>
-                    <div className="text-center">
+                    <div className="organization-stat-item">
                         <div className="mb-1 flex items-center justify-center text-gray-400">
                             <FolderKanban className="h-5 w-5" />
                         </div>
-                        <div className="text-sm font-medium text-gray-600">
-                            Проекты
-                        </div>
-                        <div className="text-lg font-bold text-gray-900">
+                        <div className="organization-stat-label">Проекты</div>
+                        <div className="organization-stat-value">
                             {formatNumber(organization.projects_count || 0)}
                         </div>
                     </div>
@@ -169,30 +184,28 @@ export default function OrganizationCard({
 
                 {/* Director */}
                 {directorName && (
-                    <div className="mb-4 flex items-center space-x-2 border-t border-gray-200 pt-4">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <div>
-                            <div className="text-xs font-medium text-gray-500">
+                    <div className="mb-4 flex items-center space-x-3">
+                        {organization.director?.photo ? (
+                            <img
+                                src={organization.director.photo}
+                                alt={directorName}
+                                className="h-9 w-9 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100">
+                                <User className="h-5 w-5 text-gray-400" />
+                            </div>
+                        )}
+                        <div className="flex-1">
+                            <div className="organization-director-label">
                                 Директор школы
                             </div>
-                            <div className="text-sm font-semibold text-gray-900">
+                            <div className="organization-director-name">
                                 {directorName}
                             </div>
                         </div>
                     </div>
                 )}
-
-                {/* Action Button */}
-                <button
-                    className="btn-accent block w-full rounded-lg px-6 py-3 text-center font-medium text-white"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        router.visit(organizationUrl);
-                    }}
-                    type="button"
-                >
-                    Помочь
-                </button>
             </div>
         </Link>
     );

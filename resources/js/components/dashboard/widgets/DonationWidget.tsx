@@ -41,6 +41,7 @@ interface Terminology {
 
 interface DonationWidgetConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     description?: string;
     fundraiser_id?: number;
     project_id?: number;
@@ -421,14 +422,18 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         >
             <div className="p-6">
                 {/* Заголовок */}
-                <div className="mb-6 text-center">
-                    <h3 className="mb-2 text-2xl font-bold">{title}</h3>
-                    {description && (
+                {(title && (config.show_title ?? true)) || description ? (
+                    <div className="mb-6 text-center">
+                        {title && (config.show_title ?? true) && (
+                            <h3 className="mb-2 text-2xl font-bold">{title}</h3>
+                        )}
+                        {description && (
                             <p className="text-sm text-gray-600">
                                 {description}
                             </p>
-                    )}
-                </div>
+                        )}
+                    </div>
+                ) : null}
 
                 {/* Прогресс сбора */}
                 {show_progress && fundraiser && (

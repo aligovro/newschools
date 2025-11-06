@@ -1,10 +1,13 @@
 import OrganizationCard from '@/components/organizations/OrganizationCard';
 import { fetchPublicOrganizations } from '@/lib/api/public';
 import { Link } from '@inertiajs/react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { Swiper as SwiperType } from 'swiper';
 import { Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
+import '@css/widgets/organizations-slider-widget.scss';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
@@ -21,12 +24,22 @@ interface Organization {
     members_count?: number;
     sponsors_count?: number;
     projects_count?: number;
-    director?: { name: string };
-    director_name?: string | null;
+    director?: {
+        id: number;
+        full_name: string;
+        last_name: string;
+        first_name: string;
+        middle_name?: string | null;
+        position: string;
+        is_director: boolean;
+        photo?: string | null;
+    };
+    director_name?: string | null; // Для обратной совместимости
 }
 
 interface OrganizationsSliderConfig {
     title?: string;
+    show_title?: boolean; // Показывать заголовок на сайте
     city_id?: number;
     limit?: number;
     slidesPerView?: number; // desktop
@@ -40,6 +53,7 @@ interface Props {
 export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     const {
         title = 'Школы города',
+        show_title = true, // По умолчанию true для обратной совместимости
         city_id,
         limit = 9,
         slidesPerView = 3,
@@ -50,15 +64,15 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const navigationNextClass = useMemo(
-        () => `orgs-slider-next-${Math.random().toString(36).slice(2, 8)}`,
-        [],
+    const swiperRef = useRef<SwiperType | null>(null);
+    const navigationPrevRef = useRef<HTMLButtonElement>(null);
+    const navigationNextRef = useRef<HTMLButtonElement>(null);
+
+    // Показываем стрелки только если элементов больше, чем видимых слайдов
+    const shouldShowArrows = useMemo(
+        () => items.length > slidesPerView,
+        [items.length, slidesPerView],
     );
-    const navigationPrevClass = useMemo(
-        () => `orgs-slider-prev-${Math.random().toString(36).slice(2, 8)}`,
-        [],
-    );
-    const swiperRef = useRef<any>(null);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -92,10 +106,13 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     return (
         <section className="py-8">
             <div className="container mx-auto px-4">
+                {(title && show_title) || showHeaderActions ? (
                 <div className="mb-6 flex items-center justify-between">
+                        {title && show_title && (
                     <h2 className="text-2xl font-bold text-gray-900">
                         {title}
                     </h2>
+                        )}
                     {showHeaderActions && (
                         <Link
                             href="/organizations"
@@ -105,6 +122,7 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                         </Link>
                     )}
                 </div>
+                ) : null}
 
                 {loading && (
                     <div className="flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
@@ -123,39 +141,17 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                 )}
 
                 {items.length > 0 && (
-                    <div className="relative">
-                        {/* Arrows */}
-                        <div className={`${navigationPrevClass}`}></div>
-                        <div className={`${navigationNextClass}`}></div>
-
-                        {/* Arrow styles */}
-                        <style
-                            dangerouslySetInnerHTML={{
-                                __html: `
-                                .${navigationNextClass}, .${navigationPrevClass} {
-                                    color: #333; background: #fff; width: 40px; height: 40px; border-radius: 50%;
-                                    position: absolute; top: 50%; transform: translateY(-50%);
-                                    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-                                    cursor: pointer; z-index: 10;
-                                }
-                                .${navigationPrevClass} { left: -10px; }
-                                .${navigationNextClass} { right: -10px; }
-                                .${navigationNextClass}:after { content: '›'; font-size: 18px; font-weight: 600; }
-                                .${navigationPrevClass}:after { content: '‹'; font-size: 18px; font-weight: 600; }
-                                @media (max-width: 640px) {
-                                    .${navigationPrevClass} { left: 4px; }
-                                    .${navigationNextClass} { right: 4px; }
-                                }
-                            `,
-                            }}
-                        />
-
+                    <div className="organizations-slider-widget relative">
                         <Swiper
-                            modules={[Navigation]}
-                            navigation={{
-                                nextEl: `.${navigationNextClass}`,
-                                prevEl: `.${navigationPrevClass}`,
-                            }}
+                            modules={shouldShowArrows ? [Navigation] : []}
+                            navigation={
+                                shouldShowArrows
+                                    ? {
+                                          prevEl: navigationPrevRef.current,
+                                          nextEl: navigationNextRef.current,
+                                      }
+                                    : false
+                            }
                             spaceBetween={16}
                             slidesPerView={1}
                             breakpoints={{
@@ -164,8 +160,19 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                                 },
                                 1024: { slidesPerView },
                             }}
-                            onBeforeInit={(swiper) => {
+                            onSwiper={(swiper) => {
                                 swiperRef.current = swiper;
+                            }}
+                            onBeforeInit={(swiper) => {
+                                if (
+                                    swiper.params.navigation &&
+                                    shouldShowArrows
+                                ) {
+                                    (swiper.params.navigation as any).prevEl =
+                                        navigationPrevRef.current;
+                                    (swiper.params.navigation as any).nextEl =
+                                        navigationNextRef.current;
+                                }
                             }}
                         >
                             {items.map((organization) => (
@@ -178,6 +185,25 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                                 </SwiperSlide>
                             ))}
                         </Swiper>
+
+                        {shouldShowArrows && (
+                            <>
+                                <button
+                                    ref={navigationPrevRef}
+                                    className="organizations-slider-widget__navigation organizations-slider-widget__navigation--prev"
+                                    aria-label="Previous slide"
+                                >
+                                    <ArrowLeft />
+                                </button>
+                                <button
+                                    ref={navigationNextRef}
+                                    className="organizations-slider-widget__navigation organizations-slider-widget__navigation--next"
+                                    aria-label="Next slide"
+                                >
+                                    <ArrowRight />
+                                </button>
+                            </>
+                        )}
                     </div>
                 )}
             </div>

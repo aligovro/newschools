@@ -1,6 +1,7 @@
 import ImageUploader from '@/components/dashboard/settings/sites/ImageUploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import React, { useCallback, useMemo } from 'react';
 
 interface SubscribeBlockWidgetModalProps {
@@ -109,20 +110,16 @@ export function SubscribeBlockWidgetModal({
             </div>
 
             <div className="space-y-4">
-                <div>
-                    <Label htmlFor="mainTitle" className="mb-2 block">
-                        Заголовок
-                    </Label>
-                    <Input
-                        id="mainTitle"
-                        value={mainTitle}
-                        onChange={(e) =>
-                            handleUpdate('mainTitle', e.target.value)
-                        }
-                        placeholder="Подпишись на постоянную поддержку своей школы"
-                        className="mt-1"
-                    />
-                </div>
+                <TitleField
+                    title={mainTitle}
+                    showTitle={(currentConfig.show_title as boolean) ?? true}
+                    onTitleChange={(title) => handleUpdate('mainTitle', title)}
+                    onShowTitleChange={(showTitle) =>
+                        handleUpdate('show_title', showTitle)
+                    }
+                    placeholder="Подпишись на постоянную поддержку своей школы"
+                    label="Заголовок"
+                />
 
                 <div>
                     <Label htmlFor="subtitle" className="mb-2 block">

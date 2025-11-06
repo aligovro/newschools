@@ -17,7 +17,13 @@ class UpdateOrganizationRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255'],
+            'slug' => [
+                'nullable',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9-]+$/',
+                Rule::unique('organizations', 'slug')->ignore($this->route('organization')),
+            ],
             'description' => ['nullable', 'string'],
             'type' => ['required', 'string', Rule::in(['school', 'university', 'kindergarten', 'other'])],
             'status' => ['required', 'string', Rule::in(array_column(OrganizationStatus::cases(), 'value'))],

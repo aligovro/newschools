@@ -26,11 +26,12 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
     const config = widget.config as {
         organization_id?: number;
         title?: string;
+        show_title?: boolean;
         showIcons?: boolean;
         columns?: ColumnConfig[];
     };
 
-    const { organization_id, title, showIcons = true, columns } = config || {};
+    const { organization_id, title, show_title = true, showIcons = true, columns } = config || {};
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -221,7 +222,7 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
         <div className={`alumni-stats-output ${className || ''}`} style={style}>
             <section className="py-12">
                 <div className="container mx-auto px-4">
-                    {title && (
+                    {title && show_title && (
                         <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
                             {title}
                         </h2>

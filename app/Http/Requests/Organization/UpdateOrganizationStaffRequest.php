@@ -24,8 +24,6 @@ class UpdateOrganizationStaffRequest extends FormRequest
   {
     $organization = $this->route('organization');
     $staff = $this->route('staff');
-    $isDirector = $this->input('is_director', false);
-    $position = $isDirector ? OrganizationStaff::POSITION_DIRECTOR : $this->input('position');
 
     return [
       'last_name' => ['required', 'string', 'max:255'],
@@ -37,7 +35,12 @@ class UpdateOrganizationStaffRequest extends FormRequest
         'nullable',
         'string',
         'max:255',
-        function ($attribute, $value, $fail) use ($organization, $isDirector, $position, $staff) {
+        function ($attribute, $value, $fail) use ($organization, $staff) {
+          // Проверяем актуальное значение is_director из запроса (может быть boolean или строка '1'/'0')
+          $isDirector = filter_var($this->input('is_director', false), FILTER_VALIDATE_BOOLEAN);
+          // Используем значение position из запроса (после prepareForValidation)
+          $position = $this->input('position');
+          
           // Если изменяется должность на директора, проверяем что у организации еще нет другого директора
           if ($isDirector && $position === OrganizationStaff::POSITION_DIRECTOR) {
             $existingDirector = OrganizationStaff::where('organization_id', $organization->id)
@@ -62,7 +65,9 @@ class UpdateOrganizationStaffRequest extends FormRequest
   protected function prepareForValidation(): void
   {
     // Если is_director = true, устанавливаем position = 'Директор'
-    if ($this->input('is_director', false)) {
+    // Обрабатываем как boolean, так и строковые значения '1'/'0'
+    $isDirector = filter_var($this->input('is_director', false), FILTER_VALIDATE_BOOLEAN);
+    if ($isDirector) {
       $this->merge([
         'position' => OrganizationStaff::POSITION_DIRECTOR,
       ]);

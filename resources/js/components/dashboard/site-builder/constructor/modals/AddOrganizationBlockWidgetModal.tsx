@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import React, { useCallback, useMemo } from 'react';
 
 interface AddOrganizationBlockWidgetModalProps {
@@ -108,20 +109,15 @@ export function AddOrganizationBlockWidgetModal({
             </div>
 
             <div className="space-y-4">
-                <div>
-                    <Label htmlFor="title" className="mb-2 block">
-                        Заголовок
-                    </Label>
-                    <Input
-                        id="title"
-                        value={title}
-                        onChange={(e) =>
-                            handleUpdate('title', e.target.value)
-                        }
-                        placeholder="Не нашли свою школу?"
-                        className="mt-1"
-                    />
-                </div>
+                <TitleField
+                    title={title}
+                    showTitle={(currentConfig.show_title as boolean) ?? true}
+                    onTitleChange={(title) => handleUpdate('title', title)}
+                    onShowTitleChange={(showTitle) =>
+                        handleUpdate('show_title', showTitle)
+                    }
+                    placeholder="Не нашли свою школу?"
+                />
 
                 <div>
                     <Label htmlFor="subtitle" className="mb-2 block">

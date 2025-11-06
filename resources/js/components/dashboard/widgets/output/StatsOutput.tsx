@@ -10,6 +10,7 @@ export const StatsOutput: React.FC<WidgetOutputProps> = ({
 
     const {
         title = '',
+        show_title = true, // По умолчанию true для обратной совместимости
         stats = [],
         columns = 3,
         layout = 'grid',
@@ -149,7 +150,7 @@ export const StatsOutput: React.FC<WidgetOutputProps> = ({
 
     return (
         <div className={`stats-output ${className || ''}`} style={style}>
-            {title && (
+            {title && show_title && (
                 <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
                     {title}
                 </h2>

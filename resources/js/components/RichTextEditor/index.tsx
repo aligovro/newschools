@@ -30,6 +30,7 @@ import { useImageResizing } from './hooks/useImageResizing';
 import { useLinkInsertion } from './hooks/useLinkInsertion';
 import { useTableInsertion } from './hooks/useTableInsertion';
 import { useVideoInsertion } from './hooks/useVideoInsertion';
+import { removeImageCompletely } from './utils/htmlFormatter';
 import { countWordsFromElement } from './utils/wordCounter';
 
 interface IRichTextEditor {
@@ -141,31 +142,14 @@ const RichTextEditor: React.FC<IRichTextEditor> = ({
 
     const isHtmlMode = htmlModeWithContent.isHtmlMode;
 
-    // Обёртка для onChange, которая автоматически выключает HTML режим перед сохранением
+    // Обёртка для onChange - просто передаем контент без переключения режима
     const handleChange = useCallback(
         (content: string) => {
-            // Если включен HTML режим, выключаем его перед сохранением
-            if (isHtmlMode && editorRef.current) {
-                // Получаем HTML код из innerText и преобразуем его в HTML
-                const htmlContent = editorRef.current.innerText;
-                // Переключаемся в WYSIWYG режим
-                htmlModeWithContent.toggleHtmlMode();
-                // Ждем немного, чтобы редактор переключился, затем получаем HTML
-                setTimeout(() => {
-                    if (editorRef.current) {
-                        // Парсим HTML из текста и вставляем в редактор
-                        editorRef.current.innerHTML = htmlContent;
-                        const wysiwygContent = editorRef.current.innerHTML;
-                        onChange(wysiwygContent);
-                    } else {
-                        onChange(content);
-                    }
-                }, 100);
-            } else {
-                onChange(content);
-            }
+            // Просто передаем контент как есть, без автоматического переключения режима
+            // Пользователь сам решает, когда переключаться между режимами
+            onChange(content);
         },
-        [isHtmlMode, htmlModeWithContent, editorRef, onChange],
+        [onChange],
     );
 
     // Editor Content Hook
@@ -483,6 +467,19 @@ const RichTextEditor: React.FC<IRichTextEditor> = ({
 
                 if (!imgElement.src || !imgElement.complete) return;
 
+                // Проверяем, является ли изображение SVG - для SVG не применяем ресайз
+                const urlPath = imgElement.src.split('?')[0];
+                const isSvg =
+                    urlPath.toLowerCase().endsWith('.svg') ||
+                    imgElement.src
+                        .toLowerCase()
+                        .startsWith('data:image/svg+xml');
+                if (isSvg) {
+                    // Убеждаемся, что у SVG нет класса resizable
+                    imgElement.classList.remove('resizable');
+                    return; // Пропускаем SVG
+                }
+
                 const container = imgElement.parentElement;
                 const existingHandles = container?.querySelectorAll(
                     '.resize-handle, .corner-handle, .image-settings-button',
@@ -491,6 +488,7 @@ const RichTextEditor: React.FC<IRichTextEditor> = ({
                     existingHandles && existingHandles.length >= 9;
 
                 if (!hasHandles) {
+                    // Добавляем класс resizable только для не-SVG изображений
                     imgElement.classList.add('resizable');
 
                     if (
@@ -577,6 +575,19 @@ const RichTextEditor: React.FC<IRichTextEditor> = ({
                 const imgElement = img as HTMLImageElement;
 
                 if (!imgElement.src || !imgElement.complete) return;
+
+                // Проверяем, является ли изображение SVG - для SVG не применяем ресайз
+                const urlPath = imgElement.src.split('?')[0];
+                const isSvg =
+                    urlPath.toLowerCase().endsWith('.svg') ||
+                    imgElement.src
+                        .toLowerCase()
+                        .startsWith('data:image/svg+xml');
+                if (isSvg) {
+                    // Удаляем класс resizable у SVG, если он был добавлен по ошибке
+                    imgElement.classList.remove('resizable');
+                    return; // Пропускаем SVG
+                }
 
                 const container = imgElement.parentElement as HTMLElement;
                 if (!container) return;
@@ -677,12 +688,321 @@ const RichTextEditor: React.FC<IRichTextEditor> = ({
         };
     }, [createResizeHandles, handleImageResize]);
 
-    // Обработка клавиатурных сокращений
+    // Обработка клавиатурных сокращений и удаления изображений
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!isActive) return;
 
             const isCtrl = e.ctrlKey || e.metaKey;
+
+            // Обработка Delete/Backspace для удаления изображений
+            if ((e.key === 'Delete' || e.key === 'Backspace') && !isCtrl) {
+                const selection = window.getSelection();
+                if (selection && selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    let imgToDelete: HTMLImageElement | null = null;
+
+                    // Проверяем, выделено ли изображение напрямую
+                    if (!range.collapsed) {
+                        // Выделен диапазон - проверяем, содержит ли он изображение
+                        const startNode = range.startContainer;
+                        const endNode = range.endContainer;
+
+                        // Проверяем начальный и конечный узлы
+                        const checkNodeForImage = (
+                            node: Node,
+                        ): HTMLImageElement | null => {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                const element = node as Element;
+                                if (element.tagName === 'IMG') {
+                                    return element as HTMLImageElement;
+                                }
+                                const img = element.querySelector('img');
+                                if (img) return img;
+
+                                // Проверяем, является ли элемент .rte-image оберткой
+                                if (element.classList.contains('rte-image')) {
+                                    const img = element.querySelector('img');
+                                    if (img) return img;
+                                }
+                            }
+                            // Проверяем родительские элементы
+                            let parent = node.parentElement;
+                            while (parent && parent !== editorRef.current) {
+                                if (parent.tagName === 'IMG') {
+                                    return parent as HTMLImageElement;
+                                }
+                                const img = parent.querySelector('img');
+                                if (img) return img;
+
+                                // Проверяем, является ли родитель .rte-image оберткой
+                                if (parent.classList.contains('rte-image')) {
+                                    const img = parent.querySelector('img');
+                                    if (img) return img;
+                                }
+                                parent = parent.parentElement;
+                            }
+                            return null;
+                        };
+
+                        imgToDelete =
+                            checkNodeForImage(startNode) ||
+                            checkNodeForImage(endNode);
+
+                        // Также проверяем содержимое диапазона
+                        if (!imgToDelete) {
+                            const contents = range.cloneContents();
+                            const img = contents.querySelector('img');
+                            if (img) {
+                                // Находим соответствующее изображение в DOM
+                                const imgSrc = img.getAttribute('src');
+                                if (imgSrc && editorRef.current) {
+                                    const allImages =
+                                        editorRef.current.querySelectorAll(
+                                            'img',
+                                        );
+                                    for (const domImg of allImages) {
+                                        if (
+                                            domImg.getAttribute('src') ===
+                                            imgSrc
+                                        ) {
+                                            imgToDelete = domImg;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Также проверяем, выделена ли .rte-image обертка
+                            if (!imgToDelete) {
+                                const rteImageWrapper =
+                                    contents.querySelector('.rte-image');
+                                if (rteImageWrapper) {
+                                    const img =
+                                        rteImageWrapper.querySelector('img');
+                                    if (img && editorRef.current) {
+                                        // Находим соответствующее изображение в DOM
+                                        const imgSrc = img.getAttribute('src');
+                                        if (imgSrc) {
+                                            const allImages =
+                                                editorRef.current.querySelectorAll(
+                                                    'img',
+                                                );
+                                            for (const domImg of allImages) {
+                                                if (
+                                                    domImg.getAttribute(
+                                                        'src',
+                                                    ) === imgSrc
+                                                ) {
+                                                    imgToDelete = domImg;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Курсор находится в тексте - проверяем соседние элементы
+                        const container = range.commonAncestorContainer;
+                        const node =
+                            container.nodeType === Node.TEXT_NODE
+                                ? container.parentElement
+                                : (container as Element);
+
+                        if (node && editorRef.current) {
+                            // Если курсор находится в .image-edit-area, проверяем соседние .rte-image
+                            if (node.classList?.contains('image-edit-area')) {
+                                const direction =
+                                    e.key === 'Delete' ? 'next' : 'prev';
+                                const sibling =
+                                    direction === 'next'
+                                        ? node.nextElementSibling
+                                        : node.previousElementSibling;
+
+                                if (sibling) {
+                                    // Проверяем, является ли соседний элемент .rte-image оберткой
+                                    if (
+                                        sibling.classList.contains('rte-image')
+                                    ) {
+                                        const img =
+                                            sibling.querySelector('img');
+                                        if (img) {
+                                            imgToDelete = img;
+                                        }
+                                    } else if (sibling.tagName === 'IMG') {
+                                        imgToDelete =
+                                            sibling as HTMLImageElement;
+                                    }
+                                }
+                            }
+
+                            // Также проверяем, находится ли курсор внутри .rte-image обертки
+                            const rteImageWrapper =
+                                node.closest?.('.rte-image');
+                            if (rteImageWrapper && !imgToDelete) {
+                                const img =
+                                    rteImageWrapper.querySelector('img');
+                                if (img) {
+                                    // Если курсор внутри обертки, удаляем изображение
+                                    imgToDelete = img;
+                                }
+                            }
+
+                            // Если изображение еще не найдено, ищем в соседних элементах
+                            if (!imgToDelete) {
+                                // Функция для поиска изображения в соседних элементах
+                                const findImageInSiblings = (
+                                    startNode: Element,
+                                    direction: 'next' | 'prev',
+                                ): HTMLImageElement | null => {
+                                    let current: Node | null = startNode;
+                                    const maxIterations = 10; // Защита от бесконечного цикла
+                                    let iterations = 0;
+
+                                    while (
+                                        current &&
+                                        iterations < maxIterations
+                                    ) {
+                                        iterations++;
+                                        current =
+                                            direction === 'next'
+                                                ? current.nextSibling
+                                                : current.previousSibling;
+
+                                        if (!current) break;
+
+                                        if (
+                                            current.nodeType ===
+                                            Node.ELEMENT_NODE
+                                        ) {
+                                            const element = current as Element;
+
+                                            // Пропускаем .image-edit-area
+                                            if (
+                                                element.classList.contains(
+                                                    'image-edit-area',
+                                                )
+                                            ) {
+                                                continue;
+                                            }
+
+                                            // Проверяем, является ли элемент изображением
+                                            if (element.tagName === 'IMG') {
+                                                return element as HTMLImageElement;
+                                            }
+
+                                            // Проверяем внутри элемента (может быть .rte-image обертка)
+                                            const img =
+                                                element.querySelector('img');
+                                            if (img) {
+                                                return img;
+                                            }
+
+                                            // Если это .rte-image обертка, проверяем изображение внутри
+                                            if (
+                                                element.classList.contains(
+                                                    'rte-image',
+                                                )
+                                            ) {
+                                                const img =
+                                                    element.querySelector(
+                                                        'img',
+                                                    );
+                                                if (img) return img;
+                                            }
+                                        }
+                                    }
+
+                                    return null;
+                                };
+
+                                if (e.key === 'Delete') {
+                                    imgToDelete = findImageInSiblings(
+                                        node,
+                                        'next',
+                                    );
+                                } else {
+                                    imgToDelete = findImageInSiblings(
+                                        node,
+                                        'prev',
+                                    );
+                                }
+                            }
+                        }
+                    }
+
+                    // Если найдено изображение, удаляем его
+                    if (imgToDelete) {
+                        e.preventDefault();
+
+                        // Сохраняем информацию о соседних элементах для установки курсора после удаления
+                        const rteImageWrapper =
+                            imgToDelete.closest('.rte-image');
+                        const nextEditArea =
+                            rteImageWrapper?.nextElementSibling;
+                        const prevEditArea =
+                            rteImageWrapper?.previousElementSibling;
+
+                        removeImageCompletely(imgToDelete);
+
+                        // Устанавливаем курсор в редактируемую область после удаления
+                        setTimeout(() => {
+                            const selection = window.getSelection();
+                            if (selection && editorRef.current) {
+                                const range = document.createRange();
+
+                                // Пытаемся установить курсор в следующую редактируемую область
+                                if (
+                                    nextEditArea &&
+                                    nextEditArea.classList.contains(
+                                        'image-edit-area',
+                                    )
+                                ) {
+                                    range.setStart(nextEditArea, 0);
+                                    range.collapse(true);
+                                } else if (
+                                    prevEditArea &&
+                                    prevEditArea.classList.contains(
+                                        'image-edit-area',
+                                    )
+                                ) {
+                                    range.setStart(prevEditArea, 0);
+                                    range.collapse(true);
+                                } else {
+                                    // Если нет редактируемых областей, устанавливаем курсор в конец редактора
+                                    const lastChild =
+                                        editorRef.current.lastChild;
+                                    if (lastChild) {
+                                        if (
+                                            lastChild.nodeType ===
+                                            Node.TEXT_NODE
+                                        ) {
+                                            range.setStart(
+                                                lastChild,
+                                                lastChild.textContent?.length ||
+                                                    0,
+                                            );
+                                        } else {
+                                            range.setStartAfter(lastChild);
+                                        }
+                                    } else {
+                                        range.setStart(editorRef.current, 0);
+                                    }
+                                    range.collapse(true);
+                                }
+
+                                selection.removeAllRanges();
+                                selection.addRange(range);
+                            }
+                        }, 0);
+
+                        handleInput();
+                        return;
+                    }
+                }
+            }
 
             if (isCtrl) {
                 switch (e.key) {
@@ -879,22 +1199,8 @@ const RichTextEditor: React.FC<IRichTextEditor> = ({
                 onApplySettings={handleApplyImageSettings}
                 onDeleteImage={() => {
                     if (editingImage) {
-                        if ((editingImage as any).__cleanupResize) {
-                            (editingImage as any).__cleanupResize();
-                            delete (editingImage as any).__cleanupResize;
-                        }
-
-                        const container = editingImage.parentElement;
-                        if (container) {
-                            const existingHandles = container.querySelectorAll(
-                                '.resize-handle, .corner-handle, .image-settings-button',
-                            );
-                            existingHandles.forEach((handle) => {
-                                handle.remove();
-                            });
-                        }
-
-                        editingImage.remove();
+                        // Используем функцию полного удаления изображения
+                        removeImageCompletely(editingImage);
                         handleInput();
                         setImageEditDialogOpen(false);
                         setEditingImage(null);

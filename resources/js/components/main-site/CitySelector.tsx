@@ -17,12 +17,16 @@ interface CitySelectorProps {
     onChange: (city: City | null) => void;
     defaultCityName?: string;
     detectOnMount?: boolean;
+    variant?: 'light' | 'dark';
+    disableAutoSet?: boolean; // Отключает автоматическую установку дефолтного города
 }
 
 export default function CitySelector({
     value,
     onChange,
     detectOnMount = false,
+    variant = 'light',
+    disableAutoSet = false,
 }: CitySelectorProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +45,7 @@ export default function CitySelector({
     useEffect(() => {
         if (!globalDefaultLoaded) return;
         if (value) return; // Если город уже выбран, не меняем
+        if (disableAutoSet) return; // Если отключена автоматическая установка
 
         // Если геолокация включена, пытаемся определить город
         if (detectOnMount) {
@@ -171,7 +176,9 @@ export default function CitySelector({
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="city-selector__button"
+                className={`city-selector__button ${
+                    variant === 'dark' ? 'city-selector__button--dark' : ''
+                }`}
             >
                 <span className="city-selector__text">
                     {isDetecting ? (

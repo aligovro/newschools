@@ -77,6 +77,20 @@ export const useHtmlMode = ({
       if (editorRef.current) {
         const images = editorRef.current.querySelectorAll('img');
         images.forEach((img) => {
+          const imgElement = img as HTMLImageElement;
+          
+          // Проверяем, является ли изображение SVG - для SVG не применяем ресайз
+          if (imgElement.src) {
+            const urlPath = imgElement.src.split('?')[0];
+            const isSvg = urlPath.toLowerCase().endsWith('.svg') || 
+                         imgElement.src.toLowerCase().startsWith('data:image/svg+xml');
+            if (isSvg) {
+              // Удаляем класс resizable у SVG, если он был добавлен по ошибке
+              imgElement.classList.remove('resizable');
+              return; // Пропускаем SVG
+            }
+          }
+
           if (img.classList.contains('resizable')) {
             // Проверяем, есть ли уже маркеры и кнопка настроек
             const container = (img.parentElement as HTMLElement) || img;
@@ -88,13 +102,13 @@ export const useHtmlMode = ({
             if (existingHandles.length < 9) {
               // Создаем маркеры ресайза
               if (createResizeHandlesRef.current) {
-                createResizeHandlesRef.current(img as HTMLImageElement);
+                createResizeHandlesRef.current(imgElement);
               }
 
               // Добавляем обработчики ресайза
               setTimeout(() => {
                 if (!(img as any).__cleanupResize && handleImageResizeRef.current) {
-                  const cleanupResize = handleImageResizeRef.current(img as HTMLImageElement);
+                  const cleanupResize = handleImageResizeRef.current(imgElement);
                   (img as any).__cleanupResize = cleanupResize;
                 }
               }, 100);

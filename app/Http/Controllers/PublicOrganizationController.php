@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\Site;
 use App\Models\City;
 use App\Http\Resources\OrganizationResource;
+use App\Http\Resources\OrganizationStaffResource;
 use App\Support\InertiaResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +20,14 @@ class PublicOrganizationController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Organization::with(['region', 'city', 'sites'])
+        $query = Organization::with([
+                'region',
+                'city',
+                'sites',
+                'director' => function ($query) {
+                    $query->whereNull('deleted_at');
+                }
+            ])
             ->where('status', 'active')
             ->where('is_public', true);
 
@@ -76,7 +84,13 @@ class PublicOrganizationController extends Controller
     public function apiIndex(Request $request): JsonResponse
     {
         $query = Organization::query()
-            ->with(['region:id,name', 'city:id,name'])
+            ->with([
+                'region:id,name',
+                'city:id,name',
+                'director' => function ($query) {
+                    $query->whereNull('deleted_at');
+                }
+            ])
             ->where('status', 'active')
             ->where('is_public', true)
             ->withCount([
@@ -152,6 +166,7 @@ class PublicOrganizationController extends Controller
                 'projects_count' => (int) ($org->projects_count ?? 0),
                 'donations_total' => (int) ($org->donations_total ?? 0),
                 'donations_collected' => (int) ($org->donations_total ?? 0),
+                'director' => $org->director ? (new OrganizationStaffResource($org->director))->toArray(request()) : null,
             ];
         });
 
@@ -172,6 +187,9 @@ class PublicOrganizationController extends Controller
             'region',
             'city',
             'settlement',
+            'director' => function ($query) {
+                $query->whereNull('deleted_at');
+            },
             'sites' => function ($query) {
                 $query->published();
             },
@@ -212,6 +230,9 @@ class PublicOrganizationController extends Controller
         $organization->load([
             'region',
             'city',
+            'director' => function ($query) {
+                $query->whereNull('deleted_at');
+            },
             'sites' => function ($query) {
                 $query->published();
             },

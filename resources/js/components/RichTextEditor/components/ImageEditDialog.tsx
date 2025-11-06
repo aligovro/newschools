@@ -53,9 +53,13 @@ export const ImageEditDialog: React.FC<ImageEditDialogProps> = React.memo(
     onHeightChange,
     onResetSize,
   }) => {
+    // Проверяем, является ли изображение SVG
+    const isSvg = editingImage?.src?.toLowerCase().endsWith('.svg') || 
+                  editingImage?.src?.includes('data:image/svg+xml');
+
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Редактирование изображения</DialogTitle>
           </DialogHeader>
@@ -71,8 +75,10 @@ export const ImageEditDialog: React.FC<ImageEditDialogProps> = React.memo(
                     alt={imageSettings.alt}
                     className="block"
                     style={{
-                      width: `${Math.min(imageSettings.width, 200)}px`,
-                      height: `${Math.min(imageSettings.height, 200)}px`,
+                      width: isSvg ? 'auto' : `${Math.min(imageSettings.width, 200)}px`,
+                      height: isSvg ? 'auto' : `${Math.min(imageSettings.height, 200)}px`,
+                      maxWidth: '200px',
+                      maxHeight: '200px',
                       objectFit: 'contain',
                     }}
                   />
@@ -80,35 +86,43 @@ export const ImageEditDialog: React.FC<ImageEditDialogProps> = React.memo(
               </div>
             )}
 
-            {/* Размеры */}
-            <div className="space-y-2">
-              <Label>Размеры (px)</Label>
-              <div className="flex gap-4">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="image-width">Ширина</Label>
-                  <Input
-                    id="image-width"
-                    type="number"
-                    value={imageSettings.width}
-                    onChange={(e) => onWidthChange(Number(e.target.value))}
-                  />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="image-height">Высота</Label>
-                  <Input
-                    id="image-height"
-                    type="number"
-                    value={imageSettings.height}
-                    onChange={(e) => onHeightChange(Number(e.target.value))}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button variant="outline" size="sm" onClick={onResetSize}>
-                    Сбросить
-                  </Button>
+            {/* Размеры - скрываем для SVG */}
+            {!isSvg && (
+              <div className="space-y-2">
+                <Label>Размеры (px)</Label>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="image-width">Ширина</Label>
+                    <Input
+                      id="image-width"
+                      type="number"
+                      value={imageSettings.width}
+                      onChange={(e) => onWidthChange(Number(e.target.value))}
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="image-height">Высота</Label>
+                    <Input
+                      id="image-height"
+                      type="number"
+                      value={imageSettings.height}
+                      onChange={(e) => onHeightChange(Number(e.target.value))}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button variant="outline" size="sm" onClick={onResetSize}>
+                      Сбросить
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {isSvg && (
+              <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
+                SVG изображения отображаются в оригинальном размере и не требуют настройки размеров.
+              </div>
+            )}
 
             {/* Выравнивание */}
             <div className="space-y-2">

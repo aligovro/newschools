@@ -127,6 +127,26 @@ class OrganizationResource extends JsonResource
                 });
                 return $adminUser ? $adminUser->id : null;
             }, null),
+
+            // Site relations
+            'primary_site' => $this->whenLoaded('primarySite', function () {
+                return $this->primarySite ? [
+                    'id' => $this->primarySite->id,
+                ] : null;
+            }, function () {
+                // Если primarySite не загружен, но sites загружены, берем первый
+                if ($this->relationLoaded('sites') && $this->sites && $this->sites->isNotEmpty()) {
+                    return [
+                        'id' => $this->sites->first()->id,
+                    ];
+                }
+                return null;
+            }),
+            'sites' => $this->whenLoaded('sites', function () {
+                return $this->sites ? $this->sites->map(fn($site) => [
+                    'id' => $site->id,
+                ])->toArray() : [];
+            }, []),
         ];
     }
 

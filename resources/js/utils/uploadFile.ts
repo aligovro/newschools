@@ -1,5 +1,5 @@
-import { apiClient } from '@/lib/api';
 import axios, { AxiosProgressEvent } from 'axios';
+import Cookies from 'js-cookie';
 
 // Типы для ответов загрузки изображений
 export interface UploadImageResponse {
@@ -32,7 +32,7 @@ export interface UploadImageResponse {
     };
 }
 
-export type UploadType = 'logo' | 'slider' | 'gallery';
+export type UploadType = 'logo' | 'slider' | 'gallery' | 'text-widget';
 
 /**
  * Загрузка файла на сервер
@@ -48,10 +48,12 @@ export const uploadFile = async (
 ): Promise<UploadImageResponse> => {
     try {
         // Определяем URL для загрузки в зависимости от типа
+        // Используем полные пути, так как маршруты находятся в группе /dashboard
         const uploadUrls: Record<UploadType, string> = {
-            logo: '/api/upload/organization-logo',
-            slider: '/api/upload/slider-image',
-            gallery: '/api/upload/gallery-image',
+            logo: '/dashboard/api/upload/organization-logo',
+            slider: '/dashboard/api/upload/slider-image',
+            gallery: '/dashboard/api/upload/gallery-image',
+            'text-widget': '/dashboard/api/upload/text-widget-image',
         };
 
         const uploadUrl = uploadUrls[type];
@@ -60,14 +62,24 @@ export const uploadFile = async (
         const formData = new FormData();
         formData.append('image', file);
 
-        // Выполняем загрузку с отслеживанием прогресса
-        const response = await apiClient.post<UploadImageResponse>(
+        // Получаем CSRF токен из cookies для Laravel Sanctum
+        const csrfToken = Cookies.get('XSRF-TOKEN');
+        const headers: Record<string, string> = {
+            'Content-Type': 'multipart/form-data',
+            'X-Requested-With': 'XMLHttpRequest',
+        };
+
+        if (csrfToken) {
+            headers['X-XSRF-TOKEN'] = csrfToken;
+        }
+
+        // Используем axios напрямую с полным путем, чтобы избежать конфликта с baseURL apiClient
+        const response = await axios.post<UploadImageResponse>(
             uploadUrl,
             formData,
             {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                headers,
+                withCredentials: true,
                 onUploadProgress: (progressEvent: AxiosProgressEvent) => {
                     if (progressEvent.total && onProgress) {
                         const percent = Math.round(

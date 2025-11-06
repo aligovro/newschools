@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\Site\StoreSiteRequest;
 use App\Http\Requests\Site\UpdateSiteRequest;
 use App\Services\GlobalSettingsService;
+use App\Http\Controllers\Dashboard\OrganizationSiteController;
 use Inertia\Inertia;
 
 class SiteController extends Controller
@@ -228,5 +229,31 @@ class SiteController extends Controller
   {
     $site->delete();
     return redirect()->back()->with('success', 'Сайт успешно удален');
+  }
+
+  /**
+   * Перенаправление на конструктор сайта в зависимости от типа сайта
+   */
+  public function builder(Site $site)
+  {
+    // Перенаправляем на конструктор организации, если это сайт организации
+    if ($site->site_type === 'organization' && $site->organization_id) {
+      return redirect()->route('organizations.sites.builder', [
+        'organization' => $site->organization_id,
+        'site' => $site->id
+      ]);
+    }
+
+    // Для главного сайта используем тот же контроллер с фиктивной организацией
+    $mainSite = Site::where('site_type', 'main')->first();
+    if (!$mainSite) {
+      abort(404, 'Главный сайт не найден');
+    }
+
+    $controller = new OrganizationSiteController();
+    $fakeOrganization = new Organization();
+    $fakeOrganization->id = 0; // Фиктивный ID для главного сайта
+
+    return $controller->editWithBuilder($fakeOrganization, $mainSite);
   }
 }

@@ -10,6 +10,7 @@ interface City {
 interface AddOrganizationBlockProps {
     config?: {
         title?: string;
+        show_title?: boolean; // Показывать заголовок на сайте
         subtitle?: string;
         description?: string;
         submitButtonText?: string;
@@ -38,6 +39,7 @@ export default function AddoOganizationBlock({
 
     // Настройки из конфига с дефолтными значениями
     const title = config.title || 'Не нашли свою школу?';
+    const show_title = config.show_title ?? true; // По умолчанию true для обратной совместимости
     const subtitle = config.subtitle || 'Добавляйте школу!';
     const description =
         config.description ||
@@ -106,12 +108,16 @@ export default function AddoOganizationBlock({
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                 {/* Левая часть - текст */}
                 <div className="flex flex-col justify-center">
-                    <h2 className="add-organization-block__title mb-4 font-bold leading-[120%]">
-                        {title}
-                    </h2>
-                    <h3 className="add-organization-block__subtitle mb-6 font-bold leading-[120%]">
-                        {subtitle}
-                    </h3>
+                    {title && show_title && (
+                        <h2 className="add-organization-block__title mb-4 font-bold leading-[120%]">
+                            {title}
+                        </h2>
+                    )}
+                    {subtitle && (
+                        <h3 className="add-organization-block__subtitle mb-6 font-bold leading-[120%]">
+                            {subtitle}
+                        </h3>
+                    )}
                     <p className="add-organization-block__description leading-[140%] tracking-[-0.02em] text-[#1a1a1a]">
                         {description}
                     </p>

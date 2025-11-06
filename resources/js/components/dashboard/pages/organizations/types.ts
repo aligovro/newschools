@@ -92,6 +92,12 @@ export interface OrganizationShow {
     donations_sum?: number | null;
     director?: OrganizationDirector;
     staff?: OrganizationStaffMember[];
+    primary_site?: {
+        id: number;
+    } | null;
+    sites?: Array<{
+        id: number;
+    }>;
 }
 
 export interface ReferenceData {

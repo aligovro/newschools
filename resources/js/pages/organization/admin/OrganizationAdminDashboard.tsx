@@ -108,7 +108,7 @@ export default function OrganizationAdminDashboard({
         {
             title: 'Сайты',
             description: 'Управление сайтами организации',
-            href: `/dashboard/organization/${organization.id}/admin/sites`,
+            href: `/dashboard/organizations/${organization.id}/sites`,
             icon: Globe,
             color: 'bg-emerald-500',
         },

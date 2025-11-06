@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import { type WidgetConfig } from '@/utils/widgetConfigUtils';
 import React, { useCallback } from 'react';
 import type { WidgetData } from '../../types';
@@ -40,16 +41,18 @@ export const ProjectsWidgetModal: React.FC<ProjectsWidgetModalProps> = ({
                         Проекты — настройки отображения
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-4">
-                    <div>
-                        <Label htmlFor="title">Заголовок</Label>
-                        <Input
-                            id="title"
-                            value={String(config.title ?? 'Проекты школ')}
-                            onChange={(e) => update({ title: e.target.value })}
-                        />
-                    </div>
+                <CardContent className="space-y-4">
+                    <TitleField
+                        title={String(config.title ?? 'Проекты школ')}
+                        showTitle={(config.show_title as boolean) ?? true}
+                        onTitleChange={(title) => update({ title })}
+                        onShowTitleChange={(showTitle) =>
+                            update({ show_title: showTitle })
+                        }
+                        placeholder="Проекты школ"
+                    />
 
+                    <div className="grid grid-cols-2 gap-4">
                     <div>
                         <Label htmlFor="limit">Количество</Label>
                         <Input
@@ -92,6 +95,7 @@ export const ProjectsWidgetModal: React.FC<ProjectsWidgetModalProps> = ({
                                 })
                             }
                         />
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-between">

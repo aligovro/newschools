@@ -145,10 +145,13 @@ class Organization extends Model
 
     /**
      * Основной сайт организации
+     * Возвращает первый сайт организации (самый старый или можно использовать другой критерий)
      */
     public function primarySite(): HasOne
     {
-        return $this->hasOne(Site::class)->where('is_primary', true);
+        return $this->hasOne(Site::class)
+            ->where('site_type', 'organization')
+            ->orderBy('created_at', 'asc');
     }
 
 

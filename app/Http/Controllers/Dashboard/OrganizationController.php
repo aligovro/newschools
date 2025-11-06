@@ -11,6 +11,7 @@ use App\Support\InertiaResource;
 use Illuminate\Http\Request;
 use App\Http\Requests\Organization\StoreOrganizationRequest;
 use App\Http\Requests\Organization\UpdateOrganizationRequest;
+use App\Helpers\TransliterationHelper;
 use Inertia\Inertia;
 use App\Services\ImageProcessingService;
 use App\Services\Organizations\OrganizationSettingsService;
@@ -118,6 +119,10 @@ class OrganizationController extends Controller
             'region',
             'city',
             'settlement',
+            'primarySite',
+            'sites' => function ($query) {
+                $query->select('id', 'organization_id')->limit(1);
+            },
             'director' => function ($query) {
                 $query->whereNull('deleted_at');
             },
@@ -147,7 +152,15 @@ class OrganizationController extends Controller
     public function edit(Organization $organization)
     {
         // Загружаем связи
-        $organization->load(['region', 'city', 'settlement']);
+        $organization->load([
+            'region',
+            'city',
+            'settlement',
+            'primarySite',
+            'sites' => function ($query) {
+                $query->select('id', 'organization_id')->limit(1);
+            },
+        ]);
 
         // Получаем справочные данные
         $referenceData = [
@@ -196,12 +209,65 @@ class OrganizationController extends Controller
 
     public function store(StoreOrganizationRequest $request)
     {
-        $organization = Organization::create($request->only([
+        $data = $request->only([
             'name',
+            'slug',
             'description',
             'type',
             'status',
-        ]));
+        ]);
+
+        // Если слаг не передан или пустой, генерируем его на основе типа и ID
+        // Но ID еще нет, поэтому сначала создаем организацию, затем обновляем слаг
+        $organization = Organization::create($data);
+
+        // Генерируем слаг с ID, если он не был передан или был только префикс типа
+        if (empty($data['slug'])) {
+            // Если слаг не передан, генерируем на основе типа и ID
+            $prefix = match ($organization->type) {
+                'school' => 'school',
+                'university' => 'university',
+                'kindergarten' => 'kindergarten',
+                default => 'organization',
+            };
+            $slug = "{$prefix}-{$organization->id}";
+            
+            // Проверяем уникальность и генерируем уникальный слаг если нужно
+            $slug = TransliterationHelper::createUniqueSlug(
+                $slug,
+                'organizations',
+                'slug',
+                $organization->id
+            );
+            
+            $organization->update(['slug' => $slug]);
+        } elseif (in_array($data['slug'], ['school', 'university', 'kindergarten', 'organization'], true)) {
+            // Если передан только префикс (без ID), добавляем ID
+            $slug = "{$data['slug']}-{$organization->id}";
+            
+            // Проверяем уникальность
+            $slug = TransliterationHelper::createUniqueSlug(
+                $slug,
+                'organizations',
+                'slug',
+                $organization->id
+            );
+            
+            $organization->update(['slug' => $slug]);
+        } else {
+            // Если слаг был передан полностью (пользователь изменил его), проверяем уникальность
+            $slug = $data['slug'];
+            $uniqueSlug = TransliterationHelper::createUniqueSlug(
+                $slug,
+                'organizations',
+                'slug',
+                $organization->id
+            );
+            
+            if ($uniqueSlug !== $slug) {
+                $organization->update(['slug' => $uniqueSlug]);
+            }
+        }
 
         return redirect()->back()->with('success', 'Организация успешно создана');
     }

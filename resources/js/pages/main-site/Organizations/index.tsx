@@ -73,6 +73,10 @@ export default function Organizations({
         name: string;
         region?: { name: string };
     } | null>(null);
+    const [cityCoordinates, setCityCoordinates] = useState<{
+        latitude: number;
+        longitude: number;
+    } | null>(null);
     const [searchQuery, setSearchQuery] = useState(filters?.search || '');
     const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -108,6 +112,55 @@ export default function Organizations({
             setSelectedCity({ id: defaultCityId, name: defaultCityName });
         }
     }, [selectedCity, defaultCityLoaded, defaultCityId, defaultCityName]);
+
+    // Загрузка координат выбранного города
+    useEffect(() => {
+        if (!selectedCity?.name) {
+            setCityCoordinates(null);
+            return;
+        }
+
+        const fetchCityCoordinates = async () => {
+            try {
+                // Сначала пробуем получить по ID через dashboard API
+                if (selectedCity.id) {
+                    try {
+                        const res = await fetch(`/dashboard/api/cities/${selectedCity.id}`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data?.latitude && data?.longitude) {
+                                setCityCoordinates({
+                                    latitude: Number(data.latitude),
+                                    longitude: Number(data.longitude),
+                                });
+                                return;
+                            }
+                        }
+                    } catch {
+                        // Если не получилось, используем публичный API
+                    }
+                }
+                
+                // Fallback: используем публичный API по имени
+                const url = new URL('/api/public/cities/resolve', window.location.origin);
+                url.searchParams.set('name', selectedCity.name);
+                const res = await fetch(url.toString());
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.city?.latitude && data?.city?.longitude) {
+                        setCityCoordinates({
+                            latitude: Number(data.city.latitude),
+                            longitude: Number(data.city.longitude),
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки координат города:', error);
+            }
+        };
+
+        fetchCityCoordinates();
+    }, [selectedCity?.id, selectedCity?.name]);
 
     // Обновление URL при изменении фильтров
     const updateFilters = useCallback(
@@ -166,9 +219,17 @@ export default function Organizations({
         [searchQuery, updateFilters],
     );
 
-    // Подготовка маркеров для карты (с учетом фильтров)
+    // Подготовка маркеров для карты (только для выбранного города)
     const mapMarkers: MapMarker[] = useMemo(() => {
         return organizations.data
+            .filter((org) => {
+                // Фильтруем только организации выбранного города
+                if (selectedCity?.id && org.city?.id) {
+                    return org.city.id === selectedCity.id;
+                }
+                // Если город не выбран, показываем все
+                return true;
+            })
             .map((org) => {
                 const lat = org.latitude != null ? Number(org.latitude) : null;
                 const lon =
@@ -186,23 +247,33 @@ export default function Organizations({
                     ${org.address ? `<p>Адрес: ${org.address}</p>` : ''}
                     <a href="/organization/${org.slug}" style="color: #3b82f6; text-decoration: underline;">Посмотреть подробнее</a>
                 </div>`,
+                    data: org, // Передаем данные организации для карточки
                 } as MapMarker;
             })
             .filter((m): m is MapMarker => m !== null);
-    }, [organizations.data]);
+    }, [organizations.data, selectedCity?.id]);
 
-    // Центр карты на основе всех организаций
+    // Центр карты на основе выбранного города
     const mapCenter: [number, number] = useMemo(() => {
-        if (mapMarkers.length === 0) return [55.751244, 37.618423]; // Москва по умолчанию
-
-        const latitudes = mapMarkers.map((m) => m.position[0]);
-        const longitudes = mapMarkers.map((m) => m.position[1]);
-        const avgLat = latitudes.reduce((a, b) => a + b, 0) / latitudes.length;
-        const avgLon =
-            longitudes.reduce((a, b) => a + b, 0) / longitudes.length;
-
-        return [avgLat, avgLon];
-    }, [mapMarkers]);
+        // Если есть координаты выбранного города, используем их
+        if (cityCoordinates) {
+            return [cityCoordinates.latitude, cityCoordinates.longitude];
+        }
+        
+        // Если есть маркеры, используем их центр
+        if (mapMarkers.length > 0) {
+            let sumLat = 0;
+            let sumLon = 0;
+            for (const marker of mapMarkers) {
+                sumLat += marker.position[0];
+                sumLon += marker.position[1];
+            }
+            return [sumLat / mapMarkers.length, sumLon / mapMarkers.length];
+        }
+        
+        // По умолчанию Москва
+        return [55.751244, 37.618423];
+    }, [cityCoordinates, mapMarkers]);
 
     if (!defaultCityLoaded) {
         return (
