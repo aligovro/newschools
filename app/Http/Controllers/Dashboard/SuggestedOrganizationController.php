@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 
-use App\Models\SuggestedSchool;
+use App\Models\SuggestedOrganization;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
-class SuggestedSchoolController extends Controller
+class SuggestedOrganizationController extends Controller
 {
     /**
      * Список предложенных школ
@@ -22,7 +22,7 @@ class SuggestedSchoolController extends Controller
             abort(403, 'Доступ запрещен');
         }
 
-        $query = SuggestedSchool::query()
+        $query = SuggestedOrganization::query()
             ->with(['city:id,name', 'reviewer:id,name,email'])
             ->select([
                 'id',
@@ -68,15 +68,15 @@ class SuggestedSchoolController extends Controller
 
         // Пагинация
         $perPage = min($request->get('per_page', 15), 100);
-        $suggestedSchools = $query->paginate($perPage);
+        $suggestedOrganizations = $query->paginate($perPage);
 
-        return Inertia::render('suggested-schools/SuggestedSchoolManagementPage', [
-            'suggestedSchools' => [
-                'data' => $suggestedSchools->items(),
-                'current_page' => $suggestedSchools->currentPage(),
-                'last_page' => $suggestedSchools->lastPage(),
-                'per_page' => $suggestedSchools->perPage(),
-                'total' => $suggestedSchools->total(),
+        return Inertia::render('suggested-schools/SuggestedOrganizationManagementPage', [
+            'suggestedOrganizations' => [
+                'data' => $suggestedOrganizations->items(),
+                'current_page' => $suggestedOrganizations->currentPage(),
+                'last_page' => $suggestedOrganizations->lastPage(),
+                'per_page' => $suggestedOrganizations->perPage(),
+                'total' => $suggestedOrganizations->total(),
             ],
             'filters' => $request->only(['search', 'status', 'sort_by', 'sort_direction', 'per_page']),
         ]);
@@ -85,7 +85,7 @@ class SuggestedSchoolController extends Controller
     /**
      * Обновление предложенной школы
      */
-    public function update(Request $request, SuggestedSchool $suggestedSchool)
+    public function update(Request $request, SuggestedOrganization $suggestedOrganization)
     {
         // Проверяем права доступа
         if (!Auth::user()->hasRole('super_admin')) {
@@ -105,18 +105,18 @@ class SuggestedSchoolController extends Controller
 
         try {
             // Если меняется статус, записываем кто и когда рассмотрел
-            if (isset($validated['status']) && $validated['status'] !== $suggestedSchool->status) {
+            if (isset($validated['status']) && $validated['status'] !== $suggestedOrganization->status) {
                 $validated['reviewed_by'] = Auth::id();
                 $validated['reviewed_at'] = now();
             }
 
-            $suggestedSchool->update($validated);
+            $suggestedOrganization->update($validated);
 
             return redirect()->back()->with('success', 'Предложенная школа успешно обновлена');
         } catch (\Exception $e) {
             Log::error('Ошибка при обновлении предложенной школы', [
                 'error' => $e->getMessage(),
-                'suggested_school_id' => $suggestedSchool->id,
+                'suggested_organization_id' => $suggestedOrganization->id,
             ]);
 
             return redirect()->back()->with('error', 'Ошибка при обновлении предложенной школы');
@@ -126,7 +126,7 @@ class SuggestedSchoolController extends Controller
     /**
      * Удаление предложенной школы
      */
-    public function destroy(SuggestedSchool $suggestedSchool)
+    public function destroy(SuggestedOrganization $suggestedOrganization)
     {
         // Проверяем права доступа
         if (!Auth::user()->hasRole('super_admin')) {
@@ -134,13 +134,13 @@ class SuggestedSchoolController extends Controller
         }
 
         try {
-            $suggestedSchool->delete();
+            $suggestedOrganization->delete();
 
             return redirect()->back()->with('success', 'Предложенная школа успешно удалена');
         } catch (\Exception $e) {
             Log::error('Ошибка при удалении предложенной школы', [
                 'error' => $e->getMessage(),
-                'suggested_school_id' => $suggestedSchool->id,
+                'suggested_organization_id' => $suggestedOrganization->id,
             ]);
 
             return redirect()->back()->with('error', 'Ошибка при удалении предложенной школы');

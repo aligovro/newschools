@@ -53,16 +53,28 @@ export async function fetchPublicOrganizations(
     return res.json();
 }
 
+export interface PublicCity {
+    id: number;
+    name: string;
+    region?: { name: string } | null;
+    latitude?: number | null;
+    longitude?: number | null;
+}
+
 export async function fetchPublicCities(params?: {
     search?: string;
     limit?: number;
-}): Promise<Array<{ id: number; name: string; region?: { name: string } }>> {
+    ids?: number[];
+}): Promise<PublicCity[]> {
     const url = new URL('/api/public/cities', window.location.origin);
     if (params?.search) {
         url.searchParams.set('search', params.search);
     }
     if (params?.limit) {
         url.searchParams.set('limit', String(params.limit));
+    }
+    if (params?.ids && params.ids.length > 0) {
+        url.searchParams.set('ids', params.ids.join(','));
     }
     const res = await fetch(url.toString());
     if (!res.ok) throw new Error('Failed to load cities');
@@ -73,6 +85,8 @@ export async function detectCityByGeolocation(): Promise<{
     id: number;
     name: string;
     region?: { name: string };
+    latitude?: number | null;
+    longitude?: number | null;
 } | null> {
     return new Promise((resolve) => {
         if (!navigator.geolocation) {

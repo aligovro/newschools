@@ -35,7 +35,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-interface SuggestedSchool {
+interface SuggestedOrganization {
     id: number;
     name: string;
     city_name?: string;
@@ -55,8 +55,8 @@ interface SuggestedSchool {
 }
 
 interface Props {
-    suggestedSchools: {
-        data: SuggestedSchool[];
+    suggestedOrganizations: {
+        data: SuggestedOrganization[];
         current_page: number;
         last_page: number;
         per_page: number;
@@ -71,8 +71,8 @@ interface Props {
     };
 }
 
-export default function SuggestedSchoolManagementPage({
-    suggestedSchools,
+export default function SuggestedOrganizationManagementPage({
+    suggestedOrganizations,
     filters,
 }: Props) {
     const [search, setSearch] = useState(filters.search || '');
@@ -99,7 +99,7 @@ export default function SuggestedSchoolManagementPage({
         );
     };
 
-    const handleDelete = (school: SuggestedSchool) => {
+    const handleDelete = (school: SuggestedOrganization) => {
         if (
             confirm(
                 `Вы уверены, что хотите удалить предложенную школу "${school.name}"?`,
@@ -114,7 +114,7 @@ export default function SuggestedSchoolManagementPage({
     };
 
     const handleStatusChange = (
-        school: SuggestedSchool,
+        school: SuggestedOrganization,
         newStatus: 'pending' | 'approved' | 'rejected',
     ) => {
         router.put(
@@ -260,18 +260,18 @@ export default function SuggestedSchoolManagementPage({
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold">
                                 Список предложенных школ (
-                                {suggestedSchools.total})
+                                {suggestedOrganizations.total})
                             </h2>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        {suggestedSchools.data.length === 0 ? (
+                        {suggestedOrganizations.data.length === 0 ? (
                             <div className="py-12 text-center text-gray-500">
                                 Нет предложенных школ
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {suggestedSchools.data.map((school) => (
+                                {suggestedOrganizations.data.map((school) => (
                                     <div
                                         key={school.id}
                                         className="flex items-start justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
@@ -368,27 +368,28 @@ export default function SuggestedSchoolManagementPage({
                         )}
 
                         {/* Pagination */}
-                        {suggestedSchools.last_page > 1 && (
+                        {suggestedOrganizations.last_page > 1 && (
                             <div className="mt-6 flex items-center justify-between">
                                 <div className="text-sm text-gray-600">
                                     Показано{' '}
-                                    {(suggestedSchools.current_page - 1) *
-                                        suggestedSchools.per_page +
+                                    {(suggestedOrganizations.current_page - 1) *
+                                        suggestedOrganizations.per_page +
                                         1}{' '}
                                     -{' '}
                                     {Math.min(
-                                        suggestedSchools.current_page *
-                                            suggestedSchools.per_page,
-                                        suggestedSchools.total,
+                                        suggestedOrganizations.current_page *
+                                            suggestedOrganizations.per_page,
+                                        suggestedOrganizations.total,
                                     )}{' '}
-                                    из {suggestedSchools.total}
+                                    из {suggestedOrganizations.total}
                                 </div>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         disabled={
-                                            suggestedSchools.current_page === 1
+                                            suggestedOrganizations.current_page ===
+                                            1
                                         }
                                         onClick={() => {
                                             router.get(
@@ -396,7 +397,7 @@ export default function SuggestedSchoolManagementPage({
                                                 {
                                                     ...filters,
                                                     page:
-                                                        suggestedSchools.current_page -
+                                                        suggestedOrganizations.current_page -
                                                         1,
                                                 },
                                             );
@@ -408,8 +409,8 @@ export default function SuggestedSchoolManagementPage({
                                         variant="outline"
                                         size="sm"
                                         disabled={
-                                            suggestedSchools.current_page ===
-                                            suggestedSchools.last_page
+                                            suggestedOrganizations.current_page ===
+                                            suggestedOrganizations.last_page
                                         }
                                         onClick={() => {
                                             router.get(
@@ -417,7 +418,7 @@ export default function SuggestedSchoolManagementPage({
                                                 {
                                                     ...filters,
                                                     page:
-                                                        suggestedSchools.current_page +
+                                                        suggestedOrganizations.current_page +
                                                         1,
                                                 },
                                             );

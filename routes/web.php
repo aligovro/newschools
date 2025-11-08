@@ -14,7 +14,7 @@ use App\Http\Controllers\Dashboard\OrganizationCreationController;
 use App\Http\Controllers\SiteConstructorController;
 use App\Http\Controllers\Dashboard\OrganizationSiteController;
 use App\Http\Controllers\Dashboard\ProjectController;
-use App\Http\Controllers\Dashboard\SuggestedSchoolController;
+use App\Http\Controllers\Dashboard\SuggestedOrganizationController;
 use App\Http\Controllers\Dashboard\SitePageController;
 
 Route::get('/', [MainSiteController::class, 'index'])->name('home');
@@ -111,9 +111,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/api/upload/image-info', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'getImageInfo'])->name('api.upload.image-info');
 
         // Suggested schools management (super admin only)
-        Route::get('/suggested-schools', [SuggestedSchoolController::class, 'index'])->name('suggested-schools.index');
-        Route::put('/suggested-schools/{suggestedSchool}', [SuggestedSchoolController::class, 'update'])->name('suggested-schools.update');
-        Route::delete('/suggested-schools/{suggestedSchool}', [SuggestedSchoolController::class, 'destroy'])->name('suggested-schools.destroy');
+        Route::get('/suggested-schools', [SuggestedOrganizationController::class, 'index'])->name('suggested-schools.index');
+        Route::put('/suggested-schools/{suggestedOrganization}', [SuggestedOrganizationController::class, 'update'])->name('suggested-schools.update');
+        Route::delete('/suggested-schools/{suggestedOrganization}', [SuggestedOrganizationController::class, 'destroy'])->name('suggested-schools.destroy');
 
         // Global settings management (super admin only)
         Route::prefix('admin')->name('admin.')->group(function () {

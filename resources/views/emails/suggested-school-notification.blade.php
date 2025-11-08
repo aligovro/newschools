@@ -87,7 +87,7 @@
 <body>
     <div class="header">
         <h1>🏫 Новая предложенная школа</h1>
-        <p><strong>Время:</strong> {{ $suggestedSchool->created_at->format('d.m.Y H:i:s') }}</p>
+        <p><strong>Время:</strong> {{ $suggestedOrganization->created_at->format('d.m.Y H:i:s') }}</p>
     </div>
 
     <div class="school-data">
@@ -95,30 +95,30 @@
 
         <div class="field">
             <div class="field-label">Название школы:</div>
-            <div class="field-value">{{ $suggestedSchool->name }}</div>
+            <div class="field-value">{{ $suggestedOrganization->name }}</div>
         </div>
 
-        @if($suggestedSchool->city_name)
+        @if($suggestedOrganization->city_name)
         <div class="field">
             <div class="field-label">Город:</div>
-            <div class="field-value">{{ $suggestedSchool->city_name }}</div>
+            <div class="field-value">{{ $suggestedOrganization->city_name }}</div>
         </div>
         @endif
 
-        @if($suggestedSchool->address)
+        @if($suggestedOrganization->address)
         <div class="field">
             <div class="field-label">Адрес:</div>
-            <div class="field-value">{{ $suggestedSchool->address }}</div>
+            <div class="field-value">{{ $suggestedOrganization->address }}</div>
         </div>
         @endif
 
-        @if($suggestedSchool->latitude && $suggestedSchool->longitude)
+        @if($suggestedOrganization->latitude && $suggestedOrganization->longitude)
         <div class="field">
             <div class="field-label">Координаты:</div>
             <div class="field-value">
-                Широта: {{ $suggestedSchool->latitude }}, Долгота: {{ $suggestedSchool->longitude }}
+                Широта: {{ $suggestedOrganization->latitude }}, Долгота: {{ $suggestedOrganization->longitude }}
                 <br>
-                <a href="https://yandex.ru/maps/?pt={{ $suggestedSchool->longitude }},{{ $suggestedSchool->latitude }}&z=15"
+                <a href="https://yandex.ru/maps/?pt={{ $suggestedOrganization->longitude }},{{ $suggestedOrganization->latitude }}&z=15"
                     target="_blank">Открыть на карте</a>
             </div>
         </div>
@@ -126,8 +126,8 @@
     </div>
 
     <div class="meta-info">
-        <div class="meta-item"><strong>ID заявки:</strong> {{ $suggestedSchool->id }}</div>
-        <div class="meta-item"><strong>Статус:</strong> {{ $suggestedSchool->status === 'pending' ? 'Ожидает рассмотрения' : $suggestedSchool->status }}</div>
+        <div class="meta-item"><strong>ID заявки:</strong> {{ $suggestedOrganization->id }}</div>
+        <div class="meta-item"><strong>Статус:</strong> {{ $suggestedOrganization->status === 'pending' ? 'Ожидает рассмотрения' : $suggestedOrganization->status }}</div>
     </div>
 
     <div style="text-align: center; margin-top: 30px;">
@@ -136,4 +136,3 @@
 </body>
 
 </html>
-

@@ -24,6 +24,7 @@ interface YandexMapProps {
     selectedIconUrl?: string; // URL кастомной иконки для выбранного маркера
     selectedMarkerId?: string | number | null; // ID выбранного маркера
     grayscale?: boolean; // Черно-белая карта
+    onZoomChange?: (zoom: number) => void;
 }
 
 export const YandexMap: React.FC<YandexMapProps> = ({
@@ -41,6 +42,7 @@ export const YandexMap: React.FC<YandexMapProps> = ({
     selectedIconUrl,
     selectedMarkerId = null,
     grayscale = false,
+    onZoomChange,
 }) => {
     const { ymaps, isReady } = useYandexMap();
     const mapRef = useRef<HTMLDivElement | null>(null);
@@ -51,6 +53,7 @@ export const YandexMap: React.FC<YandexMapProps> = ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const singlePlacemarkRef = useRef<any>(null);
     const grayscaleStyleRef = useRef<HTMLStyleElement | null>(null);
+    const grayscaleStyleIdRef = useRef<string | null>(null);
 
     // Создаем стабильную строку для отслеживания изменений маркеров
     const markersKey = useMemo(
@@ -83,27 +86,6 @@ export const YandexMap: React.FC<YandexMapProps> = ({
 
             mapInstanceRef.current = new ymaps.Map(mapRef.current, mapOptions);
 
-            // Применяем черно-белый фильтр через CSS только к тайлам карты, не к маркерам
-            if (grayscale && mapRef.current) {
-                // Применяем фильтр только к тайлам карты, маркеры остаются цветными
-                // Используем универсальный селектор для разных версий Yandex Maps API
-                const mapContainer = mapRef.current;
-                const styleId = `yandex-map-grayscale-${Date.now()}`;
-                const style = document.createElement('style');
-                style.id = styleId;
-                style.textContent = `
-                    [data-map-container="${styleId}"] .ymaps-2-1-79-ground-pane,
-                    [data-map-container="${styleId}"] .ymaps-2-1-78-ground-pane,
-                    [data-map-container="${styleId}"] .ymaps-2-1-80-ground-pane {
-                        filter: grayscale(100%) !important;
-                    }
-                `;
-                document.head.appendChild(style);
-                mapContainer.setAttribute('data-map-container', styleId);
-                // Сохраняем ссылку на стиль для удаления при размонтировании
-                grayscaleStyleRef.current = style;
-            }
-
             if (onBoundsChange) {
                 mapInstanceRef.current.events.add('boundschange', () => {
                     const bounds = mapInstanceRef.current.getBounds();
@@ -134,17 +116,6 @@ export const YandexMap: React.FC<YandexMapProps> = ({
         } else {
             mapInstanceRef.current.setCenter(center, zoom);
         }
-
-        return () => {
-            // Удаляем стиль при размонтировании
-            if (
-                grayscaleStyleRef.current &&
-                document.head.contains(grayscaleStyleRef.current)
-            ) {
-                document.head.removeChild(grayscaleStyleRef.current);
-                grayscaleStyleRef.current = null;
-            }
-        };
     }, [
         isReady,
         ymaps,
@@ -152,9 +123,80 @@ export const YandexMap: React.FC<YandexMapProps> = ({
         zoom,
         onClick,
         allowMarkerClick,
-        grayscale,
         onBoundsChange,
     ]);
+
+    useEffect(() => {
+        if (!grayscale || !mapRef.current) {
+            if (mapRef.current) {
+                mapRef.current.removeAttribute('data-map-container');
+            }
+            if (
+                grayscaleStyleRef.current &&
+                document.head.contains(grayscaleStyleRef.current)
+            ) {
+                document.head.removeChild(grayscaleStyleRef.current);
+            }
+            grayscaleStyleRef.current = null;
+            grayscaleStyleIdRef.current = null;
+            return;
+        }
+
+        const mapContainer = mapRef.current;
+        if (!grayscaleStyleIdRef.current) {
+            grayscaleStyleIdRef.current = `yandex-map-grayscale-${Math.random()
+                .toString(36)
+                .slice(2)}`;
+        }
+        const styleId = grayscaleStyleIdRef.current;
+
+        if (!grayscaleStyleRef.current) {
+            const style = document.createElement('style');
+            style.id = `${styleId}-style`;
+            style.textContent = `
+                [data-map-container="${styleId}"] .ymaps-2-1-79-ground-pane,
+                [data-map-container="${styleId}"] .ymaps-2-1-78-ground-pane,
+                [data-map-container="${styleId}"] .ymaps-2-1-80-ground-pane {
+                    filter: grayscale(100%) !important;
+                }
+            `;
+            document.head.appendChild(style);
+            grayscaleStyleRef.current = style;
+        }
+
+        mapContainer.setAttribute('data-map-container', styleId);
+    }, [grayscale, isReady]);
+
+    useEffect(() => {
+        return () => {
+            if (
+                grayscaleStyleRef.current &&
+                document.head.contains(grayscaleStyleRef.current)
+            ) {
+                document.head.removeChild(grayscaleStyleRef.current);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!mapInstanceRef.current || !onZoomChange) return;
+        const map = mapInstanceRef.current;
+        const zoomHandler = (e: { get: (key: string) => unknown }) => {
+            const newZoom = e.get('newZoom');
+            const oldZoom = e.get('oldZoom');
+            if (
+                typeof newZoom === 'number' &&
+                typeof oldZoom === 'number' &&
+                newZoom !== oldZoom
+            ) {
+                onZoomChange(newZoom);
+            }
+        };
+        map.events.add('boundschange', zoomHandler);
+        return () => {
+            map.events.remove('boundschange', zoomHandler);
+        };
+    }, [onZoomChange, isReady, ymaps]);
 
     // Обработка маркеров: либо одиночная перетаскиваемая метка, либо ObjectManager
     useEffect(() => {
@@ -179,6 +221,23 @@ export const YandexMap: React.FC<YandexMapProps> = ({
                 );
             }
 
+            const placemarkOptions: Record<string, unknown> = {
+                draggable: draggableMarker,
+            };
+
+            if (customIconUrl) {
+                Object.assign(placemarkOptions, {
+                    iconLayout: 'default#image',
+                    iconImageHref: customIconUrl,
+                    iconImageSize: [31, 33],
+                    iconImageOffset: [-15.5, -33],
+                });
+            } else {
+                Object.assign(placemarkOptions, {
+                    preset: 'islands#blueDotIcon',
+                });
+            }
+
             // Создаем новую перетаскиваемую метку
             singlePlacemarkRef.current = new ymaps.Placemark(
                 marker.position,
@@ -186,10 +245,7 @@ export const YandexMap: React.FC<YandexMapProps> = ({
                     hintContent: marker.hint || '',
                     balloonContent: marker.balloon || '',
                 },
-                {
-                    draggable: draggableMarker,
-                    preset: 'islands#blueDotIcon',
-                },
+                placemarkOptions,
             );
 
             // Обработчик перетаскивания
