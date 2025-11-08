@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SuggestedSchool extends Model
+class SuggestedOrganization extends Model
 {
     use HasFactory, SoftDeletes;
 

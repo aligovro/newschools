@@ -21,13 +21,13 @@ class PublicOrganizationController extends Controller
     public function index(Request $request)
     {
         $query = Organization::with([
-                'region',
-                'city',
-                'sites',
-                'director' => function ($query) {
-                    $query->whereNull('deleted_at');
-                }
-            ])
+            'region',
+            'city',
+            'sites',
+            'director' => function ($query) {
+                $query->whereNull('deleted_at');
+            }
+        ])
             ->where('status', 'active')
             ->where('is_public', true);
 
@@ -137,7 +137,19 @@ class PublicOrganizationController extends Controller
 
         $limit = min(max((int) $request->get('limit', 12), 1), 100);
         $items = $query->limit($limit)->get([
-            'id', 'name', 'slug', 'description', 'type', 'status', 'is_public', 'logo', 'images', 'address', 'region_id', 'city_id', 'created_at'
+            'id',
+            'name',
+            'slug',
+            'description',
+            'type',
+            'status',
+            'is_public',
+            'logo',
+            'images',
+            'address',
+            'region_id',
+            'city_id',
+            'created_at'
         ]);
 
         // Приводим к плоскому JSON для фронта
@@ -303,6 +315,19 @@ class PublicOrganizationController extends Controller
     {
         $query = City::with('region')->where('is_active', true);
 
+        $ids = [];
+        if ($request->filled('ids')) {
+            $ids = collect(explode(',', $request->get('ids')))
+                ->map(fn($value) => (int) trim($value))
+                ->filter(fn($value) => $value > 0)
+                ->unique()
+                ->values()
+                ->all();
+            if (!empty($ids)) {
+                $query->whereIn('id', $ids);
+            }
+        }
+
         if ($request->filled('search')) {
             $search = trim($request->search);
             $query->where(function ($q) use ($search) {
@@ -310,8 +335,18 @@ class PublicOrganizationController extends Controller
             });
         }
 
-        $limit = min($request->get('limit', 20), 100);
-        $cities = $query->orderBy('name')->limit($limit)->get();
+        $limit = $request->filled('limit') ? (int) $request->get('limit') : null;
+        if ($limit !== null) {
+            $limit = max(1, min($limit, 100));
+        }
+
+        if ($limit !== null) {
+            $query->limit($limit);
+        } elseif (empty($ids)) {
+            $query->limit(20);
+        }
+
+        $cities = $query->orderBy('name')->get();
 
         return response()->json(
             $cities->map(function ($city) {
@@ -321,6 +356,8 @@ class PublicOrganizationController extends Controller
                     'region' => $city->region
                         ? ['name' => $city->region->name]
                         : null,
+                    'latitude' => $city->latitude !== null ? (float) $city->latitude : null,
+                    'longitude' => $city->longitude !== null ? (float) $city->longitude : null,
                 ];
             })
         );
@@ -358,6 +395,8 @@ class PublicOrganizationController extends Controller
                     'region' => $city->region
                         ? ['name' => $city->region->name]
                         : null,
+                    'latitude' => $city->latitude !== null ? (float) $city->latitude : null,
+                    'longitude' => $city->longitude !== null ? (float) $city->longitude : null,
                 ]);
             }
 

@@ -21,6 +21,7 @@ use App\Http\Controllers\PublicOrganizationController;
 use App\Http\Controllers\Api\Public\PublicApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\Public\SuggestedOrganizationController;
 use App\Http\Controllers\Api\UserController;
 
 // Получение текущего пользователя для API
@@ -255,7 +256,7 @@ Route::prefix('public')->group(function () {
     Route::get('/city-supporters', [CitySupportersController::class, 'getTopCitiesPublic']);
 
     // Предложение новой школы (публичный доступ)
-    Route::post('/suggest-school', [App\Http\Controllers\Api\Public\SuggestedSchoolController::class, 'suggest']);
+    Route::post('/suggest-school', [SuggestedOrganizationController::class, 'suggest']);
 });
 
 /*

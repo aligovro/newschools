@@ -1,5 +1,5 @@
-import { Label } from '@/components/ui/label';
 import { MenuWidget } from '@/components/dashboard/widgets/MenuWidget';
+import { Label } from '@/components/ui/label';
 import React, { useCallback, useMemo } from 'react';
 
 interface MenuWidgetModalProps {

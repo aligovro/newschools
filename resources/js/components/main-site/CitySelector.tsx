@@ -1,16 +1,14 @@
 import { useDefaultCity } from '@/hooks/useDefaultCity';
-import { detectCityByGeolocation, fetchPublicCities } from '@/lib/api/public';
+import {
+    detectCityByGeolocation,
+    fetchPublicCities,
+    type PublicCity,
+} from '@/lib/api/public';
 import '@css/components/main-site/CitySelector.scss';
 import { Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface City {
-    id: number;
-    name: string;
-    region?: {
-        name: string;
-    };
-}
+export type City = PublicCity;
 
 interface CitySelectorProps {
     value: City | null;
@@ -33,6 +31,7 @@ export default function CitySelector({
     const [cities, setCities] = useState<City[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isDetecting, setIsDetecting] = useState(false);
+    const defaultCityDetailsRef = useRef<City | null>(null);
 
     const {
         id: defaultId,
@@ -44,59 +43,112 @@ export default function CitySelector({
     // Инициализация дефолтного города при монтировании
     useEffect(() => {
         if (!globalDefaultLoaded) return;
-        if (value) return; // Если город уже выбран, не меняем
-        if (disableAutoSet) return; // Если отключена автоматическая установка
+        if (value) return;
+        if (disableAutoSet) return;
 
-        // Если геолокация включена, пытаемся определить город
+        let cancelled = false;
+
+        const fallbackCity = () => {
+            if (!defaultId || !defaultName) return null;
+            if (defaultCityDetailsRef.current) {
+                return defaultCityDetailsRef.current;
+            }
+            return {
+                id: defaultId,
+                name: defaultName,
+                region: defaultRegion
+                    ? { name: defaultRegion.name }
+                    : undefined,
+                latitude: undefined,
+                longitude: undefined,
+            } satisfies City;
+        };
+
+        const loadDefaultCity = async () => {
+            if (!defaultId) {
+                return fallbackCity();
+            }
+            try {
+                const [cityById] = await fetchPublicCities({
+                    ids: [defaultId],
+                });
+                if (cityById) {
+                    defaultCityDetailsRef.current = cityById as City;
+                    return defaultCityDetailsRef.current;
+                }
+            } catch (error) {
+                console.debug('Failed to load default city details', error);
+            }
+            if (defaultName) {
+                try {
+                    const [cityByName] = await fetchPublicCities({
+                        search: defaultName,
+                        limit: 1,
+                    });
+                    if (cityByName) {
+                        defaultCityDetailsRef.current = cityByName as City;
+                        return defaultCityDetailsRef.current;
+                    }
+                } catch (error) {
+                    console.debug(
+                        'Failed to resolve default city by name',
+                        error,
+                    );
+                }
+            }
+            return fallbackCity();
+        };
+
+        const applyDefaultCity = async () => {
+            const cityToSet = await loadDefaultCity();
+            if (!cancelled && cityToSet) {
+                defaultCityDetailsRef.current = cityToSet;
+                onChange(cityToSet);
+            }
+        };
+
         if (detectOnMount) {
             setIsDetecting(true);
             detectCityByGeolocation()
-                .then((detectedCity) => {
+                .then(async (detectedCity) => {
                     if (
                         detectedCity &&
                         typeof detectedCity === 'object' &&
                         detectedCity.id &&
                         detectedCity.name
                     ) {
-                        onChange(detectedCity);
-                    } else if (defaultId && defaultName) {
-                        // Если геолокация не сработала, используем дефолтный
-                        onChange({
-                            id: defaultId,
-                            name: defaultName,
-                            region: defaultRegion
-                                ? { name: defaultRegion.name }
-                                : undefined,
-                        });
+                        if (!cancelled) {
+                            onChange(detectedCity as City);
+                        }
+                    } else {
+                        await applyDefaultCity();
                     }
                 })
-                .catch(() => {
-                    // При ошибке используем дефолтный город
-                    if (defaultId && defaultName) {
-                        onChange({
-                            id: defaultId,
-                            name: defaultName,
-                            region: defaultRegion
-                                ? { name: defaultRegion.name }
-                                : undefined,
-                        });
-                    }
+                .catch(async () => {
+                    await applyDefaultCity();
                 })
                 .finally(() => {
-                    setIsDetecting(false);
+                    if (!cancelled) {
+                        setIsDetecting(false);
+                    }
                 });
-        } else if (defaultId && defaultName) {
-            // Без геолокации сразу устанавливаем дефолтный
-            onChange({
-                id: defaultId,
-                name: defaultName,
-                region: defaultRegion
-                    ? { name: defaultRegion.name }
-                    : undefined,
-            });
+        } else {
+            applyDefaultCity();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [globalDefaultLoaded, detectOnMount]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        globalDefaultLoaded,
+        value,
+        disableAutoSet,
+        detectOnMount,
+        defaultId,
+        defaultName,
+        defaultRegion,
+        onChange,
+    ]);
 
     // Загрузка списка городов при открытии выпадашки
     useEffect(() => {
@@ -149,13 +201,24 @@ export default function CitySelector({
 
         // Проверяем, есть ли дефолтный город в загруженном списке с регионом
         const cityFromList = cities.find((c) => c.id === defaultId && c.region);
-        if (cityFromList) return cityFromList;
+        if (cityFromList) return cityFromList as City;
+
+        if (value && value.id === defaultId) {
+            defaultCityDetailsRef.current = value;
+            return value;
+        }
+
+        if (defaultCityDetailsRef.current) {
+            return defaultCityDetailsRef.current;
+        }
 
         // Используем данные из глобальных настроек
         return {
             id: defaultId,
             name: defaultName,
             region: defaultRegion ? { name: defaultRegion.name } : undefined,
+            latitude: undefined,
+            longitude: undefined,
         };
     };
 
@@ -194,7 +257,11 @@ export default function CitySelector({
                         <span className="text-gray-500">Выберите город</span>
                     )}
                 </span>
-                <img src="/icons/direct-right.svg" alt="" className="city-selector__icon" />
+                <img
+                    src="/icons/direct-right.svg"
+                    alt=""
+                    className="city-selector__icon"
+                />
             </button>
 
             {isOpen && (

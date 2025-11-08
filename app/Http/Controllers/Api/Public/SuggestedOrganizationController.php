@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api\Public;
 
 use App\Http\Controllers\Controller;
-use App\Models\SuggestedSchool;
+use App\Models\SuggestedOrganization;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
-class SuggestedSchoolController extends Controller
+class SuggestedOrganizationController extends Controller
 {
     /**
      * Сохранение предложенной школы
@@ -27,7 +27,7 @@ class SuggestedSchoolController extends Controller
         ]);
 
         try {
-            $suggestedSchool = SuggestedSchool::create([
+            $suggestedOrganization = SuggestedOrganization::create([
                 'name' => $validated['name'],
                 'city_id' => $validated['city_id'] ?? null,
                 'city_name' => $validated['city_name'] ?? null,
@@ -38,13 +38,13 @@ class SuggestedSchoolController extends Controller
             ]);
 
             // Отправляем уведомление супер-админам
-            $this->notifySuperAdmins($suggestedSchool);
+            $this->notifySuperAdmins($suggestedOrganization);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Школа успешно предложена. Мы рассмотрим вашу заявку в ближайшее время.',
                 'data' => [
-                    'id' => $suggestedSchool->id,
+                    'id' => $suggestedOrganization->id,
                 ],
             ], 201);
         } catch (\Exception $e) {
@@ -63,7 +63,7 @@ class SuggestedSchoolController extends Controller
     /**
      * Отправка уведомлений супер-админам
      */
-    private function notifySuperAdmins(SuggestedSchool $suggestedSchool): void
+    private function notifySuperAdmins(SuggestedOrganization $suggestedOrganization): void
     {
         try {
             // Получаем всех супер-админов
@@ -78,11 +78,11 @@ class SuggestedSchoolController extends Controller
             foreach ($superAdmins as $admin) {
                 try {
                     Mail::send('emails.suggested-school-notification', [
-                        'suggestedSchool' => $suggestedSchool,
+                        'suggestedOrganization' => $suggestedOrganization,
                         'admin' => $admin,
-                    ], function ($message) use ($admin, $suggestedSchool) {
+                    ], function ($message) use ($admin, $suggestedOrganization) {
                         $message->to($admin->email, $admin->name)
-                            ->subject('Новая предложенная школа: ' . $suggestedSchool->name);
+                            ->subject('Новая предложенная школа: ' . $suggestedOrganization->name);
                     });
                 } catch (\Exception $e) {
                     Log::error('Ошибка отправки email супер-админу', [
@@ -95,7 +95,7 @@ class SuggestedSchoolController extends Controller
         } catch (\Exception $e) {
             Log::error('Ошибка при отправке уведомлений супер-админам', [
                 'error' => $e->getMessage(),
-                'suggested_school_id' => $suggestedSchool->id,
+                'suggested_organization_id' => $suggestedOrganization->id,
             ]);
         }
     }
