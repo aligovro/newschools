@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Админ панель', href: '/dashboard' },
-    { title: 'Организации', href: '/dashboard/organizations' },
+    { title: 'Школы', href: '/dashboard/organizations' },
     { title: 'Создать организацию', href: '/dashboard/organizations/create' },
 ];
 

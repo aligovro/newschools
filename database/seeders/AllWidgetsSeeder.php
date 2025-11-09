@@ -159,6 +159,18 @@ class AllWidgetsSeeder extends Seeder
                 'sort_order' => 16,
             ],
 
+            // Слайдер проектов
+            [
+                'name' => 'Слайдер проектов',
+                'widget_slug' => 'projects_slider',
+                'description' => 'Слайдер последних проектов или проектов выбранной организации',
+                'icon' => '🚀',
+                'category' => 'content',
+                'component_name' => 'ProjectsSliderWidget',
+                'is_active' => true,
+                'sort_order' => 17,
+            ],
+
             // УНИВЕРСАЛЬНАЯ ФОРМА (конструктор форм)
             [
                 'name' => 'Форма',

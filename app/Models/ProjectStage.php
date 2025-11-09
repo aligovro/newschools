@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProjectStage extends Model
 {
@@ -34,6 +35,16 @@ class ProjectStage extends Model
   public function project(): BelongsTo
   {
     return $this->belongsTo(Project::class);
+  }
+
+  public function reports(): HasMany
+  {
+    return $this->hasMany(Report::class);
+  }
+
+  public function reportRuns(): HasMany
+  {
+    return $this->hasMany(ReportRun::class);
   }
 
   // Методы для работы с суммами

@@ -182,7 +182,7 @@ export default function OrganizationSiteBuilder({
     const breadcrumbs: BreadcrumbItem[] = useMemo(
         () => [
             { title: 'Админ панель', href: '/dashboard' },
-            { title: 'Организации', href: '/dashboard/organizations' },
+            { title: 'Школы', href: '/dashboard/organizations' },
             isMainSite
                 ? {
                       title: 'Сайты',

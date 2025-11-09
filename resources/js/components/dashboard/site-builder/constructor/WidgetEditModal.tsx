@@ -37,6 +37,7 @@ import { AddOrganizationBlockWidgetModal } from './modals/AddOrganizationBlockWi
 import { AlumniStatsWidgetModal } from './modals/AlumniStatsWidgetModal';
 import { AuthMenuWidgetModal } from './modals/AuthMenuWidgetModal';
 import { CityOrganizationsWidgetModal } from './modals/CityOrganizationsWidgetModal';
+import { ProjectsSliderWidgetModal } from './modals/ProjectsSliderWidgetModal';
 import { CitySupportersWidgetModal } from './modals/CitySupportersWidgetModal';
 import { DonationWidgetModal } from './modals/DonationWidgetModal';
 import { DonationsListWidgetModal } from './modals/DonationsListWidgetModal';
@@ -433,6 +434,16 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             case 'city_organizations': {
                 return (
                     <CityOrganizationsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'projects_slider': {
+                return (
+                    <ProjectsSliderWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
                         onConfigUpdate={handleSetPendingConfig}

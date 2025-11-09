@@ -42,14 +42,49 @@ export async function resolveCityByName(name: string) {
 
 export async function fetchPublicOrganizations(
     params: Record<string, string | number | undefined>,
+    options: RequestInit = {},
 ) {
     const url = new URL('/api/public/organizations', window.location.origin);
     Object.entries(params).forEach(([k, v]) => {
         if (v !== undefined && v !== null && v !== '')
             url.searchParams.set(k, String(v));
     });
-    const res = await fetch(url.toString());
+    const res = await fetch(url.toString(), {
+        headers: {
+            Accept: 'application/json',
+            ...(options.headers ?? {}),
+        },
+        credentials: 'same-origin',
+        ...options,
+    });
     if (!res.ok) throw new Error('Failed to load organizations');
+    return res.json();
+}
+
+export async function fetchLatestProjects(
+    params: Record<string, string | number | undefined> = {},
+    options: RequestInit = {},
+) {
+    const url = new URL('/api/public/projects/latest', window.location.origin);
+    Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') {
+            url.searchParams.set(k, String(v));
+        }
+    });
+
+    const res = await fetch(url.toString(), {
+        headers: {
+            Accept: 'application/json',
+            ...(options.headers ?? {}),
+        },
+        credentials: 'same-origin',
+        ...options,
+    });
+
+    if (!res.ok) {
+        throw new Error('Failed to load projects');
+    }
+
     return res.json();
 }
 

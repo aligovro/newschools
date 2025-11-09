@@ -50,7 +50,7 @@ export default function OrganizationAdminDashboard({
             href: '/dashboard',
         },
         {
-            title: 'Организации',
+            title: 'Школы',
             href: '/dashboard/organizations',
         },
         {
@@ -98,7 +98,7 @@ export default function OrganizationAdminDashboard({
         {
             title: 'Отчеты',
             description: 'Генерация отчетов',
-            href: `/dashboard/organization/${organization.id}/admin/reports`,
+            href: `/dashboard/organization/${organization.id}/reports`,
             icon: BarChart3,
             color: 'bg-indigo-500',
         },

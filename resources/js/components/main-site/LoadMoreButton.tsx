@@ -20,8 +20,7 @@ export default function LoadMoreButton({
             disabled={isLoading}
             className="load-more-button"
         >
-            {isLoading ? 'Загрузка...' : 'Загрузить больше'}
+            {isLoading ? 'Загрузка…' : 'Загрузить ещё'}
         </button>
     );
 }
-

@@ -20,6 +20,8 @@ interface OrganizationData {
     donations_total: number;
     donations_collected: number;
     director_name?: string;
+    needs_target_amount?: number | null;
+    needs_collected_amount?: number | null;
     latitude?: number | null;
     longitude?: number | null;
 }

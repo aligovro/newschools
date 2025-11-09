@@ -2,6 +2,7 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
 import ProjectStageCard from '@/components/projects/ProjectStageCard';
+import ProjectSponsorsSection from '@/components/projects/ProjectSponsorsSection';
 import MainLayout from '@/layouts/MainLayout';
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
@@ -62,11 +63,33 @@ interface Project {
     organization?: Organization;
 }
 
+interface Sponsor {
+    id: string;
+    name: string;
+    avatar?: string | null;
+    total_amount: number;
+    total_amount_formatted: string;
+    latest_donation_at?: string | null;
+    donations_count: number;
+}
+
+interface SponsorsPayload {
+    sort: 'top' | 'recent';
+    data: Sponsor[];
+    pagination: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
+}
+
 interface ProjectShowProps {
     site: any;
     positions: any[];
     position_settings?: any[];
     project: Project;
+    sponsors: SponsorsPayload;
 }
 
 export default function ProjectShow({
@@ -74,6 +97,7 @@ export default function ProjectShow({
     positions,
     position_settings = [],
     project,
+    sponsors,
 }: ProjectShowProps) {
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
     const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
@@ -211,6 +235,20 @@ export default function ProjectShow({
                             </div>
                         </div>
                     )}
+
+                <ProjectSponsorsSection
+                    projectSlug={project.slug}
+                    initialData={sponsors?.data ?? []}
+                    initialPagination={
+                        sponsors?.pagination ?? {
+                            current_page: 1,
+                            last_page: 1,
+                            per_page: 6,
+                            total: 0,
+                        }
+                    }
+                    initialSort={sponsors?.sort ?? 'top'}
+                />
             </div>
         </MainLayout>
     );

@@ -26,7 +26,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboard().url,
     },
     {
-        title: 'Организации',
+        title: 'Школы',
         href: '/dashboard/organizations',
     },
 ];
@@ -53,6 +53,8 @@ interface Organization {
     };
     latitude?: number | null;
     longitude?: number | null;
+    needs_target_amount?: number | null;
+    needs_collected_amount?: number | null;
 }
 
 interface Props {

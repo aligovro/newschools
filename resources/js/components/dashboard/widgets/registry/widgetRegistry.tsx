@@ -567,6 +567,18 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         );
     },
 
+    // Слайдер проектов
+    projects_slider: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) || 'Слайдер проектов';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">projects_slider</div>
+            </div>
+        );
+    },
+
     // Блок подписки на школы (только для главного сайта) — в конструкторе показываем плейсхолдер
     subscribe_block: ({ widget }) => {
         const title =

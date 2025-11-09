@@ -1,0 +1,60 @@
+.projects-slider-widget {
+    position: relative;
+    overflow: visible;
+
+    &__navigation {
+        width: 36px;
+        height: 36px;
+        background: #f5f6f8;
+        border: none;
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: #e8e9eb;
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        &--prev {
+            left: -50px;
+        }
+
+        &--next {
+            right: -50px;
+        }
+
+        svg {
+            width: 20px;
+            height: 20px;
+            color: #1a1a1a;
+        }
+
+        @media (max-width: 640px) {
+            &--prev {
+                left: -40px;
+            }
+
+            &--next {
+                right: -40px;
+            }
+        }
+    }
+}
+
+section:has(.projects-slider-widget),
+.container:has(.projects-slider-widget) {
+    overflow: visible;
+}
+

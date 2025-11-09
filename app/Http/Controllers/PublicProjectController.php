@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HasSiteWidgets;
+use App\Http\Resources\Sponsors\SponsorResource;
 use App\Models\Project;
 use App\Models\ProjectCategory;
+use App\Services\Sponsors\ProjectSponsorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -12,6 +14,10 @@ use Inertia\Inertia;
 class PublicProjectController extends Controller
 {
     use HasSiteWidgets;
+
+    public function __construct(
+        private readonly ProjectSponsorService $projectSponsorService,
+    ) {}
 
     /**
      * Отображение списка проектов
@@ -157,10 +163,29 @@ class PublicProjectController extends Controller
             ] : null,
         ];
 
+        $sponsorsPaginator = $this->projectSponsorService->paginate(
+            $project,
+            'top',
+            ProjectSponsorService::DEFAULT_PER_PAGE,
+            1,
+        );
+
+        $sponsorsPayload = [
+            'sort' => 'top',
+            'data' => SponsorResource::collection(collect($sponsorsPaginator->items()))->resolve(),
+            'pagination' => [
+                'current_page' => $sponsorsPaginator->currentPage(),
+                'last_page' => $sponsorsPaginator->lastPage(),
+                'per_page' => $sponsorsPaginator->perPage(),
+                'total' => $sponsorsPaginator->total(),
+            ],
+        ];
+
         $data = $this->getSiteWidgetsAndPositions();
 
         return Inertia::render('main-site/ProjectShow', array_merge($data, [
             'project' => $projectData,
+            'sponsors' => $sponsorsPayload,
         ]));
     }
 

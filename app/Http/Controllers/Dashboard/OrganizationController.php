@@ -217,6 +217,12 @@ class OrganizationController extends Controller
             'status',
         ]);
 
+        $needsTarget = $this->normalizeMonetaryInput($request->input('needs_target_amount'));
+        $needsCollected = $this->normalizeMonetaryInput($request->input('needs_collected_amount'));
+
+        $data['needs_target_amount'] = $needsTarget;
+        $data['needs_collected_amount'] = $needsCollected;
+
         // Если слаг не передан или пустой, генерируем его на основе типа и ID
         // Но ID еще нет, поэтому сначала создаем организацию, затем обновляем слаг
         $organization = Organization::create($data);
@@ -298,8 +304,15 @@ class OrganizationController extends Controller
             'is_public',
             'latitude',
             'longitude',
-            'city_name'
+            'city_name',
         ]);
+
+        $updateData['needs_target_amount'] = $this->normalizeMonetaryInput(
+            $request->input('needs_target_amount')
+        );
+        $updateData['needs_collected_amount'] = $this->normalizeMonetaryInput(
+            $request->input('needs_collected_amount')
+        );
 
         // Обрабатываем логотип (может быть файлом или путем)
         if ($request->hasFile('logo')) {
@@ -436,6 +449,32 @@ class OrganizationController extends Controller
                 ]);
             }
         }
+    }
+
+    private function normalizeMonetaryInput(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || $value === 'null') {
+            return null;
+        }
+
+        if (!is_numeric($value)) {
+            $clean = preg_replace('/[^\d.,-]/', '', (string) $value);
+            if ($clean === '') {
+                return null;
+            }
+            $normalized = str_replace(',', '.', $clean);
+            if (!is_numeric($normalized)) {
+                return null;
+            }
+            $value = $normalized;
+        }
+
+        $numeric = (float) $value;
+        if ($numeric < 0) {
+            $numeric = 0;
+        }
+
+        return (int) round($numeric);
     }
 
     public function destroy(Organization $organization)

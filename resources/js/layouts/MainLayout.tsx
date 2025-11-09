@@ -218,7 +218,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             >
                 <div className={`${containerClass} ${alignClass}`}>
                     {positionWidgets.length > 0 && (
-                        <div className="space-y-4">
+                        <div className={`space-y-4 ${position.slug}-wrapper`}>
                             {positionWidgets
                                 .filter((widget) => shouldShowWidget(widget))
                                 .map((widget) => (
@@ -473,14 +473,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 </main>
 
                 {/* Footer: четыре колонки (footer-col-1..4) */}
-                <footer className="site-footer">
-                    {(() => {
-                        const { footerCols, footerOther } = positionsByArea;
+                <footer className="site-footer mb-60 mt-60">
+                    <div className="site-foote--wrapper container">
+                        {(() => {
+                            const { footerCols, footerOther } = positionsByArea;
 
-                        return (
-                            <div className="footer-container">
-                                {footerCols.length > 0 && (
-                                    <div className="container mx-auto px-4">
+                            return (
+                                <div className="footer-container">
+                                    {footerCols.length > 0 && (
                                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                                             {footerCols.map((p) => (
                                                 <div key={p.id}>
@@ -491,16 +491,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                )}
-                                {footerOther.map((p) => (
-                                    <div key={p.id}>
-                                        {renderPosition(p, site.widgets_config)}
-                                    </div>
-                                ))}
-                            </div>
-                        );
-                    })()}
+                                    )}
+                                    {footerOther.map((p) => (
+                                        <div key={p.id}>
+                                            {renderPosition(
+                                                p,
+                                                site.widgets_config,
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
+                    </div>
                 </footer>
             </div>
         </>

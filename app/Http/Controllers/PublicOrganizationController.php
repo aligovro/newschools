@@ -120,6 +120,21 @@ class PublicOrganizationController extends Controller
             $query->where('city_id', (int) $request->get('city_id'));
         }
 
+        if ($request->filled('organization_id')) {
+            $query->where('id', (int) $request->get('organization_id'));
+        }
+
+        if ($request->filled('ids')) {
+            $ids = collect(explode(',', (string) $request->get('ids')))
+                ->map(fn($value) => (int) trim($value))
+                ->filter(fn($value) => $value > 0)
+                ->values();
+
+            if ($ids->isNotEmpty()) {
+                $query->whereIn('id', $ids->all());
+            }
+        }
+
         // Сортировка
         $allowedSort = ['created_at', 'name', 'donations_total'];
         $sortBy = in_array($request->get('order_by'), $allowedSort, true)
@@ -149,7 +164,9 @@ class PublicOrganizationController extends Controller
             'address',
             'region_id',
             'city_id',
-            'created_at'
+            'created_at',
+            'needs_target_amount',
+            'needs_collected_amount',
         ]);
 
         // Приводим к плоскому JSON для фронта
@@ -178,6 +195,12 @@ class PublicOrganizationController extends Controller
                 'projects_count' => (int) ($org->projects_count ?? 0),
                 'donations_total' => (int) ($org->donations_total ?? 0),
                 'donations_collected' => (int) ($org->donations_total ?? 0),
+                'needs_target_amount' => $org->needs_target_amount !== null
+                    ? (int) $org->needs_target_amount
+                    : null,
+                'needs_collected_amount' => $org->needs_collected_amount !== null
+                    ? (int) $org->needs_collected_amount
+                    : null,
                 'director' => $org->director ? (new OrganizationStaffResource($org->director))->toArray(request()) : null,
             ];
         });

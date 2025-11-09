@@ -56,7 +56,7 @@ export default function OrganizationSitesIndex({ organization, sites }: Props) {
             href: '/dashboard',
         },
         {
-            title: 'Организации',
+            title: 'Школы',
             href: '/dashboard/organizations',
         },
         {

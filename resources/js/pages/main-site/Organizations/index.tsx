@@ -31,6 +31,8 @@ interface OrganizationData {
     donations_total: number;
     donations_collected: number;
     director_name?: string;
+    needs_target_amount?: number | null;
+    needs_collected_amount?: number | null;
     latitude?: number | null;
     longitude?: number | null;
 }
@@ -52,6 +54,14 @@ interface OrganizationsPageProps {
         data: OrganizationData[];
         current_page: number;
         last_page: number;
+        per_page?: number;
+        total?: number;
+        meta?: {
+            current_page: number;
+            last_page: number;
+            per_page: number;
+            total: number;
+        };
     };
     filters?: {
         search?: string;
@@ -67,6 +77,16 @@ export default function Organizations({
     organizations,
     filters,
 }: OrganizationsPageProps) {
+    const paginationMeta =
+        organizations.meta ??
+        ({
+            current_page: organizations.current_page,
+            last_page: organizations.last_page,
+            per_page: organizations.per_page,
+            total: organizations.total,
+        } satisfies OrganizationsPageProps['organizations']['meta']);
+
+    const PAGE_SIZE = paginationMeta?.per_page ?? organizations.per_page ?? 6;
     const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
     const [selectedCity, setSelectedCity] = useState<{
         id: number;
@@ -175,11 +195,12 @@ export default function Organizations({
             if (newFilters.page) {
                 params.set('page', String(newFilters.page));
             }
+            params.set('per_page', String(PAGE_SIZE));
 
             const url = `/organizations${params.toString() ? '?' + params.toString() : ''}`;
             router.get(url, {}, { preserveState: true, preserveScroll: true });
         },
-        [],
+        [PAGE_SIZE],
     );
 
     // Обработчик изменения поиска с дебаунсом
@@ -322,6 +343,7 @@ export default function Organizations({
             params.set('city_id', String(filters.city_id));
         }
         params.set('page', String(page));
+        params.set('per_page', String(PAGE_SIZE));
         return `/organizations?${params.toString()}`;
     };
 

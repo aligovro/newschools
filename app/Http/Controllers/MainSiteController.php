@@ -68,7 +68,11 @@ class MainSiteController extends Controller
             $query->where('city_id', $request->city_id);
         }
 
-        $organizations = $query->orderBy('created_at', 'desc')->paginate(12);
+        $perPage = (int) $request->input('per_page', 6);
+        $perPage = max(1, min($perPage, 24));
+
+        $organizations = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        $organizations->appends($request->except('page'));
 
         // Форматируем данные организаций для отображения
         $organizations->getCollection()->transform(function ($org) {
@@ -100,6 +104,18 @@ class MainSiteController extends Controller
             }
             return $org;
         });
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'data' => $organizations->items(),
+                'meta' => [
+                    'current_page' => $organizations->currentPage(),
+                    'last_page' => $organizations->lastPage(),
+                    'per_page' => $organizations->perPage(),
+                    'total' => $organizations->total(),
+                ],
+            ]);
+        }
 
         $data = $this->getSiteWidgetsAndPositions();
 

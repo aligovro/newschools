@@ -38,6 +38,7 @@ export const isCustomWidget = (slug: string): boolean => {
         'alumni_stats',
         'html',
         'city_organizations',
+        'projects_slider',
         'subscribe_block',
         'add_organization_block',
         'organization_search',
@@ -63,4 +64,5 @@ export type WidgetSlug =
     | 'donations_list'
     | 'referral_leaderboard'
     | 'html'
-    | 'city_organizations';
+    | 'city_organizations'
+    | 'projects_slider';

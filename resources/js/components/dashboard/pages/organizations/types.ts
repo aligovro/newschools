@@ -39,6 +39,8 @@ export interface OrganizationLite {
     region?: Region | null;
     city?: City | null;
     settlement?: Settlement | null;
+    needs_target_amount?: number | null;
+    needs_collected_amount?: number | null;
 }
 
 export interface OrganizationDirector {
@@ -90,6 +92,8 @@ export interface OrganizationShow {
     donations_count?: number;
     donations_total?: number | null;
     donations_sum?: number | null;
+    needs_target_amount?: number | null;
+    needs_collected_amount?: number | null;
     director?: OrganizationDirector;
     staff?: OrganizationStaffMember[];
     primary_site?: {
