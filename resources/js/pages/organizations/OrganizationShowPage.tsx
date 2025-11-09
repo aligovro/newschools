@@ -21,7 +21,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboard().url,
     },
     {
-        title: 'Организации',
+        title: 'Школы',
         href: '/dashboard/organizations',
     },
     {
@@ -124,10 +124,13 @@ export default function OrganizationShowPage({ organization }: Props) {
                     <div className="flex items-center gap-2">
                         <StatusBadge status={organization.status} />
                         <div className="flex items-center gap-2">
-                            {organization.primary_site || (organization.sites && organization.sites.length > 0) ? (
+                            {organization.primary_site ||
+                            (organization.sites &&
+                                organization.sites.length > 0) ? (
                                 <Link
                                     href={`/dashboard/organizations/${organization.id}/sites/${
-                                        organization.primary_site?.id || organization.sites?.[0]?.id
+                                        organization.primary_site?.id ||
+                                        organization.sites?.[0]?.id
                                     }/builder`}
                                 >
                                     <Button variant="default" size="sm">

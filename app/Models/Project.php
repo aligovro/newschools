@@ -83,6 +83,16 @@ class Project extends Model
     return $this->hasMany(ProjectStage::class)->orderBy('order');
   }
 
+  public function reports(): HasMany
+  {
+    return $this->hasMany(Report::class);
+  }
+
+  public function reportRuns(): HasMany
+  {
+    return $this->hasMany(ReportRun::class);
+  }
+
   public function categories(): BelongsToMany
   {
     return $this->belongsToMany(ProjectCategory::class, 'project_project_category')

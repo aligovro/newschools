@@ -41,6 +41,8 @@ class Organization extends Model
         'status',
         'is_public',
         'features',
+        'needs_target_amount',
+        'needs_collected_amount',
         'founded_at',
     ];
 
@@ -53,6 +55,8 @@ class Organization extends Model
         'longitude' => 'decimal:8',
         'is_public' => 'boolean',
         'status' => OrganizationStatus::class,
+        'needs_target_amount' => 'integer',
+        'needs_collected_amount' => 'integer',
     ];
 
     // Связи
@@ -124,6 +128,16 @@ class Organization extends Model
     public function statistics(): HasMany
     {
         return $this->hasMany(OrganizationStatistic::class);
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
+
+    public function reportRuns(): HasMany
+    {
+        return $this->hasMany(ReportRun::class);
     }
 
 

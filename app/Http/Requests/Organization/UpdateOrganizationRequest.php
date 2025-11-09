@@ -50,6 +50,8 @@ class UpdateOrganizationRequest extends FormRequest
             'payment_settings' => ['nullable'],
             // Администратор организации (для новой логики с organization_users)
             'admin_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'needs_target_amount' => ['nullable', 'numeric', 'min:0'],
+            'needs_collected_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -84,6 +86,11 @@ class UpdateOrganizationRequest extends FormRequest
         if ($this->has('city_name') && $this->input('city_name') === '') {
             $this->merge(['city_name' => null]);
         }
+
+        $this->merge([
+            'needs_target_amount' => $this->normalizeNumericInput($this->input('needs_target_amount')),
+            'needs_collected_amount' => $this->normalizeNumericInput($this->input('needs_collected_amount')),
+        ]);
     }
 
     /**
@@ -109,6 +116,31 @@ class UpdateOrganizationRequest extends FormRequest
             'latitude',
             'longitude',
             'city_name',
+            'needs_target_amount',
+            'needs_collected_amount',
         ]);
+    }
+
+    private function normalizeNumericInput(mixed $value): mixed
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value === '' || $value === 'null') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            return $value;
+        }
+
+        $clean = preg_replace('/[^\d.,-]/', '', (string) $value);
+        if ($clean === '') {
+            return null;
+        }
+
+        $normalized = str_replace(',', '.', $clean);
+        return is_numeric($normalized) ? $normalized : null;
     }
 }

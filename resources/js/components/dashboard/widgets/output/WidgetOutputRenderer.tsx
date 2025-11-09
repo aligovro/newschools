@@ -22,6 +22,7 @@ import { AddOrganizationBlockOutput } from './AddOrganizationBlockOutput';
 import { OrganizationSearchOutput } from './OrganizationSearchOutput';
 import { TextOutput } from './TextOutput';
 import { CityOrganizationsOutput } from './CityOrganizationsOutput';
+import { ProjectsSliderOutput } from './ProjectsSliderOutput';
 
 // Registry of output components
 const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
@@ -42,6 +43,7 @@ const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
     city_supporters: CitySupportersOutput,
     referral_leaderboard: ReferralLeaderboardOutput,
     city_organizations: CityOrganizationsOutput,
+    projects_slider: ProjectsSliderOutput,
     subscribe_block: SubscribeBlockOutput,
     add_organization_block: AddOrganizationBlockOutput,
     organization_search: OrganizationSearchOutput,

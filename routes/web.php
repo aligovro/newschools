@@ -22,6 +22,7 @@ Route::get('/organizations', [MainSiteController::class, 'organizations'])->name
 Route::get('/organization/{slug}', [MainSiteController::class, 'organization'])->name('main-site.organization');
 Route::get('/projects', [App\Http\Controllers\PublicProjectController::class, 'index'])->name('main-site.projects');
 Route::get('/project/{slug}', [App\Http\Controllers\PublicProjectController::class, 'show'])->name('main-site.project');
+Route::get('/project/{project:slug}/sponsors', [App\Http\Controllers\PublicSponsorController::class, 'projectSponsors'])->name('main-site.project.sponsors');
 
 // Legacy public organization routes (deprecated)
 Route::prefix('old-api')->group(function () {
@@ -197,16 +198,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/webhook', [App\Http\Controllers\Dashboard\OrganizationTelegramController::class, 'handleWebhook'])->name('webhook');
             });
 
-            // Отчеты
-            Route::prefix('reports')->name('reports.')->group(function () {
-                Route::get('/', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'index'])->name('index');
-                Route::post('/revenue', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'generateRevenueReport'])->name('revenue');
-                Route::post('/members', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'generateMembersReport'])->name('members');
-                Route::post('/projects', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'generateProjectsReport'])->name('projects');
-                Route::post('/comprehensive', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'generateComprehensiveReport'])->name('comprehensive');
-                Route::post('/export', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'exportReport'])->name('export');
-            });
-
             // Конструктор сайтов (legacy routes removed; use canonical /sites/{site}/builder)
 
             // API для виджетов
@@ -233,6 +224,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::put('/{project}', [ProjectController::class, 'update'])->name('update');
                 Route::delete('/{project}', [ProjectController::class, 'destroy'])->name('destroy');
                 Route::post('/check-slug', [ProjectController::class, 'checkSlug'])->name('check-slug');
+            });
+        });
+
+        // Organization reports (clean REST-like paths)
+        Route::prefix('organization/{organization}')->name('organization.')->middleware('organization.admin')->group(function () {
+            Route::prefix('reports')->name('reports.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'index'])->name('index');
+                Route::get('/projects', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'projectOptions'])->name('projects');
+                Route::get('/projects/{project}/stages', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'projectStages'])->name('projects.stages');
+                Route::get('/{report}/runs', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'runs'])->name('runs');
+                Route::post('/', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'store'])->name('store');
+                Route::patch('/{report}', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'update'])->name('update');
+                Route::delete('/{report}', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'destroy'])->name('destroy');
+                Route::post('/generate', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'generate'])->name('generate');
+                Route::post('/export', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'export'])->name('export');
             });
         });
 

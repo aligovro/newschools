@@ -48,6 +48,18 @@ export function useOrganizationFormState({
     const [isPublic, setIsPublic] = useState<boolean>(
         organization?.is_public ?? true,
     );
+    const [needsTargetAmount, setNeedsTargetAmount] = useState<string>(
+        organization?.needs_target_amount !== undefined &&
+            organization?.needs_target_amount !== null
+            ? String(organization.needs_target_amount)
+            : '',
+    );
+    const [needsCollectedAmount, setNeedsCollectedAmount] = useState<string>(
+        organization?.needs_collected_amount !== undefined &&
+            organization?.needs_collected_amount !== null
+            ? String(organization.needs_collected_amount)
+            : '',
+    );
 
     const [dirty, setDirty] = useState<Record<string, boolean>>({});
     const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
@@ -129,6 +141,8 @@ export function useOrganizationFormState({
         email,
         website,
         isPublic,
+        needsTargetAmount,
+        needsCollectedAmount,
         logoValue,
         galleryImages,
         paymentSettings,
@@ -144,6 +158,8 @@ export function useOrganizationFormState({
         setEmail,
         setWebsite,
         setIsPublic,
+        setNeedsTargetAmount,
+        setNeedsCollectedAmount,
         setLogoValue,
         setGalleryImages,
         setPaymentSettings,

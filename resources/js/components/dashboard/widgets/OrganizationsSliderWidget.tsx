@@ -11,31 +11,9 @@ import '@css/widgets/organizations-slider-widget.scss';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-interface Organization {
-    id: number;
-    name: string;
-    slug?: string;
-    address?: string;
-    city?: { id: number; name: string };
-    image?: string;
-    logo?: string;
-    donations_total?: number;
-    donations_collected?: number;
-    members_count?: number;
-    sponsors_count?: number;
-    projects_count?: number;
-    director?: {
-        id: number;
-        full_name: string;
-        last_name: string;
-        first_name: string;
-        middle_name?: string | null;
-        position: string;
-        is_director: boolean;
-        photo?: string | null;
-    };
-    director_name?: string | null; // Для обратной совместимости
-}
+type Organization = React.ComponentProps<
+    typeof OrganizationCard
+>['organization'];
 
 interface OrganizationsSliderConfig {
     title?: string;
@@ -92,9 +70,15 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                       ? data
                       : [];
                 setItems(list);
-            } catch (e: any) {
-                if (e?.name !== 'AbortError')
-                    setError(e?.message || 'Не удалось загрузить организации');
+            } catch (error) {
+                if ((error as { name?: string })?.name === 'AbortError') {
+                    return;
+                }
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : 'Не удалось загрузить организации';
+                setError(message);
             } finally {
                 setLoading(false);
             }
@@ -103,25 +87,45 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
         return () => controller.abort();
     }, [city_id, limit]);
 
+    useEffect(() => {
+        const swiper = swiperRef.current;
+        const prevEl = navigationPrevRef.current;
+        const nextEl = navigationNextRef.current;
+
+        if (!swiper || !shouldShowArrows || !prevEl || !nextEl) return;
+
+        // Обновляем элементы навигации только когда они доступны
+        const navigation = swiper.params.navigation;
+        if (navigation && typeof navigation !== 'boolean') {
+            navigation.prevEl = prevEl;
+            navigation.nextEl = nextEl;
+        }
+
+        const navigationModule = swiper.navigation;
+        navigationModule?.destroy();
+        navigationModule?.init();
+        navigationModule?.update();
+    }, [shouldShowArrows, items.length]);
+
     return (
         <section className="py-8">
             <div className="container mx-auto px-4">
                 {(title && show_title) || showHeaderActions ? (
-                <div className="mb-6 flex items-center justify-between">
+                    <div className="mb-6 flex items-center justify-between">
                         {title && show_title && (
-                    <h2 className="text-2xl font-bold text-gray-900">
-                        {title}
-                    </h2>
+                            <h2 className="text-2xl font-bold text-gray-900">
+                                {title}
+                            </h2>
                         )}
-                    {showHeaderActions && (
-                        <Link
-                            href="/organizations"
-                            className="btn-outline-primary dark-color"
-                        >
-                            Все школы
-                        </Link>
-                    )}
-                </div>
+                        {showHeaderActions && (
+                            <Link
+                                href="/organizations"
+                                className="btn-outline-primary dark-color"
+                            >
+                                Все школы
+                            </Link>
+                        )}
+                    </div>
                 ) : null}
 
                 {loading && (
@@ -164,14 +168,18 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                                 swiperRef.current = swiper;
                             }}
                             onBeforeInit={(swiper) => {
+                                if (!shouldShowArrows) return;
+                                const prevEl = navigationPrevRef.current;
+                                const nextEl = navigationNextRef.current;
+                                if (!prevEl || !nextEl) return;
+
+                                const navigation = swiper.params.navigation;
                                 if (
-                                    swiper.params.navigation &&
-                                    shouldShowArrows
+                                    navigation &&
+                                    typeof navigation !== 'boolean'
                                 ) {
-                                    (swiper.params.navigation as any).prevEl =
-                                        navigationPrevRef.current;
-                                    (swiper.params.navigation as any).nextEl =
-                                        navigationNextRef.current;
+                                    navigation.prevEl = prevEl;
+                                    navigation.nextEl = nextEl;
                                 }
                             }}
                         >
@@ -179,7 +187,7 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                                 <SwiperSlide key={organization.id}>
                                     <div className="h-full">
                                         <OrganizationCard
-                                            organization={organization as any}
+                                            organization={organization}
                                         />
                                     </div>
                                 </SwiperSlide>

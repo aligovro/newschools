@@ -3,6 +3,7 @@
 
 .add-organization-block {
     min-height: 344px;
+    margin-top: 60px;
 }
 
 .add-organization-block__title {
@@ -19,10 +20,8 @@
     font-weight: 700;
     font-size: 40px;
     line-height: 120%;
-    background: $accent-gradient;
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: $dark-color;
+    margin-bottom: 60px;
 }
 
 .add-organization-block__description {

@@ -11,6 +11,7 @@ import { ContactInfoSection } from './sections/ContactInfoSection';
 import { LocationSection } from './sections/LocationSection';
 import { PaymentSettingsSection } from './sections/PaymentSettingsSection';
 import { MediaSection } from './sections/MediaSection';
+import { NeedsSection } from './sections/NeedsSection';
 import { SettingsSection } from './sections/SettingsSection';
 import type { OrganizationFormProps, Status } from '../types';
 
@@ -283,6 +284,14 @@ export default function OrganizationForm({
                 'payment_settings',
                 JSON.stringify(formState.paymentSettings),
             );
+            formData.append(
+                'needs_target_amount',
+                formState.needsTargetAmount ?? '',
+            );
+            formData.append(
+                'needs_collected_amount',
+                formState.needsCollectedAmount ?? '',
+            );
 
             if (formState.logoValue instanceof File)
                 formData.append('logo', formState.logoValue);
@@ -376,6 +385,13 @@ export default function OrganizationForm({
                         onPhoneChange={formState.setPhone}
                         onEmailChange={formState.setEmail}
                         onWebsiteChange={formState.setWebsite}
+                    />
+
+                    <NeedsSection
+                        targetAmount={formState.needsTargetAmount}
+                        collectedAmount={formState.needsCollectedAmount}
+                        onTargetChange={formState.setNeedsTargetAmount}
+                        onCollectedChange={formState.setNeedsCollectedAmount}
                     />
 
                     <LocationSection

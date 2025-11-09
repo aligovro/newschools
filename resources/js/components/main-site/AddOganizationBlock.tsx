@@ -129,14 +129,14 @@ export default function AddoOganizationBlock({
             <section className="add-organization-block w-full rounded-[20px] bg-white p-8 shadow-[0_4px_84px_0_rgba(26,26,26,0.08)]">
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                     {/* Левая часть - текст */}
-                    <div className="flex flex-col justify-center">
+                    <div className="flex flex-col">
                         {title && show_title && (
-                            <h2 className="add-organization-block__title mb-4 font-bold leading-[120%]">
+                            <h2 className="add-organization-block__title">
                                 {title}
                             </h2>
                         )}
                         {subtitle && (
-                            <h3 className="add-organization-block__subtitle mb-6 font-bold leading-[120%]">
+                            <h3 className="add-organization-block__subtitle">
                                 {subtitle}
                             </h3>
                         )}

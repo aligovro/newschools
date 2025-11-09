@@ -19,6 +19,7 @@ export { StatsOutput } from './StatsOutput';
 export { SubscribeBlockOutput } from './SubscribeBlockOutput';
 export { AddOrganizationBlockOutput } from './AddOrganizationBlockOutput';
 export { OrganizationSearchOutput } from './OrganizationSearchOutput';
+export { ProjectsSliderOutput } from './ProjectsSliderOutput';
 export { TextOutput } from './TextOutput';
 
 // Main output renderer

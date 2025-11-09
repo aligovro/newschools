@@ -14,6 +14,8 @@ interface School {
     logo?: string;
     donations_total?: number;
     donations_collected?: number;
+    needs_target_amount?: number | null;
+    needs_collected_amount?: number | null;
     members_count?: number;
     sponsors_count?: number;
     projects_count?: number;
@@ -58,11 +60,20 @@ export default function OrganizationCard({
         .filter(Boolean)
         .join(', ');
 
-    const targetAmount = organization.donations_total || 0;
-    const collectedAmount = organization.donations_collected || 0;
+    const targetAmount = organization.needs_target_amount ?? 0;
+    const collectedAmount =
+        organization.needs_collected_amount ??
+        organization.donations_collected ??
+        organization.donations_total ??
+        0;
+    const safeTargetAmount = Math.max(0, targetAmount);
+    const safeCollectedAmount = Math.max(0, collectedAmount);
+
     const progressPercentage =
-        targetAmount > 0
-            ? Math.round((collectedAmount / targetAmount) * 100)
+        safeTargetAmount > 0
+            ? Math.round(
+                  Math.min((safeCollectedAmount / safeTargetAmount) * 100, 100),
+              )
             : 0;
 
     const directorName =
@@ -115,7 +126,7 @@ export default function OrganizationCard({
                         </div>
                         <div className="organization-donation-progress-wrapper">
                             <div className="organization-donation-progress-bar">
-                                {targetAmount > 0 && (
+                                {safeTargetAmount > 0 && (
                                     <div
                                         className="organization-donation-progress-fill"
                                         style={{
@@ -127,10 +138,10 @@ export default function OrganizationCard({
                         </div>
                         <div className="organization-donation-amounts">
                             <span className="organization-donation-target">
-                                {formatCurrency(targetAmount)}
+                                {formatCurrency(safeTargetAmount)}
                             </span>
                             <span className="organization-donation-collected">
-                                {formatCurrency(collectedAmount)}
+                                {formatCurrency(safeCollectedAmount)}
                             </span>
                         </div>
                     </div>

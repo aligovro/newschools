@@ -1,3 +1,4 @@
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -8,8 +9,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import type { Status, ReferenceData } from '../../types';
+import type { ReferenceData, Status } from '../../types';
 import type { SlugValidation } from './types';
 
 interface BasicInfoSectionProps {
@@ -58,9 +58,7 @@ export function BasicInfoSection({
         <div className="rounded-lg border bg-white p-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                    <Label htmlFor="org-name">
-                        Название организации *
-                    </Label>
+                    <Label htmlFor="org-name">Название *</Label>
                     <Input
                         id="org-name"
                         value={name}
@@ -127,8 +125,8 @@ export function BasicInfoSection({
                     </div>
                     {autoGenerateSlug && slug === type && (
                         <p className="mt-1 text-xs text-gray-500">
-                            После сохранения будет добавлен ID (например:{' '}
-                            {type}-123)
+                            После сохранения будет добавлен ID (например: {type}
+                            -123)
                         </p>
                     )}
                     {slugValidation.isValid && !slugValidation.isUnique && (
@@ -152,8 +150,7 @@ export function BasicInfoSection({
                         </p>
                     )}
                     {errors.slug &&
-                        (slugValidation.isValid ||
-                            slugValidation.isUnique) && (
+                        (slugValidation.isValid || slugValidation.isUnique) && (
                             <p className="mt-1 text-sm text-red-600">
                                 {errors.slug}
                             </p>
@@ -204,4 +201,3 @@ export function BasicInfoSection({
         </div>
     );
 }
-

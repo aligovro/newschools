@@ -32,6 +32,8 @@ interface Organization {
     };
     type: string;
     projects?: Project[];
+    needs_target_amount?: number | null;
+    needs_collected_amount?: number | null;
 }
 
 interface OrganizationShowProps {
