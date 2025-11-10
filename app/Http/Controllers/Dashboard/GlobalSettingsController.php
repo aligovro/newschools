@@ -30,7 +30,7 @@ class GlobalSettingsController extends Controller
         $terminology = $this->settingsService->getTerminology();
         $systemSettings = $this->settingsService->getSystemSettings();
 
-        return Inertia::render('admin/GlobalSettingsPage', [
+        return Inertia::render('dashboard/admin/GlobalSettingsPage', [
             'settings' => $settings->toArray(),
             'terminology' => $terminology,
             'systemSettings' => $systemSettings,

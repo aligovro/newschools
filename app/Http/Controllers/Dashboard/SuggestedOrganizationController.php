@@ -70,7 +70,7 @@ class SuggestedOrganizationController extends Controller
         $perPage = min($request->get('per_page', 15), 100);
         $suggestedOrganizations = $query->paginate($perPage);
 
-        return Inertia::render('suggested-schools/SuggestedOrganizationManagementPage', [
+        return Inertia::render('dashboard/suggested-organizations/SuggestedOrganizationManagementPage', [
             'suggestedOrganizations' => [
                 'data' => $suggestedOrganizations->items(),
                 'current_page' => $suggestedOrganizations->currentPage(),

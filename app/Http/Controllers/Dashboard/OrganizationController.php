@@ -15,6 +15,7 @@ use App\Helpers\TransliterationHelper;
 use Inertia\Inertia;
 use App\Services\ImageProcessingService;
 use App\Services\Organizations\OrganizationSettingsService;
+use App\Models\SitePage;
 
 class OrganizationController extends Controller
 {
@@ -102,7 +103,7 @@ class OrganizationController extends Controller
             'no_organizations' => __t('no_organizations'),
         ]);
 
-        return Inertia::render('organizations/OrganizationManagementPage', [
+        return Inertia::render('dashboard/organizations/OrganizationManagementPage', [
             // Provide paginator payload serialized via Resource to ensure consistent structure in Inertia
             'organizations' => InertiaResource::paginate($organizations, OrganizationResource::class),
             'filters' => $request->only(['search', 'type', 'status', 'region_id', 'sort_by', 'sort_direction', 'per_page']),
@@ -144,8 +145,36 @@ class OrganizationController extends Controller
         ]);
         $organization->loadSum('donations', 'amount');
 
-        return Inertia::render('organizations/OrganizationShowPage', [
+        $organization->loadCount(['sites']);
+
+        $totalSitePages = SitePage::query()
+            ->whereHas('site', fn($query) => $query->where('organization_id', $organization->id))
+            ->count();
+
+        $monthlyVisitors = $organization->statistics()
+            ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->sum('unique_visitors');
+
+        $monthlyRevenue = $organization->donations()
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->sum('amount');
+
+        $stats = [
+            'totalSites' => (int) ($organization->sites_count ?? 0),
+            'totalSitePages' => $totalSitePages,
+            'totalUsers' => (int) ($organization->users()->count()),
+            'totalDonations' => (int) ($organization->donations_count ?? 0),
+            'monthlyVisitors' => (int) $monthlyVisitors,
+            'monthlyRevenue' => (int) $monthlyRevenue,
+            'monthlyRevenueFormatted' => $monthlyRevenue > 0
+                ? number_format($monthlyRevenue / 100, 0, '.', ' ')
+                : null,
+        ];
+
+        return Inertia::render('dashboard/organizations/OrganizationShowPage', [
             'organization' => (new OrganizationResource($organization))->toArray(request()),
+            'stats' => $stats,
         ]);
     }
 
@@ -200,7 +229,7 @@ class OrganizationController extends Controller
             $organizationData['admin_user'] = null;
         }
 
-        return Inertia::render('organizations/OrganizationEditPage', [
+        return Inertia::render('dashboard/organizations/OrganizationEditPage', [
             'organization' => $organizationData,
             'referenceData' => $referenceData,
             'organizationSettings' => $orgSettings,
@@ -237,7 +266,7 @@ class OrganizationController extends Controller
                 default => 'organization',
             };
             $slug = "{$prefix}-{$organization->id}";
-            
+
             // Проверяем уникальность и генерируем уникальный слаг если нужно
             $slug = TransliterationHelper::createUniqueSlug(
                 $slug,
@@ -245,12 +274,12 @@ class OrganizationController extends Controller
                 'slug',
                 $organization->id
             );
-            
+
             $organization->update(['slug' => $slug]);
         } elseif (in_array($data['slug'], ['school', 'university', 'kindergarten', 'organization'], true)) {
             // Если передан только префикс (без ID), добавляем ID
             $slug = "{$data['slug']}-{$organization->id}";
-            
+
             // Проверяем уникальность
             $slug = TransliterationHelper::createUniqueSlug(
                 $slug,
@@ -258,7 +287,7 @@ class OrganizationController extends Controller
                 'slug',
                 $organization->id
             );
-            
+
             $organization->update(['slug' => $slug]);
         } else {
             // Если слаг был передан полностью (пользователь изменил его), проверяем уникальность
@@ -269,7 +298,7 @@ class OrganizationController extends Controller
                 'slug',
                 $organization->id
             );
-            
+
             if ($uniqueSlug !== $slug) {
                 $organization->update(['slug' => $uniqueSlug]);
             }

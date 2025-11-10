@@ -57,7 +57,7 @@ class SitePageController extends Controller
         $perPage = min(request()->get('per_page', 15), 100);
         $pages = $query->paginate($perPage);
 
-        return Inertia::render('sites/pages/Index', [
+        return Inertia::render('dashboard/sites/pages/Index', [
             'site' => [
                 'id' => $site->id,
                 'name' => $site->name,
@@ -82,7 +82,7 @@ class SitePageController extends Controller
             ->orderBy('title')
             ->get(['id', 'title', 'slug']);
 
-        return Inertia::render('sites/pages/Create', [
+        return Inertia::render('dashboard/sites/pages/Create', [
             'site' => [
                 'id' => $site->id,
                 'name' => $site->name,
@@ -154,7 +154,7 @@ class SitePageController extends Controller
 
         $page->load(['parent:id,title,slug', 'children:id,title,slug,sort_order', 'site:id,name,slug']);
 
-        return Inertia::render('sites/pages/Show', [
+        return Inertia::render('dashboard/sites/pages/Show', [
             'site' => [
                 'id' => $site->id,
                 'name' => $site->name,
@@ -186,7 +186,7 @@ class SitePageController extends Controller
             ->orderBy('title')
             ->get(['id', 'title', 'slug']);
 
-        return Inertia::render('sites/pages/Edit', [
+        return Inertia::render('dashboard/sites/pages/Edit', [
             'site' => [
                 'id' => $site->id,
                 'name' => $site->name,

@@ -39,7 +39,7 @@ export default function SettingsTab({
                         onChange={(slug) => setCreateData('slug', slug)}
                         onNameChange={(name) => setCreateData('name', name)}
                         placeholder="Введите название сайта"
-                        table="organization_sites"
+                        table="sites"
                         column="slug"
                     />
                     {createErrors.name && (

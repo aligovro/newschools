@@ -7,19 +7,19 @@ use Illuminate\Validation\Rule;
 
 class StoreSiteRequest extends FormRequest
 {
-  public function authorize(): bool
-  {
-    return true;
-  }
+    public function authorize(): bool
+    {
+        return true;
+    }
 
-  public function rules(): array
-  {
-    return [
-      'organization_id' => ['required', 'exists:organizations,id'],
-      'name' => ['required', 'string', 'max:255'],
-      'slug' => ['required', 'string', 'max:255', 'unique:organization_sites,slug'],
-      'description' => ['nullable', 'string', 'max:1000'],
-      'template' => ['required', 'string', 'exists:site_templates,slug'],
-    ];
-  }
+    public function rules(): array
+    {
+        return [
+            'organization_id' => ['required', 'exists:organizations,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:255', 'unique:sites,slug'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'template' => ['required', 'string', 'exists:site_templates,slug'],
+        ];
+    }
 }

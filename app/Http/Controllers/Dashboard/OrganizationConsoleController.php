@@ -32,7 +32,7 @@ class OrganizationConsoleController extends Controller
         $recentActivity = $this->getRecentActivity($organization);
         $quickActions = $this->getQuickActions($organization);
 
-        return Inertia::render('organization/admin/ConsoleIndex', [
+        return Inertia::render('dashboard/organizations/ConsoleIndex', [
             'organization' => (new OrganizationResource($organization))->toArray(request()),
             'stats' => $stats,
             'recentActivity' => $recentActivity,
@@ -165,7 +165,7 @@ class OrganizationConsoleController extends Controller
                 'title' => 'Не настроены платежные методы',
                 'message' => 'Настройте способы приема платежей для начала сбора пожертвований',
                 'action' => 'Настроить платежи',
-                'action_url' => route('organization.admin.settings', $organization),
+                'action_url' => route('dashboard.organizations.settings.index', $organization),
             ]);
         }
 
@@ -177,7 +177,7 @@ class OrganizationConsoleController extends Controller
                 'title' => 'Подключите Telegram бота',
                 'message' => 'Настройте Telegram бота для автоматических уведомлений',
                 'action' => 'Настроить бота',
-                'action_url' => route('organization.admin.settings', $organization),
+                'action_url' => route('dashboard.organizations.settings.index', $organization),
             ]);
         }
 
@@ -188,7 +188,7 @@ class OrganizationConsoleController extends Controller
                 'title' => 'Настройте SEO',
                 'message' => 'Добавьте мета-данные для лучшего продвижения в поисковых системах',
                 'action' => 'Настроить SEO',
-                'action_url' => route('organization.admin.settings', $organization),
+                'action_url' => route('dashboard.organizations.settings.index', $organization),
             ]);
         }
 
@@ -200,7 +200,7 @@ class OrganizationConsoleController extends Controller
                 'title' => 'Создайте проект для сбора средств',
                 'message' => 'Добавьте первый проект, чтобы начать принимать пожертвования',
                 'action' => 'Создать проект',
-                'action_url' => route('organization.admin.projects.create', $organization),
+                'action_url' => route('dashboard.organizations.projects.create', $organization),
             ]);
         }
 
@@ -230,7 +230,7 @@ class OrganizationConsoleController extends Controller
                 return response()->json([
                     'message' => 'Проект создан',
                     'project' => $project,
-                    'redirect_url' => route('organization.admin.projects.edit', [$organization, $project]),
+                    'redirect_url' => route('dashboard.organizations.projects.edit', [$organization, $project]),
                 ]);
 
             case 'send_notification':
@@ -283,7 +283,6 @@ class OrganizationConsoleController extends Controller
                 ->count(),
             'activeProjects' => $organization->projects()->where('status', 'active')->count(),
             'totalProjects' => $organization->projects()->count(),
-            'pagesCount' => $organization->pages()->count(),
             'lastLogin' => $organization->users()->latest('last_active_at')->first()?->last_active_at,
         ];
     }

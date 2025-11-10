@@ -131,7 +131,7 @@
     </div>
 
     <div style="text-align: center; margin-top: 30px;">
-        <a href="{{ url('/dashboard/suggested-schools') }}" class="button">Перейти к управлению</a>
+        <a href="{{ url('/dashboard/suggested-organizations') }}" class="button">Перейти к управлению</a>
     </div>
 </body>
 

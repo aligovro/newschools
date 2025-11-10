@@ -31,7 +31,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     {
         title: 'Предложенные школы',
-        href: '/dashboard/suggested-schools',
+        href: '/dashboard/suggested-organizations',
     },
 ];
 
@@ -84,7 +84,7 @@ export default function SuggestedOrganizationManagementPage({
 
     const handleSearch = () => {
         router.get(
-            '/dashboard/suggested-schools',
+            '/dashboard/suggested-organizations',
             {
                 search,
                 status: statusFilter || undefined,
@@ -105,7 +105,7 @@ export default function SuggestedOrganizationManagementPage({
                 `Вы уверены, что хотите удалить предложенную школу "${school.name}"?`,
             )
         ) {
-            router.delete(`/dashboard/suggested-schools/${school.id}`, {
+            router.delete(`/dashboard/suggested-organizations/${school.id}`, {
                 onSuccess: () => {
                     router.reload();
                 },
@@ -118,7 +118,7 @@ export default function SuggestedOrganizationManagementPage({
         newStatus: 'pending' | 'approved' | 'rejected',
     ) => {
         router.put(
-            `/dashboard/suggested-schools/${school.id}`,
+            `/dashboard/suggested-organizations/${school.id}`,
             {
                 status: newStatus,
             },
@@ -393,7 +393,7 @@ export default function SuggestedOrganizationManagementPage({
                                         }
                                         onClick={() => {
                                             router.get(
-                                                '/dashboard/suggested-schools',
+                                                '/dashboard/suggested-organizations',
                                                 {
                                                     ...filters,
                                                     page:
@@ -414,7 +414,7 @@ export default function SuggestedOrganizationManagementPage({
                                         }
                                         onClick={() => {
                                             router.get(
-                                                '/dashboard/suggested-schools',
+                                                '/dashboard/suggested-organizations',
                                                 {
                                                     ...filters,
                                                     page:
