@@ -26,7 +26,7 @@ class OrganizationSiteController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return Inertia::render('organization/admin/sites/Index', [
+        return Inertia::render('dashboard/organization/sites/Index', [
             'organization' => (new OrganizationResource($organization))->toArray(request()),
             'sites' => InertiaResource::paginate($sites, OrganizationSiteResource::class),
         ]);
@@ -42,7 +42,7 @@ class OrganizationSiteController extends Controller
             ->get();
 
         // Для создания сайта используем тот же конструктор, передавая пустой site и список шаблонов
-        return Inertia::render('organization/admin/sites/organization-site-builder/OrganizationSiteBuilder', [
+        return Inertia::render('dashboard/organization/sites/builder/OrganizationSiteBuilder', [
             'organization' => (new OrganizationResource($organization))->toArray(request()),
             'site' => [
                 'id' => null,
@@ -69,7 +69,7 @@ class OrganizationSiteController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:organization_sites,slug',
+            'slug' => 'nullable|string|max:255|unique:sites,slug',
             'description' => 'nullable|string|max:1000',
             'template' => 'required|string|exists:site_templates,slug',
         ]);
@@ -124,7 +124,7 @@ class OrganizationSiteController extends Controller
 
         $site->load(['pages', 'widgets']);
 
-        return Inertia::render('organization/admin/sites/Edit', [
+        return Inertia::render('dashboard/organization/sites/Edit', [
             'organization' => (new OrganizationResource($organization))->toArray(request()),
             'site' => (new OrganizationSiteResource($site->load('pages')))->toArray(request()),
             'templates' => $templates,
@@ -138,7 +138,7 @@ class OrganizationSiteController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:organization_sites,slug,' . $site->id,
+            'slug' => 'required|string|max:255|unique:sites,slug,' . $site->id,
             'description' => 'nullable|string|max:1000',
             'template' => 'required|string|exists:site_templates,slug',
             'is_public' => 'boolean',
@@ -243,7 +243,7 @@ class OrganizationSiteController extends Controller
             }
         }
 
-        return Inertia::render('organization/admin/sites/organization-site-builder/OrganizationSiteBuilder', [
+        return Inertia::render('dashboard/organization/sites/builder/OrganizationSiteBuilder', [
             'organization' => (new OrganizationResource($organization))->toArray(request()),
             'site' => [
                 'id' => $site->id,

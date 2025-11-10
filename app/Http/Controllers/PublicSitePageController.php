@@ -145,7 +145,7 @@ class PublicSitePageController extends Controller
     {
         /** @var WidgetDataService $widgetDataService */
         $widgetDataService = app(WidgetDataService::class);
-        
+
         // Кешируем конфигурацию виджетов на 5 минут
         $widgetsConfig = Cache::remember(
             "site_widgets_config_{$site->id}",

@@ -385,7 +385,7 @@ export default function OrganizationSiteBuilder({
                                             setCreateData('name', name)
                                         }
                                         placeholder="Введите название сайта"
-                                        table="organization_sites"
+                                        table="sites"
                                         column="slug"
                                     />
                                     {createErrors.name && (

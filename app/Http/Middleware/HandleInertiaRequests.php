@@ -40,9 +40,9 @@ class HandleInertiaRequests extends Middleware
   {
     [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
-    // Определяем organizationId из URL /dashboard/organization/{id}/...
+    // Определяем organizationId из URL /dashboard/organizations/{id}/...
     $organizationId = null;
-    if (preg_match('#/organization/(\d+)#', $request->path(), $m)) {
+    if (preg_match('#/organizations/(\d+)#', $request->path(), $m)) {
       $organizationId = (int) $m[1];
     }
 

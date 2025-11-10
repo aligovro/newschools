@@ -7,12 +7,26 @@ import { StatusBadge } from '@/components/dashboard/pages/organizations/StatusBa
 import type { OrganizationShow } from '@/components/dashboard/pages/organizations/types';
 import { getTypeLabel } from '@/components/dashboard/pages/organizations/utils';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useOrganizationStaff } from '@/hooks/useOrganizationStaff';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Edit, Globe, Plus } from 'lucide-react';
+import {
+    ArrowLeft,
+    BarChart3,
+    CreditCard,
+    DollarSign,
+    Edit,
+    Eye,
+    FileText,
+    Globe,
+    Plus,
+    Settings,
+    Target,
+    Users,
+} from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -32,9 +46,18 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface Props {
     organization: OrganizationShow;
+    stats: {
+        totalSites: number;
+        totalSitePages: number;
+        totalUsers: number;
+        totalDonations: number;
+        monthlyVisitors: number;
+        monthlyRevenue: number;
+        monthlyRevenueFormatted?: string | null;
+    };
 }
 
-export default function OrganizationShowPage({ organization }: Props) {
+export default function OrganizationShowPage({ organization, stats }: Props) {
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [editingStaffId, setEditingStaffId] = useState<number | null>(null);
 
@@ -96,6 +119,120 @@ export default function OrganizationShowPage({ organization }: Props) {
         }
         await deleteStaff(staffId);
     };
+
+    const statsCards = [
+        {
+            title: 'Сайты',
+            value: stats.totalSites,
+            icon: Globe,
+            helperText: 'Всего сайтов организации',
+        },
+        {
+            title: 'Страницы',
+            value: stats.totalSitePages,
+            icon: FileText,
+            helperText: 'Страниц во всех сайтах',
+        },
+        {
+            title: 'Пользователи',
+            value: stats.totalUsers,
+            icon: Users,
+            helperText: 'Команда организации',
+        },
+        {
+            title: 'Посетители',
+            value: stats.monthlyVisitors,
+            icon: Eye,
+            helperText: 'За текущий месяц',
+        },
+        {
+            title: 'Пожертвования',
+            value: stats.totalDonations,
+            icon: CreditCard,
+            helperText: stats.monthlyRevenueFormatted
+                ? `+${stats.monthlyRevenueFormatted} ₽ за месяц`
+                : 'Данные за текущий месяц',
+        },
+    ];
+
+    const adminMenuItems = [
+        {
+            title: 'Консоль',
+            description: 'Общая статистика и быстрые действия',
+            href: `/dashboard/organizations/${organization.id}/console`,
+            icon: BarChart3,
+            color: 'bg-blue-500',
+        },
+        {
+            title: 'Настройки',
+            description: 'Основные настройки организации',
+            href: `/dashboard/organizations/${organization.id}/settings`,
+            icon: Settings,
+            color: 'bg-green-500',
+        },
+        {
+            title: 'Платежи',
+            description: 'Управление платежами и YooKassa',
+            href: `/dashboard/organizations/${organization.id}/payments`,
+            icon: DollarSign,
+            color: 'bg-yellow-500',
+        },
+        {
+            title: 'Telegram бот',
+            description: 'Настройка Telegram бота',
+            href: `/dashboard/organizations/${organization.id}/telegram`,
+            icon: Globe,
+            color: 'bg-cyan-500',
+        },
+        {
+            title: 'Отчеты',
+            description: 'Генерация отчетов',
+            href: `/dashboard/organizations/${organization.id}/reports`,
+            icon: BarChart3,
+            color: 'bg-indigo-500',
+        },
+    ];
+
+    const contentMenuItems = [
+        {
+            title: 'Сайты',
+            description: 'Управление сайтами организации',
+            href: `/dashboard/organizations/${organization.id}/sites`,
+            icon: Globe,
+            color: 'bg-emerald-500',
+        },
+        {
+            title: 'Проекты',
+            description: 'Управление проектами организации',
+            href: `/dashboard/organizations/${organization.id}/projects`,
+            icon: Target,
+            color: 'bg-amber-500',
+        },
+        {
+            title: 'Аналитика',
+            description: 'Статистика и аналитика',
+            href: `/dashboard/organizations/${organization.id}/analytics`,
+            icon: BarChart3,
+            color: 'bg-violet-500',
+        },
+    ];
+
+    const peopleMenuItems = [
+        {
+            title: 'Пользователи',
+            description: 'Управление пользователями',
+            href: `/dashboard/organizations/${organization.id}/users`,
+            icon: Users,
+            color: 'bg-slate-500',
+        },
+        {
+            title: 'Галерея',
+            description: 'Управление медиафайлами',
+            href: `/dashboard/organizations/${organization.id}/gallery`,
+            icon: Eye,
+            color: 'bg-rose-500',
+        },
+    ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -163,6 +300,30 @@ export default function OrganizationShowPage({ organization }: Props) {
                     {/* Основная информация */}
                     <div className="space-y-6 lg:col-span-2">
                         <OrganizationInfoCard organization={organization} />
+                        {/* Stats Cards */}
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            {statsCards.map((card) => {
+                                const Icon = card.icon;
+                                return (
+                                    <Card key={card.title}>
+                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                            <CardTitle className="text-sm font-medium">
+                                                {card.title}
+                                            </CardTitle>
+                                            <Icon className="h-4 w-4 text-muted-foreground" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">
+                                                {card.value}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">
+                                                {card.helperText}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     {/* Контактная информация и персонал */}

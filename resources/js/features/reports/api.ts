@@ -27,17 +27,23 @@ interface GenerateReportResponse {
 }
 
 export const reportsApi = {
-    generate: (
-        organizationId: number,
-        payload: GenerateReportPayload,
-    ) => {
-        const url = route('organization.reports.generate', organizationId);
+    generate: (organizationId: number, payload: GenerateReportPayload) => {
+        const url = route(
+            'dashboard.organizations.reports.generate',
+            organizationId,
+        );
         return apiClient.post<GenerateReportResponse>(url, payload);
     },
 
     create: (organizationId: number, payload: Record<string, unknown>) => {
-        const url = route('organization.reports.store', organizationId);
-        return apiClient.post<{ message: string; report: Report }>(url, payload);
+        const url = route(
+            'dashboard.organizations.reports.store',
+            organizationId,
+        );
+        return apiClient.post<{ message: string; report: Report }>(
+            url,
+            payload,
+        );
     },
 
     update: (
@@ -45,15 +51,18 @@ export const reportsApi = {
         reportId: number,
         payload: Record<string, unknown>,
     ) => {
-        const url = route('organization.reports.update', [
+        const url = route('dashboard.organizations.reports.update', [
             organizationId,
             reportId,
         ]);
-        return apiClient.patch<{ message: string; report: Report }>(url, payload);
+        return apiClient.patch<{ message: string; report: Report }>(
+            url,
+            payload,
+        );
     },
 
     destroy: (organizationId: number, reportId: number) => {
-        const url = route('organization.reports.destroy', [
+        const url = route('dashboard.organizations.reports.destroy', [
             organizationId,
             reportId,
         ]);
@@ -61,7 +70,7 @@ export const reportsApi = {
     },
 
     runs: (organizationId: number, reportId: number) => {
-        const url = route('organization.reports.runs', [
+        const url = route('dashboard.organizations.reports.runs', [
             organizationId,
             reportId,
         ]);
@@ -69,7 +78,7 @@ export const reportsApi = {
     },
 
     projectStages: (organizationId: number, projectId: number) => {
-        const url = route('organization.reports.projects.stages', [
+        const url = route('dashboard.organizations.reports.projects.stages', [
             organizationId,
             projectId,
         ]);
@@ -80,7 +89,10 @@ export const reportsApi = {
     },
 
     export: (organizationId: number, payload: Record<string, unknown>) => {
-        const url = route('organization.reports.export', organizationId);
+        const url = route(
+            'dashboard.organizations.reports.export',
+            organizationId,
+        );
         const format =
             typeof payload.format === 'string' ? payload.format : 'csv';
 
@@ -89,5 +101,3 @@ export const reportsApi = {
         });
     },
 };
-
-

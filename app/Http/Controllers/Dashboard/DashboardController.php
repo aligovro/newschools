@@ -86,7 +86,7 @@ class DashboardController extends Controller
      */
     public function statistics()
     {
-        return Inertia::render('statistics/StatisticsPage');
+        return Inertia::render('dashboard/statistics/StatisticsPage');
     }
 
     /**
@@ -95,8 +95,8 @@ class DashboardController extends Controller
     public function settings(GlobalSettingsService $globalSettings)
     {
         $mainSite = Site::where('site_type', 'main')->first();
-        
-        return Inertia::render('settings/SettingsPage', [
+
+        return Inertia::render('dashboard/settings/SettingsPage', [
             'globalSettings' => $globalSettings->getSettings(),
             'userSettings' => Auth::user(),
             'mainSiteId' => $mainSite?->id,

@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 
 use App\Models\Organization;
-use App\Http\Resources\OrganizationResource;
-use App\Http\Resources\SitePageResource;
-use App\Http\Resources\OrganizationMediaResource;
 use App\Http\Resources\OrganizationDonationResource;
+use App\Http\Resources\OrganizationMediaResource;
+use App\Http\Resources\OrganizationResource;
 use App\Http\Resources\OrganizationStatisticResource;
 use App\Support\InertiaResource;
 use Illuminate\Http\Request;
@@ -26,75 +25,7 @@ class OrganizationAdminController extends Controller
      */
     public function index(Organization $organization)
     {
-        // Получаем статистику организации
-        $stats = [
-            'totalPages' => $organization->pages()->count(),
-            'totalUsers' => $organization->users()->count(),
-            'totalMenus' => $organization->menus()->count(),
-            'totalSliders' => $organization->sliders()->count(),
-            'totalDonations' => $organization->donations()->count(),
-            'monthlyVisitors' => $organization->statistics()
-                ->whereMonth('created_at', now()->month)
-                ->sum('unique_visitors'),
-            'monthlyRevenue' => $organization->donations()
-                ->whereMonth('created_at', now()->month)
-                ->sum('amount'),
-        ];
-
-        return Inertia::render('organization/admin/OrganizationAdminDashboard', [
-            'organization' => (new OrganizationResource($organization))->toArray(request()),
-            'stats' => $stats,
-        ]);
-    }
-
-    /**
-     * Управление меню организации
-     */
-    public function menus(Organization $organization)
-    {
-        $menus = $organization->menus()
-            ->with(['items' => function ($query) {
-                $query->whereNull('parent_id')
-                    ->with('children')
-                    ->orderBy('sort_order');
-            }])
-            ->get();
-
-        $pages = $organization->publishedPages()
-            ->select('id', 'title', 'slug')
-            ->get();
-
-        return Inertia::render('OrganizationMenuPage', [
-            'organization' => (new OrganizationResource($organization))->toArray(request()),
-            'menus' => $menus, // can be resource-ized later if needed per UI
-            'pages' => $pages,
-        ]);
-    }
-
-    /**
-     * Управление страницами организации
-     */
-    public function pages(Organization $organization)
-    {
-        $pages = $organization->pages()
-            ->with('seo')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-
-        return Inertia::render('SitePagesPage', [
-            'organization' => (new OrganizationResource($organization))->toArray(request()),
-            'pages' => InertiaResource::paginate($pages, SitePageResource::class),
-        ]);
-    }
-
-    /**
-     * Создание новой страницы
-     */
-    public function createPage(Organization $organization)
-    {
-        return Inertia::render('SitePageCreate', [
-            'organization' => (new OrganizationResource($organization))->toArray(request()),
-        ]);
+        return redirect()->route('organizations.show', $organization);
     }
 
     /**

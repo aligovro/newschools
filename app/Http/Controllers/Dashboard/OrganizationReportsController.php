@@ -46,7 +46,7 @@ class OrganizationReportsController extends Controller
             ->limit(8)
             ->get();
 
-        return Inertia::render('organization/admin/reports/Index', [
+        return Inertia::render('dashboard/organization/reports/Index', [
             'organization' => InertiaResource::item(new OrganizationResource($organization->load('primaryDomain'))),
             'reportTypes' => $this->reportService->availableReportDefinitions(),
             'reports' => InertiaResource::paginate($reportsPaginator, ReportResource::class),
