@@ -1,146 +1,79 @@
 <!DOCTYPE html>
 <html lang="ru">
-    <head>
-        <meta charset="utf-8" />
-        <title>{{ $title ?? 'Отчет' }}</title>
-        <style>
-            * {
-                box-sizing: border-box;
-            }
+<head>
+    <meta charset="UTF-8">
+    <title>{{ $title }}</title>
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #111827; }
+        h1 { font-size: 20px; margin-bottom: 12px; }
+        h2 { font-size: 16px; margin-top: 18px; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        th, td { border: 1px solid #d1d5db; padding: 6px 8px; }
+        th { background-color: #f3f4f6; text-align: left; }
+        .section { margin-bottom: 16px; }
+        .meta-list { list-style: none; padding: 0; margin: 0; }
+        .meta-list li { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .meta-label { color: #6b7280; margin-right: 8px; }
+        .meta-value { font-weight: 600; }
+    </style>
+</head>
+<body>
+    <h1>{{ $title }}</h1>
 
-            body {
-                font-family: "DejaVu Sans", Arial, sans-serif;
-                color: #1f2937;
-                font-size: 12px;
-                margin: 24px;
-            }
-
-            h1 {
-                font-size: 20px;
-                margin-bottom: 8px;
-            }
-
-            .meta {
-                margin-bottom: 16px;
-                color: #4b5563;
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 12px;
-            }
-
-            th,
-            td {
-                border: 1px solid #d1d5db;
-                padding: 6px 8px;
-                text-align: left;
-            }
-
-            th {
-                background: #f3f4f6;
-                font-weight: 600;
-            }
-
-            tbody tr:nth-child(even) {
-                background-color: #f9fafb;
-            }
-
-            .summary {
-                margin-top: 24px;
-            }
-
-            .summary h2 {
-                font-size: 16px;
-                margin-bottom: 8px;
-            }
-
-            .summary table {
-                width: auto;
-                min-width: 240px;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>{{ $title ?? 'Отчет' }}</h1>
-
-        <div class="meta">
-            <div>Дата генерации: {{ \Illuminate\Support\Carbon::parse($generatedAt ?? now())->format('d.m.Y H:i') }}</div>
-            @if(!empty($filters) && is_array($filters))
-                <div>
-                    Параметры:
-                    @foreach($filters as $key => $value)
-                        @if($value !== null && $value !== '')
-                            <span>{{ \Illuminate\Support\Str::headline((string) $key) }}:
-                                @if(is_array($value))
-                                    {{ json_encode($value, JSON_UNESCAPED_UNICODE) }}
-                                @else
-                                    {{ $value }}
-                                @endif
-                            </span>@if(!$loop->last), @endif
-                        @endif
-                    @endforeach
-                </div>
-            @endif
+    @if (!empty($summary))
+        <div class="section">
+            <h2>Сводка</h2>
+            <ul class="meta-list">
+                @foreach ($summary as $row)
+                    <li>
+                        <span class="meta-label">{{ $row['label'] }}</span>
+                        <span class="meta-value">{{ $row['value'] }}</span>
+                    </li>
+                @endforeach
+            </ul>
         </div>
+    @endif
 
-        <table>
-            <thead>
-                <tr>
-                    @foreach($headers as $header)
-                        <th>{{ \Illuminate\Support\Str::headline((string) $header) }}</th>
+    @if (!empty($parameters))
+        <div class="section">
+            <h2>Параметры отчета</h2>
+            <ul class="meta-list">
+                @foreach ($parameters as $row)
+                    <li>
+                        <span class="meta-label">{{ $row['label'] }}</span>
+                        <span class="meta-value">{{ $row['value'] }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @foreach ($tables as $table)
+        <div class="section">
+            <h2>{{ $table['title'] }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        @foreach ($table['headers'] as $header)
+                            <th>{{ $header }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($table['rows'] as $row)
+                        <tr>
+                            @foreach ($row as $value)
+                                <td>{{ $value }}</td>
+                            @endforeach
+                        </tr>
                     @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($rows as $row)
-                    <tr>
-                        @foreach($headers as $header)
-                            <td>
-                                @php($value = $row[$header] ?? '')
-                                @if(is_array($value) || is_object($value))
-                                    {{ json_encode($value, JSON_UNESCAPED_UNICODE) }}
-                                @elseif(is_bool($value))
-                                    {{ $value ? 'Да' : 'Нет' }}
-                                @else
-                                    {{ $value }}
-                                @endif
-                            </td>
-                        @endforeach
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="{{ count($headers) }}">Нет данных за выбранный период.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+    @endforeach
 
-        @if(!empty($summary) && is_array($summary))
-            <div class="summary">
-                <h2>Сводка</h2>
-                <table>
-                    <tbody>
-                        @foreach($summary as $key => $value)
-                            <tr>
-                                <th>{{ \Illuminate\Support\Str::headline((string) $key) }}</th>
-                                <td>
-                                    @if(is_array($value) || is_object($value))
-                                        {{ json_encode($value, JSON_UNESCAPED_UNICODE) }}
-                                    @elseif(is_bool($value))
-                                        {{ $value ? 'Да' : 'Нет' }}
-                                    @else
-                                        {{ $value }}
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
-    </body>
+    <p style="margin-top: 24px; color: #6b7280; font-size: 10px;">Сформировано: {{ \Carbon\Carbon::parse($generated_at)->format('d.m.Y H:i') }}</p>
+</body>
 </html>
 
 

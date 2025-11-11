@@ -23,6 +23,7 @@ interface BuilderState extends ReportFiltersState {
     includeProjects: boolean;
     includeAnalytics: boolean;
     includeInactive: boolean;
+    siteId: number | null;
 }
 
 type BuilderAction =
@@ -38,6 +39,7 @@ const initialState: BuilderState = {
     status: 'all',
     projectId: null,
     projectStageId: null,
+    siteId: null,
     includeRevenue: true,
     includeMembers: true,
     includeProjects: true,
@@ -54,6 +56,14 @@ function buildInitialState(
     }
 
     const filters = report.filters || {};
+    const rawSiteId =
+        (filters.site_id as string | number | undefined) ??
+        (filters.siteId as string | number | undefined);
+    const normalizedSiteId =
+        report.site?.id ??
+        (rawSiteId !== undefined && rawSiteId !== null && rawSiteId !== ''
+            ? Number(rawSiteId)
+            : null);
 
     return {
         ...defaults,
@@ -65,6 +75,7 @@ function buildInitialState(
         status: (filters.status as string) || 'all',
         projectId: report.project?.id ?? null,
         projectStageId: report.project_stage?.id ?? null,
+        siteId: Number.isNaN(normalizedSiteId ?? NaN) ? null : normalizedSiteId,
         includeRevenue: Boolean(filters.include_revenue ?? defaults.includeRevenue),
         includeMembers: Boolean(filters.include_members ?? defaults.includeMembers),
         includeProjects: Boolean(filters.include_projects ?? defaults.includeProjects),
@@ -220,6 +231,7 @@ export function useReportBuilder({
                     include_inactive: state.includeInactive,
                     project_id: state.projectId ?? undefined,
                     project_stage_id: state.projectStageId ?? undefined,
+                    site_id: state.siteId ?? undefined,
                     persist: options.persist ?? false,
                     report_id: options.reportId ?? undefined,
                 });

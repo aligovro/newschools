@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useEffect, useState } from 'react';
 import type { OrganizationDirector, StaffFormData } from './types';
+import { useOrganizationTerms } from './utils';
 
 interface OrganizationStaffModalProps {
     open: boolean;
@@ -45,6 +46,8 @@ export default function OrganizationStaffModal({
         OrganizationDirector | undefined
     >(undefined);
     const [isCheckingDirector, setIsCheckingDirector] = useState(false);
+
+    const { singularGenitive } = useOrganizationTerms();
 
     // Сбрасываем директора при открытии модалки
     useEffect(() => {
@@ -94,7 +97,7 @@ export default function OrganizationStaffModal({
                             : 'Добавить персонал'}
                     </DialogTitle>
                     <DialogDescription>
-                        Заполните информацию о сотруднике организации
+                        Заполните информацию о сотруднике {singularGenitive}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={onSubmit}>
@@ -107,7 +110,7 @@ export default function OrganizationStaffModal({
                                 onCheckedChange={handleDirectorChange}
                             />
                             <Label htmlFor="is_director">
-                                Директор организации
+                                Директор {singularGenitive}
                             </Label>
                         </div>
 
@@ -116,7 +119,7 @@ export default function OrganizationStaffModal({
                             !isEditing && (
                                 <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
                                     <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                        У данной организации уже есть директор:{' '}
+                                        У данной {singularGenitive} уже есть директор:{' '}
                                         <i>{currentDirector.full_name}</i>
                                     </p>
                                 </div>

@@ -190,7 +190,7 @@ export default function OrganizationSiteBuilder({
                   }
                 : {
                       title: organization.name,
-                      href: `/dashboard/organization/${organization.id}/admin`,
+                      href: `/dashboard/organizations/${organization.id}`,
                   },
             isMainSite
                 ? {

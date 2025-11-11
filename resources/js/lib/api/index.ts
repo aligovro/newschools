@@ -8,6 +8,7 @@ export { sitesApi } from './sites';
 export { widgetImagesApi } from './widget-images';
 export { widgetsApi } from './widgets';
 export { widgetsSystemApi } from './widgets-system';
+export { newsApi } from './news';
 
 // Экспорт типов
 export type {
@@ -35,3 +36,5 @@ export type {
     WidgetPosition,
     WidgetPositionsResponse,
 } from './widgets-system';
+export type { NewsItem, NewsPayload, PaginatedNewsResponse } from './news';
+export type { NewsTargetResponse } from './news';

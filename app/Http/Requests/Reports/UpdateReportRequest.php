@@ -55,6 +55,7 @@ class UpdateReportRequest extends FormRequest
             'visibility' => ['nullable', 'string', Rule::in(ReportVisibility::values())],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'project_stage_id' => ['nullable', 'integer', 'exists:project_stages,id'],
+            'site_id' => ['nullable', 'integer', 'exists:sites,id'],
             'filters' => ['nullable', 'array'],
             'filters.period' => ['nullable', 'string', Rule::in(['day', 'week', 'month', 'quarter', 'year', 'custom'])],
             'filters.date_from' => ['nullable', 'date'],
@@ -76,6 +77,9 @@ class UpdateReportRequest extends FormRequest
         $validator->after(function ($validator) {
             $projectId = $this->input('project_id');
             $stageId = $this->input('project_stage_id');
+            $siteId = $this->input('site_id');
+            /** @var \App\Models\Organization|null $organization */
+            $organization = $this->route('organization');
 
             if ($stageId) {
                 $stage = ProjectStage::find($stageId);
@@ -88,6 +92,16 @@ class UpdateReportRequest extends FormRequest
                     $validator->errors()->add(
                         'project_stage_id',
                         'Выбранный этап не принадлежит указанному проекту.'
+                    );
+                }
+            }
+
+            if ($siteId && $organization) {
+                $hasSite = $organization->sites()->whereKey($siteId)->exists();
+                if (!$hasSite) {
+                    $validator->errors()->add(
+                        'site_id',
+                        'Выбранный сайт не принадлежит указанной организации.'
                     );
                 }
             }

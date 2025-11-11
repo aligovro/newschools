@@ -27,7 +27,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'login' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -41,14 +41,13 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        /** @var User|null $user */
-        $user = Auth::getProvider()->retrieveByCredentials($this->only('email', 'password'));
+        $user = $this->findUser();
 
         if (! $user || ! Auth::getProvider()->validateCredentials($user, $this->only('password'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'login' => __('auth.failed'),
             ]);
         }
 
@@ -85,10 +84,32 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return $this->string('email')
+        return $this->string('login')
             ->lower()
             ->append('|'.$this->ip())
             ->transliterate()
             ->value();
+    }
+
+    private function findUser(): ?User
+    {
+        $identifier = $this->input('login');
+
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            return Auth::getProvider()->retrieveByCredentials([
+                'email' => $identifier,
+                'password' => $this->input('password'),
+            ]);
+        }
+
+        $normalizedPhone = \App\Support\PhoneNumber::normalize($identifier);
+
+        if (! $normalizedPhone) {
+            return null;
+        }
+
+        return User::query()
+            ->where('phone', $normalizedPhone)
+            ->first();
     }
 }

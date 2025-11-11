@@ -8,15 +8,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { ReportTypeDefinition } from '../types';
+import { ReportTypeDefinition, SiteOption } from '../types';
 
 interface ReportsFiltersBarProps {
     reportTypes: ReportTypeDefinition[];
     statuses: string[];
+    sites?: SiteOption[];
+    organizations?: Array<{ id: number; name: string }>;
     value: {
         report_type?: string;
         status?: string;
         search?: string;
+        site_id?: string;
+        organization_id?: string;
     };
     onChange: (value: ReportsFiltersBarProps['value']) => void;
 }
@@ -24,6 +28,8 @@ interface ReportsFiltersBarProps {
 export function ReportsFiltersBar({
     reportTypes,
     statuses,
+    sites = [],
+    organizations = [],
     value,
     onChange,
 }: ReportsFiltersBarProps) {
@@ -39,9 +45,26 @@ export function ReportsFiltersBar({
         [onChange, value],
     );
 
+    const handleOrganizationChange = useCallback(
+        (next: string) => {
+            onChange({
+                ...value,
+                organization_id: next,
+            });
+        },
+        [onChange, value],
+    );
+
     const handleStatusChange = useCallback(
         (next: string) => {
             onChange({ ...value, status: next || undefined });
+        },
+        [onChange, value],
+    );
+
+    const handleSiteChange = useCallback(
+        (next: string) => {
+            onChange({ ...value, site_id: next || undefined });
         },
         [onChange, value],
     );
@@ -60,6 +83,32 @@ export function ReportsFiltersBar({
     return (
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-1 flex-wrap items-center gap-3">
+                {organizations.length > 0 && (
+                    <div className="min-w-[200px]">
+                        <Select
+                            value={value.organization_id ?? 'all'}
+                            onValueChange={(next) =>
+                                handleOrganizationChange(next || 'all')
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Организация" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Все организации</SelectItem>
+                                {organizations.map((organization) => (
+                                    <SelectItem
+                                        key={organization.id}
+                                        value={String(organization.id)}
+                                    >
+                                        {organization.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+
                 <div className="min-w-[180px]">
                     <Select
                         value={value.report_type ?? 'all'}
@@ -92,6 +141,25 @@ export function ReportsFiltersBar({
                             {statuses.map((status) => (
                                 <SelectItem key={status} value={status}>
                                     {status}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="min-w-[180px]">
+                    <Select
+                        value={value.site_id ?? 'all'}
+                        onValueChange={handleSiteChange}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Сайт" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Все сайты</SelectItem>
+                            {sites.map((site) => (
+                                <SelectItem key={site.id} value={String(site.id)}>
+                                    {site.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>

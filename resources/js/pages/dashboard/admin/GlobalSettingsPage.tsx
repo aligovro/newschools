@@ -218,8 +218,30 @@ export default function GlobalSettingsPage({
                 settings.integration_settings?.yandex_map_apikey || '',
             yandex_suggest_apikey:
                 settings.integration_settings?.yandex_suggest_apikey || '',
+            smsc: {
+                ...(settings.integration_settings?.smsc || {}),
+                login: settings.integration_settings?.smsc?.login || '',
+                password: settings.integration_settings?.smsc?.password || '',
+                sender: settings.integration_settings?.smsc?.sender || '',
+            },
         },
     });
+
+    const handleSmscChange = (
+        field: 'login' | 'password' | 'sender',
+        value: string,
+    ) => {
+        integrationsForm.setData('integration_settings', {
+            ...integrationsForm.data.integration_settings,
+            smsc: {
+                ...(integrationsForm.data.integration_settings as any)?.smsc,
+                [field]: value,
+            },
+        });
+    };
+
+    const smscSettings =
+        (integrationsForm.data.integration_settings as any)?.smsc || {};
 
     const handleTerminologySubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -1293,6 +1315,71 @@ export default function GlobalSettingsPage({
                                             }
                                             placeholder="Введите ключ Suggest API"
                                         />
+                                    </div>
+                                    <Separator className="my-2" />
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold text-muted-foreground">
+                                            SMSC.ru
+                                        </h4>
+                                        <div className="grid gap-4 md:grid-cols-3">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="smsc_login">
+                                                    Логин
+                                                </Label>
+                                                <Input
+                                                    id="smsc_login"
+                                                    value={
+                                                        smscSettings.login || ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleSmscChange(
+                                                            'login',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Введите логин SMSC.ru"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="smsc_password">
+                                                    Пароль
+                                                </Label>
+                                                <Input
+                                                    id="smsc_password"
+                                                    type="password"
+                                                    value={
+                                                        smscSettings.password ||
+                                                        ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleSmscChange(
+                                                            'password',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Введите пароль"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="smsc_sender">
+                                                    Имя отправителя
+                                                </Label>
+                                                <Input
+                                                    id="smsc_sender"
+                                                    value={
+                                                        smscSettings.sender ||
+                                                        ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleSmscChange(
+                                                            'sender',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Например: NEWSCHOOL"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                     <Button
                                         type="submit"

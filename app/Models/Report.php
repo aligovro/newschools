@@ -35,6 +35,7 @@ class Report extends Model
         'meta',
         'summary',
         'generated_at',
+        'site_id',
     ];
 
     /**
@@ -89,6 +90,14 @@ class Report extends Model
     public function projectStage(): BelongsTo
     {
         return $this->belongsTo(ProjectStage::class);
+    }
+
+    /**
+     * Report belongs to a site.
+     */
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(Site::class);
     }
 
     /**

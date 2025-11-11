@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use App\Rules\RussianPhoneNumber;
+use App\Support\PhoneNumber;
 
 class AuthController extends Controller
 {
@@ -18,7 +21,14 @@ class AuthController extends Controller
   {
     $validator = Validator::make($request->all(), [
       'name' => 'required|string|max:255',
-      'email' => 'required|email|unique:users,email',
+      'email' => [
+        'nullable',
+        'string',
+        'email',
+        'max:255',
+        Rule::unique(User::class, 'email'),
+      ],
+      'phone' => ['nullable', new RussianPhoneNumber(), Rule::unique(User::class, 'phone')],
       'password' => 'required|string|min:6|confirmed',
       'photo' => 'nullable|string|max:255',
       'organization_id' => 'nullable|exists:organizations,id',
@@ -33,9 +43,22 @@ class AuthController extends Controller
       ], 422);
     }
 
+    if (!$request->filled('email') && !$request->filled('phone')) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => [
+          'email' => ['Необходимо указать email или номер телефона'],
+          'phone' => ['Необходимо указать email или номер телефона'],
+        ],
+      ], 422);
+    }
+
+    $normalizedPhone = $request->filled('phone') ? PhoneNumber::normalize($request->input('phone')) : null;
+
     $user = User::create([
       'name' => $request->name,
       'email' => $request->email,
+      'phone' => $normalizedPhone,
       'password' => Hash::make($request->password),
       'is_active' => true,
       'photo' => $request->photo,
@@ -94,7 +117,7 @@ class AuthController extends Controller
   public function login(Request $request): JsonResponse
   {
     $validator = Validator::make($request->all(), [
-      'email' => 'required|email',
+      'login' => 'required|string',
       'password' => 'required|string',
     ]);
 
@@ -106,10 +129,10 @@ class AuthController extends Controller
     }
 
     // Используем веб-авторизацию как на странице /login
-    /** @var User|null $user */
-    $user = Auth::getProvider()->retrieveByCredentials($request->only('email', 'password'));
+    $credentials = $request->only(['login', 'password']);
+    $user = $this->resolveUser($credentials['login'], $credentials['password']);
 
-    if (!$user || !Auth::getProvider()->validateCredentials($user, $request->only('password'))) {
+    if (!$user) {
       return response()->json(['message' => 'Неверные учетные данные'], 401);
     }
 
@@ -176,5 +199,32 @@ class AuthController extends Controller
       ->first();
 
     return $domain?->organization_id;
+  }
+
+  private function resolveUser(string $login, string $password): ?User
+  {
+    if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+      $user = Auth::getProvider()->retrieveByCredentials([
+        'email' => $login,
+        'password' => $password,
+      ]);
+
+      return $user && Auth::getProvider()->validateCredentials($user, ['password' => $password]) ? $user : null;
+    }
+
+    $normalizedPhone = PhoneNumber::normalize($login);
+
+    if (! $normalizedPhone) {
+      return null;
+    }
+
+    /** @var User|null $user */
+    $user = User::query()->where('phone', $normalizedPhone)->first();
+
+    if (! $user || ! $user->password) {
+      return null;
+    }
+
+    return Auth::getProvider()->validateCredentials($user, ['password' => $password]) ? $user : null;
   }
 }

@@ -36,6 +36,7 @@ export const RecentRunsList = memo(function RecentRunsList({
                                 <TableRow>
                                     <TableHead>Отчет</TableHead>
                                     <TableHead>Тип</TableHead>
+                                    <TableHead>Сайт</TableHead>
                                     <TableHead className="text-right">
                                         Строк
                                     </TableHead>
@@ -52,6 +53,9 @@ export const RecentRunsList = memo(function RecentRunsList({
                                         </TableCell>
                                         <TableCell className="capitalize">
                                             {run.report_type}
+                                        </TableCell>
+                                        <TableCell>
+                                            {run.site?.name ?? 'Все сайты'}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {run.rows_count}

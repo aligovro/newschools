@@ -4,3 +4,4 @@ export { useDesignSettings } from './useDesignSettings';
 export { useSeoSettings } from './useSeoSettings';
 export { useSiteSettings } from './useSiteSettings';
 export { useWidgets } from './useWidgets';
+export { useNewsApi } from './useNewsApi';

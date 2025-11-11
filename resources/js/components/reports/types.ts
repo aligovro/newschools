@@ -25,6 +25,7 @@ export interface ReportFiltersState {
     groupBy?: string | null;
     projectId?: number | null;
     projectStageId?: number | null;
+    siteId?: number | null;
     includeInactive?: boolean;
     includeRevenue?: boolean;
     includeMembers?: boolean;
@@ -62,6 +63,11 @@ export interface ReportRun {
         id: number;
         name: string;
     };
+    site?: {
+        id: number;
+        name: string;
+        status?: string;
+    } | null;
     report?: {
         id: number;
         title: string;
@@ -93,6 +99,11 @@ export interface Report {
     } | null;
     runs_count?: number;
     latest_run?: ReportRun | null;
+    site?: {
+        id: number;
+        name: string;
+        status?: string;
+    } | null;
 }
 
 export interface Paginated<T> {
@@ -122,6 +133,12 @@ export interface ProjectStageOption {
     status: string;
     start_date?: string | null;
     end_date?: string | null;
+}
+
+export interface SiteOption {
+    id: number;
+    name: string;
+    status?: string;
 }
 
 

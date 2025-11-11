@@ -13,7 +13,9 @@ use App\Http\Controllers\Dashboard\OrganizationCreationController;
 use App\Http\Controllers\SiteConstructorController;
 use App\Http\Controllers\Dashboard\OrganizationSiteController;
 use App\Http\Controllers\Dashboard\ProjectController;
+use App\Http\Controllers\Dashboard\NewsController as DashboardNewsController;
 use App\Http\Controllers\Dashboard\SuggestedOrganizationController;
+use App\Http\Controllers\Dashboard\ReportsOverviewController;
 use App\Http\Controllers\Dashboard\SitePageController;
 
 Route::get('/', [MainSiteController::class, 'index'])->name('home');
@@ -90,6 +92,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Projects management (all projects for super admin)
         Route::get('/projects', [ProjectController::class, 'all'])->name('projects.index');
+        Route::get('/news', [DashboardNewsController::class, 'all'])->name('news.index');
+        Route::get('/news/create', [DashboardNewsController::class, 'create'])->name('news.create');
+        Route::post('/news', [DashboardNewsController::class, 'store'])->name('news.store');
+        Route::get('/news/{news}', [DashboardNewsController::class, 'show'])->name('news.show');
+        Route::get('/news/{news}/edit', [DashboardNewsController::class, 'edit'])->name('news.edit');
+        Route::put('/news/{news}', [DashboardNewsController::class, 'update'])->name('news.update');
+        Route::delete('/news/{news}', [DashboardNewsController::class, 'destroy'])->name('news.destroy');
+
+        Route::get('/reports', [ReportsOverviewController::class, 'index'])->name('reports.index');
 
         // Projects management (organization projects)
         Route::get('/organizations/{organization}/projects', [ProjectController::class, 'index'])->name('organizations.projects.index');
@@ -197,6 +208,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/template/{template}/positions', [App\Http\Controllers\Dashboard\WidgetController::class, 'getTemplatePositions'])->name('positions');
                 Route::get('/position/{position}/widgets', [App\Http\Controllers\Dashboard\WidgetController::class, 'getWidgetsForPosition'])->name('position-widgets');
             });
+
+            Route::get('/news', [DashboardNewsController::class, 'index'])->name('news.index');
+            Route::get('/news/create', [DashboardNewsController::class, 'create'])->name('news.create');
+            Route::post('/news', [DashboardNewsController::class, 'store'])->name('news.store');
+            Route::get('/news/{news}', [DashboardNewsController::class, 'show'])->name('news.show');
+            Route::get('/news/{news}/edit', [DashboardNewsController::class, 'edit'])->name('news.edit');
+            Route::put('/news/{news}', [DashboardNewsController::class, 'update'])->name('news.update');
+            Route::delete('/news/{news}', [DashboardNewsController::class, 'destroy'])->name('news.destroy');
 
             Route::prefix('projects')->name('projects.')->group(function () {
                 Route::get('/', [ProjectController::class, 'index'])->name('index');

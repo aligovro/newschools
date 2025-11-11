@@ -12,37 +12,70 @@ export const TextOutput: React.FC<WidgetOutputProps> = ({
         title = '',
         content = '',
         show_title = true, // По умолчанию true для обратной совместимости
-        fontSize = '16px',
-        textAlign = 'left',
-        backgroundColor = 'transparent',
-        textColor = '#000000',
-        titleColor = '#000000',
-        padding = '16px',
-        margin = '0',
-        borderRadius = '0',
-        borderWidth = '0',
-        borderColor = '#000000',
+        fontSize,
+        textAlign,
+        backgroundColor,
+        textColor,
+        titleColor,
+        padding,
+        margin,
+        borderRadius,
+        borderWidth,
+        borderColor,
         enableFormatting = false,
         enableColors = false,
     } = config;
 
+    const hasPadding = typeof padding === 'string' && padding.trim().length > 0;
+    const hasMargin = typeof margin === 'string' && margin.trim().length > 0;
+    const hasRadius =
+        typeof borderRadius === 'string' && borderRadius.trim().length > 0;
+    const normalizedBorderWidth =
+        typeof borderWidth === 'string' ? borderWidth.trim() : undefined;
+    const hasBorder =
+        Boolean(normalizedBorderWidth) &&
+        normalizedBorderWidth !== '0' &&
+        normalizedBorderWidth !== '0px';
+
+    const resolvedTextColor =
+        enableColors && textColor && textColor.trim().length > 0
+            ? textColor
+            : undefined;
+    const resolvedBgColor =
+        enableColors && backgroundColor && backgroundColor.trim().length > 0
+            ? backgroundColor
+            : undefined;
+    const resolvedTitleColor =
+        enableColors && (titleColor || textColor)
+            ? titleColor && titleColor.trim().length > 0
+                ? titleColor
+                : textColor
+            : undefined;
+
     const containerStyle: React.CSSProperties = {
-        backgroundColor,
-        color: textColor,
-        padding,
-        margin,
-        borderRadius,
-        borderWidth: borderWidth !== '0' ? borderWidth : undefined,
-        borderColor: borderWidth !== '0' ? borderColor : undefined,
-        borderStyle: borderWidth !== '0' ? 'solid' : undefined,
-        fontSize,
-        textAlign,
+        ...(resolvedBgColor ? { backgroundColor: resolvedBgColor } : {}),
+        ...(resolvedTextColor ? { color: resolvedTextColor } : {}),
+        ...(hasPadding ? { padding } : {}),
+        ...(hasMargin ? { margin } : {}),
+        ...(hasRadius ? { borderRadius } : {}),
+        ...(hasBorder
+            ? {
+                  borderWidth: normalizedBorderWidth,
+                  borderColor:
+                      borderColor && borderColor.trim().length > 0
+                          ? borderColor
+                          : undefined,
+                  borderStyle: 'solid',
+              }
+            : {}),
+        ...(fontSize ? { fontSize } : {}),
+        ...(textAlign ? { textAlign } : {}),
         ...style,
     };
 
     const titleStyle: React.CSSProperties = {
-        color: enableColors ? titleColor : textColor,
-        marginBottom: title && content ? '16px' : '0',
+        ...(resolvedTitleColor ? { color: resolvedTitleColor } : {}),
+        ...(title && content ? { marginBottom: '16px' } : {}),
     };
 
     // Render content: prefer HTML from editor; fallback to plain text with line breaks

@@ -14,8 +14,11 @@ import {
     BarChart3,
     BookOpen,
     Building2,
+    CalendarClock,
+    FileText,
     Folder,
     Globe,
+    Home,
     LayoutGrid,
     Settings,
     Target,
@@ -25,6 +28,13 @@ import {
 export function AppSidebar() {
     const { props } = usePage();
     const rawTerminology = (props as any).terminology;
+    const authUser = (props as any)?.auth?.user;
+    const roleNames = Array.isArray(authUser?.roles)
+        ? (authUser.roles as Array<{ name?: string | null }>)
+              .map((role) => role?.name)
+              .filter(Boolean) as string[]
+        : [];
+    const isSuperAdmin = roleNames.includes('super_admin');
 
     // Получаем plural_nominative с поддержкой разных форматов
     const getPluralNominative = () => {
@@ -52,6 +62,12 @@ export function AppSidebar() {
             icon: LayoutGrid,
         },
         {
+            title: 'Главный сайт',
+            href: '/',
+            icon: Home,
+            target: '_blank',
+        },
+        {
             title: 'Пользователи',
             href: '/dashboard/users',
             icon: Users,
@@ -61,10 +77,24 @@ export function AppSidebar() {
             href: '/dashboard/organizations',
             icon: Building2,
         },
+        ...(isSuperAdmin
+            ? [
+                  {
+                      title: 'Все отчеты',
+                      href: '/dashboard/reports',
+                      icon: FileText,
+                  } satisfies NavItem,
+              ]
+            : []),
         {
             title: 'Проекты',
             href: '/dashboard/projects',
             icon: Target,
+        },
+        {
+            title: 'События',
+            href: '/dashboard/news',
+            icon: CalendarClock,
         },
         {
             title: 'Сайты',

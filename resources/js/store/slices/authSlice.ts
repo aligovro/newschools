@@ -5,8 +5,11 @@ import axios from 'axios';
 export interface User {
     id: number;
     name: string;
-    email: string;
-    email_verified_at?: string;
+    email: string | null;
+    phone?: string | null;
+    photo?: string | null;
+    email_verified_at?: string | null;
+    phone_verified_at?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -32,7 +35,7 @@ const initialState: AuthState = {
 export const loginUser = createAsyncThunk(
     'auth/login',
     async (
-        credentials: { email: string; password: string },
+        credentials: { login: string; password: string },
         { rejectWithValue },
     ) => {
         try {
@@ -61,7 +64,8 @@ export const registerUser = createAsyncThunk(
     async (
         userData: {
             name: string;
-            email: string;
+            email?: string | null;
+            phone?: string | null;
             password: string;
             password_confirmation: string;
             organization_id?: number;

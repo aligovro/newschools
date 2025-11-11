@@ -76,7 +76,9 @@ export default function SuggestedOrganizationManagementPage({
     filters,
 }: Props) {
     const [search, setSearch] = useState(filters.search || '');
-    const [statusFilter, setStatusFilter] = useState(filters.status || '');
+    const [statusFilter, setStatusFilter] = useState(
+        filters.status ? filters.status : 'all',
+    );
     const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
     const [sortDirection, setSortDirection] = useState(
         filters.sort_direction || 'desc',
@@ -87,7 +89,7 @@ export default function SuggestedOrganizationManagementPage({
             '/dashboard/suggested-organizations',
             {
                 search,
-                status: statusFilter || undefined,
+                status: statusFilter === 'all' ? undefined : statusFilter,
                 sort_by: sortBy,
                 sort_direction: sortDirection,
                 per_page: filters.per_page || 15,
@@ -203,7 +205,7 @@ export default function SuggestedOrganizationManagementPage({
                                         <SelectValue placeholder="Все статусы" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">
+                                <SelectItem value="all">
                                             Все статусы
                                         </SelectItem>
                                         <SelectItem value="pending">

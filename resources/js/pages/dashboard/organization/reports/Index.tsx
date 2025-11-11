@@ -1,21 +1,23 @@
-import { useCallback, useMemo, useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
-import { Head, router } from '@inertiajs/react';
-import { toast } from 'sonner';
-import { ReportsFiltersBar } from '@/features/reports/components/ReportsFiltersBar';
-import { ReportsList } from '@/features/reports/components/ReportsList';
-import { ReportBuilderPanel } from '@/features/reports/components/ReportBuilderPanel';
-import { ReportPreviewPanel } from '@/features/reports/components/ReportPreviewPanel';
-import { RecentRunsList } from '@/features/reports/components/RecentRunsList';
-import { ReportSaveDialog } from '@/features/reports/components/ReportSaveDialog';
-import { reportsApi } from '@/features/reports/api';
+import { reportsApi } from '@/components/reports/api';
+import { RecentRunsList } from '@/components/reports/components/RecentRunsList';
+import { ReportBuilderPanel } from '@/components/reports/components/ReportBuilderPanel';
+import { ReportPreviewPanel } from '@/components/reports/components/ReportPreviewPanel';
+import { ReportSaveDialog } from '@/components/reports/components/ReportSaveDialog';
+import { ReportsFiltersBar } from '@/components/reports/components/ReportsFiltersBar';
+import { ReportsList } from '@/components/reports/components/ReportsList';
 import {
     Paginated,
     ProjectOption,
     Report,
     ReportRun,
     ReportTypeDefinition,
-} from '@/features/reports/types';
+    SiteOption,
+} from '@/components/reports/types';
+import AppLayout from '@/layouts/app-layout';
+import reportsRoutes from '@/routes/organizations/reports';
+import { Head, router } from '@inertiajs/react';
+import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 interface Organization {
     id: number;
@@ -36,6 +38,7 @@ interface ReportsPageProps {
     recentRuns: ReportRun[];
     filters: FiltersProps;
     projects: ProjectOption[];
+    sites: SiteOption[];
 }
 
 export default function ReportsIndex({
@@ -45,28 +48,32 @@ export default function ReportsIndex({
     recentRuns,
     filters,
     projects,
+    sites,
 }: ReportsPageProps) {
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
     const [filtersState, setFiltersState] = useState(filters.query ?? {});
-    const [previewPayload, setPreviewPayload] = useState<Record<string, unknown> | null>(
+    const [previewPayload, setPreviewPayload] = useState<Record<
+        string,
+        unknown
+    > | null>(null);
+    const handlePaginate = useCallback((url: string | null) => {
+        if (!url) return;
+        router.visit(url, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['reports'],
+        });
+    }, []);
+    const [isExporting, setIsExporting] = useState(false);
+    const [processingReportId, setProcessingReportId] = useState<number | null>(
         null,
     );
-    const handlePaginate = useCallback(
-        (url: string | null) => {
-            if (!url) return;
-            router.visit(url, {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-                only: ['reports'],
-            });
-        },
-        [],
-    );
-    const [isExporting, setIsExporting] = useState(false);
-    const [processingReportId, setProcessingReportId] = useState<number | null>(null);
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-    const [savePayload, setSavePayload] = useState<Record<string, unknown> | null>(null);
+    const [savePayload, setSavePayload] = useState<Record<
+        string,
+        unknown
+    > | null>(null);
     const handleSaveDialogToggle = useCallback((open: boolean) => {
         setSaveDialogOpen(open);
         if (!open) {
@@ -74,11 +81,10 @@ export default function ReportsIndex({
         }
     }, []);
 
-
     const handleFiltersChange = useCallback(
         (next: typeof filtersState) => {
             setFiltersState(next);
-            router.visit(route('organization.reports.index', organization.id), {
+            router.visit(reportsRoutes.index.url(organization.id), {
                 method: 'get',
                 data: sanitizeFilters(next),
                 preserveState: true,
@@ -119,7 +125,9 @@ export default function ReportsIndex({
 
     const handleProcessingChange = useCallback(
         (isProcessing: boolean) => {
-            setProcessingReportId(isProcessing ? selectedReport?.id ?? null : null);
+            setProcessingReportId(
+                isProcessing ? (selectedReport?.id ?? null) : null,
+            );
         },
         [selectedReport],
     );
@@ -133,8 +141,10 @@ export default function ReportsIndex({
         }) => {
             if (!savePayload) return;
 
-            const filtersPayload = (savePayload.filters ??
-                {}) as Record<string, unknown>;
+            const filtersPayload = (savePayload.filters ?? {}) as Record<
+                string,
+                unknown
+            >;
             const meta = (savePayload.meta ?? {}) as Record<string, unknown>;
 
             await reportsApi.create(organization.id, {
@@ -148,6 +158,7 @@ export default function ReportsIndex({
                 summary: savePayload.summary,
                 project_id: meta.project_id ?? undefined,
                 project_stage_id: meta.project_stage_id ?? undefined,
+                site_id: meta.site_id ?? undefined,
             });
 
             toast.success('Отчет сохранен');
@@ -173,34 +184,44 @@ export default function ReportsIndex({
     );
 
     const handleExport = useCallback(
-        async (format: 'csv' | 'pdf' | 'excel') => {
+        async (format: 'pdf' | 'excel') => {
             if (!previewPayload) return;
             setIsExporting(true);
             try {
+                const extension = format === 'excel' ? 'xlsx' : format;
+                const defaultFilename = `report_${previewPayload.type}_${Date.now()}.${extension}`;
                 const response = await reportsApi.export(organization.id, {
                     report_type: previewPayload.type,
                     format,
                     data: previewPayload.data,
                     filters: previewPayload.filters,
                     summary: previewPayload.summary,
-                    filename: `report_${previewPayload.type}_${Date.now()}.${format}`,
+                    filename: defaultFilename,
                 });
 
-                if (format === 'csv') {
-                    const blob = new Blob([response.data], { type: 'text/csv' });
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download =
-                        (response.headers['x-filename'] as string) ||
-                        `report.${format}`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                } else {
-                    toast.info(response.data.message ?? 'Экспорт недоступен');
-                }
+                const mimeType =
+                    format === 'excel'
+                        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        : format === 'pdf'
+                          ? 'application/pdf'
+                          : 'text/csv;charset=utf-8;';
+
+                const blob =
+                    response.data instanceof Blob
+                        ? response.data.type
+                            ? response.data
+                            : new Blob([response.data], { type: mimeType })
+                        : new Blob([response.data], { type: mimeType });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                const fallbackName = defaultFilename;
+                link.download =
+                    (response.headers['x-filename'] as string) ?? fallbackName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
             } catch (error) {
                 console.error(error);
                 toast.error('Не удалось экспортировать отчет');
@@ -224,7 +245,7 @@ export default function ReportsIndex({
                 { title: 'Админ панель', href: '/dashboard' },
                 {
                     title: organization.name,
-                    href: `/dashboard/organization/${organization.id}/admin`,
+                    href: `/dashboard/organizations/${organization.id}`,
                 },
                 { title: 'Отчеты', href: '#' },
             ]}
@@ -235,6 +256,7 @@ export default function ReportsIndex({
                 <ReportsFiltersBar
                     reportTypes={reportTypes}
                     statuses={filters.availableStatuses}
+                    sites={sites}
                     value={filtersState}
                     onChange={handleFiltersChange}
                 />
@@ -246,6 +268,7 @@ export default function ReportsIndex({
                             reportTypes={reportTypes}
                             periods={filters.availablePeriods}
                             projects={projects}
+                            sites={sites}
                             initialReport={selectedReport}
                             onGenerated={handleReportGenerated}
                             onSaveAs={handleSaveAs}
@@ -292,7 +315,8 @@ export default function ReportsIndex({
 function sanitizeFilters(filters: Record<string, string | undefined>) {
     return Object.fromEntries(
         Object.entries(filters).filter(
-            ([, value]) => value !== undefined && value !== 'all' && value !== '',
+            ([, value]) =>
+                value !== undefined && value !== 'all' && value !== '',
         ),
     );
 }
@@ -322,7 +346,7 @@ function PaginationControls({ links, onNavigate }: PaginationControlsProps) {
                         className={`inline-flex min-w-[32px] items-center justify-center rounded-md border px-2 py-1 text-xs ${
                             link.active
                                 ? 'border-primary bg-primary text-primary-foreground'
-                                : 'border-input text-muted-foreground hover:bg-muted/60'
+                                : 'hover:bg-muted/60 border-input text-muted-foreground'
                         } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
                     >
                         {label}
@@ -339,5 +363,3 @@ function decodeHtml(html: string): string {
     textarea.innerHTML = html;
     return textarea.value;
 }
-
-
