@@ -5,7 +5,10 @@ import OrganizationStaffList from '@/components/dashboard/pages/organizations/Or
 import OrganizationStaffModal from '@/components/dashboard/pages/organizations/OrganizationStaffModal';
 import { StatusBadge } from '@/components/dashboard/pages/organizations/StatusBadge';
 import type { OrganizationShow } from '@/components/dashboard/pages/organizations/types';
-import { getTypeLabel } from '@/components/dashboard/pages/organizations/utils';
+import {
+    getTypeLabel,
+    useOrganizationTerms,
+} from '@/components/dashboard/pages/organizations/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useOrganizationStaff } from '@/hooks/useOrganizationStaff';
@@ -29,21 +32,6 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Админ панель',
-        href: dashboard().url,
-    },
-    {
-        title: 'Школы',
-        href: '/dashboard/organizations',
-    },
-    {
-        title: 'Просмотр',
-        href: '#',
-    },
-];
-
 interface Props {
     organization: OrganizationShow;
     stats: {
@@ -58,6 +46,26 @@ interface Props {
 }
 
 export default function OrganizationShowPage({ organization, stats }: Props) {
+    const {
+        pluralNominative: organizationPluralNominative,
+        singularGenitive: organizationSingularGenitive,
+    } = useOrganizationTerms();
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Админ панель',
+            href: dashboard().url,
+        },
+        {
+            title: organizationPluralNominative,
+            href: '/dashboard/organizations',
+        },
+        {
+            title: 'Просмотр',
+            href: '#',
+        },
+    ];
+
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [editingStaffId, setEditingStaffId] = useState<number | null>(null);
 
@@ -125,7 +133,7 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
             title: 'Сайты',
             value: stats.totalSites,
             icon: Globe,
-            helperText: 'Всего сайтов организации',
+            helperText: `Всего сайтов ${organizationSingularGenitive}`,
         },
         {
             title: 'Страницы',
@@ -137,7 +145,7 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
             title: 'Пользователи',
             value: stats.totalUsers,
             icon: Users,
-            helperText: 'Команда организации',
+            helperText: `Команда ${organizationSingularGenitive}`,
         },
         {
             title: 'Посетители',
@@ -165,7 +173,7 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
         },
         {
             title: 'Настройки',
-            description: 'Основные настройки организации',
+            description: `Основные настройки ${organizationSingularGenitive}`,
             href: `/dashboard/organizations/${organization.id}/settings`,
             icon: Settings,
             color: 'bg-green-500',
@@ -196,14 +204,14 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
     const contentMenuItems = [
         {
             title: 'Сайты',
-            description: 'Управление сайтами организации',
+            description: `Управление сайтами ${organizationSingularGenitive}`,
             href: `/dashboard/organizations/${organization.id}/sites`,
             icon: Globe,
             color: 'bg-emerald-500',
         },
         {
             title: 'Проекты',
-            description: 'Управление проектами организации',
+            description: `Управление проектами ${organizationSingularGenitive}`,
             href: `/dashboard/organizations/${organization.id}/projects`,
             icon: Target,
             color: 'bg-amber-500',
@@ -247,10 +255,13 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                                 Назад к списку
                             </Button>
                         </Link>
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {organization.name}
-                            </h1>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {organization.name}
+                                </h1>
+                                <StatusBadge status={organization.status} />
+                            </div>
                             <p className="text-gray-600 dark:text-gray-400">
                                 {getTypeLabel(organization.type)}
                                 {organization.region?.name &&
@@ -259,7 +270,6 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <StatusBadge status={organization.status} />
                         <div className="flex items-center gap-2">
                             {organization.primary_site ||
                             (organization.sites &&
@@ -285,6 +295,14 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                                     </Button>
                                 </Link>
                             )}
+                            <Link
+                                href={`/dashboard/organizations/${organization.id}/reports`}
+                            >
+                                <Button variant="outline" size="sm">
+                                    <BarChart3 className="mr-2 h-4 w-4" />
+                                    Отчеты
+                                </Button>
+                            </Link>
                             <Link
                                 href={`/dashboard/organizations/${organization.id}/edit`}
                             >

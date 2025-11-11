@@ -1,7 +1,8 @@
 import axios, {
-    AxiosInstance,
-    AxiosResponse,
-    InternalAxiosRequestConfig,
+    type AxiosInstance,
+    type AxiosRequestConfig,
+    type AxiosResponse,
+    type InternalAxiosRequestConfig,
 } from 'axios';
 import Cookies from 'js-cookie';
 
@@ -63,46 +64,94 @@ async function ensureCsrfCookie(): Promise<void> {
     }
 }
 
+const ensureLeadingSlash = (url: string): string =>
+    url.startsWith('/') ? url : `/${url}`;
+
 // Утилиты для работы с API
 export const apiClient = {
     get: <T = unknown>(
         url: string,
-        config?: Record<string, unknown>,
-    ): Promise<AxiosResponse<T>> => api.get<T>(url, config),
+        config?: AxiosRequestConfig,
+    ): Promise<AxiosResponse<T>> =>
+        api.get<T>(ensureLeadingSlash(url), config),
+
+    getAbsolute: <T = unknown>(
+        url: string,
+        config?: AxiosRequestConfig,
+    ): Promise<AxiosResponse<T>> =>
+        api.get<T>(ensureLeadingSlash(url), {
+            ...(config ?? {}),
+            baseURL: '',
+        }),
 
     post: async <T = unknown>(
         url: string,
         data?: unknown,
-        config?: Record<string, unknown>,
+        config?: AxiosRequestConfig,
     ): Promise<AxiosResponse<T>> => {
         await ensureCsrfCookie();
-        return api.post<T>(url, data, config);
+        return api.post<T>(ensureLeadingSlash(url), data, config);
+    },
+
+    postAbsolute: async <T = unknown>(
+        url: string,
+        data?: unknown,
+        config?: AxiosRequestConfig,
+    ): Promise<AxiosResponse<T>> => {
+        await ensureCsrfCookie();
+        return api.post<T>(ensureLeadingSlash(url), data, {
+            ...(config ?? {}),
+            baseURL: '',
+        });
     },
 
     put: async <T = unknown>(
         url: string,
         data?: unknown,
-        config?: Record<string, unknown>,
+        config?: AxiosRequestConfig,
     ): Promise<AxiosResponse<T>> => {
         await ensureCsrfCookie();
-        return api.put<T>(url, data, config);
+        return api.put<T>(ensureLeadingSlash(url), data, config);
     },
 
     patch: async <T = unknown>(
         url: string,
         data?: unknown,
-        config?: Record<string, unknown>,
+        config?: AxiosRequestConfig,
     ): Promise<AxiosResponse<T>> => {
         await ensureCsrfCookie();
-        return api.patch<T>(url, data, config);
+        return api.patch<T>(ensureLeadingSlash(url), data, config);
+    },
+
+    patchAbsolute: async <T = unknown>(
+        url: string,
+        data?: unknown,
+        config?: AxiosRequestConfig,
+    ): Promise<AxiosResponse<T>> => {
+        await ensureCsrfCookie();
+        return api.patch<T>(ensureLeadingSlash(url), data, {
+            ...(config ?? {}),
+            baseURL: '',
+        });
     },
 
     delete: async <T = unknown>(
         url: string,
-        config?: Record<string, unknown>,
+        config?: AxiosRequestConfig,
     ): Promise<AxiosResponse<T>> => {
         await ensureCsrfCookie();
-        return api.delete<T>(url, config);
+        return api.delete<T>(ensureLeadingSlash(url), config);
+    },
+
+    deleteAbsolute: async <T = unknown>(
+        url: string,
+        config?: AxiosRequestConfig,
+    ): Promise<AxiosResponse<T>> => {
+        await ensureCsrfCookie();
+        return api.delete<T>(ensureLeadingSlash(url), {
+            ...(config ?? {}),
+            baseURL: '',
+        });
     },
 
     // Специальные методы для работы с файлами
@@ -114,7 +163,7 @@ export const apiClient = {
         const formData = new FormData();
         formData.append(fieldName, file);
 
-        return api.post<T>(url, formData, {
+        return api.post<T>(ensureLeadingSlash(url), formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -131,7 +180,7 @@ export const apiClient = {
             formData.append(`${fieldName}[${index}]`, file);
         });
 
-        return api.post<T>(url, formData, {
+        return api.post<T>(ensureLeadingSlash(url), formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -157,7 +206,9 @@ export const apiClient = {
         });
 
         const queryString = searchParams.toString();
-        const fullUrl = queryString ? `${url}?${queryString}` : url;
+        const fullUrl = queryString
+            ? `${ensureLeadingSlash(url)}?${queryString}`
+            : ensureLeadingSlash(url);
 
         return api.get<T>(fullUrl);
     },

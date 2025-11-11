@@ -51,6 +51,13 @@ class ReportRunResource extends JsonResource
                     'title' => $this->projectStage->title,
                 ];
             }),
+            'site' => $this->whenLoaded('site', function () {
+                return [
+                    'id' => $this->site->id,
+                    'name' => $this->site->name,
+                    'status' => $this->site->status,
+                ];
+            }),
             'generated_by' => $this->whenLoaded('generator', function () {
                 return [
                     'id' => $this->generator->id,

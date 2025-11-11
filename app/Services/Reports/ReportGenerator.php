@@ -6,6 +6,7 @@ use App\Enums\ReportType;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\ProjectStage;
+use App\Models\Site;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
@@ -23,6 +24,7 @@ class ReportGenerator
         array $filters = [],
         ?Project $project = null,
         ?ProjectStage $stage = null,
+        ?Site $site = null,
     ): array {
         $period = Arr::get($filters, 'period', 'month');
         $groupBy = Arr::get($filters, 'group_by');
@@ -39,12 +41,23 @@ class ReportGenerator
             'organization_id' => $organization->id,
             'project_id' => $project?->id,
             'project_stage_id' => $stage?->id,
+            'site_id' => $site?->id,
             'period' => $period,
             'group_by' => $groupBy,
             'status' => $status,
             'date_from' => $startDate->toDateString(),
             'date_to' => $endDate->toDateString(),
         ];
+
+        $normalizedFilters = array_merge($filters, [
+            'period' => $period,
+            'date_from' => $startDate->toDateString(),
+            'date_to' => $endDate->toDateString(),
+        ]);
+
+        if ($site) {
+            $normalizedFilters['site_id'] = $site->id;
+        }
 
         $result = match ($reportType) {
             ReportType::Revenue => $this->buildRevenueReport($organization, $startDate, $endDate, $groupBy ?? 'month', $project, $stage),
@@ -69,11 +82,7 @@ class ReportGenerator
         return [
             'type' => $reportType->value,
             'title' => Arr::get($result, 'title', $reportType->label()),
-            'filters' => array_merge($filters, [
-                'period' => $period,
-                'date_from' => $startDate->toDateString(),
-                'date_to' => $endDate->toDateString(),
-            ]),
+            'filters' => $normalizedFilters,
             'meta' => array_merge($contextMeta, Arr::get($result, 'meta', [])),
             'data' => Arr::get($result, 'data', []),
             'summary' => Arr::get($result, 'summary', []),
@@ -176,7 +185,6 @@ class ReportGenerator
         ?ProjectStage $stage,
     ): array {
         $query = $organization->donations()
-            ->select('donations.*')
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate]);
 

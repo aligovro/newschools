@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\RussianPhoneNumber;
+use App\Support\PhoneNumber;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,16 +33,39 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        if ($request->filled('phone')) {
+            $normalized = PhoneNumber::normalize($request->input('phone'));
+            if ($normalized) {
+                $request->merge(['phone' => $normalized]);
+            }
+        }
+
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => [
+                'nullable',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                Rule::unique(User::class, 'email'),
+            ],
+            'phone' => ['nullable', new RussianPhoneNumber(), Rule::unique(User::class, 'phone')],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        if (empty($validated['email']) && empty($validated['phone'])) {
+            return back()->withErrors([
+                'email' => __('Укажите email или номер телефона'),
+                'phone' => __('Укажите email или номер телефона'),
+            ])->withInput();
+        }
+
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'password' => Hash::make($validated['password']),
         ]);
 
         event(new Registered($user));

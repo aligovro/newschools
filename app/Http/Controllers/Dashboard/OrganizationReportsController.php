@@ -16,6 +16,7 @@ use App\Models\Organization;
 use App\Models\Project;
 use App\Models\ProjectStage;
 use App\Models\Report;
+use App\Models\Site;
 use App\Services\Reports\ReportService;
 use App\Support\InertiaResource;
 use Illuminate\Http\JsonResponse;
@@ -36,12 +37,13 @@ class OrganizationReportsController extends Controller
             'report_type' => $request->query('report_type'),
             'status' => $request->query('status'),
             'search' => $request->query('search'),
+            'site_id' => $request->query('site_id'),
         ];
 
         $reportsPaginator = $this->reportService->listReports($organization, $filters);
 
         $recentRuns = $organization->reportRuns()
-            ->with(['report'])
+            ->with(['report', 'site'])
             ->latest('generated_at')
             ->limit(8)
             ->get();
@@ -54,12 +56,19 @@ class OrganizationReportsController extends Controller
             'filters' => [
                 'availableStatuses' => ReportStatus::values(),
                 'availablePeriods' => ['day', 'week', 'month', 'quarter', 'year', 'custom'],
-                'query' => array_filter($filters, fn($value) => $value !== null && $value !== ''),
+                'query' => array_filter(
+                    $filters,
+                    fn($value) => $value !== null && $value !== '' && $value !== 'all'
+                ),
             ],
             'projects' => $organization->projects()
                 ->select('id', 'title', 'status')
                 ->orderBy('title')
                 ->limit(100)
+                ->get(),
+            'sites' => $organization->sites()
+                ->select('id', 'name', 'status')
+                ->orderBy('name')
                 ->get(),
         ]);
     }
@@ -74,7 +83,7 @@ class OrganizationReportsController extends Controller
 
         return response()->json([
             'message' => 'Отчет сохранен',
-            'report' => new ReportResource($report),
+            'report' => new ReportResource($report->loadMissing(['project', 'projectStage', 'site'])),
         ], 201);
     }
 
@@ -90,7 +99,7 @@ class OrganizationReportsController extends Controller
 
         return response()->json([
             'message' => 'Отчет обновлен',
-            'report' => new ReportResource($updated),
+            'report' => new ReportResource($updated->loadMissing(['project', 'projectStage', 'site'])),
         ]);
     }
 
@@ -115,6 +124,8 @@ class OrganizationReportsController extends Controller
             ? $this->resolveProjectStage($organization, (int) $request->input('project_stage_id'), $project)
             : null;
 
+        $site = $this->resolveOptionalSite($organization, $request->input('site_id'));
+
         $payload = $this->reportService->buildReportPayload(
             $organization,
             $reportType,
@@ -129,9 +140,11 @@ class OrganizationReportsController extends Controller
                 'include_projects' => $request->input('include_projects'),
                 'include_analytics' => $request->input('include_analytics'),
                 'include_inactive' => $request->input('include_inactive'),
+                'site_id' => $site?->id,
             ],
             $project,
-            $stage
+            $stage,
+            $site
         );
 
         $runResource = null;
@@ -150,13 +163,14 @@ class OrganizationReportsController extends Controller
                 $request->user(),
                 $reportModel,
                 $project,
-                $stage
+                $stage,
+                $site
             );
 
             $runResource = new ReportRunResource($run);
 
             if ($reportModel) {
-                $reportResource = new ReportResource($reportModel->fresh(['latestRun', 'project', 'projectStage']));
+                $reportResource = new ReportResource($reportModel->fresh(['latestRun', 'project', 'projectStage', 'site']));
             }
         }
 
@@ -168,7 +182,7 @@ class OrganizationReportsController extends Controller
         ]);
     }
 
-    public function export(ExportReportRequest $request, Organization $organization): Response
+    public function export(ExportReportRequest $request, Organization $organization): \Symfony\Component\HttpFoundation\Response
     {
         $reportType = ReportType::from($request->input('report_type'));
         $data = $request->input('data');
@@ -185,7 +199,10 @@ class OrganizationReportsController extends Controller
     {
         $this->reportService->ensureReportBelongsToOrganization($report, $organization);
 
-        $runs = $report->runs()->latest('generated_at')->paginate(10);
+        $runs = $report->runs()
+            ->with(['project', 'projectStage', 'site', 'generator'])
+            ->latest('generated_at')
+            ->paginate(10);
 
         return response()->json(
             InertiaResource::paginate($runs, ReportRunResource::class)
@@ -245,5 +262,20 @@ class OrganizationReportsController extends Controller
         }
 
         return $stage;
+    }
+
+    protected function resolveOptionalSite(Organization $organization, mixed $siteId): ?Site
+    {
+        if ($siteId === null || $siteId === '' || $siteId === 'all') {
+            return null;
+        }
+
+        $site = $organization->sites()->findOrFail((int) $siteId);
+
+        if ($site->organization_id !== $organization->id) {
+            abort(404);
+        }
+
+        return $site;
     }
 }

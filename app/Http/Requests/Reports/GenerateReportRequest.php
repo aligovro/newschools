@@ -40,6 +40,7 @@ class GenerateReportRequest extends FormRequest
             'group_by' => ['nullable', 'string'],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'project_stage_id' => ['nullable', 'integer', 'exists:project_stages,id'],
+            'site_id' => ['nullable', 'integer', 'exists:sites,id'],
             'format' => ['nullable', 'string', Rule::in(['json', 'pdf', 'excel', 'csv'])],
             'status' => ['nullable', 'string', Rule::in(['all', 'active', 'completed', 'failed', 'cancelled'])],
             'include_revenue' => ['boolean'],
@@ -57,6 +58,9 @@ class GenerateReportRequest extends FormRequest
         $validator->after(function ($validator) {
             $projectId = $this->input('project_id');
             $stageId = $this->input('project_stage_id');
+            $siteId = $this->input('site_id');
+            /** @var \App\Models\Organization|null $organization */
+            $organization = $this->route('organization');
 
             if ($stageId) {
                 $stage = ProjectStage::find($stageId);
@@ -79,6 +83,13 @@ class GenerateReportRequest extends FormRequest
                     $validator->errors()->add('project_id', 'Выбранный проект не найден.');
                 }
             }
+
+            if ($siteId && $organization) {
+                $hasSite = $organization->sites()->whereKey($siteId)->exists();
+                if (!$hasSite) {
+                    $validator->errors()->add('site_id', 'Выбранный сайт не принадлежит организации.');
+                }
+            }
         });
     }
 
@@ -98,6 +109,7 @@ class GenerateReportRequest extends FormRequest
             'include_projects' => $this->boolean('include_projects'),
             'include_analytics' => $this->boolean('include_analytics'),
             'include_inactive' => $this->boolean('include_inactive'),
+            'site_id' => $this->input('site_id'),
         ];
     }
 

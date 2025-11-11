@@ -103,6 +103,11 @@ export const ReportCard = memo(function ReportCard({
                                     Этап: {report.project_stage.title}
                                 </span>
                             )}
+                            {report.site?.name && (
+                                <span className="truncate text-xs text-muted-foreground">
+                                    Сайт: {report.site.name}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

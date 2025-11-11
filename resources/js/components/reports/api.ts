@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api';
+import reportsRoutes from '@/routes/organizations/reports';
 import { Paginated, ProjectStageOption, Report, ReportRun } from './types';
 
 interface GenerateReportPayload {
@@ -28,19 +29,13 @@ interface GenerateReportResponse {
 
 export const reportsApi = {
     generate: (organizationId: number, payload: GenerateReportPayload) => {
-        const url = route(
-            'dashboard.organizations.reports.generate',
-            organizationId,
-        );
-        return apiClient.post<GenerateReportResponse>(url, payload);
+        const url = reportsRoutes.generate.url(organizationId);
+        return apiClient.postAbsolute<GenerateReportResponse>(url, payload);
     },
 
     create: (organizationId: number, payload: Record<string, unknown>) => {
-        const url = route(
-            'dashboard.organizations.reports.store',
-            organizationId,
-        );
-        return apiClient.post<{ message: string; report: Report }>(
+        const url = reportsRoutes.store.url(organizationId);
+        return apiClient.postAbsolute<{ message: string; report: Report }>(
             url,
             payload,
         );
@@ -51,53 +46,53 @@ export const reportsApi = {
         reportId: number,
         payload: Record<string, unknown>,
     ) => {
-        const url = route('dashboard.organizations.reports.update', [
-            organizationId,
-            reportId,
-        ]);
-        return apiClient.patch<{ message: string; report: Report }>(
+        const url = reportsRoutes.update.url([organizationId, reportId]);
+        return apiClient.patchAbsolute<{ message: string; report: Report }>(
             url,
             payload,
         );
     },
 
     destroy: (organizationId: number, reportId: number) => {
-        const url = route('dashboard.organizations.reports.destroy', [
-            organizationId,
-            reportId,
-        ]);
-        return apiClient.delete(url);
+        const url = reportsRoutes.destroy.url([organizationId, reportId]);
+        return apiClient.deleteAbsolute(url);
     },
 
     runs: (organizationId: number, reportId: number) => {
-        const url = route('dashboard.organizations.reports.runs', [
-            organizationId,
-            reportId,
-        ]);
-        return apiClient.get<Paginated<ReportRun>>(url);
+        const url = reportsRoutes.runs.url([organizationId, reportId]);
+        return apiClient.getAbsolute<Paginated<ReportRun>>(url);
     },
 
     projectStages: (organizationId: number, projectId: number) => {
-        const url = route('dashboard.organizations.reports.projects.stages', [
+        const url = reportsRoutes.projects.stages.url([
             organizationId,
             projectId,
         ]);
-        return apiClient.get<{
+        return apiClient.getAbsolute<{
             project: { id: number; title: string };
             stages: ProjectStageOption[];
         }>(url);
     },
 
     export: (organizationId: number, payload: Record<string, unknown>) => {
-        const url = route(
-            'dashboard.organizations.reports.export',
-            organizationId,
-        );
+        const url = reportsRoutes.export.url(organizationId);
         const format =
-            typeof payload.format === 'string' ? payload.format : 'csv';
+            typeof payload.format === 'string'
+                ? payload.format === 'xlsx'
+                    ? 'excel'
+                    : payload.format
+                : 'csv';
 
-        return apiClient.post(url, payload, {
-            responseType: format === 'csv' ? 'blob' : undefined,
+        return apiClient.postAbsolute(url, payload, {
+            responseType: 'blob',
+            headers:
+                format === 'excel'
+                    ? {
+                          Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                      }
+                    : format === 'pdf'
+                      ? { Accept: 'application/pdf' }
+                      : { Accept: 'text/csv;charset=utf-8' },
         });
     },
 };

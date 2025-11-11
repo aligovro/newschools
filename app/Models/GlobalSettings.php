@@ -180,6 +180,11 @@ class GlobalSettings extends Model
       'integration_settings' => [
         'yookassa_test_mode' => true,
         'telegram_bot_enabled' => false,
+        'smsc' => [
+          'login' => null,
+          'password' => null,
+          'sender' => null,
+        ],
       ],
       'default_seo_settings' => [
         'meta_title_template' => '{name} - {type_name}',

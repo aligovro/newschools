@@ -1,7 +1,7 @@
-import { useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -10,13 +10,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { useCallback, useMemo } from 'react';
 import { useReportBuilder } from '../hooks/useReportBuilder';
 import {
     ProjectOption,
     Report,
     ReportRun,
     ReportTypeDefinition,
+    SiteOption,
 } from '../types';
 
 interface ReportBuilderPanelProps {
@@ -24,6 +25,7 @@ interface ReportBuilderPanelProps {
     reportTypes: ReportTypeDefinition[];
     periods: string[];
     projects: ProjectOption[];
+    sites: SiteOption[];
     initialReport?: Report | null;
     onGenerated?: (
         payload: Record<string, unknown>,
@@ -42,6 +44,7 @@ export function ReportBuilderPanel({
     reportTypes,
     periods,
     projects,
+    sites,
     initialReport = null,
     onGenerated,
     onPersisted,
@@ -67,7 +70,30 @@ export function ReportBuilderPanel({
         initialReport,
     });
 
-    const groupByOptions = useMemo(() => selectedReportType?.groupings ?? [], [selectedReportType]);
+    const groupByOptions = useMemo(
+        () => selectedReportType?.groupings ?? [],
+        [selectedReportType],
+    );
+
+    const periodLabels: Record<string, string> = {
+        day: 'День',
+        week: 'Неделя',
+        month: 'Месяц',
+        quarter: 'Квартал',
+        year: 'Год',
+        custom: 'Произвольный период',
+    };
+
+    const handleSiteChange = useCallback(
+        (value: string) => {
+            const numeric = Number(value);
+            setField({
+                siteId:
+                    value === 'all' || Number.isNaN(numeric) ? null : numeric,
+            });
+        },
+        [setField],
+    );
 
     const handleGenerate = useCallback(async () => {
         onProcessingChange?.(true);
@@ -78,7 +104,11 @@ export function ReportBuilderPanel({
         onProcessingChange?.(false);
 
         if (result && onGenerated) {
-            onGenerated(result.payload, result.run ?? null, result.report ?? null);
+            onGenerated(
+                result.payload,
+                result.run ?? null,
+                result.report ?? null,
+            );
         }
 
         if (result?.report && onPersisted) {
@@ -142,7 +172,9 @@ export function ReportBuilderPanel({
                         <Label>Период</Label>
                         <Select
                             value={state.period}
-                            onValueChange={(value) => setField({ period: value })}
+                            onValueChange={(value) =>
+                                setField({ period: value })
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Выберите период" />
@@ -150,7 +182,7 @@ export function ReportBuilderPanel({
                             <SelectContent>
                                 {periods.map((period) => (
                                     <SelectItem key={period} value={period}>
-                                        {period}
+                                        {periodLabels[period] ?? period}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -188,14 +220,19 @@ export function ReportBuilderPanel({
                         <Label>Группировка</Label>
                         <Select
                             value={state.groupBy ?? undefined}
-                            onValueChange={(value) => setField({ groupBy: value })}
+                            onValueChange={(value) =>
+                                setField({ groupBy: value })
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Выберите группировку" />
                             </SelectTrigger>
                             <SelectContent>
                                 {groupByOptions.map((option) => (
-                                    <SelectItem key={option} value={option as string}>
+                                    <SelectItem
+                                        key={option}
+                                        value={option as string}
+                                    >
                                         {option}
                                     </SelectItem>
                                 ))}
@@ -209,7 +246,9 @@ export function ReportBuilderPanel({
                         <Label>Статус проекта</Label>
                         <Select
                             value={state.status ?? 'all'}
-                            onValueChange={(value) => setField({ status: value })}
+                            onValueChange={(value) =>
+                                setField({ status: value })
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue />
@@ -225,14 +264,47 @@ export function ReportBuilderPanel({
                     </div>
                 )}
 
+                <div className="space-y-2">
+                    <Label>Сайт</Label>
+                    <Select
+                        value={
+                            state.siteId !== null && state.siteId !== undefined
+                                ? String(state.siteId)
+                                : 'all'
+                        }
+                        onValueChange={handleSiteChange}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Все сайты" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Все сайты</SelectItem>
+                            {sites.map((site) => (
+                                <SelectItem
+                                    key={site.id}
+                                    value={String(site.id)}
+                                >
+                                    {site.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                         <Label>Проект</Label>
                         <Select
-                            value={state.projectId ? String(state.projectId) : undefined}
+                            value={
+                                state.projectId !== null &&
+                                state.projectId !== undefined
+                                    ? String(state.projectId)
+                                    : 'all'
+                            }
                             onValueChange={(value) =>
                                 setField({
-                                    projectId: value ? Number(value) : null,
+                                    projectId:
+                                        value === 'all' ? null : Number(value),
                                     projectStageId: null,
                                 })
                             }
@@ -241,9 +313,12 @@ export function ReportBuilderPanel({
                                 <SelectValue placeholder="Все проекты" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Все проекты</SelectItem>
+                                <SelectItem value="all">Все проекты</SelectItem>
                                 {projectOptions.map((project) => (
-                                    <SelectItem key={project.id} value={String(project.id)}>
+                                    <SelectItem
+                                        key={project.id}
+                                        value={String(project.id)}
+                                    >
                                         {project.title}
                                     </SelectItem>
                                 ))}
@@ -255,13 +330,15 @@ export function ReportBuilderPanel({
                         <Label>Этап проекта</Label>
                         <Select
                             value={
-                                state.projectStageId
+                                state.projectStageId !== null &&
+                                state.projectStageId !== undefined
                                     ? String(state.projectStageId)
-                                    : undefined
+                                    : 'all'
                             }
                             onValueChange={(value) =>
                                 setField({
-                                    projectStageId: value ? Number(value) : null,
+                                    projectStageId:
+                                        value === 'all' ? null : Number(value),
                                 })
                             }
                             disabled={!stageOptions.length}
@@ -270,7 +347,7 @@ export function ReportBuilderPanel({
                                 <SelectValue placeholder="Все этапы" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Все этапы</SelectItem>
+                                <SelectItem value="all">Все этапы</SelectItem>
                                 {stageOptions.map((stage) => (
                                     <SelectItem
                                         key={stage.id}
@@ -285,7 +362,7 @@ export function ReportBuilderPanel({
                 </div>
 
                 {state.reportType === 'members' && (
-                    <div className="flex items-center justify-between rounded-md border border-muted p-3">
+                    <div className="border-muted flex items-center justify-between rounded-md border p-3">
                         <Label htmlFor="includeInactive" className="text-sm">
                             Включать неактивных участников
                         </Label>
@@ -302,21 +379,27 @@ export function ReportBuilderPanel({
                 )}
 
                 {state.reportType === 'comprehensive' && (
-                    <div className="grid grid-cols-1 gap-3 rounded-md border border-muted p-4 sm:grid-cols-2">
+                    <div className="border-muted grid grid-cols-1 gap-3 rounded-md border p-4 sm:grid-cols-2">
                         <ToggleRow
                             label="Доходы"
                             checked={state.includeRevenue}
-                            onChange={(checked) => setField({ includeRevenue: checked })}
+                            onChange={(checked) =>
+                                setField({ includeRevenue: checked })
+                            }
                         />
                         <ToggleRow
                             label="Участники"
                             checked={state.includeMembers}
-                            onChange={(checked) => setField({ includeMembers: checked })}
+                            onChange={(checked) =>
+                                setField({ includeMembers: checked })
+                            }
                         />
                         <ToggleRow
                             label="Проекты"
                             checked={state.includeProjects}
-                            onChange={(checked) => setField({ includeProjects: checked })}
+                            onChange={(checked) =>
+                                setField({ includeProjects: checked })
+                            }
                         />
                         <ToggleRow
                             label="Аналитика"
@@ -329,7 +412,7 @@ export function ReportBuilderPanel({
                 )}
 
                 {error && (
-                    <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                    <div className="border-destructive/40 bg-destructive/10 rounded-md border p-3 text-sm text-destructive">
                         {error}
                     </div>
                 )}
@@ -358,18 +441,21 @@ export function ReportBuilderPanel({
                 </div>
 
                 {(payload || lastRun) && (
-                    <div className="rounded-md bg-muted/40 p-4 text-sm text-muted-foreground">
+                    <div className="bg-muted/40 rounded-md p-4 text-sm text-muted-foreground">
                         <div className="font-medium text-foreground">
                             Последний результат:
                         </div>
                         {payload?.summary && (
-                            <pre className="mt-2 max-h-40 overflow-auto rounded bg-background/80 p-2">
+                            <pre className="bg-background/80 mt-2 max-h-40 overflow-auto rounded p-2">
                                 {JSON.stringify(payload.summary, null, 2)}
                             </pre>
                         )}
                         {lastRun && (
                             <div className="mt-2 text-xs">
-                                Сохраненный запуск: {new Date(lastRun.generated_at).toLocaleString('ru-RU')}
+                                Сохраненный запуск:{' '}
+                                {new Date(lastRun.generated_at).toLocaleString(
+                                    'ru-RU',
+                                )}
                             </div>
                         )}
                     </div>
@@ -387,11 +473,9 @@ interface ToggleRowProps {
 
 function ToggleRow({ label, checked, onChange }: ToggleRowProps) {
     return (
-        <div className="flex items-center justify-between rounded-md border border-muted/50 bg-background p-3">
+        <div className="border-muted/50 flex items-center justify-between rounded-md border bg-background p-3">
             <span className="text-sm">{label}</span>
             <Switch checked={checked} onCheckedChange={onChange} />
         </div>
     );
 }
-
-

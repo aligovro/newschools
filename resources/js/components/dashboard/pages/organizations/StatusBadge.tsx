@@ -7,8 +7,8 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
     const statusConfig = {
-        active: { label: 'Активна', variant: 'default' as const },
-        inactive: { label: 'Неактивна', variant: 'secondary' as const },
+        active: { label: 'Активна', variant: 'secondary' as const },
+        inactive: { label: 'Неактивна', variant: 'outline' as const },
         pending: { label: 'На рассмотрении', variant: 'outline' as const },
     };
 

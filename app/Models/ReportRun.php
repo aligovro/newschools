@@ -22,6 +22,7 @@ class ReportRun extends Model
         'organization_id',
         'project_id',
         'project_stage_id',
+        'site_id',
         'generated_by',
         'report_type',
         'status',
@@ -84,6 +85,11 @@ class ReportRun extends Model
     public function projectStage(): BelongsTo
     {
         return $this->belongsTo(ProjectStage::class);
+    }
+
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(Site::class);
     }
 
     public function generator(): BelongsTo

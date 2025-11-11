@@ -10,10 +10,11 @@ use App\Models\Project;
 use App\Models\ProjectStage;
 use App\Models\Report;
 use App\Models\ReportRun;
+use App\Models\Site;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -85,7 +86,7 @@ class ReportService
     public function listReports(Organization $organization, array $filters = []): LengthAwarePaginator
     {
         $query = $organization->reports()
-            ->with(['project', 'projectStage', 'creator', 'updater', 'latestRun'])
+            ->with(['project', 'projectStage', 'site', 'creator', 'updater', 'latestRun'])
             ->withCount('runs');
 
         if (isset($filters['report_type']) && $filters['report_type'] !== 'all') {
@@ -96,6 +97,10 @@ class ReportService
             $query->where('status', $filters['status']);
         }
 
+        if (isset($filters['site_id']) && $filters['site_id'] !== 'all' && $filters['site_id'] !== null && $filters['site_id'] !== '') {
+            $query->where('site_id', (int) $filters['site_id']);
+        }
+
         if (isset($filters['search']) && $filters['search']) {
             $query->where(function (Builder $builder) use ($filters) {
                 $builder->where('title', 'like', '%' . $filters['search'] . '%')
@@ -104,6 +109,44 @@ class ReportService
         }
 
         return $query->latest()->paginate(10)->withQueryString();
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    public function listAllReports(array $filters = []): LengthAwarePaginator
+    {
+        $query = Report::query()
+            ->with(['organization', 'project', 'projectStage', 'site', 'latestRun'])
+            ->withCount('runs');
+
+        if (isset($filters['organization_id']) && $filters['organization_id'] !== 'all' && $filters['organization_id'] !== null && $filters['organization_id'] !== '') {
+            $query->where('organization_id', (int) $filters['organization_id']);
+        }
+
+        if (isset($filters['site_id']) && $filters['site_id'] !== 'all' && $filters['site_id'] !== null && $filters['site_id'] !== '') {
+            $query->where('site_id', (int) $filters['site_id']);
+        }
+
+        if (isset($filters['report_type']) && $filters['report_type'] !== 'all' && $filters['report_type']) {
+            $query->where('report_type', $filters['report_type']);
+        }
+
+        if (isset($filters['status']) && $filters['status'] !== 'all' && $filters['status']) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['search']) && $filters['search']) {
+            $query->where(function (Builder $builder) use ($filters) {
+                $builder->where('title', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('description', 'like', '%' . $filters['search'] . '%');
+            });
+        }
+
+        $perPage = (int) ($filters['per_page'] ?? 15);
+        $perPage = $perPage > 0 ? $perPage : 15;
+
+        return $query->latest()->paginate($perPage)->withQueryString();
     }
 
     /**
@@ -124,6 +167,10 @@ class ReportService
 
             if (!empty($data['project_stage_id'])) {
                 $report->projectStage()->associate($data['project_stage_id']);
+            }
+
+            if (!empty($data['site_id'])) {
+                $report->site()->associate($data['site_id']);
             }
 
             if ($user) {
@@ -159,6 +206,13 @@ class ReportService
                 }
             }
 
+            if (array_key_exists('site_id', $data)) {
+                $report->site()->dissociate();
+                if (!empty($data['site_id'])) {
+                    $report->site()->associate($data['site_id']);
+                }
+            }
+
             if ($user) {
                 $report->updater()->associate($user);
             }
@@ -184,8 +238,9 @@ class ReportService
         array $filters,
         ?Project $project = null,
         ?ProjectStage $stage = null,
+        ?Site $site = null,
     ): array {
-        return $this->generator->generate($organization, $reportType, $filters, $project, $stage);
+        return $this->generator->generate($organization, $reportType, $filters, $project, $stage, $site);
     }
 
     /**
@@ -198,8 +253,9 @@ class ReportService
         ?Report $report = null,
         ?Project $project = null,
         ?ProjectStage $stage = null,
+        ?Site $site = null,
     ): ReportRun {
-        return DB::transaction(function () use ($payload, $organization, $user, $report, $project, $stage) {
+        return DB::transaction(function () use ($payload, $organization, $user, $report, $project, $stage, $site) {
             $run = new ReportRun();
             $run->report_type = Arr::get($payload, 'type');
             $run->filters = Arr::get($payload, 'filters', []);
@@ -213,14 +269,26 @@ class ReportService
             if ($report) {
                 $run->report()->associate($report);
 
+                $meta = [
+                    ...($report->meta ?? []),
+                    ...Arr::get($payload, 'meta', []),
+                ];
+
+                if ($site) {
+                    $meta['site_id'] = $site->id;
+                } else {
+                    unset($meta['site_id']);
+                }
+
                 $report->update([
                     'filters' => Arr::get($payload, 'filters', $report->filters ?? []),
                     'summary' => $run->summary,
-                    'meta' => array_filter([
-                        ...($report->meta ?? []),
-                        ...Arr::get($payload, 'meta', []),
-                    ]),
+                    'meta' => array_filter(
+                        $meta,
+                        static fn ($value) => $value !== null && $value !== ''
+                    ),
                     'generated_at' => $run->generated_at,
+                    'site_id' => $site?->id,
                 ]);
             }
 
@@ -230,6 +298,10 @@ class ReportService
 
             if ($stage) {
                 $run->projectStage()->associate($stage);
+            }
+
+            if ($site) {
+                $run->site()->associate($site);
             }
 
             if ($user) {
@@ -247,12 +319,37 @@ class ReportService
      */
     public function export(ReportType $reportType, array $payload, string $format = 'csv', ?string $filename = null): Response
     {
-        return $this->exporter->export($reportType, $payload, $format, $filename);
+        $format = strtolower($format);
+
+        if ($format === 'excel') {
+            $format = 'xlsx';
+        }
+
+        if ($filename) {
+            if (str_ends_with(strtolower($filename), '.excel')) {
+                $filename = preg_replace('/\.excel$/i', '.xlsx', $filename);
+            } elseif ($format === 'xlsx' && !str_ends_with(strtolower($filename), '.xlsx')) {
+                $filename .= '.xlsx';
+            }
+        }
+
+        return $this->exporter->export($reportType, [
+            'title' => Arr::get($payload, 'title'),
+            'data' => Arr::get($payload, 'data', []),
+            'filters' => Arr::get($payload, 'filters', []),
+            'summary' => Arr::get($payload, 'summary', []),
+            'meta' => Arr::get($payload, 'meta', []),
+            'generated_at' => Arr::get($payload, 'generated_at', now()),
+        ], $format, $filename);
     }
 
     public function ensureReportBelongsToOrganization(Report $report, Organization $organization): void
     {
         if ($report->organization_id && $report->organization_id !== $organization->id) {
+            abort(404);
+        }
+
+        if ($report->site && $report->site->organization_id !== $organization->id) {
             abort(404);
         }
     }

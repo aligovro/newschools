@@ -45,6 +45,13 @@ class ReportResource extends JsonResource
                     'title' => $this->projectStage->title,
                 ];
             }),
+            'site' => $this->whenLoaded('site', function () {
+                return [
+                    'id' => $this->site->id,
+                    'name' => $this->site->name,
+                    'status' => $this->site->status,
+                ];
+            }),
             'creator' => $this->whenLoaded('creator', function () {
                 return [
                     'id' => $this->creator->id,

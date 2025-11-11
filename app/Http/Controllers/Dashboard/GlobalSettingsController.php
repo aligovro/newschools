@@ -262,6 +262,9 @@ class GlobalSettingsController extends Controller
             'integration_settings' => 'array',
             'integration_settings.yandex_map_apikey' => 'nullable|string|max:255',
             'integration_settings.yandex_suggest_apikey' => 'nullable|string|max:255',
+            'integration_settings.smsc.login' => 'nullable|string|max:255',
+            'integration_settings.smsc.password' => 'nullable|string|max:255',
+            'integration_settings.smsc.sender' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -273,7 +276,7 @@ class GlobalSettingsController extends Controller
         $current = $this->settingsService->getSettings()->integration_settings ?? [];
         $incoming = $request->get('integration_settings', []);
 
-        $merged = array_merge($current, $incoming);
+        $merged = array_replace_recursive($current, $incoming);
 
         $this->settingsService->updateSettings([
             'integration_settings' => $merged,

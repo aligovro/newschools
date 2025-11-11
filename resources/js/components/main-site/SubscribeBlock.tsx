@@ -3,7 +3,12 @@ import '@css/components/main-site/SubscribeBlock.scss';
 import { usePage } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
+
 import CitySelector from './CitySelector';
+import { SubscribeSponsorModal } from './SubscribeSponsorModal';
+import type { Auth, User as AppUser } from '@/types';
 
 interface Organization {
     id: number;
@@ -35,6 +40,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                 plural_nominative?: string;
             };
         };
+        auth?: Auth;
     }>();
 
     const globalTerminology = props.terminology;
@@ -72,6 +78,16 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
     const [popularSchools, setPopularSchools] = useState<Organization[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [targetOrganization, setTargetOrganization] =
+        useState<Organization | null>(null);
+
+    const initialUser = props.auth?.user || null;
+    const [sessionUser, setSessionUser] = useState<AppUser | null>(initialUser);
+
+    useEffect(() => {
+        setSessionUser(initialUser);
+    }, [initialUser]);
 
     // Функция для выполнения поиска
     const performSearch = useCallback(
@@ -135,10 +151,32 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
         [searchQuery, selectedCity, performSearch],
     );
 
-    const handleSubscribe = (schoolId: number) => {
-        // TODO: Реализовать подписку на школу
-        console.log('Подписка на школу:', schoolId);
-    };
+    const handleSubscribe = useCallback(
+        async (school: Organization) => {
+            if (sessionUser) {
+                try {
+                    await axios.post(
+                        '/api/auth/phone/attach',
+                        { organization_id: school.id },
+                        { withCredentials: true },
+                    );
+                    toast.success(
+                        `Вы подписались как спонсор ${school.name}. Благодарим!`,
+                    );
+                } catch (error: any) {
+                    const message =
+                        error.response?.data?.message ||
+                        'Не удалось оформить подписку. Попробуйте позже.';
+                    toast.error(message);
+                }
+                return;
+            }
+
+            setTargetOrganization(school);
+            setIsModalOpen(true);
+        },
+        [sessionUser],
+    );
 
     // Определяем классы для grid в зависимости от количества колонок
     const gridColsClass = useMemo(() => {
@@ -277,9 +315,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
 
                                     {/* Кнопка подписки */}
                                     <button
-                                        onClick={() =>
-                                            handleSubscribe(school.id)
-                                        }
+                                        onClick={() => handleSubscribe(school)}
                                         className="subscribe-block__subscribe-button flex shrink-0 items-center justify-center"
                                         aria-label="Подписаться"
                                     >
@@ -297,6 +333,22 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                     )}
                 </div>
             </div>
+            <SubscribeSponsorModal
+                open={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                organization={
+                    targetOrganization
+                        ? {
+                              id: targetOrganization.id,
+                              name: targetOrganization.name,
+                          }
+                        : null
+                }
+                onCompleted={(user) => {
+                    setSessionUser(user);
+                    setIsModalOpen(false);
+                }}
+            />
         </section>
     );
 }

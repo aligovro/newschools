@@ -20,7 +20,9 @@ use App\Http\Controllers\Dashboard\OrganizationCreationController;
 use App\Http\Controllers\PublicOrganizationController;
 use App\Http\Controllers\Api\Public\PublicApiController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PhoneAuthController;
 use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\NewsController;
 use App\Http\Controllers\Api\Public\SuggestedOrganizationController;
 use App\Http\Controllers\Api\UserController;
 
@@ -33,6 +35,16 @@ Route::middleware('web')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
+
+    Route::prefix('auth/phone')->group(function () {
+        Route::post('/request-code', [PhoneAuthController::class, 'requestCode']);
+        Route::post('/verify-code', [PhoneAuthController::class, 'verifyCode']);
+        Route::middleware('auth')->group(function () {
+            Route::patch('/profile', [PhoneAuthController::class, 'completeProfile']);
+            Route::post('/photo', [PhoneAuthController::class, 'uploadPhoto']);
+            Route::post('/attach', [PhoneAuthController::class, 'attach']);
+        });
+    });
 });
 
 /*
@@ -210,6 +222,16 @@ Route::prefix('sites/{siteId}/forms/{widgetId}')->group(function () {
 Route::middleware(['web', 'auth'])->prefix('organizations')->group(function () {
     Route::get('/', [OrganizationController::class, 'index']);
     Route::get('/{organization}', [OrganizationController::class, 'show']);
+});
+
+Route::middleware(['web', 'auth'])->prefix('news')->group(function () {
+    Route::get('/targets', [NewsController::class, 'targets']);
+    Route::get('/main-site', [NewsController::class, 'mainSite']);
+    Route::get('/', [NewsController::class, 'index']);
+    Route::post('/', [NewsController::class, 'store']);
+    Route::get('/{news}', [NewsController::class, 'show'])->whereNumber('news');
+    Route::match(['put', 'patch'], '/{news}', [NewsController::class, 'update'])->whereNumber('news');
+    Route::delete('/{news}', [NewsController::class, 'destroy'])->whereNumber('news');
 });
 
 // Защищенные API маршруты для пользователей (требуют аутентификации)

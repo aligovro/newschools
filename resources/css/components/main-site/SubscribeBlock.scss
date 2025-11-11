@@ -97,3 +97,43 @@
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(4px);
 }
+
+.phone-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 0.75rem;
+    background-color: #fff;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+
+    &:focus-within {
+        border-color: rgba(37, 99, 235, 0.6);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+}
+
+.phone-input__prefix {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-right: 0.5rem;
+}
+
+.phone-input__field {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    line-height: 1.25;
+    color: #0f172a;
+}
+
+.phone-input__field::placeholder {
+    color: rgba(100, 116, 139, 0.7);
+}
+

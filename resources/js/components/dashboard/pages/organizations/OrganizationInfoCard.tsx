@@ -1,7 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { OrganizationShow } from './types';
-import { getTypeLabel } from './utils';
 import { StatusBadge } from './StatusBadge';
+import {
+    buildAboutPhrase,
+    getTypeLabel,
+    useOrganizationTerms,
+} from './utils';
 
 interface OrganizationInfoCardProps {
     organization: OrganizationShow;
@@ -10,10 +14,13 @@ interface OrganizationInfoCardProps {
 export default function OrganizationInfoCard({
     organization,
 }: OrganizationInfoCardProps) {
+    const { singularPrepositional } = useOrganizationTerms();
+    const infoTitle = `Информация ${buildAboutPhrase(singularPrepositional)}`;
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Информация об организации</CardTitle>
+                <CardTitle>{infoTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 {organization.logo && (
@@ -93,4 +100,3 @@ export default function OrganizationInfoCard({
         </Card>
     );
 }
-

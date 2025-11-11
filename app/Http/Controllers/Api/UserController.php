@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\RussianPhoneNumber;
+use App\Support\PhoneNumber;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
@@ -56,9 +58,27 @@ class UserController extends Controller
   {
     $this->authorize('users.create');
 
+    if ($request->filled('phone')) {
+      $normalized = PhoneNumber::normalize($request->input('phone'));
+      if ($normalized) {
+        $request->merge(['phone' => $normalized]);
+      }
+    }
+
     $validator = Validator::make($request->all(), [
       'name' => 'required|string|max:255',
-      'email' => 'required|string|email|max:255|unique:users',
+      'email' => [
+        'nullable',
+        'string',
+        'email',
+        'max:255',
+        Rule::unique('users', 'email'),
+      ],
+      'phone' => [
+        'nullable',
+        new RussianPhoneNumber(required: false),
+        Rule::unique('users', 'phone'),
+      ],
       'password' => 'required|string|min:8|confirmed',
       'photo' => 'nullable|string|max:255',
       'roles' => 'array',
@@ -74,11 +94,22 @@ class UserController extends Controller
       ], 422);
     }
 
+    if (!$request->filled('email') && !$request->filled('phone')) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => [
+          'email' => ['Необходимо указать email или номер телефона'],
+          'phone' => ['Необходимо указать email или номер телефона'],
+        ],
+      ], 422);
+    }
+
     $user = User::create([
       'name' => $request->name,
       'email' => $request->email,
+      'phone' => $request->phone,
       'password' => Hash::make($request->password),
-      'email_verified_at' => now(),
+      'email_verified_at' => $request->filled('email') ? now() : null,
       'photo' => $request->photo,
     ]);
 
@@ -136,15 +167,28 @@ class UserController extends Controller
   {
     $this->authorize('users.edit');
 
+    if ($request->filled('phone')) {
+      $normalized = PhoneNumber::normalize($request->input('phone'));
+      if ($normalized) {
+        $request->merge(['phone' => $normalized]);
+      }
+    }
+
     $validator = Validator::make($request->all(), [
       'name' => 'sometimes|required|string|max:255',
       'email' => [
         'sometimes',
-        'required',
+        'nullable',
         'string',
         'email',
         'max:255',
         Rule::unique('users')->ignore($user->id)
+      ],
+      'phone' => [
+        'sometimes',
+        'nullable',
+        new RussianPhoneNumber(required: false),
+        Rule::unique('users', 'phone')->ignore($user->id),
       ],
       'password' => 'sometimes|nullable|string|min:8|confirmed',
       'photo' => 'nullable|string|max:255',
@@ -161,7 +205,20 @@ class UserController extends Controller
       ], 422);
     }
 
-    $updateData = $request->only(['name', 'email']);
+    $email = $request->has('email') ? $request->input('email') : $user->email;
+    $phone = $request->has('phone') ? $request->input('phone') : $user->phone;
+
+    if (empty($email) && empty($phone)) {
+      return response()->json([
+        'message' => 'Validation failed',
+        'errors' => [
+          'email' => ['Необходимо указать email или номер телефона'],
+          'phone' => ['Необходимо указать email или номер телефона'],
+        ],
+      ], 422);
+    }
+
+    $updateData = $request->only(['name', 'email', 'phone']);
 
     // Обновляем фото только если оно передано и не является data URL (слишком длинным)
     if ($request->has('photo')) {

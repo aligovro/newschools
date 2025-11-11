@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'smsc' => [
+        'endpoint' => env('SMSC_ENDPOINT', 'https://smsc.ru/sys/send.php'),
+        'timeout' => env('SMSC_TIMEOUT', 10),
+        'login' => env('SMSC_LOGIN'),
+        'password' => env('SMSC_PASSWORD'),
+        'sender' => env('SMSC_SENDER'),
+    ],
+
 ];

@@ -14,20 +14,61 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
             <SidebarMenu>
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                            asChild
-                            isActive={page.url.startsWith(
-                                typeof item.href === 'string'
-                                    ? item.href
-                                    : item.href.url,
-                            )}
-                            tooltip={{ children: item.title }}
-                        >
-                            <Link href={item.href} prefetch>
-                                {item.icon && <item.icon />}
-                                <span>{item.title}</span>
-                            </Link>
-                        </SidebarMenuButton>
+                        {(() => {
+                            const isNewTab = item.target === '_blank';
+                            const relValue =
+                                item.rel ??
+                                (isNewTab ? 'noopener noreferrer' : undefined);
+
+                            const content = (
+                                <>
+                                    {item.icon && <item.icon />}
+                                    <span>{item.title}</span>
+                                </>
+                            );
+
+                            if (isNewTab) {
+                                return (
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={false}
+                                        tooltip={{ children: item.title }}
+                                    >
+                                        <a
+                                            href={
+                                                typeof item.href === 'string'
+                                                    ? item.href
+                                                    : item.href.url
+                                            }
+                                            target="_blank"
+                                            rel={relValue}
+                                        >
+                                            {content}
+                                        </a>
+                                    </SidebarMenuButton>
+                                );
+                            }
+
+                            return (
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={page.url.startsWith(
+                                        typeof item.href === 'string'
+                                            ? item.href
+                                            : item.href.url,
+                                    )}
+                                    tooltip={{ children: item.title }}
+                                >
+                                    <Link
+                                        href={item.href}
+                                        prefetch
+                                        rel={relValue}
+                                    >
+                                        {content}
+                                    </Link>
+                                </SidebarMenuButton>
+                            );
+                        })()}
                     </SidebarMenuItem>
                 ))}
             </SidebarMenu>
