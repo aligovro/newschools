@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Organization;
 use App\Models\Fundraiser;
 use App\Models\Project;
+use App\Models\ProjectStage;
 use App\Models\PaymentMethod;
 use App\Models\PaymentTransaction;
 use App\Models\Donation;
@@ -36,6 +37,14 @@ class DonationWidgetController extends Controller
                 'id' => $organization->id,
                 'name' => $organization->name,
                 'logo' => $organization->logo ? asset('storage/' . $organization->logo) : null,
+            ],
+            'organization_needs' => [
+                'target_amount' => $organization->needs_target_amount,
+                'collected_amount' => $organization->needs_collected_amount,
+                'target_amount_rubles' => $organization->needs_target_amount,
+                'collected_amount_rubles' => $organization->needs_collected_amount,
+                'currency' => 'RUB',
+                'is_active' => ($organization->needs_target_amount ?? 0) > 0,
             ],
             'terminology' => [],
             'payment_methods' => [],
@@ -115,12 +124,38 @@ class DonationWidgetController extends Controller
             $project = Project::where('organization_id', $organization->id)
                 ->findOrFail($projectId);
 
+            $activeStage = $project->stages()
+                ->where('status', 'active')
+                ->orderBy('order')
+                ->first();
+
             $data['project'] = [
                 'id' => $project->id,
                 'title' => $project->title,
                 'description' => $project->description,
                 'image' => $project->image ? asset('storage/' . $project->image) : null,
+                'target_amount' => $project->target_amount,
+                'collected_amount' => $project->collected_amount,
+                'target_amount_rubles' => $project->target_amount_rubles,
+                'collected_amount_rubles' => $project->collected_amount_rubles,
+                'progress_percentage' => $project->progress_percentage,
+                'has_stages' => (bool) $project->has_stages,
             ];
+
+            if ($activeStage) {
+                $data['project']['active_stage'] = [
+                    'id' => $activeStage->id,
+                    'title' => $activeStage->title,
+                    'description' => $activeStage->description,
+                    'target_amount' => $activeStage->target_amount,
+                    'collected_amount' => $activeStage->collected_amount,
+                    'target_amount_rubles' => $activeStage->target_amount_rubles,
+                    'collected_amount_rubles' => $activeStage->collected_amount_rubles,
+                    'progress_percentage' => $activeStage->progress_percentage,
+                    'status' => $activeStage->status,
+                    'order' => $activeStage->order,
+                ];
+            }
         }
 
         return response()->json($data);
@@ -138,6 +173,7 @@ class DonationWidgetController extends Controller
             'payment_method_slug' => 'required|string|exists:payment_methods,slug',
             'fundraiser_id' => 'nullable|exists:fundraisers,id',
             'project_id' => 'nullable|exists:projects,id',
+            'project_stage_id' => 'nullable|exists:project_stages,id',
             'donor_name' => 'required_if:is_anonymous,false|string|max:255',
             'donor_email' => 'nullable|email|max:255',
             'donor_phone' => 'nullable|string|max:20',
@@ -161,6 +197,10 @@ class DonationWidgetController extends Controller
 
         try {
             // Проверяем, что fundraiser и project принадлежат организации
+            $fundraiser = null;
+            $project = null;
+            $projectStage = null;
+
             if (isset($data['fundraiser_id'])) {
                 $fundraiser = Fundraiser::where('id', $data['fundraiser_id'])
                     ->where('organization_id', $organization->id)
@@ -171,6 +211,40 @@ class DonationWidgetController extends Controller
                 $project = Project::where('id', $data['project_id'])
                     ->where('organization_id', $organization->id)
                     ->firstOrFail();
+            }
+
+            if (isset($data['project_stage_id'])) {
+                $projectStage = ProjectStage::where('id', $data['project_stage_id'])
+                    ->when($project, function ($query) use ($project) {
+                        $query->where('project_id', $project->id);
+                    })
+                    ->firstOrFail();
+
+                if (!$project) {
+                    $project = $projectStage->project;
+
+                    if (!$project || $project->organization_id !== $organization->id) {
+                        throw new \InvalidArgumentException('Stage does not belong to organization');
+                    }
+
+                    $data['project_id'] = $project->id;
+                }
+            }
+
+            if ($project && !$projectStage && $project->has_stages) {
+                $activeStage = $project->stages()
+                    ->where('status', 'active')
+                    ->orderBy('order')
+                    ->first();
+
+                if ($activeStage) {
+                    $projectStage = $activeStage;
+                    $data['project_stage_id'] = $activeStage->id;
+                }
+            }
+
+            if ($projectStage && $project && (int) $projectStage->project_id !== (int) $project->id) {
+                throw new \InvalidArgumentException('Stage does not belong to the specified project');
             }
 
             // Конвертируем сумму в копейки
@@ -193,6 +267,7 @@ class DonationWidgetController extends Controller
                 'organization_id' => $organization->id,
                 'fundraiser_id' => $data['fundraiser_id'] ?? null,
                 'project_id' => $data['project_id'] ?? null,
+                'project_stage_id' => $data['project_stage_id'] ?? null,
                 'payment_method_slug' => $data['payment_method_slug'],
                 'amount' => $amountInKopeks,
                 'currency' => $data['currency'],

@@ -1,5 +1,6 @@
-import { Breadcrumbs } from '@/components/breadcrumbs';
-import CitySelector from '@/components/main-site/CitySelector';
+import CitySelector, {
+    type City as PublicCity,
+} from '@/components/main-site/CitySelector';
 import { MapMarker } from '@/components/maps/YandexMap';
 import { useDefaultCity } from '@/hooks/useDefaultCity';
 import MainLayout from '@/layouts/MainLayout';
@@ -80,19 +81,15 @@ export default function Organizations({
     const paginationMeta =
         organizations.meta ??
         ({
-            current_page: organizations.current_page,
-            last_page: organizations.last_page,
-            per_page: organizations.per_page,
-            total: organizations.total,
+            current_page: organizations.current_page ?? 1,
+            last_page: organizations.last_page ?? 1,
+            per_page: organizations.per_page ?? 6,
+            total: organizations.total ?? organizations.data.length ?? 0,
         } satisfies OrganizationsPageProps['organizations']['meta']);
 
     const PAGE_SIZE = paginationMeta?.per_page ?? organizations.per_page ?? 6;
     const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
-    const [selectedCity, setSelectedCity] = useState<{
-        id: number;
-        name: string;
-        region?: { name: string };
-    } | null>(null);
+    const [selectedCity, setSelectedCity] = useState<PublicCity | null>(null);
     const [cityCoordinates, setCityCoordinates] = useState<{
         latitude: number;
         longitude: number;
@@ -145,7 +142,9 @@ export default function Organizations({
                 // Сначала пробуем получить по ID через dashboard API
                 if (selectedCity.id) {
                     try {
-                        const res = await fetch(`/dashboard/api/cities/${selectedCity.id}`);
+                        const res = await fetch(
+                            `/dashboard/api/cities/${selectedCity.id}`,
+                        );
                         if (res.ok) {
                             const data = await res.json();
                             if (data?.latitude && data?.longitude) {
@@ -160,9 +159,12 @@ export default function Organizations({
                         // Если не получилось, используем публичный API
                     }
                 }
-                
+
                 // Fallback: используем публичный API по имени
-                const url = new URL('/api/public/cities/resolve', window.location.origin);
+                const url = new URL(
+                    '/api/public/cities/resolve',
+                    window.location.origin,
+                );
                 url.searchParams.set('name', selectedCity.name);
                 const res = await fetch(url.toString());
                 if (res.ok) {
@@ -223,13 +225,7 @@ export default function Organizations({
 
     // Обработчик изменения города
     const handleCityChange = useCallback(
-        (
-            city: {
-                id: number;
-                name: string;
-                region?: { name: string };
-            } | null,
-        ) => {
+        (city: PublicCity | null) => {
             setSelectedCity(city);
             updateFilters({
                 search: searchQuery || undefined,
@@ -280,7 +276,7 @@ export default function Organizations({
         if (cityCoordinates) {
             return [cityCoordinates.latitude, cityCoordinates.longitude];
         }
-        
+
         // Если есть маркеры, используем их центр
         if (mapMarkers.length > 0) {
             let sumLat = 0;
@@ -291,7 +287,7 @@ export default function Organizations({
             }
             return [sumLat / mapMarkers.length, sumLon / mapMarkers.length];
         }
-        
+
         // По умолчанию Москва
         return [55.751244, 37.618423];
     }, [cityCoordinates, mapMarkers]);
@@ -304,15 +300,12 @@ export default function Organizations({
                 position_settings={position_settings}
                 pageTitle="Загрузка..."
                 pageDescription="Список всех организаций"
+                breadcrumbs={[
+                    { title: 'Главная', href: '/' },
+                    { title: 'Школы', href: '' },
+                ]}
             >
                 <div className="space-y-6">
-                    {/* Хлебные крошки */}
-                    <Breadcrumbs
-                        breadcrumbs={[
-                            { title: 'Главная', href: '/' },
-                            { title: 'Школы', href: '' },
-                        ]}
-                    />
                     {/* Заголовок */}
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900">
                         Загрузка города…
@@ -354,16 +347,12 @@ export default function Organizations({
             position_settings={position_settings}
             pageTitle={pageTitle}
             pageDescription="Список всех организаций"
+            breadcrumbs={[
+                { title: 'Главная', href: '/' },
+                { title: 'Школы', href: '' },
+            ]}
         >
             <div className="space-y-6">
-                {/* Хлебные крошки */}
-                <Breadcrumbs
-                    breadcrumbs={[
-                        { title: 'Главная', href: '/' },
-                        { title: 'Школы', href: '' },
-                    ]}
-                />
-
                 {/* Заголовок */}
                 <h1 className="text-3xl font-bold tracking-tight text-gray-900">
                     {pageTitle}

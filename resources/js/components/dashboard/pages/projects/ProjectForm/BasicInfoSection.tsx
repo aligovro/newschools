@@ -4,12 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import UniversalSelect from '@/components/ui/universal-select/UniversalSelect';
 import { Target } from 'lucide-react';
-import type {
-    BasicInfoSectionProps,
-    CategoryOption,
-    Project,
-    StatusOption,
-} from './types';
+import type { BasicInfoSectionProps, Project, StatusOption } from './types';
 
 const statusOptions: StatusOption[] = [
     { value: 'draft', label: 'Черновик' },
@@ -22,23 +17,40 @@ const statusOptions: StatusOption[] = [
 export function BasicInfoSection({
     data,
     errors,
-    categories,
     projectCategories = [],
     onDataChange,
 }: BasicInfoSectionProps) {
-    const categoryOptions: CategoryOption[] = Object.entries(categories).map(
-        ([value, label]) => ({
-            value,
-            label,
-        }),
-    );
-
     const handleCategoryToggle = (categoryId: number) => {
-        const currentIds = data.category_ids || [];
-        const newIds = currentIds.includes(categoryId)
-            ? currentIds.filter((id) => id !== categoryId)
-            : [...currentIds, categoryId];
-        onDataChange('category_ids', newIds);
+        const currentIds = new Set(data.category_ids || []);
+        if (currentIds.has(categoryId)) {
+            currentIds.delete(categoryId);
+        } else {
+            currentIds.add(categoryId);
+        }
+
+        const nextIds = projectCategories
+            .filter((category) => currentIds.has(category.id))
+            .map((category) => category.id);
+
+        onDataChange('category_ids', nextIds);
+
+        const primaryStillSelected = projectCategories.some(
+            (category) =>
+                category.slug === data.category &&
+                nextIds.includes(category.id),
+        );
+
+        if (!primaryStillSelected) {
+            const fallback =
+                projectCategories.find((category) =>
+                    nextIds.includes(category.id),
+                ) ?? null;
+            const nextCategory = fallback?.slug ?? '';
+
+            if (nextCategory !== data.category) {
+                onDataChange('category', nextCategory);
+            }
+        }
     };
 
     return (
@@ -94,19 +106,67 @@ export function BasicInfoSection({
                 </div>
 
                 <div className="create-organization__field-group create-organization__field-group--two-columns">
-                    <div className="create-organization__field">
-                        <UniversalSelect
-                            options={categoryOptions}
-                            value={data.category}
-                            onChange={(value) =>
-                                onDataChange('category', value as string)
-                            }
-                            label="Категория"
-                            required
-                            placeholder="Выберите категорию"
-                            error={errors.category}
-                        />
-                    </div>
+                    {projectCategories.length > 0 && (
+                        <div className="create-organization__field-group">
+                            <div className="create-organization__field">
+                                <Label>
+                                    Категории проекта
+                                    <span className="text-muted-foreground">
+                                        {' '}
+                                        (можно выбрать несколько)
+                                    </span>
+                                </Label>
+                                <div className="mt-2 space-y-2">
+                                    {projectCategories.map((category) => {
+                                        const isChecked = (
+                                            data.category_ids || []
+                                        ).includes(category.id);
+                                        return (
+                                            <div
+                                                key={category.id}
+                                                className="flex items-center space-x-2"
+                                            >
+                                                <Checkbox
+                                                    id={`category-${category.id}`}
+                                                    checked={isChecked}
+                                                    onCheckedChange={() =>
+                                                        handleCategoryToggle(
+                                                            category.id,
+                                                        )
+                                                    }
+                                                />
+                                                <Label
+                                                    htmlFor={`category-${category.id}`}
+                                                    className="cursor-pointer font-normal"
+                                                >
+                                                    {category.name}
+                                                    {category.description && (
+                                                        <span className="ml-2 text-sm text-muted-foreground">
+                                                            (
+                                                            {
+                                                                category.description
+                                                            }
+                                                            )
+                                                        </span>
+                                                    )}
+                                                </Label>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {errors.category_ids && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {errors.category_ids}
+                                    </p>
+                                )}
+                                {errors.category && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {errors.category}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="create-organization__field">
                         <UniversalSelect
@@ -124,59 +184,6 @@ export function BasicInfoSection({
                         />
                     </div>
                 </div>
-
-                {projectCategories.length > 0 && (
-                    <div className="create-organization__field-group">
-                        <div className="create-organization__field">
-                            <Label>
-                                Категории проекта
-                                <span className="text-muted-foreground">
-                                    {' '}
-                                    (можно выбрать несколько)
-                                </span>
-                            </Label>
-                            <div className="mt-2 space-y-2">
-                                {projectCategories.map((category) => {
-                                    const isChecked = (
-                                        data.category_ids || []
-                                    ).includes(category.id);
-                                    return (
-                                        <div
-                                            key={category.id}
-                                            className="flex items-center space-x-2"
-                                        >
-                                            <Checkbox
-                                                id={`category-${category.id}`}
-                                                checked={isChecked}
-                                                onCheckedChange={() =>
-                                                    handleCategoryToggle(
-                                                        category.id,
-                                                    )
-                                                }
-                                            />
-                                            <Label
-                                                htmlFor={`category-${category.id}`}
-                                                className="cursor-pointer font-normal"
-                                            >
-                                                {category.name}
-                                                {category.description && (
-                                                    <span className="ml-2 text-sm text-muted-foreground">
-                                                        ({category.description})
-                                                    </span>
-                                                )}
-                                            </Label>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            {errors.category_ids && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {errors.category_ids}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                )}
 
                 <div className="create-organization__field-group">
                     <div className="create-organization__field">

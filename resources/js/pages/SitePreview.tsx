@@ -377,8 +377,14 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                             }
 
                             // Рендерим с сайдбаром
+                            const gridTemplateClass = sidebarLeft
+                                ? 'lg:grid-cols-[minmax(360px,1fr)_repeat(3,minmax(0,1fr))]'
+                                : 'lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(360px,1fr)]';
+
                             return (
-                                <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+                                <div
+                                    className={`grid grid-cols-1 gap-8 lg:gap-24 ${gridTemplateClass}`}
+                                >
                                     {/* Sidebar */}
                                     {sidebarLeft &&
                                         visibleSidebarPositions.map(

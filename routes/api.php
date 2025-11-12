@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Api\Dashboard\SuggestedOrganizationController as DashboardSuggestedOrganizationController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\SlugController;
@@ -357,3 +358,11 @@ Route::prefix('dashboard')->middleware(['web', 'auth', 'verified'])->group(funct
     Route::post('/widgets/images/upload', [WidgetController::class, 'uploadImage']);
     Route::post('/widgets/images/delete', [WidgetController::class, 'deleteImage']);
 });
+
+Route::prefix('dashboard/suggested-organizations')
+    ->middleware(['web', 'auth', 'verified'])
+    ->group(function () {
+        Route::get('/', [DashboardSuggestedOrganizationController::class, 'index']);
+        Route::match(['put', 'patch'], '/{suggestedOrganization}', [DashboardSuggestedOrganizationController::class, 'update']);
+        Route::delete('/{suggestedOrganization}', [DashboardSuggestedOrganizationController::class, 'destroy']);
+    });

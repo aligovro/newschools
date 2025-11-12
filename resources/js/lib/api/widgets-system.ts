@@ -76,18 +76,63 @@ export interface PaymentMethod {
     id: number;
     name: string;
     type: string;
+    slug?: string;
     is_active: boolean;
     config: Record<string, unknown>;
+    description?: string;
+    icon?: string;
+    min_amount?: number;
+    max_amount?: number;
 }
 
 export interface DonationWidgetData {
     terminology: Record<string, string>;
     fundraiser?: {
         id: number;
-        name: string;
-        description: string;
+        title: string;
+        description?: string;
+        short_description?: string;
         target_amount?: number;
-        current_amount?: number;
+        collected_amount?: number;
+        target_amount_rubles?: number;
+        collected_amount_rubles?: number;
+        progress_percentage?: number;
+    };
+    organization?: {
+        id: number;
+        name: string;
+    };
+    organization_needs?: {
+        target_amount: number | null;
+        collected_amount: number | null;
+        target_amount_rubles: number | null;
+        collected_amount_rubles: number | null;
+        currency: string;
+        is_active: boolean;
+    };
+    project?: {
+        id: number;
+        title: string;
+        description?: string;
+        image?: string | null;
+        target_amount?: number;
+        collected_amount?: number;
+        target_amount_rubles?: number;
+        collected_amount_rubles?: number;
+        progress_percentage?: number;
+        has_stages?: boolean;
+        active_stage?: {
+            id: number;
+            title: string;
+            description?: string;
+            target_amount?: number;
+            collected_amount?: number;
+            target_amount_rubles?: number;
+            collected_amount_rubles?: number;
+            progress_percentage?: number;
+            status?: string;
+            order?: number;
+        } | null;
     };
 }
 
@@ -97,6 +142,7 @@ export interface DonationRequest {
     payment_method_slug: string;
     fundraiser_id?: number;
     project_id?: number;
+    project_stage_id?: number;
     donor_name?: string;
     donor_email?: string;
     donor_phone?: string;
@@ -159,7 +205,7 @@ export const widgetsSystemApi = {
     // Получение данных виджета пожертвований
     getDonationWidgetData: (
         organizationId: number,
-        params: { fundraiser_id?: number } = {},
+        params: { fundraiser_id?: number; project_id?: number; project_stage_id?: number } = {},
     ): Promise<DonationWidgetData> =>
         apiClient
             .get<DonationWidgetData>(

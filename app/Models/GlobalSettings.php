@@ -54,7 +54,6 @@ class GlobalSettings extends Model
     'default_timezone',
     'default_currency',
     'default_organization_settings',
-    'default_payment_settings',
     'default_notification_settings',
     'system_settings',
     'feature_flags',
@@ -78,7 +77,6 @@ class GlobalSettings extends Model
 
   protected $casts = [
     'default_organization_settings' => 'array',
-    'default_payment_settings' => 'array',
     'default_notification_settings' => 'array',
     'system_settings' => 'array',
     'feature_flags' => 'array',
@@ -149,14 +147,6 @@ class GlobalSettings extends Model
         'accent_color' => '#10B981',
         'font_family' => 'Inter',
         'dark_mode' => false,
-      ],
-      'default_payment_settings' => [
-        'enabled_methods' => ['yookassa', 'tinkoff'],
-        'min_amount' => 100,
-        'max_amount' => 100000000,
-        'currency' => 'RUB',
-        'auto_approve' => true,
-        'commission_percentage' => 0,
       ],
       'default_notification_settings' => [
         'email_notifications' => true,

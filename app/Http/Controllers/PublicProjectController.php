@@ -186,6 +186,7 @@ class PublicProjectController extends Controller
         return Inertia::render('main-site/ProjectShow', array_merge($data, [
             'project' => $projectData,
             'sponsors' => $sponsorsPayload,
+            'organizationId' => $project->organization?->id,
         ]));
     }
 

@@ -123,8 +123,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Suggested schools management (super admin only)
         Route::get('/suggested-organizations', [SuggestedOrganizationController::class, 'index'])->name('suggested-organizations.index');
-        Route::put('/suggested-organizations/{suggestedOrganization}', [SuggestedOrganizationController::class, 'update'])->name('suggested-organizations.update');
-        Route::delete('/suggested-organizations/{suggestedOrganization}', [SuggestedOrganizationController::class, 'destroy'])->name('suggested-organizations.destroy');
 
         // Global settings management (super admin only)
         Route::prefix('admin')->name('admin.')->group(function () {
@@ -135,6 +133,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/global-settings/features', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updateFeatureFlags'])->name('global-settings.features');
             Route::post('/global-settings/system-config', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updateSystemConfig'])->name('global-settings.system-config');
             Route::post('/global-settings/integrations', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updateIntegrationSettings'])->name('global-settings.integrations');
+            Route::post('/global-settings/payments', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updatePaymentSettings'])->name('global-settings.payments');
             Route::get('/global-settings/export', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'export'])->name('global-settings.export');
             Route::post('/global-settings/import', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'import'])->name('global-settings.import');
             Route::post('/global-settings/reset', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'reset'])->name('global-settings.reset');

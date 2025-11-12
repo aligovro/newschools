@@ -47,6 +47,11 @@ class ProjectStage extends Model
     return $this->hasMany(ReportRun::class);
   }
 
+  public function donations(): HasMany
+  {
+    return $this->hasMany(Donation::class);
+  }
+
   // Методы для работы с суммами
   public function getTargetAmountRublesAttribute(): float
   {

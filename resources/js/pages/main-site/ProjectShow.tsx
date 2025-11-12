@@ -1,4 +1,3 @@
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
 import ProjectStageCard from '@/components/projects/ProjectStageCard';
@@ -125,17 +124,13 @@ export default function ProjectShow({
             position_settings={position_settings}
             pageTitle={project.title}
             pageDescription={project.short_description}
+            breadcrumbs={[
+                { title: 'Главная', href: '/' },
+                { title: 'Проекты', href: '/projects' },
+                { title: project.title, href: '' },
+            ]}
         >
             <div className="space-y-8">
-                {/* Хлебные крошки */}
-                <Breadcrumbs
-                    breadcrumbs={[
-                        { title: 'Главная', href: '/' },
-                        { title: 'Проекты', href: '/projects' },
-                        { title: project.title, href: '' },
-                    ]}
-                />
-
                 {/* Слайдер галереи */}
                 {project.gallery && project.gallery.length > 0 && (
                     <div>

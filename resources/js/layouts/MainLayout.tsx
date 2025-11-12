@@ -1,8 +1,10 @@
+import { Breadcrumbs } from '@/components/breadcrumbs';
 import { WidgetDisplay } from '@/components/dashboard/site-builder/constructor/WidgetDisplay';
 import type {
     WidgetData,
     WidgetPosition,
 } from '@/components/dashboard/site-builder/types';
+import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import React, { ReactNode } from 'react';
 import '../../css/site-preview.scss';
@@ -31,6 +33,7 @@ interface MainLayoutProps {
     children?: ReactNode;
     pageTitle?: string;
     pageDescription?: string;
+    breadcrumbs?: BreadcrumbItem[];
 }
 
 type PositionVisibilityRules = {
@@ -46,6 +49,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     children,
     pageTitle,
     pageDescription,
+    breadcrumbs = [],
 }) => {
     const MemoWidgetDisplay = React.useMemo(
         () => React.memo(WidgetDisplay),
@@ -376,6 +380,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 {/* Main Content */}
                 <main className="site-main">
                     <div className="container mx-auto px-4">
+                        {breadcrumbs.length > 0 && (
+                            <div className="mb-8">
+                                <Breadcrumbs breadcrumbs={breadcrumbs} />
+                            </div>
+                        )}
                         {(() => {
                             const sidebarPositions = positionsByArea.sidebar;
 
@@ -418,8 +427,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                 );
                             }
 
+                            const gridTemplateClass = sidebarLeft
+                                ? 'lg:grid-cols-[minmax(360px,1fr)_repeat(3,minmax(0,1fr))]'
+                                : 'lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(360px,1fr)]';
+
                             return (
-                                <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+                                <div
+                                    className={`grid grid-cols-1 gap-8 lg:gap-24 ${gridTemplateClass}`}
+                                >
                                     {sidebarLeft &&
                                         visibleSidebarPositions.map(
                                             (position) => (

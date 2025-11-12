@@ -1,12 +1,15 @@
 import { useCallback, useMemo, useState } from 'react';
+import type { SetStateAction } from 'react';
 import type { OrganizationLite, Status } from '../../types';
 import type { PaymentGatewaysSettingsValue } from '@/components/dashboard/payments/PaymentGatewaysSettings';
 import type { UploadedImage } from '@/components/ui/image-uploader/MultiImageUploader';
+import { normalizePaymentSettings } from '@/lib/payments/normalizePaymentSettings';
 
 interface UseOrganizationFormStateProps {
     organization?: OrganizationLite;
     organizationSettings?: { payment_settings?: unknown };
     isEdit: boolean;
+    defaultPaymentSettings?: PaymentGatewaysSettingsValue;
 }
 
 interface FormState {
@@ -33,6 +36,7 @@ export function useOrganizationFormState({
     organization,
     organizationSettings,
     isEdit,
+    defaultPaymentSettings,
 }: UseOrganizationFormStateProps) {
     const [name, setName] = useState(organization?.name ?? '');
     const [description, setDescription] = useState(
@@ -87,27 +91,19 @@ export function useOrganizationFormState({
         useState<UploadedImage[]>(initialGallery);
 
     const initialPayments: PaymentGatewaysSettingsValue = useMemo(() => {
-        const ps = (organizationSettings?.payment_settings || {}) as any;
-        const enabled = Array.isArray(ps.enabled_gateways)
-            ? ps.enabled_gateways
-            : ps.gateway
-              ? [ps.gateway]
-              : ['yookassa'];
+        const normalized = normalizePaymentSettings(
+            (organizationSettings?.payment_settings ?? defaultPaymentSettings) as any,
+        );
+
         return {
-            enabled_gateways: enabled,
-            credentials: ps.credentials || {},
-            currency: ps.currency || 'RUB',
-            test_mode: typeof ps.test_mode === 'boolean' ? ps.test_mode : true,
-            donation_min_amount:
-                typeof ps.donation_min_amount === 'number'
-                    ? ps.donation_min_amount
-                    : 100,
-            donation_max_amount:
-                typeof ps.donation_max_amount === 'number'
-                    ? ps.donation_max_amount
-                    : 0,
+            enabled_gateways: normalized.enabled_gateways,
+            credentials: normalized.credentials,
+            currency: normalized.currency,
+            test_mode: normalized.test_mode,
+            donation_min_amount: normalized.donation_min_amount,
+            donation_max_amount: normalized.donation_max_amount,
         };
-    }, [organizationSettings]);
+    }, [organizationSettings, defaultPaymentSettings]);
 
     const [paymentSettings, setPaymentSettings] =
         useState<PaymentGatewaysSettingsValue>(initialPayments);
@@ -162,7 +158,25 @@ export function useOrganizationFormState({
         setNeedsCollectedAmount,
         setLogoValue,
         setGalleryImages,
-        setPaymentSettings,
+        setPaymentSettings: (updater: SetStateAction<PaymentGatewaysSettingsValue>) => {
+            setPaymentSettings((prev) => {
+                const next =
+                    typeof updater === 'function'
+                        ? (updater as (value: PaymentGatewaysSettingsValue) => PaymentGatewaysSettingsValue)(prev)
+                        : updater;
+
+                const normalized = normalizePaymentSettings(next as any);
+
+                return {
+                    enabled_gateways: normalized.enabled_gateways,
+                    credentials: normalized.credentials,
+                    currency: normalized.currency,
+                    test_mode: normalized.test_mode,
+                    donation_min_amount: normalized.donation_min_amount,
+                    donation_max_amount: normalized.donation_max_amount,
+                };
+            });
+        },
         markDirty,
         setClientError,
         clearClientError,

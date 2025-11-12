@@ -100,6 +100,13 @@ const PageViewer: React.FC<PageViewerProps> = ({
         );
     };
 
+    const hasSidebar = navigationPages.length > 0;
+    const gridTemplateClass = hasSidebar
+        ? 'lg:grid-cols-[minmax(360px,1fr)_repeat(3,minmax(0,1fr))]'
+        : 'lg:grid-cols-4';
+    const gridClassName = `grid grid-cols-1 gap-8 lg:gap-24 ${gridTemplateClass}`;
+    const mainColumnClass = hasSidebar ? 'lg:col-span-3' : 'lg:col-span-4';
+
     return (
         <>
             <Head>
@@ -156,9 +163,9 @@ const PageViewer: React.FC<PageViewerProps> = ({
                 </header>
 
                 <div className="container mx-auto px-4 py-8">
-                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+                    <div className={gridClassName}>
                         {/* Navigation Sidebar */}
-                        {navigationPages.length > 0 && (
+                        {hasSidebar && (
                             <aside className="lg:col-span-1">
                                 <PageNavigation
                                     pages={navigationPages}
@@ -169,9 +176,7 @@ const PageViewer: React.FC<PageViewerProps> = ({
                         )}
 
                         {/* Main Content */}
-                        <main
-                            className={`${navigationPages.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}`}
-                        >
+                        <main className={mainColumnClass}>
                             <div className={getTemplateClass(page.template)}>
                                 {/* Breadcrumbs */}
                                 {page.breadcrumbs &&

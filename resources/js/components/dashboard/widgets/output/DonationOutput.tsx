@@ -1,5 +1,6 @@
 import { DonationWidget } from '@/components/dashboard/widgets/DonationWidget';
-import React from 'react';
+import { usePage } from '@inertiajs/react';
+import React, { useMemo } from 'react';
 import { DonationOutputConfig, WidgetOutputProps } from './types';
 
 export const DonationOutput: React.FC<WidgetOutputProps> = ({
@@ -8,6 +9,118 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
     style,
 }) => {
     const config = widget.config as DonationOutputConfig;
+
+    const page = usePage();
+    const propsAny = (page?.props as any) || {};
+    const pageOrganization = propsAny?.organization;
+    const pageProject = propsAny?.project;
+
+    const parseId = (value: unknown): number | undefined => {
+        if (value === null || value === undefined) {
+            return undefined;
+        }
+        const parsed = Number(value);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+    };
+
+    const organizationIdFromPage =
+        parseId(propsAny?.organizationId) ??
+        parseId(pageOrganization?.id) ??
+        parseId(pageProject?.organization?.id) ??
+        parseId(propsAny?.site?.organization_id);
+
+    const resolvedOrganizationId =
+        parseId(config.organizationId) ?? organizationIdFromPage;
+
+    const publicContext = useMemo(() => {
+        const safeNumber = (value: unknown): number => {
+            if (value == null) return 0;
+            const num = typeof value === 'string' ? Number.parseFloat(value) : Number(value);
+            return Number.isFinite(num) ? num : 0;
+        };
+
+        if (pageProject?.id) {
+            const activeStage = (pageProject?.stages || [])?.find(
+                (stage: any) => stage?.is_active || stage?.status === 'active',
+            );
+
+            const stageTarget = activeStage
+                ? safeNumber(activeStage.target_amount_rubles ?? activeStage.target_amount)
+                : 0;
+            const stageCollected = activeStage
+                ? safeNumber(activeStage.collected_amount_rubles ?? activeStage.collected_amount)
+                : 0;
+
+            const projectTarget = safeNumber(
+                pageProject.target_amount_rubles ?? pageProject.target_amount,
+            );
+            const projectCollected = safeNumber(
+                pageProject.collected_amount_rubles ?? pageProject.collected_amount,
+            );
+
+            if (activeStage && stageTarget > 0) {
+                return {
+                    organizationId: resolvedOrganizationId,
+                    projectId: parseId(pageProject.id),
+                    projectStageId: parseId(activeStage.id),
+                    progress: {
+                        targetAmount: stageTarget,
+                        collectedAmount: stageCollected,
+                        currency: 'RUB',
+                        labelTarget: 'Цель этапа',
+                        labelCollected: 'Собрали',
+                    },
+                };
+            }
+
+            if (projectTarget > 0) {
+                return {
+                    organizationId: resolvedOrganizationId,
+                    projectId: parseId(pageProject.id),
+                    progress: {
+                        targetAmount: projectTarget,
+                        collectedAmount: projectCollected,
+                        currency: 'RUB',
+                        labelTarget: 'Цель проекта',
+                        labelCollected: 'Собрали',
+                    },
+                };
+            }
+
+            return {
+                organizationId: resolvedOrganizationId,
+                projectId: parseId(pageProject.id),
+            };
+        }
+
+        if (pageOrganization?.id) {
+            const needsTarget = safeNumber(pageOrganization.needs_target_amount);
+            const needsCollected = safeNumber(pageOrganization.needs_collected_amount);
+
+            return {
+                organizationId:
+                    resolvedOrganizationId ?? parseId(pageOrganization.id),
+                progress:
+                    needsTarget > 0
+                        ? {
+                              targetAmount: needsTarget,
+                              collectedAmount: needsCollected,
+                              currency: 'RUB',
+                              labelTarget: 'Нужды школы',
+                              labelCollected: 'Собрали',
+                          }
+                        : undefined,
+            };
+        }
+
+        if (resolvedOrganizationId) {
+            return {
+                organizationId: resolvedOrganizationId,
+            };
+        }
+
+        return undefined;
+    }, [pageOrganization, pageProject, resolvedOrganizationId]);
 
     const mapped = {
         title: config.title,
@@ -27,7 +140,8 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
             <DonationWidget
                 config={mapped}
                 isEditable={false}
-                organizationId={config.organizationId}
+                organizationId={resolvedOrganizationId}
+                publicContext={publicContext}
             />
         </div>
     );

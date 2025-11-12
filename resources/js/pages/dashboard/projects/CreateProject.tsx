@@ -1,3 +1,4 @@
+import type { PaymentSettings } from '@/components/dashboard/pages/projects/ProjectForm/types';
 import ProjectForm from './ProjectForm';
 
 interface Organization {
@@ -18,20 +19,20 @@ interface ProjectCategory {
 
 interface Props {
     organization: Organization;
-    categories: Record<string, string>;
     projectCategories?: ProjectCategory[];
+    defaultPaymentSettings?: PaymentSettings;
 }
 
 export default function CreateProject({
     organization,
-    categories,
     projectCategories = [],
+    defaultPaymentSettings,
 }: Props) {
     return (
         <ProjectForm
             organization={organization}
-            categories={categories}
             projectCategories={projectCategories}
+            defaultPaymentSettings={defaultPaymentSettings}
             isEdit={false}
         />
     );

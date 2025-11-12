@@ -1,4 +1,3 @@
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
 import ProjectCard from '@/components/projects/ProjectCard';
@@ -73,17 +72,13 @@ export default function OrganizationShow({
             position_settings={position_settings}
             pageTitle={organization.name}
             pageDescription={organization.description}
+            breadcrumbs={[
+                { title: 'Главная', href: '/' },
+                { title: 'Школы', href: '/organizations' },
+                { title: organization.name, href: '' },
+            ]}
         >
             <div className="space-y-8">
-                {/* Хлебные крошки */}
-                <Breadcrumbs
-                    breadcrumbs={[
-                        { title: 'Главная', href: '/' },
-                        { title: 'Школы', href: '/organizations' },
-                        { title: organization.name, href: '' },
-                    ]}
-                />
-
                 {/* Слайдер галереи */}
                 {organization.gallery && organization.gallery.length > 0 && (
                     <div>

@@ -13,7 +13,6 @@ import type {
 interface GeneralTabProps {
     data: ProjectFormData;
     errors: Record<string, string>;
-    categories: Record<string, string>;
     projectCategories?: Array<{
         id: number;
         name: string;
@@ -33,7 +32,6 @@ interface GeneralTabProps {
 export default function GeneralTab({
     data,
     errors,
-    categories,
     projectCategories = [],
     paymentSettings,
     onDataChange,
@@ -50,7 +48,6 @@ export default function GeneralTab({
                 <BasicInfoSection
                     data={data}
                     errors={errors}
-                    categories={categories}
                     projectCategories={projectCategories}
                     onDataChange={onDataChange}
                 />

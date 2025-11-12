@@ -115,11 +115,14 @@ export interface ReferenceData {
     settlements?: Settlement[];
 }
 
+import type { PaymentGatewaysSettingsValue } from '@/components/dashboard/payments/PaymentGatewaysSettings';
+
 export interface OrganizationFormProps {
     mode: 'create' | 'edit';
     organization?: OrganizationLite;
     referenceData: ReferenceData;
     organizationSettings?: { payment_settings?: unknown };
+    defaultPaymentSettings?: PaymentGatewaysSettingsValue;
 }
 
 export interface StaffFormData {

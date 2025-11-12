@@ -142,6 +142,7 @@ class OrganizationController extends Controller
         $organization->loadCount([
             'members as members_count',
             'donations as donations_count',
+            'projects as projects_count',
         ]);
         $organization->loadSum('donations', 'amount');
 
@@ -165,6 +166,7 @@ class OrganizationController extends Controller
             'totalSitePages' => $totalSitePages,
             'totalUsers' => (int) ($organization->users()->count()),
             'totalDonations' => (int) ($organization->donations_count ?? 0),
+            'totalProjects' => (int) ($organization->projects_count ?? $organization->projects->count()),
             'monthlyVisitors' => (int) $monthlyVisitors,
             'monthlyRevenue' => (int) $monthlyRevenue,
             'monthlyRevenueFormatted' => $monthlyRevenue > 0
@@ -233,6 +235,8 @@ class OrganizationController extends Controller
             'organization' => $organizationData,
             'referenceData' => $referenceData,
             'organizationSettings' => $orgSettings,
+            'defaultPaymentSettings' => $orgSettings['payment_settings']
+                ?? app(OrganizationSettingsService::class)->getDefaultPaymentSettings(),
         ]);
     }
 

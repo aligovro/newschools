@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Cache;
 
 class GlobalSettingsService
 {
+  public function __construct(
+    private readonly GlobalPaymentSettingsService $globalPaymentSettingsService,
+  ) {
+  }
+
   /**
    * Получить глобальные настройки
    */
@@ -23,6 +28,7 @@ class GlobalSettingsService
   public function clearCache(): void
   {
     Cache::forget('global_settings');
+    Cache::forget('global_payment_settings:instance');
   }
 
   /**
@@ -159,7 +165,7 @@ class GlobalSettingsService
 
     return [
       'organization' => $settings->default_organization_settings ?? [],
-      'payment' => $settings->default_payment_settings ?? [],
+      'payment' => $this->globalPaymentSettingsService->getNormalizedSettings(),
       'notification' => $settings->default_notification_settings ?? [],
       'seo' => $settings->default_seo_settings ?? [],
     ];
@@ -227,7 +233,6 @@ class GlobalSettingsService
       'default_timezone',
       'default_currency',
       'default_organization_settings',
-      'default_payment_settings',
       'default_notification_settings',
       'system_settings',
       'feature_flags',

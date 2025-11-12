@@ -18,6 +18,7 @@ class Donation extends Model
     'region_id',
     'fundraiser_id',
     'project_id',
+    'project_stage_id',
     'donor_id',
     'referrer_user_id',
     'payment_transaction_id',
@@ -70,6 +71,11 @@ class Donation extends Model
   public function project(): BelongsTo
   {
     return $this->belongsTo(Project::class);
+  }
+
+  public function projectStage(): BelongsTo
+  {
+    return $this->belongsTo(ProjectStage::class);
   }
 
   public function donor(): BelongsTo
@@ -185,6 +191,14 @@ class Donation extends Model
         if ($donation->fundraiser) {
           $donation->fundraiser->update([
             'collected_amount' => $donation->fundraiser->donations()
+              ->completed()
+              ->sum('amount'),
+          ]);
+        }
+
+        if ($donation->projectStage) {
+          $donation->projectStage->update([
+            'collected_amount' => $donation->projectStage->donations()
               ->completed()
               ->sum('amount'),
           ]);

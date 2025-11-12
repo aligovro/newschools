@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 
+use App\Services\GlobalPaymentSettingsService;
 use App\Services\GlobalSettingsService;
 use App\Models\GlobalSettings;
 use Illuminate\Http\Request;
@@ -13,12 +14,17 @@ use Inertia\Inertia;
 class GlobalSettingsController extends Controller
 {
     protected GlobalSettingsService $settingsService;
+    protected GlobalPaymentSettingsService $paymentSettingsService;
 
-    public function __construct(GlobalSettingsService $settingsService)
+    public function __construct(
+        GlobalSettingsService $settingsService,
+        GlobalPaymentSettingsService $paymentSettingsService,
+    )
     {
         $this->middleware('auth');
         $this->middleware('can:manage,' . GlobalSettings::class); // Политика для супер-админов
         $this->settingsService = $settingsService;
+        $this->paymentSettingsService = $paymentSettingsService;
     }
 
     /**
@@ -34,6 +40,7 @@ class GlobalSettingsController extends Controller
             'settings' => $settings->toArray(),
             'terminology' => $terminology,
             'systemSettings' => $systemSettings,
+            'globalPaymentSettings' => $this->paymentSettingsService->getNormalizedSettings(),
         ]);
     }
 
@@ -179,7 +186,6 @@ class GlobalSettingsController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'default_organization_settings' => 'array',
-            'default_payment_settings' => 'array',
             'default_notification_settings' => 'array',
             'default_seo_settings' => 'array',
         ]);
@@ -192,12 +198,31 @@ class GlobalSettingsController extends Controller
 
         $this->settingsService->updateSettings($request->only([
             'default_organization_settings',
-            'default_payment_settings',
             'default_notification_settings',
             'default_seo_settings'
         ]));
 
         return redirect()->back()->with('success', 'Настройки по умолчанию обновлены');
+    }
+
+    /**
+     * Обновить глобальные платежные настройки
+     */
+    public function updatePaymentSettings(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_settings' => 'required|array',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $this->paymentSettingsService->update($request->input('payment_settings', []));
+
+        return redirect()->back()->with('success', 'Платежные настройки обновлены');
     }
 
     /**
