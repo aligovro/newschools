@@ -68,14 +68,6 @@ class UpdateGlobalSettingsSeeder extends Seeder
         'font_family' => 'Inter',
         'dark_mode' => false,
       ],
-      'default_payment_settings' => [
-        'enabled_methods' => ['yookassa', 'tinkoff'],
-        'min_amount' => 100,
-        'max_amount' => 100000000,
-        'currency' => 'RUB',
-        'auto_approve' => true,
-        'commission_percentage' => 0,
-      ],
       'default_notification_settings' => [
         'email_notifications' => true,
         'telegram_notifications' => false,

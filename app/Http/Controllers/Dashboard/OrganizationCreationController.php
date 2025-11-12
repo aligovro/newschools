@@ -50,6 +50,7 @@ class OrganizationCreationController extends Controller
 
         return Inertia::render('dashboard/organizations/CreateOrganization', [
             'referenceData' => $referenceData,
+            'defaultPaymentSettings' => $this->settingsService->getDefaultPaymentSettings(),
         ]);
     }
 

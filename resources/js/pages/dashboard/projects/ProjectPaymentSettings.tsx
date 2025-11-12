@@ -1,15 +1,8 @@
+import PaymentGatewaysSettings, {
+    type PaymentGatewaysSettingsValue,
+} from '@/components/dashboard/payments/PaymentGatewaysSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { projectsApi } from '@/lib/api/index';
 import { Loader2, Save } from 'lucide-react';
 import React from 'react';
@@ -17,8 +10,11 @@ import React from 'react';
 interface PaymentSettingsData {
     [key: string]: unknown;
     gateway?: 'sbp' | 'yookassa' | 'tinkoff';
-    credentials?: Record<string, string>;
-    options?: Record<string, any>;
+    enabled_gateways?: Array<'sbp' | 'yookassa' | 'tinkoff'>;
+    credentials?:
+        | Record<string, string>
+        | Record<string, Record<string, string>>;
+    options?: Record<string, unknown>;
     donation_min_amount?: number;
     donation_max_amount?: number;
     currency?: string;
@@ -38,10 +34,24 @@ const ProjectPaymentSettings: React.FC<ProjectPaymentSettingsProps> = ({
         initialSettings && typeof initialSettings === 'object'
             ? initialSettings
             : {};
+
+    const initialEnabled: Array<'yookassa' | 'tinkoff' | 'sbp'> = Array.isArray(
+        safe.enabled_gateways,
+    )
+        ? (safe.enabled_gateways as Array<'yookassa' | 'tinkoff' | 'sbp'>)
+        : safe.gateway
+          ? [safe.gateway]
+          : ['yookassa'];
+
     const [settings, setSettings] = React.useState<PaymentSettingsData>({
         gateway: (safe as PaymentSettingsData).gateway ?? 'yookassa',
+        enabled_gateways: initialEnabled,
         credentials: (safe as PaymentSettingsData).credentials ?? {},
-        options: (safe as PaymentSettingsData).options ?? {},
+        options:
+            ((safe as PaymentSettingsData).options as Record<
+                string,
+                unknown
+            >) ?? {},
         donation_min_amount:
             (safe as PaymentSettingsData).donation_min_amount ?? 100,
         donation_max_amount:
@@ -53,19 +63,25 @@ const ProjectPaymentSettings: React.FC<ProjectPaymentSettingsProps> = ({
     const [errors, setErrors] = React.useState<string[]>([]);
 
     const update = React.useCallback(
-        (key: keyof PaymentSettingsData, value: any) => {
-            setSettings((prev) => ({ ...prev, [key]: value }));
+        (key: keyof PaymentSettingsData, value: unknown) => {
+            setSettings((prev) => {
+                const next: PaymentSettingsData = { ...prev, [key]: value };
+
+                if (key === 'enabled_gateways') {
+                    const list = Array.isArray(value) ? value : [];
+                    if (list.length > 0) {
+                        next.gateway = list[0];
+                    } else {
+                        delete next.gateway;
+                    }
+                }
+
+                return next;
+            });
             setErrors([]);
         },
         [],
     );
-
-    const updateCredential = React.useCallback((key: string, value: string) => {
-        setSettings((prev) => ({
-            ...prev,
-            credentials: { ...(prev.credentials || {}), [key]: value },
-        }));
-    }, []);
 
     const save = React.useCallback(async () => {
         setIsLoading(true);
@@ -80,106 +96,12 @@ const ProjectPaymentSettings: React.FC<ProjectPaymentSettingsProps> = ({
                     data.message || 'Ошибка при сохранении платежных настроек',
                 ]);
             }
-        } catch (e) {
+        } catch {
             setErrors(['Ошибка сети при сохранении платежных настроек']);
         } finally {
             setIsLoading(false);
         }
     }, [projectId, settings]);
-
-    const renderGatewayFields = () => {
-        switch (settings.gateway) {
-            case 'yookassa':
-                return (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                            <Label htmlFor="yk-shop">Shop ID</Label>
-                            <Input
-                                id="yk-shop"
-                                value={settings.credentials?.shop_id || ''}
-                                onChange={(e) =>
-                                    updateCredential('shop_id', e.target.value)
-                                }
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="yk-key">Secret Key</Label>
-                            <Input
-                                id="yk-key"
-                                value={settings.credentials?.secret_key || ''}
-                                onChange={(e) =>
-                                    updateCredential(
-                                        'secret_key',
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                    </div>
-                );
-            case 'tinkoff':
-                return (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                            <Label htmlFor="tk-terminal">Terminal Key</Label>
-                            <Input
-                                id="tk-terminal"
-                                value={settings.credentials?.terminal_key || ''}
-                                onChange={(e) =>
-                                    updateCredential(
-                                        'terminal_key',
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="tk-password">Password</Label>
-                            <Input
-                                id="tk-password"
-                                value={settings.credentials?.password || ''}
-                                onChange={(e) =>
-                                    updateCredential('password', e.target.value)
-                                }
-                            />
-                        </div>
-                    </div>
-                );
-            case 'sbp':
-                return (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                            <Label htmlFor="sbp-merchant">Merchant ID</Label>
-                            <Input
-                                id="sbp-merchant"
-                                value={settings.credentials?.merchant_id || ''}
-                                onChange={(e) =>
-                                    updateCredential(
-                                        'merchant_id',
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="sbp-secret">Secret Key</Label>
-                            <Input
-                                id="sbp-secret"
-                                value={settings.credentials?.secret_key || ''}
-                                onChange={(e) =>
-                                    updateCredential(
-                                        'secret_key',
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
 
     return (
         <Card>
@@ -207,79 +129,12 @@ const ProjectPaymentSettings: React.FC<ProjectPaymentSettingsProps> = ({
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div>
-                        <Label>Платежный шлюз</Label>
-                        <Select
-                            value={settings.gateway || 'yookassa'}
-                            onValueChange={(v) => update('gateway', v as any)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Выберите шлюз" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="yookassa">ЮKassa</SelectItem>
-                                <SelectItem value="tinkoff">Tinkoff</SelectItem>
-                                <SelectItem value="sbp">СБП</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label htmlFor="currency">Валюта</Label>
-                        <Input
-                            id="currency"
-                            value={settings.currency || 'RUB'}
-                            onChange={(e) =>
-                                update('currency', e.target.value.toUpperCase())
-                            }
-                        />
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <Switch
-                            checked={!!settings.test_mode}
-                            onCheckedChange={(v) => update('test_mode', v)}
-                            id="test-mode"
-                        />
-                        <Label htmlFor="test-mode">Тестовый режим</Label>
-                    </div>
-                </div>
-
-                {renderGatewayFields()}
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                        <Label htmlFor="min-amount">
-                            Мин. сумма пожертвования (в копейках)
-                        </Label>
-                        <Input
-                            id="min-amount"
-                            type="number"
-                            value={settings.donation_min_amount ?? 0}
-                            onChange={(e) =>
-                                update(
-                                    'donation_min_amount',
-                                    Number(e.target.value),
-                                )
-                            }
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="max-amount">
-                            Макс. сумма пожертвования (0 = без ограничений)
-                        </Label>
-                        <Input
-                            id="max-amount"
-                            type="number"
-                            value={settings.donation_max_amount ?? 0}
-                            onChange={(e) =>
-                                update(
-                                    'donation_max_amount',
-                                    Number(e.target.value),
-                                )
-                            }
-                        />
-                    </div>
-                </div>
+                <PaymentGatewaysSettings
+                    value={settings as PaymentGatewaysSettingsValue}
+                    onChange={(key, val) =>
+                        update(key as keyof PaymentSettingsData, val)
+                    }
+                />
             </CardContent>
         </Card>
     );

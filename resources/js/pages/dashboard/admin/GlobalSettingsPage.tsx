@@ -18,7 +18,11 @@ import AppLayout from '@/layouts/app-layout';
 import { fetchPublicCities } from '@/lib/api/public';
 import { Head, useForm } from '@inertiajs/react';
 import { Download, Eye, RefreshCw, Save, Settings } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import PaymentGatewaysSettings, {
+    type PaymentGatewaysSettingsValue,
+} from '@/components/dashboard/payments/PaymentGatewaysSettings';
+import { normalizePaymentSettings } from '@/lib/payments/normalizePaymentSettings';
 
 interface GlobalSettingsPageProps {
     settings: {
@@ -41,7 +45,6 @@ interface GlobalSettingsPageProps {
         default_timezone: string;
         default_currency: string;
         default_organization_settings: any;
-        default_payment_settings: any;
         default_notification_settings: any;
         system_settings: any;
         feature_flags: any;
@@ -91,12 +94,14 @@ interface GlobalSettingsPageProps {
     };
     terminology: any;
     systemSettings: any;
+    globalPaymentSettings: any;
 }
 
 export default function GlobalSettingsPage({
     settings,
     terminology,
     systemSettings,
+    globalPaymentSettings,
 }: GlobalSettingsPageProps) {
     const [activeTab, setActiveTab] = useState('terminology');
     const [previewData, setPreviewData] = useState<any>(null);
@@ -105,6 +110,17 @@ export default function GlobalSettingsPage({
         name: string;
         region?: { name: string };
     } | null>(null);
+
+    const [paymentSettings, setPaymentSettings] =
+        useState(normalizePaymentSettings(globalPaymentSettings));
+
+    const paymentsForm = useForm({
+        payment_settings: paymentSettings,
+    });
+
+    useEffect(() => {
+        paymentsForm.setData('payment_settings', paymentSettings);
+    }, [paymentSettings]);
 
     // Форма для терминологии
     const terminologyForm = useForm({
@@ -208,6 +224,36 @@ export default function GlobalSettingsPage({
             default_city_id: city?.id ?? '',
             default_city_fallback: city?.name ?? '',
         });
+    };
+
+    const handlePaymentChange = useCallback(
+        (key: keyof PaymentGatewaysSettingsValue, value: unknown) => {
+            setPaymentSettings((prev) =>
+                normalizePaymentSettings({
+                    ...prev,
+                    [key]: value,
+                }),
+            );
+        },
+        [],
+    );
+
+    const paymentComponentValue: PaymentGatewaysSettingsValue = useMemo(
+        () => ({
+            enabled_gateways: paymentSettings.enabled_gateways,
+            credentials: paymentSettings.credentials,
+            currency: paymentSettings.currency,
+            test_mode: paymentSettings.test_mode,
+            donation_min_amount: paymentSettings.donation_min_amount,
+            donation_max_amount: paymentSettings.donation_max_amount,
+        }),
+        [paymentSettings],
+    );
+
+    const handlePaymentSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        paymentsForm.setData('payment_settings', paymentSettings);
+        paymentsForm.post('/dashboard/admin/global-settings/payments');
     };
 
     // Форма для интеграций (ключи Яндекс.Карт)
@@ -326,7 +372,7 @@ export default function GlobalSettingsPage({
                     onValueChange={setActiveTab}
                     className="space-y-6"
                 >
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-6">
                         <TabsTrigger value="terminology">
                             Терминология
                         </TabsTrigger>
@@ -336,6 +382,7 @@ export default function GlobalSettingsPage({
                         <TabsTrigger value="integrations">
                             Интеграции
                         </TabsTrigger>
+                        <TabsTrigger value="payments">Платежи</TabsTrigger>
                     </TabsList>
 
                     {/* Терминология */}
@@ -1388,6 +1435,44 @@ export default function GlobalSettingsPage({
                                         <Save className="mr-2 h-4 w-4" />
                                         Сохранить интеграции
                                     </Button>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* Платежные настройки */}
+                    <TabsContent value="payments" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Глобальные платежные настройки</CardTitle>
+                                <CardDescription>
+                                    Значения по умолчанию для всех организаций, проектов и сайтов
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <form
+                                    onSubmit={handlePaymentSubmit}
+                                    className="space-y-6"
+                                >
+                                    <PaymentGatewaysSettings
+                                        value={paymentComponentValue}
+                                        onChange={handlePaymentChange}
+                                    />
+
+                                    <div className="flex gap-3">
+                                        <Button
+                                            type="submit"
+                                            disabled={paymentsForm.processing}
+                                        >
+                                            <Save className="mr-2 h-4 w-4" />
+                                            Сохранить платежные настройки
+                                        </Button>
+                                    </div>
+                                    {paymentsForm.errors.payment_settings && (
+                                        <p className="text-sm text-red-600">
+                                            {paymentsForm.errors.payment_settings}
+                                        </p>
+                                    )}
                                 </form>
                             </CardContent>
                         </Card>

@@ -1,4 +1,5 @@
 import OrganizationForm from '@/components/dashboard/pages/organizations/OrganizationForm';
+import type { PaymentGatewaysSettingsValue } from '@/components/dashboard/payments/PaymentGatewaysSettings';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -23,9 +24,13 @@ interface Props {
         regions: any[];
         availableUsers: any[];
     };
+    defaultPaymentSettings: PaymentGatewaysSettingsValue;
 }
 
-export default function CreateOrganization({ referenceData }: Props) {
+export default function CreateOrganization({
+    referenceData,
+    defaultPaymentSettings,
+}: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Создать организацию" />
@@ -49,6 +54,7 @@ export default function CreateOrganization({ referenceData }: Props) {
                 <OrganizationForm
                     mode="create"
                     referenceData={referenceData as any}
+                    defaultPaymentSettings={defaultPaymentSettings}
                 />
             </div>
         </AppLayout>

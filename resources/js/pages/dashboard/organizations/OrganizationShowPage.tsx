@@ -30,6 +30,20 @@ import {
     Target,
     Users,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+type StatsCardAction = {
+    label: string;
+    href: string;
+};
+
+type StatsCard = {
+    title: string;
+    value: number;
+    icon: LucideIcon;
+    helperText: string;
+    action?: StatsCardAction;
+};
 import { useState } from 'react';
 
 interface Props {
@@ -39,6 +53,7 @@ interface Props {
         totalSitePages: number;
         totalUsers: number;
         totalDonations: number;
+        totalProjects: number;
         monthlyVisitors: number;
         monthlyRevenue: number;
         monthlyRevenueFormatted?: string | null;
@@ -128,7 +143,7 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
         await deleteStaff(staffId);
     };
 
-    const statsCards = [
+    const statsCards: StatsCard[] = [
         {
             title: 'Сайты',
             value: stats.totalSites,
@@ -160,6 +175,16 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
             helperText: stats.monthlyRevenueFormatted
                 ? `+${stats.monthlyRevenueFormatted} ₽ за месяц`
                 : 'Данные за текущий месяц',
+        },
+        {
+            title: 'Проекты',
+            value: stats.totalProjects,
+            icon: Target,
+            helperText: 'Активных проектов',
+            action: {
+                label: 'Добавить проект',
+                href: `/dashboard/organizations/${organization.id}/projects/create`,
+            },
         },
     ];
 
@@ -330,13 +355,25 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                                             </CardTitle>
                                             <Icon className="h-4 w-4 text-muted-foreground" />
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="space-y-3">
                                             <div className="text-2xl font-bold">
                                                 {card.value}
                                             </div>
                                             <p className="text-xs text-muted-foreground">
                                                 {card.helperText}
                                             </p>
+                                            {card.action ? (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full justify-center"
+                                                    asChild
+                                                >
+                                                    <Link href={card.action.href}>
+                                                        {card.action.label}
+                                                    </Link>
+                                                </Button>
+                                            ) : null}
                                         </CardContent>
                                     </Card>
                                 );

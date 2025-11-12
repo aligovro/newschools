@@ -50,7 +50,7 @@ export interface Project {
 export interface PaymentSettings {
     gateway?: 'sbp' | 'yookassa' | 'tinkoff';
     enabled_gateways?: Array<'sbp' | 'yookassa' | 'tinkoff'>;
-    credentials?: Record<string, string>;
+    credentials?: Record<string, Record<string, string>>;
     options?: Record<string, unknown>;
     donation_min_amount?: number;
     donation_max_amount?: number;
@@ -106,8 +106,8 @@ export interface UploadedImage {
 
 export interface ProjectFormProps {
     organization: Organization;
-    categories: Record<string, string>;
     projectCategories?: ProjectCategory[];
+    defaultPaymentSettings?: PaymentSettings;
     project?: Project;
     isEdit?: boolean;
 }
@@ -115,7 +115,6 @@ export interface ProjectFormProps {
 export interface BasicInfoSectionProps {
     data: ProjectFormData;
     errors: Record<string, string>;
-    categories: Record<string, string>;
     projectCategories?: ProjectCategory[];
     onDataChange: (key: keyof ProjectFormData, value: unknown) => void;
 }
@@ -162,10 +161,5 @@ export interface SettingsSectionProps {
 
 export interface StatusOption {
     value: Project['status'];
-    label: string;
-}
-
-export interface CategoryOption {
-    value: string;
     label: string;
 }

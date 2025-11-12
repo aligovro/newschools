@@ -1,4 +1,5 @@
 import OrganizationForm from '@/components/dashboard/pages/organizations/OrganizationForm';
+import type { PaymentGatewaysSettingsValue } from '@/components/dashboard/payments/PaymentGatewaysSettings';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
@@ -77,12 +78,14 @@ interface Props {
         settlements: Settlement[];
     };
     organizationSettings?: any;
+    defaultPaymentSettings: PaymentGatewaysSettingsValue;
 }
 
 export default function OrganizationEditPage({
     organization,
     referenceData,
     organizationSettings,
+    defaultPaymentSettings,
 }: Props) {
     return (
         <AppLayout
@@ -149,6 +152,7 @@ export default function OrganizationEditPage({
                     organization={organization as any}
                     referenceData={referenceData as any}
                     organizationSettings={organizationSettings as any}
+                    defaultPaymentSettings={defaultPaymentSettings}
                 />
             </div>
         </AppLayout>

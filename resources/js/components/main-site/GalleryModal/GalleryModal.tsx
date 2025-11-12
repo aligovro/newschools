@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Navigation, Keyboard } from 'swiper/modules';
-import { Swiper, SwiperSlide } from 'swiper/react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Keyboard, Navigation } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import type { NavigationOptions } from 'swiper/types';
 import './GalleryModal.css';
 
 interface GalleryModalProps {
@@ -20,6 +21,15 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
     initialIndex = 0,
     onClose,
 }) => {
+    type ModalImageClickEvent = React.MouseEvent<
+        HTMLImageElement,
+        globalThis.MouseEvent
+    >;
+    type OverlayClickEvent = React.MouseEvent<
+        HTMLDivElement,
+        globalThis.MouseEvent
+    >;
+
     const swiperRef = useRef<SwiperType | null>(null);
     const navigationPrevRef = useRef<HTMLButtonElement>(null);
     const navigationNextRef = useRef<HTMLButtonElement>(null);
@@ -50,19 +60,29 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
         };
     }, [isOpen, onClose]);
 
+    const handleOverlayClick = useCallback(
+        (event: OverlayClickEvent) => {
+            if (event.target === event.currentTarget) {
+                onClose();
+            }
+        },
+        [onClose],
+    );
+
+    const handleSlideClick = useCallback(() => {
+        onClose();
+    }, [onClose]);
+
+    const handleImageClick = useCallback((event: ModalImageClickEvent) => {
+        event.stopPropagation();
+    }, []);
+
     if (!isOpen || !images || images.length === 0) {
         return null;
     }
 
     return (
-        <div
-            className="gallery-modal-overlay"
-            onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                    onClose();
-                }
-            }}
-        >
+        <div className="gallery-modal-overlay" onClick={handleOverlayClick}>
             <div className="gallery-modal-content">
                 <button
                     className="gallery-modal-close"
@@ -94,21 +114,30 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
                     }}
                     onBeforeInit={(swiper) => {
                         if (swiper.params.navigation) {
-                            (swiper.params.navigation as any).prevEl =
-                                navigationPrevRef.current;
-                            (swiper.params.navigation as any).nextEl =
-                                navigationNextRef.current;
+                            const navigationParams = swiper.params
+                                .navigation as NavigationOptions;
+                            if (navigationParams) {
+                                navigationParams.prevEl =
+                                    navigationPrevRef.current;
+                                navigationParams.nextEl =
+                                    navigationNextRef.current;
+                            }
                         }
                     }}
                     className="gallery-modal-swiper"
                 >
                     {images.map((image, index) => (
-                        <SwiperSlide key={index} className="gallery-modal-slide">
+                        <SwiperSlide
+                            key={index}
+                            className="gallery-modal-slide"
+                            onClick={handleSlideClick}
+                        >
                             <img
                                 src={image}
                                 alt={`Gallery image ${index + 1}`}
                                 className="gallery-modal-image"
                                 loading="eager"
+                                onClick={handleImageClick}
                             />
                         </SwiperSlide>
                     ))}
@@ -142,4 +171,3 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
         </div>
     );
 };
-

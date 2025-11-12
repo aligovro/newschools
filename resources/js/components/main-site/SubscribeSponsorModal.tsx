@@ -17,6 +17,7 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import PersonalDataConsent from '@/components/ui/personal-data-consent/PersonalDataConsent';
 import { Label } from '@/components/ui/label';
 import type { User } from '@/types';
 import { Loader2 } from 'lucide-react';
@@ -88,6 +89,8 @@ export const SubscribeSponsorModal = ({
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState(initialProfileState);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [isPersonalDataAccepted, setIsPersonalDataAccepted] =
+        useState(false);
 
     useEffect(() => {
         if (!open) {
@@ -100,6 +103,7 @@ export const SubscribeSponsorModal = ({
             setUser(null);
             setProfile(initialProfileState);
             setPhotoPreview(null);
+            setIsPersonalDataAccepted(false);
         }
     }, [open]);
 
@@ -133,10 +137,29 @@ export const SubscribeSponsorModal = ({
     }, [phone]);
 
     const handleRequestCode = async () => {
-        if (!organization?.id || phoneDigitsLength !== 10) {
-            setErrors({
+        if (!organization?.id) {
+            setErrors((prev) => ({
+                ...prev,
+                organization:
+                    'Невозможно подписаться: организация не найдена',
+            }));
+            return;
+        }
+
+        if (phoneDigitsLength !== 10) {
+            setErrors((prev) => ({
+                ...prev,
                 phone: 'Введите корректный номер телефона',
-            });
+            }));
+            return;
+        }
+
+        if (!isPersonalDataAccepted) {
+            setErrors((prev) => ({
+                ...prev,
+                personalData:
+                    'Необходимо принять условия обработки персональных данных',
+            }));
             return;
         }
 
@@ -344,11 +367,32 @@ export const SubscribeSponsorModal = ({
                     <p className="text-sm text-destructive">{errors.phone}</p>
                 )}
             </div>
+            <PersonalDataConsent
+                checked={isPersonalDataAccepted}
+                onChange={(checked) => {
+                    setIsPersonalDataAccepted(checked);
+                    if (checked) {
+                        setErrors((prev) => ({
+                            ...prev,
+                            personalData: null,
+                        }));
+                    }
+                }}
+                policyHref="/privacy-policy"
+            />
+            {errors.personalData && (
+                <p className="text-sm text-destructive">
+                    {errors.personalData}
+                </p>
+            )}
             <Button
                 className="w-full"
                 onClick={handleRequestCode}
                 disabled={
-                    loading || !organization?.id || phoneDigitsLength !== 10
+                    loading ||
+                    !organization?.id ||
+                    phoneDigitsLength !== 10 ||
+                    !isPersonalDataAccepted
                 }
             >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -1,3 +1,5 @@
+/* eslint-env node */
+/* global module */
 module.exports = {
     root: true,
     env: {
@@ -5,6 +7,9 @@ module.exports = {
         es2021: true,
         node: true,
     },
+    ignorePatterns: [
+        'wp-example/**',
+    ],
     extends: [
         'eslint:recommended',
         '@typescript-eslint/recommended',
@@ -21,14 +26,6 @@ module.exports = {
     },
     plugins: ['react', '@typescript-eslint', 'react-hooks'],
     rules: {
-        // Разрешаем any в определенных случаях
-        '@typescript-eslint/no-explicit-any': [
-            'error',
-            {
-                ignoreRestArgs: true, // Разрешаем any в rest параметрах
-            },
-        ],
-
         // Разрешаем any для внешних API и конфигураций
         '@typescript-eslint/no-explicit-any': 'off',
 

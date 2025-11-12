@@ -1,4 +1,3 @@
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import CategoryFilter from '@/components/main-site/CategoryFilter';
 import CitySelector from '@/components/main-site/CitySelector';
 import LoadMoreButton from '@/components/main-site/LoadMoreButton';
@@ -328,16 +327,12 @@ export default function Projects({
             position_settings={position_settings}
             pageTitle="Проекты"
             pageDescription="Список всех проектов"
+            breadcrumbs={[
+                { title: 'Главная', href: '/' },
+                { title: 'Проекты', href: '' },
+            ]}
         >
             <div className="space-y-8">
-                {/* Хлебные крошки */}
-                <Breadcrumbs
-                    breadcrumbs={[
-                        { title: 'Главная', href: '/' },
-                        { title: 'Проекты', href: '' },
-                    ]}
-                />
-
                 {/* Заголовок */}
                 <h1
                     style={{

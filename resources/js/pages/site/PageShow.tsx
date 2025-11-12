@@ -3,6 +3,7 @@ import type {
     WidgetPosition,
 } from '@/components/dashboard/site-builder/types';
 import MainLayout from '@/layouts/MainLayout';
+import { type BreadcrumbItem } from '@/types';
 import React, { useMemo } from 'react';
 
 interface Site {
@@ -165,6 +166,18 @@ const SitePageShow: React.FC<PageShowProps> = ({
         );
     }, [page.children]);
 
+    const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
+        if (!page.parent) {
+            return [];
+        }
+
+        return [
+            { title: 'Главная', href: '/' },
+            { title: page.parent.title, href: `/${page.parent.slug}` },
+            { title: page.title, href: '' },
+        ];
+    }, [page.parent, page.title]);
+
     // Формируем SEO заголовок
     const seoTitle = useMemo(() => {
         if (page.is_homepage) {
@@ -200,28 +213,9 @@ const SitePageShow: React.FC<PageShowProps> = ({
             position_settings={position_settings}
             pageTitle={seoTitle}
             pageDescription={seoDescription}
+            breadcrumbs={breadcrumbs}
         >
             <article className="mx-auto max-w-4xl">
-                {/* Breadcrumbs */}
-                {page.parent && (
-                    <nav className="mb-6 flex items-center space-x-2 text-sm text-muted-foreground">
-                        <a href="/" className="hover:text-foreground">
-                            Главная
-                        </a>
-                        <span>/</span>
-                        <a
-                            href={`/${page.parent.slug}`}
-                            className="hover:text-foreground"
-                        >
-                            {page.parent.title}
-                        </a>
-                        <span>/</span>
-                        <span className="font-medium text-foreground">
-                            {page.title}
-                        </span>
-                    </nav>
-                )}
-
                 {/* Main Image */}
                 {page.image && (
                     <div className="mb-8">

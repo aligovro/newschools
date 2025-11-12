@@ -3,11 +3,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import {
     widgetsSystemApi,
     type PaymentMethod as ApiPaymentMethod,
+    type DonationWidgetData,
 } from '@/lib/api/index';
+import { formatCurrency } from '@/lib/helpers';
 import {
     AlertCircle,
     CheckCircle2,
@@ -38,6 +39,49 @@ interface Terminology {
     member_singular: string;
     member_plural: string;
 }
+
+type OrganizationNeeds = NonNullable<DonationWidgetData['organization_needs']>;
+type ProjectSummary = NonNullable<DonationWidgetData['project']>;
+
+interface PublicDonationContext {
+    organizationId?: number;
+    projectId?: number;
+    projectStageId?: number;
+    progress?: {
+        targetAmount: number;
+        collectedAmount: number;
+        currency?: string;
+        labelTarget?: string;
+        labelCollected?: string;
+    };
+}
+
+const normalizePaymentSlug = (method: ApiPaymentMethod): string => {
+    const meta = method as unknown as {
+        slug?: string | null;
+        id?: string | number | null;
+        type?: string | null;
+        name?: string | null;
+    };
+
+    if (typeof meta.slug === 'string' && meta.slug.trim() !== '') {
+        return meta.slug;
+    }
+
+    if (meta.id !== undefined && meta.id !== null && meta.id !== '') {
+        return String(meta.id);
+    }
+
+    if (typeof meta.type === 'string' && meta.type.trim() !== '') {
+        return meta.type;
+    }
+
+    if (typeof meta.name === 'string' && meta.name.trim() !== '') {
+        return meta.name.trim().toLowerCase().replace(/\s+/g, '-');
+    }
+
+    return 'payment-method';
+};
 
 interface DonationWidgetConfig {
     title?: string;
@@ -74,13 +118,14 @@ interface DonationWidgetConfig {
     shadow?: 'none' | 'small' | 'medium' | 'large';
 }
 
-interface DonationWidgetProps {
+export interface DonationWidgetProps {
     config?: DonationWidgetConfig;
     isEditable?: boolean;
     autoExpandSettings?: boolean;
     onSave?: (config: Record<string, unknown>) => Promise<void>;
     widgetId?: string;
     organizationId?: number;
+    publicContext?: PublicDonationContext;
 }
 
 const CURRENCY_SYMBOLS = {
@@ -95,6 +140,19 @@ const RECURRING_PERIOD_LABELS = {
     monthly: 'Ежемесячно',
 };
 
+const parseNumericId = (value: unknown): number | undefined => {
+    if (value === null || value === undefined) {
+        return undefined;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+        return undefined;
+    }
+
+    return parsed > 0 ? parsed : undefined;
+};
+
 export const DonationWidget: React.FC<DonationWidgetProps> = ({
     config = {},
     isEditable = false,
@@ -102,6 +160,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     onSave,
     widgetId: _widgetId,
     organizationId,
+    publicContext,
 }) => {
     const [isSettingsExpanded, setIsSettingsExpanded] =
         useState(autoExpandSettings);
@@ -113,6 +172,9 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         [],
     );
     const [fundraiser, setFundraiser] = useState<Fundraiser | null>(null);
+    const [projectInfo, setProjectInfo] = useState<ProjectSummary | null>(null);
+    const [organizationNeeds, setOrganizationNeeds] =
+        useState<OrganizationNeeds | null>(null);
     const [terminology, setTerminology] = useState<Terminology | null>(null);
     const [_isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -136,6 +198,35 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     const [agreedToRecurring, setAgreedToRecurring] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
+    const resolvedOrganizationId =
+        parseNumericId(organizationId) ??
+        parseNumericId(publicContext?.organizationId) ??
+        null;
+    const contextProjectId = parseNumericId(publicContext?.projectId);
+    const contextStageId = parseNumericId(publicContext?.projectStageId);
+
+    const ensureSelectedPaymentMethod = React.useCallback(
+        (methodsList: ApiPaymentMethod[] | null | undefined) => {
+            if (!methodsList || methodsList.length === 0) {
+                return;
+            }
+
+            setSelectedPaymentMethod((prev) => {
+                if (
+                    prev &&
+                    methodsList.some(
+                        (method) => normalizePaymentSlug(method) === prev,
+                    )
+                ) {
+                    return prev;
+                }
+
+                return normalizePaymentSlug(methodsList[0]);
+            });
+        },
+        [],
+    );
+
     // Синхронизация локального состояния с внешним config
     useEffect(() => {
         setLocalConfig(config);
@@ -152,55 +243,128 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     }, [autoExpandSettings, isEditable]);
 
     const loadWidgetData = React.useCallback(async () => {
+        if (!resolvedOrganizationId) {
+            setFundraiser(null);
+            setProjectInfo(null);
+            setOrganizationNeeds(null);
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const methods =
+                    await widgetsSystemApi.getDonationWidgetPaymentMethodsPublic();
+                const methodsList = methods || [];
+                setPaymentMethods(methodsList);
+                ensureSelectedPaymentMethod(methodsList);
+            } catch (err) {
+                console.error('Error loading public payment methods:', err);
+                setError('Ошибка загрузки данных виджета');
+            } finally {
+                setIsLoading(false);
+            }
+
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
-            if (organizationId) {
-                // Данные в контексте организации
-                const widgetData = await widgetsSystemApi.getDonationWidgetData(
-                    organizationId,
-                    { fundraiser_id: localConfig.fundraiser_id },
-                );
+            const params: {
+                fundraiser_id?: number;
+                project_id?: number;
+                project_stage_id?: number;
+            } = {};
 
-                if (widgetData.terminology) {
-                    setTerminology(
-                        widgetData.terminology as unknown as Terminology,
-                    );
-                }
+            const fundraiserId = parseNumericId(localConfig.fundraiser_id);
+            if (fundraiserId) {
+                params.fundraiser_id = fundraiserId;
+            }
 
-                if (widgetData.fundraiser) {
-                    setFundraiser(widgetData.fundraiser as unknown as Fundraiser);
-                }
-
-                const methods =
-                    await widgetsSystemApi.getDonationWidgetPaymentMethods(
-                        organizationId,
-                    );
-                setPaymentMethods(methods || []);
-                if ((methods || []).length > 0) {
-                    setSelectedPaymentMethod(
-                        (prev) => prev || String(methods[0].id),
-                    );
-                }
+            if (contextProjectId) {
+                params.project_id = contextProjectId;
             } else {
-                // Главный сайт: публичные методы оплаты (без организации)
-                const methods =
-                    await widgetsSystemApi.getDonationWidgetPaymentMethodsPublic();
-                setPaymentMethods(methods || []);
-                if ((methods || []).length > 0) {
-                    setSelectedPaymentMethod(
-                        (prev) => prev || String(methods[0].id),
-                    );
+                const configProjectId = parseNumericId(localConfig.project_id);
+                if (configProjectId) {
+                    params.project_id = configProjectId;
                 }
             }
+
+            if (contextStageId) {
+                params.project_stage_id = contextStageId;
+            }
+
+            const widgetData = await widgetsSystemApi.getDonationWidgetData(
+                resolvedOrganizationId,
+                params,
+            );
+
+            if (widgetData.terminology) {
+                setTerminology(
+                    widgetData.terminology as unknown as Terminology,
+                );
+            }
+
+            if (widgetData.organization_needs) {
+                setOrganizationNeeds(
+                    widgetData.organization_needs as OrganizationNeeds,
+                );
+            } else {
+                setOrganizationNeeds(null);
+            }
+
+            if (widgetData.project) {
+                setProjectInfo(widgetData.project as ProjectSummary);
+            } else {
+                setProjectInfo(null);
+            }
+
+            if (widgetData.fundraiser) {
+                const f = widgetData.fundraiser;
+                const targetRub =
+                    f.target_amount_rubles ?? f.target_amount ?? 0;
+                const collectedRub =
+                    f.collected_amount_rubles ?? f.collected_amount ?? 0;
+                const targetAmount = Number(targetRub) || 0;
+                const collectedAmount = Number(collectedRub) || 0;
+                const progress =
+                    targetAmount > 0
+                        ? Math.min(100, (collectedAmount / targetAmount) * 100)
+                        : (f.progress_percentage ?? 0);
+
+                setFundraiser({
+                    id: f.id,
+                    title: f.title,
+                    short_description: f.short_description,
+                    target_amount: targetAmount,
+                    collected_amount: collectedAmount,
+                    progress_percentage: progress,
+                });
+            } else {
+                setFundraiser(null);
+            }
+
+            const methods =
+                await widgetsSystemApi.getDonationWidgetPaymentMethods(
+                    resolvedOrganizationId,
+                );
+            const methodsList = methods || [];
+            setPaymentMethods(methodsList);
+            ensureSelectedPaymentMethod(methodsList);
         } catch (err: unknown) {
             console.error('Error loading widget data:', err);
             setError('Ошибка загрузки данных виджета');
         } finally {
             setIsLoading(false);
         }
-    }, [organizationId, localConfig.fundraiser_id]);
+    }, [
+        resolvedOrganizationId,
+        localConfig.fundraiser_id,
+        localConfig.project_id,
+        contextProjectId,
+        contextStageId,
+        ensureSelectedPaymentMethod,
+    ]);
 
     // Загрузка данных виджета
     useEffect(() => {
@@ -274,19 +438,20 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         setIsProcessing(true);
 
         try {
-            if (!organizationId) {
+            if (!resolvedOrganizationId) {
                 setError('Пожертвования доступны на страницах организаций');
                 return;
             }
 
             const response = await widgetsSystemApi.submitDonation(
-                organizationId,
+                resolvedOrganizationId,
                 {
                     amount,
                     currency: localConfig.currency || 'RUB',
                     payment_method_slug: selectedPaymentMethod,
                     fundraiser_id: localConfig.fundraiser_id || undefined,
-                    project_id: localConfig.project_id || undefined,
+                    project_id: derivedProjectId || undefined,
+                    project_stage_id: derivedStageId || undefined,
                     donor_name: isAnonymous ? undefined : donorName,
                     donor_email: donorEmail || undefined,
                     donor_phone: donorPhone || undefined,
@@ -354,6 +519,157 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         shadow = 'small',
     } = localConfig;
 
+    const progressData = React.useMemo(() => {
+        if (!show_progress) {
+            return null;
+        }
+
+        const effectiveCurrency = currency || 'RUB';
+
+        const buildProgress = (
+            targetAmount: number,
+            collectedAmount: number,
+            labelTarget: string,
+            labelCollected = 'Собрали',
+        ) => {
+            if (!targetAmount || targetAmount <= 0) {
+                return null;
+            }
+
+            const percentage = Math.min(
+                100,
+                targetAmount > 0 ? (collectedAmount / targetAmount) * 100 : 0,
+            );
+
+            return {
+                targetAmount,
+                collectedAmount,
+                percentage,
+                labelTarget,
+                labelCollected,
+                currency: effectiveCurrency,
+            } as {
+                targetAmount: number;
+                collectedAmount: number;
+                percentage: number;
+                labelTarget: string;
+                labelCollected: string;
+                currency: string;
+            } | null;
+        };
+
+        const getAmount = (raw?: number | null, fallback?: number | null) => {
+            if (typeof raw === 'number') {
+                return raw;
+            }
+            if (typeof fallback === 'number') {
+                return fallback;
+            }
+            return 0;
+        };
+
+        if (publicContext?.progress) {
+            const {
+                targetAmount,
+                collectedAmount,
+                labelTarget,
+                labelCollected,
+                currency: ctxCurrency,
+            } = publicContext.progress;
+            const target = getAmount(targetAmount);
+            const collected = getAmount(collectedAmount);
+            const progress = buildProgress(
+                target,
+                collected,
+                labelTarget ?? 'Цель',
+                labelCollected ?? 'Собрали',
+            );
+
+            if (progress) {
+                progress.currency = ctxCurrency || effectiveCurrency;
+                return progress;
+            }
+        }
+
+        const stage = projectInfo?.active_stage;
+        if (stage) {
+            const target = getAmount(
+                stage.target_amount_rubles,
+                stage.target_amount ? stage.target_amount / 100 : 0,
+            );
+            const collected = getAmount(
+                stage.collected_amount_rubles,
+                stage.collected_amount ? stage.collected_amount / 100 : 0,
+            );
+            const progress = buildProgress(target, collected, 'Цель этапа');
+            if (progress) {
+                return progress;
+            }
+        }
+
+        if (projectInfo) {
+            const target = getAmount(
+                projectInfo.target_amount_rubles,
+                projectInfo.target_amount ? projectInfo.target_amount / 100 : 0,
+            );
+            const collected = getAmount(
+                projectInfo.collected_amount_rubles,
+                projectInfo.collected_amount
+                    ? projectInfo.collected_amount / 100
+                    : 0,
+            );
+            const progress = buildProgress(target, collected, 'Цель проекта');
+            if (progress) {
+                return progress;
+            }
+        }
+
+        if (organizationNeeds) {
+            const target = getAmount(
+                organizationNeeds.target_amount_rubles,
+                organizationNeeds.target_amount,
+            );
+            const collected = getAmount(
+                organizationNeeds.collected_amount_rubles,
+                organizationNeeds.collected_amount,
+            );
+            const progress = buildProgress(target, collected, 'Нужды школы');
+            if (progress) {
+                return progress;
+            }
+        }
+
+        if (fundraiser) {
+            const progress = buildProgress(
+                fundraiser.target_amount,
+                fundraiser.collected_amount,
+                'Цель сбора',
+            );
+            if (progress) {
+                return progress;
+            }
+        }
+
+        return null;
+    }, [
+        show_progress,
+        currency,
+        publicContext?.progress,
+        projectInfo,
+        organizationNeeds,
+        fundraiser,
+    ]);
+
+    const derivedProjectId =
+        contextProjectId ??
+        projectInfo?.id ??
+        parseNumericId(localConfig.project_id);
+
+    const derivedStageId =
+        contextStageId ??
+        parseNumericId(projectInfo?.active_stage?.id) ??
+        undefined;
+
     const borderRadiusClass = {
         none: 'rounded-none',
         small: 'rounded-sm',
@@ -379,8 +695,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
     // Утилита: метаданные способов оплаты для отображения
     const getPaymentMeta = (m: ApiPaymentMethod) => {
-        const rawSlug = (m as unknown as { slug?: string }).slug;
-        const slug = (rawSlug || m.type || m.name || '').toLowerCase();
+        const slug = (m.slug || m.type || m.name || '').toLowerCase();
         if (slug.includes('sbp') || slug === 'sbp' || slug.includes('qr')) {
             return {
                 title: 'По QR коду через СБП',
@@ -416,355 +731,368 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
     // Рендер публичной версии (используем и в предпросмотре)
     const renderPublic = () => {
-    return (
-        <div
-            className={`donation-widget ${borderRadiusClass} ${shadowClass} border bg-white`}
-        >
-            <div className="p-6">
-                {/* Заголовок */}
-                {(title && (config.show_title ?? true)) || description ? (
-                    <div className="mb-6 text-center">
-                        {title && (config.show_title ?? true) && (
-                            <h3 className="mb-2 text-2xl font-bold">{title}</h3>
-                        )}
-                        {description && (
-                            <p className="text-sm text-gray-600">
-                                {description}
-                            </p>
-                        )}
-                    </div>
-                ) : null}
+        return (
+            <div
+                className={`donation-widget ${borderRadiusClass} ${shadowClass}`}
+            >
+                <div className="p-6">
+                    {/* Заголовок */}
+                    {(title && (config.show_title ?? true)) || description ? (
+                        <div className="donation-widget__header">
+                            {title && (config.show_title ?? true) && (
+                                <h3 className="donation-widget__title">
+                                    {title}
+                                </h3>
+                            )}
+                            {description && (
+                                <p className="text-sm text-gray-600">
+                                    {description}
+                                </p>
+                            )}
+                        </div>
+                    ) : null}
 
-                {/* Прогресс сбора */}
-                {show_progress && fundraiser && (
-                    <div className="mb-6 space-y-2">
-                        {show_target_amount && (
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">
-                                    Необходимо
-                                </span>
-                                <span className="font-semibold">
-                                    {fundraiser.target_amount.toLocaleString(
-                                        'ru-RU',
-                                    )}{' '}
-                                    {CURRENCY_SYMBOLS[currency]}
-                                </span>
+                    {progressData && (
+                        <div className="organization-donation-info mb-6 space-y-3">
+                            {(show_target_amount || show_collected_amount) && (
+                                <div className="organization-donation-labels flex justify-between text-xs uppercase tracking-wide text-gray-500">
+                                    {show_target_amount && (
+                                        <span>{progressData.labelTarget}</span>
+                                    )}
+                                    {show_collected_amount && (
+                                        <span>
+                                            {progressData.labelCollected}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            <div className="organization-donation-progress-wrapper">
+                                <div className="organization-donation-progress-bar relative h-2 overflow-hidden rounded-full bg-gray-200">
+                                    <div
+                                        className="organization-donation-progress-fill absolute left-0 top-0 h-full rounded-full bg-blue-500 transition-all"
+                                        style={{
+                                            width: `${Math.min(progressData.percentage, 100)}%`,
+                                        }}
+                                    ></div>
+                                </div>
                             </div>
-                        )}
-                        {show_collected_amount && (
-                            <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">
-                                        Собрали
+                            <div className="organization-donation-amounts flex justify-between text-sm font-semibold">
+                                {show_target_amount && (
+                                    <span className="organization-donation-target text-gray-800">
+                                        {formatCurrency(
+                                            progressData.targetAmount,
+                                            progressData.currency,
+                                        )}
                                     </span>
-                                <span className="font-semibold text-green-600">
-                                    {fundraiser.collected_amount.toLocaleString(
-                                        'ru-RU',
-                                    )}{' '}
-                                    {CURRENCY_SYMBOLS[currency]}
-                                </span>
+                                )}
+                                {show_collected_amount && (
+                                    <span className="organization-donation-collected text-blue-600">
+                                        {formatCurrency(
+                                            progressData.collectedAmount,
+                                            progressData.currency,
+                                        )}
+                                    </span>
+                                )}
                             </div>
-                        )}
-                        <Progress
-                            value={fundraiser.progress_percentage}
-                            className="h-2"
-                        />
-                    </div>
-                )}
-
-                {/* Форма пожертвования */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Имя донора */}
-                    {!isAnonymous && require_name && (
-                        <div>
-                            <Label htmlFor="donor_name">Ваше имя</Label>
-                            <Input
-                                id="donor_name"
-                                value={donorName}
-                                    onChange={(e) =>
-                                        setDonorName(e.target.value)
-                                    }
-                                placeholder="Александр"
-                                required={require_name}
-                            />
                         </div>
                     )}
 
-                    {/* Анонимное пожертвование */}
-                    {allow_anonymous && (
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="is_anonymous"
-                                checked={isAnonymous}
-                                onCheckedChange={(checked) =>
-                                    setIsAnonymous(checked as boolean)
-                                }
-                            />
+                    {/* Форма пожертвования */}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Имя донора */}
+                        {!isAnonymous && require_name && (
+                            <div>
+                                <Label htmlFor="donor_name">Ваше имя</Label>
+                                <Input
+                                    id="donor_name"
+                                    value={donorName}
+                                    onChange={(e) =>
+                                        setDonorName(e.target.value)
+                                    }
+                                    placeholder="Александр"
+                                    required={require_name}
+                                />
+                            </div>
+                        )}
+
+                        {/* Анонимное пожертвование */}
+                        {allow_anonymous && (
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="is_anonymous"
+                                    checked={isAnonymous}
+                                    onCheckedChange={(checked) =>
+                                        setIsAnonymous(checked as boolean)
+                                    }
+                                />
                                 <Label
                                     htmlFor="is_anonymous"
                                     className="text-sm"
                                 >
-                                Анонимное пожертвование
-                            </Label>
-                        </div>
-                    )}
-
-                    {/* Сумма */}
-                    <div>
-                        <Label htmlFor="amount">Сумма</Label>
-                        <Input
-                            id="amount"
-                            type="number"
-                            value={amount}
-                            onChange={(e) =>
-                                setAmount(parseInt(e.target.value) || 0)
-                            }
-                            min={localConfig.min_amount || 1}
-                            max={localConfig.max_amount || undefined}
-                            required
-                        />
-                    </div>
-
-                    {/* Предустановленные суммы */}
-                    <div className="grid grid-cols-4 gap-2">
-                        {preset_amounts.map((presetAmount) => (
-                            <button
-                                key={presetAmount}
-                                type="button"
-                                onClick={() => setAmount(presetAmount)}
-                                className={`px-4 py-2 ${borderRadiusClass} border transition-colors ${
-                                    amount === presetAmount
-                                        ? 'border-blue-600 bg-blue-600 text-white'
-                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                }`}
-                            >
-                                {presetAmount} {CURRENCY_SYMBOLS[currency]}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Регулярные платежи */}
-                    {allow_recurring && (
-                        <div className="space-y-3 border-t pt-4">
-                            <div className="flex gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsRecurring(false)}
-                                    className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
-                                        !isRecurring
-                                            ? 'border-blue-600 bg-blue-600 text-white'
-                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    Единоразово
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsRecurring(true)}
-                                    className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
-                                        isRecurring
-                                            ? 'border-blue-600 bg-blue-600 text-white'
-                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    Регулярно
-                                </button>
+                                    Анонимное пожертвование
+                                </Label>
                             </div>
+                        )}
 
-                            {isRecurring && (
-                                <>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {recurring_periods.map((period) => (
-                                            <button
-                                                key={period}
-                                                type="button"
-                                                onClick={() =>
-                                                    setRecurringPeriod(
-                                                        period as
-                                                            | 'daily'
-                                                            | 'weekly'
-                                                            | 'monthly',
-                                                    )
-                                                }
-                                                className={`px-3 py-2 text-sm ${borderRadiusClass} border transition-colors ${
-                                                        recurringPeriod ===
-                                                        period
-                                                        ? 'border-blue-600 bg-blue-600 text-white'
-                                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                                }`}
-                                            >
-                                                {
-                                                    RECURRING_PERIOD_LABELS[
-                                                        period as keyof typeof RECURRING_PERIOD_LABELS
-                                                    ]
-                                                }
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    <div className="flex items-start space-x-2">
-                                        <Checkbox
-                                            id="agreed_to_recurring"
-                                            checked={agreedToRecurring}
-                                            onCheckedChange={(checked) =>
-                                                setAgreedToRecurring(
-                                                    checked as boolean,
-                                                )
-                                            }
-                                            required={isRecurring}
-                                        />
-                                        <Label
-                                            htmlFor="agreed_to_recurring"
-                                            className="text-xs text-gray-600"
-                                        >
-                                                Я согласен на подписку на
-                                                платежи на сумму {amount}{' '}
-                                            {CURRENCY_SYMBOLS[currency]}.
-                                            Подписка будет списываться{' '}
-                                            {
-                                                RECURRING_PERIOD_LABELS[
-                                                    recurringPeriod
-                                                ]
-                                            }
-                                        </Label>
-                                    </div>
-                                </>
-                            )}
+                        {/* Сумма */}
+                        <div>
+                            <Label htmlFor="amount">Сумма</Label>
+                            <Input
+                                id="amount"
+                                type="number"
+                                value={amount}
+                                onChange={(e) =>
+                                    setAmount(parseInt(e.target.value) || 0)
+                                }
+                                min={localConfig.min_amount || 1}
+                                max={localConfig.max_amount || undefined}
+                                required
+                            />
                         </div>
-                    )}
 
-                        {/* Способы оплаты - чекбоксы с иконками, одиночный выбор */}
-                    <div className="border-t pt-4">
-                        <Label className="mb-3 block">Способ оплаты</Label>
-                        <div className="space-y-2">
-                            {paymentMethods.length > 0 ? (
-                                // Убираем дубликаты по slug (или по name, если slug отсутствует)
-                                paymentMethods
-                                    .filter((m, idx, arr) => {
-                                        const slug = (
-                                            (m as unknown as { slug?: string })
-                                                .slug || m.name
-                                        )?.toLowerCase();
-                                        return (
-                                            arr.findIndex((x) => {
-                                                const s = (
-                                                    (x as unknown as {
-                                                        slug?: string;
-                                                    }).slug || x.name
-                                                )?.toLowerCase();
-                                                return s === slug;
-                                            }) === idx
-                                        );
-                                    })
-                                    .map((method) => {
-                                        const meta = getPaymentMeta(method);
-                                        const checked =
-                                            selectedPaymentMethod ===
-                                            method.id.toString();
-                                        return (
-                                    <label
-                                        key={method.id}
-                                        className={`flex items-center gap-3 border p-3 ${borderRadiusClass} cursor-pointer transition-colors ${
-                                                    checked
-                                                ? 'border-blue-600 bg-blue-50'
-                                                : 'border-gray-300 bg-white hover:bg-gray-50'
+                        {/* Предустановленные суммы */}
+                        <div className="grid grid-cols-4 gap-2">
+                            {preset_amounts.map((presetAmount) => (
+                                <button
+                                    key={presetAmount}
+                                    type="button"
+                                    onClick={() => setAmount(presetAmount)}
+                                    className={`px-4 py-2 ${borderRadiusClass} border transition-colors ${
+                                        amount === presetAmount
+                                            ? 'border-blue-600 bg-blue-600 text-white'
+                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    {presetAmount} {CURRENCY_SYMBOLS[currency]}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Регулярные платежи */}
+                        {allow_recurring && (
+                            <div className="space-y-3 border-t pt-4">
+                                <div className="flex gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsRecurring(false)}
+                                        className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
+                                            !isRecurring
+                                                ? 'border-blue-600 bg-blue-600 text-white'
+                                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                                         }`}
                                     >
-                                        <input
-                                                    type="checkbox"
-                                                    role="checkbox"
-                                                    aria-checked={checked}
-                                                    checked={checked}
-                                                    onChange={() =>
-                                                setSelectedPaymentMethod(
-                                                            method.id.toString(),
-                                                )
-                                            }
-                                            className="text-blue-600"
-                                        />
-                                        <div className="flex-1">
-                                            <div className="font-medium">
-                                                        {meta.title}
-                                            </div>
-                                                <div className="text-xs text-gray-600">
-                                                        {meta.description}
-                                                </div>
-                                        </div>
-                                                {meta.icon}
-                                    </label>
-                                        );
-                                    })
-                            ) : (
-                                <div className="py-4 text-center text-gray-500">
-                                    Загрузка способов оплаты...
+                                        Единоразово
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsRecurring(true)}
+                                        className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
+                                            isRecurring
+                                                ? 'border-blue-600 bg-blue-600 text-white'
+                                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        Регулярно
+                                    </button>
                                 </div>
-                            )}
-                        </div>
-                    </div>
 
-                    {/* Политика */}
-                    <div className="flex items-start space-x-2 border-t pt-4">
-                        <Checkbox
-                            id="agreed_to_policy"
-                            checked={agreedToPolicy}
-                            onCheckedChange={(checked) =>
-                                setAgreedToPolicy(checked as boolean)
-                            }
-                            required
-                        />
-                        <Label
-                            htmlFor="agreed_to_policy"
-                            className="text-xs text-gray-600"
-                        >
-                            Принимаю{' '}
-                            <a
-                                href="/policy/"
-                                target="_blank"
-                                className="text-blue-600 underline"
+                                {isRecurring && (
+                                    <>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {recurring_periods.map((period) => (
+                                                <button
+                                                    key={period}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setRecurringPeriod(
+                                                            period as
+                                                                | 'daily'
+                                                                | 'weekly'
+                                                                | 'monthly',
+                                                        )
+                                                    }
+                                                    className={`px-3 py-2 text-sm ${borderRadiusClass} border transition-colors ${
+                                                        recurringPeriod ===
+                                                        period
+                                                            ? 'border-blue-600 bg-blue-600 text-white'
+                                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    {
+                                                        RECURRING_PERIOD_LABELS[
+                                                            period as keyof typeof RECURRING_PERIOD_LABELS
+                                                        ]
+                                                    }
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="flex items-start space-x-2">
+                                            <Checkbox
+                                                id="agreed_to_recurring"
+                                                checked={agreedToRecurring}
+                                                onCheckedChange={(checked) =>
+                                                    setAgreedToRecurring(
+                                                        checked as boolean,
+                                                    )
+                                                }
+                                                required={isRecurring}
+                                            />
+                                            <Label
+                                                htmlFor="agreed_to_recurring"
+                                                className="text-xs text-gray-600"
+                                            >
+                                                Я согласен на подписку на
+                                                платежи на сумму {amount}{' '}
+                                                {CURRENCY_SYMBOLS[currency]}.
+                                                Подписка будет списываться{' '}
+                                                {
+                                                    RECURRING_PERIOD_LABELS[
+                                                        recurringPeriod
+                                                    ]
+                                                }
+                                            </Label>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Способы оплаты - чекбоксы с иконками, одиночный выбор */}
+                        <div className="border-t pt-4">
+                            <Label className="mb-3 block">Способ оплаты</Label>
+                            <div className="space-y-2">
+                                {paymentMethods.length > 0 ? (
+                                    // Убираем дубликаты по slug (или по name, если slug отсутствует)
+                                    paymentMethods
+                                        .filter((m, idx, arr) => {
+                                            const slugKey = normalizePaymentSlug(
+                                                m,
+                                            ).toLowerCase();
+                                            return (
+                                                arr.findIndex(
+                                                    (x) =>
+                                                        normalizePaymentSlug(
+                                                            x,
+                                                        ).toLowerCase() ===
+                                                        slugKey,
+                                                ) === idx
+                                            );
+                                        })
+                                        .map((method) => {
+                                            const meta = getPaymentMeta(method);
+                                            const slug = normalizePaymentSlug(
+                                                method,
+                                            );
+                                            const checked =
+                                                selectedPaymentMethod ===
+                                                slug;
+                                            return (
+                                                <label
+                                                    key={slug}
+                                                    className={`flex items-center gap-3 border p-3 ${borderRadiusClass} cursor-pointer transition-colors ${
+                                                        checked
+                                                            ? 'border-blue-600 bg-blue-50'
+                                                            : 'border-gray-300 bg-white hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        role="checkbox"
+                                                        value={slug}
+                                                        aria-checked={checked}
+                                                        checked={checked}
+                                                        onChange={() =>
+                                                            setSelectedPaymentMethod(
+                                                                slug,
+                                                            )
+                                                        }
+                                                        className="text-blue-600"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="font-medium">
+                                                            {meta.title}
+                                                        </div>
+                                                        <div className="text-xs text-gray-600">
+                                                            {meta.description}
+                                                        </div>
+                                                    </div>
+                                                    {meta.icon}
+                                                </label>
+                                            );
+                                        })
+                                ) : (
+                                    <div className="py-4 text-center text-gray-500">
+                                        Загрузка способов оплаты...
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Политика */}
+                        <div className="flex items-start space-x-2 border-t pt-4">
+                            <Checkbox
+                                id="agreed_to_policy"
+                                checked={agreedToPolicy}
+                                onCheckedChange={(checked) =>
+                                    setAgreedToPolicy(checked as boolean)
+                                }
+                                required
+                            />
+                            <Label
+                                htmlFor="agreed_to_policy"
+                                className="text-xs text-gray-600"
                             >
-                                условия обработки
-                            </a>{' '}
-                            персональных данных
-                        </Label>
-                    </div>
+                                Принимаю{' '}
+                                <a
+                                    href="/policy/"
+                                    target="_blank"
+                                    className="text-blue-600 underline"
+                                >
+                                    условия обработки
+                                </a>{' '}
+                                персональных данных
+                            </Label>
+                        </div>
 
                         {/* Сообщения */}
-                    {error && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-                    {success && (
-                        <Alert>
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            <AlertDescription className="text-green-600">
-                                {success}
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                        {error && (
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
+                        {success && (
+                            <Alert>
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                <AlertDescription className="text-green-600">
+                                    {success}
+                                </AlertDescription>
+                            </Alert>
+                        )}
 
                         {/* Кнопка */}
-                    <button
-                        type="submit"
-                        disabled={isProcessing}
-                        className={`btn-accent w-full px-6 py-3 ${borderRadiusClass} flex items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50`}
-                    >
-                        {isProcessing ? (
-                            <>
-                                <Loader2 className="h-5 w-5 animate-spin" />
-                                Обработка...
-                            </>
-                        ) : (
-                            <>
-                                <Heart className="h-5 w-5" />
-                                {button_text}
-                            </>
-                        )}
-                    </button>
-                </form>
+                        <button
+                            type="submit"
+                            disabled={isProcessing}
+                            className={`btn-accent w-full px-6 py-3 ${borderRadiusClass} flex items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${buttonStyleClass || ''}`}
+                        >
+                            {isProcessing ? (
+                                <>
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    Обработка...
+                                </>
+                            ) : (
+                                <>
+                                    <Heart className="h-5 w-5" />
+                                    {button_text}
+                                </>
+                            )}
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
-    );
+        );
     };
 
     // Режим редактирования

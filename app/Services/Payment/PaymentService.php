@@ -9,6 +9,7 @@ use App\Models\Donation;
 use App\Models\Organization;
 use App\Models\Fundraiser;
 use App\Models\Project;
+use App\Models\ProjectStage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +37,7 @@ class PaymentService
         'organization_id' => $data['organization_id'],
         'fundraiser_id' => $data['fundraiser_id'] ?? null,
         'project_id' => $data['project_id'] ?? null,
+        'project_stage_id' => $data['project_stage_id'] ?? null,
         'payment_method_id' => $paymentMethod->id,
         'transaction_id' => PaymentTransaction::generateTransactionId(),
         'amount' => $data['amount'],
@@ -310,6 +312,7 @@ class PaymentService
       'organization_id' => $transaction->organization_id,
       'fundraiser_id' => $transaction->fundraiser_id,
       'project_id' => $transaction->project_id,
+      'project_stage_id' => $transaction->project_stage_id,
       'payment_transaction_id' => $transaction->id,
       'amount' => $transaction->amount,
       'currency' => $transaction->currency,
@@ -354,6 +357,18 @@ class PaymentService
 
     if (isset($data['project_id'])) {
       Project::findOrFail($data['project_id']);
+    }
+
+    if (isset($data['project_stage_id'])) {
+      $stage = ProjectStage::with('project')->findOrFail($data['project_stage_id']);
+
+      if (isset($data['project_id']) && (int) $stage->project_id !== (int) $data['project_id']) {
+        throw new \InvalidArgumentException('Project stage does not belong to the specified project');
+      }
+
+      if ($stage->project && (int) $stage->project->organization_id !== (int) $data['organization_id']) {
+        throw new \InvalidArgumentException('Project stage does not belong to the specified organization');
+      }
     }
 
     // Проверяем сумму

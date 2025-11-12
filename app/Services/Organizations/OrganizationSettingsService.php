@@ -4,11 +4,19 @@ namespace App\Services\Organizations;
 
 use App\Models\Organization;
 use App\Models\OrganizationSetting;
-use Illuminate\Support\Facades\Cache;
+use App\Services\GlobalSettingsService;
+use App\Services\Payment\PaymentSettingsNormalizer;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class OrganizationSettingsService
 {
+    public function __construct(
+        private readonly GlobalSettingsService $globalSettingsService,
+        private readonly PaymentSettingsNormalizer $paymentSettingsNormalizer,
+    ) {
+    }
+
     /**
      * Получить настройки организации
      */
@@ -38,7 +46,9 @@ class OrganizationSettingsService
                     'layout_config' => $settings->layout_config ?? [],
                     'feature_flags' => $settings->feature_flags ?? [],
                     'integration_settings' => $settings->integration_settings ?? [],
-                    'payment_settings' => $settings->payment_settings ?? $this->getDefaultPaymentSettings(),
+                    'payment_settings' => is_array($settings->payment_settings)
+                        ? $this->paymentSettingsNormalizer->normalize($settings->payment_settings)
+                        : $this->resolveDefaultPaymentSettings(),
                     'notification_settings' => $settings->notification_settings ?? $this->getDefaultNotificationSettings(),
                     'advanced_layout_config' => $settings->advanced_layout_config ?? [],
                     'seo_settings' => $settings->seo_settings ?? [],
@@ -198,7 +208,7 @@ class OrganizationSettingsService
                 'telegram_bot_token' => null,
                 'telegram_chat_id' => null,
             ],
-            'payment_settings' => $this->getDefaultPaymentSettings(),
+            'payment_settings' => $this->resolveDefaultPaymentSettings(),
             'notification_settings' => $this->getDefaultNotificationSettings(),
             'advanced_layout_config' => [],
             'seo_settings' => [
@@ -251,20 +261,37 @@ class OrganizationSettingsService
     /**
      * Получить настройки платежей по умолчанию
      */
-    private function getDefaultPaymentSettings(): array
+    public function getDefaultPaymentSettings(): array
     {
-        return [
-            'enabled_methods' => ['yookassa', 'tinkoff'],
-            'min_amount' => 100,
-            'max_amount' => 100000000,
-            'currency' => 'RUB',
-            'auto_approve' => true,
-            'commission_percentage' => 0,
-            'test_mode' => true,
-            'webhook_url' => null,
-            'success_url' => '/thanks',
-            'failure_url' => '/donation-failed',
-        ];
+        return $this->resolveDefaultPaymentSettings();
+    }
+
+    private function resolveDefaultPaymentSettings(): array
+    {
+        $defaults = $this->globalSettingsService->getDefaultOrganizationSettings()['payment'] ?? [];
+
+        if (!is_array($defaults) || empty($defaults)) {
+            $defaults = [
+                'enabled_gateways' => ['yookassa'],
+                'currency' => 'RUB',
+                'test_mode' => true,
+                'donation_min_amount' => 100,
+                'donation_max_amount' => 0,
+                'credentials' => [],
+            ];
+        }
+
+        $normalized = $this->paymentSettingsNormalizer->normalize($defaults);
+
+        if (!isset($normalized['credentials']) || !is_array($normalized['credentials'])) {
+            $normalized['credentials'] = [];
+        }
+
+        if (!isset($normalized['options']) || !is_array($normalized['options'])) {
+            $normalized['options'] = [];
+        }
+
+        return $normalized;
     }
 
     /**

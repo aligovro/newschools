@@ -1,12 +1,15 @@
 import ProjectForm from '@/components/dashboard/pages/projects/ProjectForm/ProjectForm';
 import type {
     Organization,
+    PaymentSettings,
     Project,
+    ProjectCategory,
 } from '@/components/dashboard/pages/projects/ProjectForm/types';
 
 interface Props {
     organization: Organization;
-    categories: Record<string, string>;
+    projectCategories?: ProjectCategory[];
+    defaultPaymentSettings?: PaymentSettings;
     project?: Project;
     isEdit?: boolean;
 }

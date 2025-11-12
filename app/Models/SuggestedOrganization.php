@@ -11,6 +11,29 @@ class SuggestedOrganization extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+
+    /**
+     * @var array<int, string>
+     */
+    public const STATUSES = [
+        self::STATUS_PENDING,
+        self::STATUS_APPROVED,
+        self::STATUS_REJECTED,
+    ];
+
+    /**
+     * @var array<int, string>
+     */
+    public const SORTABLE_FIELDS = [
+        'name',
+        'created_at',
+        'updated_at',
+        'status',
+    ];
+
     protected $fillable = [
         'name',
         'city_name',

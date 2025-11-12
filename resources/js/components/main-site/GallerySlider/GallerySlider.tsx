@@ -5,6 +5,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import type { NavigationOptions } from 'swiper/types';
 import './GallerySlider.css';
 
 interface GallerySliderProps {
@@ -12,6 +13,11 @@ interface GallerySliderProps {
     onImageClick?: (index: number) => void;
     className?: string;
 }
+
+type GroupedImages = {
+    images: string[];
+    startIndex: number;
+};
 
 export const GallerySlider: React.FC<GallerySliderProps> = ({
     images,
@@ -39,20 +45,36 @@ export const GallerySlider: React.FC<GallerySliderProps> = ({
     const navigationNextRef = useRef<HTMLButtonElement>(null);
 
     // Группируем изображения по 3 - мемоизируем, чтобы не пересчитывать при каждом рендере
-    const groupedImages = useMemo(() => {
+    const groupedImages = useMemo<GroupedImages[]>(() => {
         if (!images || images.length === 0) {
             return [];
         }
-        const grouped: string[][] = [];
-        for (let i = 0; i < images.length; i += 3) {
-            grouped.push(images.slice(i, i + 3));
+
+        const total = images.length;
+
+        if (total <= 3) {
+            return [
+                {
+                    images: images.slice(0, 3),
+                    startIndex: 0,
+                },
+            ];
         }
+
+        const grouped: GroupedImages[] = [];
+        for (let start = 0; start <= total - 3; start += 1) {
+            grouped.push({
+                images: images.slice(start, start + 3),
+                startIndex: start,
+            });
+        }
+
         return grouped;
     }, [images]);
 
     const handleImageClick = useCallback(
-        (groupIndex: number, imageIndex: number) => {
-            const globalIndex = groupIndex * 3 + imageIndex;
+        (startIndex: number, imageIndex: number) => {
+            const globalIndex = startIndex + imageIndex;
             if (onImageClick) {
                 onImageClick(globalIndex);
             }
@@ -65,6 +87,14 @@ export const GallerySlider: React.FC<GallerySliderProps> = ({
         groupIndex: number,
         groupLength: number,
     ) => {
+        if (groupLength === 1) {
+            return '100%';
+        }
+
+        if (groupLength === 2) {
+            return '50%';
+        }
+
         // По умолчанию узкая - последняя картинка в группе (третья если есть, иначе последняя)
         const defaultSmallIndex = Math.min(2, groupLength - 1);
 
@@ -162,6 +192,15 @@ export const GallerySlider: React.FC<GallerySliderProps> = ({
 
     const handleMouseEnter = useCallback(
         (groupIndex: number, imageIndex: number, groupLength: number) => {
+            if (groupLength < 3) {
+                setHoveredImageIndices((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.set(groupIndex, imageIndex);
+                    return newMap;
+                });
+                return;
+            }
+
             const defaultSmallIndex = Math.min(2, groupLength - 1);
 
             // Если навели на третью картинку (index 2) в группе из 3 картинок
@@ -278,10 +317,12 @@ export const GallerySlider: React.FC<GallerySliderProps> = ({
 
     const handleBeforeInit = useCallback((swiper: SwiperType) => {
         if (swiper.params.navigation) {
-            (swiper.params.navigation as any).prevEl =
-                navigationPrevRef.current;
-            (swiper.params.navigation as any).nextEl =
-                navigationNextRef.current;
+            const navigationParams = swiper.params
+                .navigation as NavigationOptions;
+            if (navigationParams) {
+                navigationParams.prevEl = navigationPrevRef.current;
+                navigationParams.nextEl = navigationNextRef.current;
+            }
         }
     }, []);
 
@@ -304,51 +345,53 @@ export const GallerySlider: React.FC<GallerySliderProps> = ({
                     }}
                     onBeforeInit={handleBeforeInit}
                 >
-                    {groupedImages.map((group, groupIndex) => (
-                        <SwiperSlide key={groupIndex}>
-                            <div
-                                className="gallery-slider-group"
-                                onMouseLeave={() =>
-                                    handleMouseLeave(groupIndex)
-                                }
-                            >
-                                {group.map((image, imageIndex) => {
-                                    const globalIndex =
-                                        groupIndex * 3 + imageIndex;
-                                    const imageWidth = getImageWidth(
-                                        imageIndex,
-                                        groupIndex,
-                                        group.length,
-                                    );
-                                    return (
-                                        <img
-                                            key={imageIndex}
-                                            src={image}
-                                            alt={`Gallery image ${globalIndex + 1}`}
-                                            className="gallery-slider-image"
-                                            style={{
-                                                width: imageWidth,
-                                            }}
-                                            onMouseEnter={() =>
-                                                handleMouseEnter(
-                                                    groupIndex,
-                                                    imageIndex,
-                                                    group.length,
-                                                )
-                                            }
-                                            onClick={() =>
-                                                handleImageClick(
-                                                    groupIndex,
-                                                    imageIndex,
-                                                )
-                                            }
-                                            loading="lazy"
-                                        />
-                                    );
-                                })}
-                            </div>
-                        </SwiperSlide>
-                    ))}
+                    {groupedImages.map(
+                        ({ images: group, startIndex }, groupIndex) => (
+                            <SwiperSlide key={`${groupIndex}-${startIndex}`}>
+                                <div
+                                    className="gallery-slider-group"
+                                    onMouseLeave={() =>
+                                        handleMouseLeave(groupIndex)
+                                    }
+                                >
+                                    {group.map((image, imageIndex) => {
+                                        const globalIndex =
+                                            startIndex + imageIndex;
+                                        const imageWidth = getImageWidth(
+                                            imageIndex,
+                                            groupIndex,
+                                            group.length,
+                                        );
+                                        return (
+                                            <img
+                                                key={imageIndex}
+                                                src={image}
+                                                alt={`Gallery image ${globalIndex + 1}`}
+                                                className="gallery-slider-image"
+                                                style={{
+                                                    width: imageWidth,
+                                                }}
+                                                onMouseEnter={() =>
+                                                    handleMouseEnter(
+                                                        groupIndex,
+                                                        imageIndex,
+                                                        group.length,
+                                                    )
+                                                }
+                                                onClick={() =>
+                                                    handleImageClick(
+                                                        startIndex,
+                                                        imageIndex,
+                                                    )
+                                                }
+                                                loading="lazy"
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </SwiperSlide>
+                        ),
+                    )}
                 </Swiper>
             </div>
 

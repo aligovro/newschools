@@ -14,6 +14,10 @@ import type {
     ProjectStageFormData,
     UploadedImage,
 } from './types';
+import {
+    ALLOWED_PAYMENT_GATEWAYS,
+    normalizePaymentSettings,
+} from '@/lib/payments/normalizePaymentSettings';
 
 type StageRequestPayload = {
     id?: number;
@@ -29,8 +33,8 @@ type StageRequestPayload = {
 
 export default function ProjectForm({
     organization,
-    categories,
     projectCategories = [],
+    defaultPaymentSettings,
     project,
     isEdit = false,
 }: ProjectFormProps) {
@@ -163,39 +167,52 @@ export default function ProjectForm({
         initialFormData as any,
     );
 
-    // Payment settings state
-    const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(
-        useMemo(() => {
-            const raw = project?.payment_settings;
-            if (raw && typeof raw === 'object') {
-                return {
-                    gateway: raw.gateway ?? 'yookassa',
-                    enabled_gateways: (Array.isArray(raw.enabled_gateways)
-                        ? (raw.enabled_gateways as string[])
-                        : raw.gateway
-                          ? [raw.gateway as string]
-                          : ['yookassa']) as Array<
-                        'yookassa' | 'tinkoff' | 'sbp'
-                    >,
-                    credentials: raw.credentials ?? {},
-                    options: raw.options ?? {},
-                    donation_min_amount: Number(raw.donation_min_amount) || 100,
-                    donation_max_amount: Number(raw.donation_max_amount) || 0,
-                    currency: raw.currency ?? 'RUB',
-                    test_mode: Boolean(raw.test_mode ?? true),
-                };
-            }
-            return {
-                gateway: 'yookassa',
-                credentials: {},
-                options: {},
-                donation_min_amount: 100,
-                donation_max_amount: 0,
-                currency: 'RUB',
-                test_mode: true,
-            };
-        }, [project]),
+    useEffect(() => {
+        const selectedIds = Array.isArray((data as any).category_ids)
+            ? ((data as any).category_ids as number[])
+            : [];
+
+        if (!selectedIds.length || !projectCategories?.length) {
+            return;
+        }
+
+        const primaryStillSelected = projectCategories.some(
+            (category) =>
+                category.slug === data.category &&
+                selectedIds.includes(category.id),
+        );
+
+        if (primaryStillSelected) {
+            return;
+        }
+
+        const fallback = projectCategories.find((category) =>
+            selectedIds.includes(category.id),
+        );
+        const fallbackSlug = fallback?.slug ?? '';
+
+        if (fallbackSlug !== data.category) {
+            (setData as any)('category', fallbackSlug);
+        }
+    }, [data.category, data.category_ids, projectCategories, setData]);
+
+    const basePaymentSettings = useMemo(
+        () =>
+            normalizePaymentSettings(
+                (project?.payment_settings as Partial<PaymentSettings> | null) ??
+                    (defaultPaymentSettings as Partial<PaymentSettings> | null) ??
+                    null,
+            ),
+        [project?.payment_settings, defaultPaymentSettings],
     );
+
+    // Payment settings state
+    const [paymentSettings, setPaymentSettings] =
+        useState<PaymentSettings>(basePaymentSettings as PaymentSettings);
+
+    useEffect(() => {
+        setPaymentSettings(basePaymentSettings as PaymentSettings);
+    }, [basePaymentSettings]);
 
     // Callbacks for data changes
     const handleDataChange = useCallback(
@@ -207,16 +224,60 @@ export default function ProjectForm({
 
     const handlePaymentChange = useCallback(
         (key: keyof PaymentSettings, value: unknown) => {
-            setPaymentSettings((prev) => ({ ...prev, [key]: value }));
+            setPaymentSettings((prev) => {
+                if (key === 'enabled_gateways' && Array.isArray(value)) {
+                    const normalized = (value as Array<string>)
+                        .map((gateway) =>
+                            ALLOWED_PAYMENT_GATEWAYS.includes(gateway as any)
+                                ? (gateway as 'yookassa' | 'tinkoff' | 'sbp')
+                                : null,
+                        )
+                        .filter(
+                            (gateway): gateway is 'yookassa' | 'tinkoff' | 'sbp' =>
+                                !!gateway,
+                        );
+
+                    const nextGateways =
+                        normalized.length > 0 ? normalized : ['yookassa'];
+
+                    return {
+                        ...prev,
+                        gateway: nextGateways[0],
+                        enabled_gateways: nextGateways,
+                    };
+                }
+
+                if (key === 'credentials' && value && typeof value === 'object') {
+                    return {
+                        ...prev,
+                        credentials:
+                            value as Record<string, Record<string, string>>,
+                    };
+                }
+
+                return { ...prev, [key]: value } as PaymentSettings;
+            });
         },
         [],
     );
 
     const handleCredentialChange = useCallback((key: string, value: string) => {
-        setPaymentSettings((prev) => ({
-            ...prev,
-            credentials: { ...(prev.credentials || {}), [key]: value },
-        }));
+        const [gateway, credentialKey] = key.split('.');
+        if (!gateway || !credentialKey) {
+            return;
+        }
+
+        setPaymentSettings((prev) => {
+            const credentials = { ...(prev.credentials ?? {}) };
+            const gatewayCredentials = { ...(credentials[gateway] ?? {}) };
+            gatewayCredentials[credentialKey] = value;
+            credentials[gateway] = gatewayCredentials;
+
+            return {
+                ...prev,
+                credentials,
+            };
+        });
     }, []);
 
     // Sync payment settings with form
@@ -313,16 +374,6 @@ export default function ProjectForm({
             ).filter((g) => ['yookassa', 'tinkoff', 'sbp'].includes(String(g))),
         } as const;
 
-        console.log(
-            '🎬 Submitting stages with files:',
-            stages.map((s) => ({
-                title: s.title,
-                hasImageFile: !!s.imageFile,
-                hasGalleryFiles:
-                    s.galleryFiles?.filter((img) => img.file).length || 0,
-            })),
-        );
-
         const url =
             isEdit && project?.id
                 ? `/dashboard/organizations/${organization.id}/projects/${project.id}`
@@ -345,7 +396,6 @@ export default function ProjectForm({
 
             if (stageState?.imageFile) {
                 stageData.image_file = stageState.imageFile;
-                console.log(`✅ Added stage ${index} image file`);
             }
 
             const newGalleryFiles =
@@ -355,9 +405,6 @@ export default function ProjectForm({
 
             if (newGalleryFiles.length > 0) {
                 stageData.gallery_files = newGalleryFiles;
-                console.log(
-                    `Stage ${index}: Adding ${newGalleryFiles.length} gallery files`,
-                );
             }
         });
 
@@ -383,16 +430,6 @@ export default function ProjectForm({
         e.preventDefault();
 
         if (!isEdit || !project?.id) return;
-
-        console.log(
-            '🎬 Saving only stages with files:',
-            stages.map((s) => ({
-                title: s.title,
-                hasImageFile: !!s.imageFile,
-                newGalleryFiles:
-                    s.galleryFiles?.filter((g) => g.file).length || 0,
-            })),
-        );
 
         const url = `/dashboard/organizations/${organization.id}/projects/${project.id}/stages`;
 
@@ -535,7 +572,6 @@ export default function ProjectForm({
                         <GeneralTab
                             data={data}
                             errors={errors}
-                            categories={categories}
                             projectCategories={projectCategories}
                             paymentSettings={paymentSettings}
                             onDataChange={handleDataChange}

@@ -5,9 +5,11 @@ import { Switch } from '@/components/ui/switch';
 
 type Gateway = 'yookassa' | 'tinkoff' | 'sbp';
 
+type GatewayCredentials = Record<string, Record<string, string>>;
+
 export interface PaymentGatewaysSettingsValue {
     enabled_gateways?: Gateway[];
-    credentials?: Record<string, any>;
+    credentials?: GatewayCredentials;
     currency?: string;
     test_mode?: boolean;
     donation_min_amount?: number;
@@ -28,20 +30,27 @@ export function PaymentGatewaysSettings({
     );
 
     const toggleGateway = (gw: Gateway, checked: boolean) => {
-        const next = new Set(enabled);
-        if (checked) next.add(gw);
-        else next.delete(gw);
-        onChange('enabled_gateways', Array.from(next));
+        if (checked) {
+            onChange('enabled_gateways', [gw]);
+            return;
+        }
+
+        const remaining = Array.from(enabled).filter((item) => item !== gw);
+        onChange('enabled_gateways', remaining);
     };
 
     const readCred = (gw: Gateway, key: string): string => {
-        const creds = (value.credentials || {}) as any;
-        return creds[gw]?.[key] ?? creds[key] ?? '';
+        const creds = (value.credentials ?? {}) as GatewayCredentials;
+        const gatewayCreds = creds[gw];
+        if (gatewayCreds && typeof gatewayCreds[key] === 'string') {
+            return gatewayCreds[key];
+        }
+        return '';
     };
 
     const writeCred = (gw: Gateway, key: string, v: string) => {
-        const creds = { ...(value.credentials || {}) } as any;
-        const gwCreds = { ...(creds[gw] || {}) };
+        const creds = { ...(value.credentials ?? {}) } as GatewayCredentials;
+        const gwCreds = { ...(creds[gw] ?? {}) };
         gwCreds[key] = v;
         creds[gw] = gwCreds;
         onChange('credentials', creds);

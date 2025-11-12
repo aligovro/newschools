@@ -19,11 +19,17 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use App\Services\Organizations\OrganizationSettingsService;
+use App\Services\Payment\PaymentSettingsNormalizer;
 use App\Services\Projects\ProjectStageService;
 
 class ProjectController extends Controller
 {
-    public function __construct(private ProjectStageService $stageService)
+    public function __construct(
+        private readonly ProjectStageService $stageService,
+        private readonly OrganizationSettingsService $organizationSettingsService,
+        private readonly PaymentSettingsNormalizer $paymentSettingsNormalizer,
+    )
     {
         $this->middleware('auth');
     }
@@ -54,13 +60,12 @@ class ProjectController extends Controller
      */
     public function create(Organization $organization)
     {
-        $categories = $organization->type_config['categories'] ?? [];
         $projectCategories = ProjectCategory::active()->ordered()->get();
 
         return Inertia::render('dashboard/projects/CreateProject', [
             'organization' => $organization->only(['id', 'name', 'slug', 'type_config']),
-            'categories' => $categories,
             'projectCategories' => $projectCategories,
+            'defaultPaymentSettings' => $this->resolveDefaultPaymentSettings($organization),
         ]);
     }
 
@@ -441,6 +446,7 @@ class ProjectController extends Controller
             'project' => $project,
             'categories' => $categories,
             'projectCategories' => $projectCategories,
+            'defaultPaymentSettings' => $this->resolveDefaultPaymentSettings($organization),
         ]);
     }
 
@@ -597,6 +603,22 @@ class ProjectController extends Controller
             'available' => $available,
             'message' => $available ? 'Slug доступен' : 'Slug уже используется'
         ]);
+    }
+
+    /**
+     * Получить платежные настройки по умолчанию для форм проекта
+     */
+    private function resolveDefaultPaymentSettings(Organization $organization): array
+    {
+        $organization->loadMissing('settings');
+
+        $existing = $organization->settings?->payment_settings;
+
+        if (is_array($existing) && !empty($existing)) {
+            return $this->paymentSettingsNormalizer->normalize($existing);
+        }
+
+        return $this->organizationSettingsService->getDefaultPaymentSettings();
     }
 
     /**

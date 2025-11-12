@@ -1,448 +1,455 @@
 // Donation Widget Styles
 .donation-widget {
-  font-family: inherit;
-  line-height: 1.6;
-  color: #333;
+    font-family: inherit;
+    box-shadow: none;
+    border: 1px solid #e8ecf3;
+    border-radius: 10px;
 
-  // Контейнер
-  &-editor {
-    .form-widget-editor__tabs {
-      display: flex;
-      gap: 0.5rem;
-      border-bottom: 2px solid #e5e7eb;
-      margin-bottom: 1.5rem;
+    &__header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
     }
 
-    .form-widget-editor__tab {
-      padding: 0.75rem 1rem;
-      background: transparent;
-      border: none;
-      color: #6b7280;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
-
-      &:hover {
-        color: #3b82f6;
-      }
-
-      &.active {
-        color: #3b82f6;
-        border-bottom-color: #3b82f6;
-      }
-    }
-  }
-
-  // Прогресс бар
-  .donation-progress {
-    position: relative;
-    width: 100%;
-    height: 8px;
-    background-color: #e5e7eb;
-    border-radius: 9999px;
-    overflow: hidden;
-
-    &__fill {
-      height: 100%;
-      background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
-      transition: width 0.5s ease;
-      border-radius: 9999px;
-    }
-  }
-
-  // Кнопки предустановленных сумм
-  .preset-amount-btn {
-    transition: all 0.2s;
-    font-weight: 500;
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    &__title {
+        font-weight: 700;
+        font-size: 30px;
     }
 
-    &:active {
-      transform: translateY(0);
+    // Контейнер
+    &-editor {
+        .form-widget-editor__tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-widget-editor__tab {
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: none;
+            color: #6b7280;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+
+            &:hover {
+                color: #3b82f6;
+            }
+
+            &.active {
+                color: #3b82f6;
+                border-bottom-color: #3b82f6;
+            }
+        }
     }
 
-    &.active {
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-    }
-  }
+    // Прогресс бар
+    .donation-progress {
+        position: relative;
+        width: 100%;
+        height: 8px;
+        background-color: #e5e7eb;
+        border-radius: 9999px;
+        overflow: hidden;
 
-  // Методы оплаты
-  .payment-method-card {
-    transition: all 0.2s;
-    cursor: pointer;
-
-    &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    &.selected {
-      box-shadow: 0 2px 12px rgba(59, 130, 246, 0.2);
-    }
-
-    .payment-method-icon {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f3f4f6;
-      border-radius: 8px;
-      transition: background-color 0.2s;
-
-      img {
-        max-width: 100%;
-        max-height: 100%;
-      }
+        &__fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+            transition: width 0.5s ease;
+            border-radius: 9999px;
+        }
     }
 
-    &:hover .payment-method-icon {
-      background: #e5e7eb;
-    }
-
-    &.selected .payment-method-icon {
-      background: #dbeafe;
-    }
-  }
-
-  // Переключатели (единоразово / регулярно)
-  .donation-type-switcher {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-
-    button {
-      transition: all 0.2s;
-      font-weight: 500;
-
-      &:hover:not(.active) {
-        background-color: #f9fafb;
-      }
-    }
-  }
-
-  // Периоды регулярных платежей
-  .recurring-periods {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-
-    button {
-      transition: all 0.2s;
-      font-size: 0.875rem;
-
-      &:hover:not(.active) {
-        background-color: #f9fafb;
-      }
-    }
-  }
-
-  // Поля формы
-  .form-field {
-    margin-bottom: 1rem;
-
-    label {
-      display: block;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-      font-size: 0.875rem;
-      color: #374151;
-    }
-
-    input,
-    textarea {
-      width: 100%;
-      padding: 0.625rem 0.875rem;
-      border: 1px solid #d1d5db;
-      border-radius: 0.375rem;
-      font-size: 0.875rem;
-      transition: all 0.2s;
-
-      &:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-      }
-
-      &:disabled {
-        background-color: #f3f4f6;
-        cursor: not-allowed;
-      }
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-  }
-
-  // Чекбоксы
-  .checkbox-field {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-
-    input[type="checkbox"] {
-      width: auto;
-      margin-top: 0.25rem;
-      flex-shrink: 0;
-    }
-
-    label {
-      font-size: 0.875rem;
-      color: #4b5563;
-      line-height: 1.5;
-      margin: 0;
-      font-weight: 400;
-
-      a {
-        color: #3b82f6;
-        text-decoration: underline;
+    // Кнопки предустановленных сумм
+    .preset-amount-btn {
+        transition: all 0.2s;
+        font-weight: 500;
 
         &:hover {
-          color: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-      }
-    }
-  }
 
-  // Кнопка отправки
-  .submit-button {
-    width: 100%;
-    padding: 0.875rem 1.5rem;
-    font-weight: 600;
-    font-size: 1rem;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-center;
-    gap: 0.5rem;
+        &:active {
+            transform: translateY(0);
+        }
 
-    &:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        &.active {
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
     }
 
-    &:active:not(:disabled) {
-      transform: translateY(0);
+    // Методы оплаты
+    .payment-method-card {
+        transition: all 0.2s;
+        cursor: pointer;
+
+        &:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        &.selected {
+            box-shadow: 0 2px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        .payment-method-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+
+            img {
+                max-width: 100%;
+                max-height: 100%;
+            }
+        }
+
+        &:hover .payment-method-icon {
+            background: #e5e7eb;
+        }
+
+        &.selected .payment-method-icon {
+            background: #dbeafe;
+        }
     }
 
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    // Переключатели (единоразово / регулярно)
+    .donation-type-switcher {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+
+        button {
+            transition: all 0.2s;
+            font-weight: 500;
+
+            &:hover:not(.active) {
+                background-color: #f9fafb;
+            }
+        }
     }
 
-    svg {
-      width: 1.25rem;
-      height: 1.25rem;
-    }
-  }
+    // Периоды регулярных платежей
+    .recurring-periods {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-top: 0.75rem;
 
-  // Алерты
-  .alert {
-    padding: 0.75rem 1rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    margin-bottom: 1rem;
+        button {
+            transition: all 0.2s;
+            font-size: 0.875rem;
 
-    &-success {
-      background-color: #d1fae5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
+            &:hover:not(.active) {
+                background-color: #f9fafb;
+            }
+        }
     }
 
-    &-error {
-      background-color: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fecaca;
-    }
-
-    &-info {
-      background-color: #dbeafe;
-      color: #1e40af;
-      border: 1px solid #bfdbfe;
-    }
-  }
-
-  // Разделители
-  .divider {
-    height: 1px;
-    background-color: #e5e7eb;
-    margin: 1.5rem 0;
-  }
-
-  // Загрузчик
-  .loader {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spinner 0.6s linear infinite;
-  }
-
-  @keyframes spinner {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-
-  // Цветовые схемы
-  &.dark-theme {
-    background-color: #1f2937;
-    color: #f3f4f6;
-
+    // Поля формы
     .form-field {
-      label {
-        color: #e5e7eb;
-      }
+        margin-bottom: 1rem;
 
-      input,
-      textarea {
-        background-color: #374151;
-        border-color: #4b5563;
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+
+            &:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+            &:disabled {
+                background-color: #f3f4f6;
+                cursor: not-allowed;
+            }
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+    }
+
+    // Чекбоксы
+    .checkbox-field {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+
+        input[type='checkbox'] {
+            width: auto;
+            margin-top: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        label {
+            font-size: 0.875rem;
+            color: #4b5563;
+            line-height: 1.5;
+            margin: 0;
+            font-weight: 400;
+
+            a {
+                color: #3b82f6;
+                text-decoration: underline;
+
+                &:hover {
+                    color: #2563eb;
+                }
+            }
+        }
+    }
+
+    // Кнопка отправки
+    .submit-button {
+        width: 100%;
+        padding: 0.875rem 1.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        &:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        &:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+    }
+
+    // Алерты
+    .alert {
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+
+        &-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        &-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        &-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+    }
+
+    // Разделители
+    .divider {
+        height: 1px;
+        background-color: #e5e7eb;
+        margin: 1.5rem 0;
+    }
+
+    // Загрузчик
+    .loader {
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spinner 0.6s linear infinite;
+    }
+
+    @keyframes spinner {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    // Цветовые схемы
+    &.dark-theme {
+        background-color: #1f2937;
         color: #f3f4f6;
 
-        &:focus {
-          border-color: #60a5fa;
+        .form-field {
+            label {
+                color: #e5e7eb;
+            }
+
+            input,
+            textarea {
+                background-color: #374151;
+                border-color: #4b5563;
+                color: #f3f4f6;
+
+                &:focus {
+                    border-color: #60a5fa;
+                }
+            }
         }
-      }
+
+        .payment-method-card {
+            background-color: #374151;
+            border-color: #4b5563;
+
+            &:hover {
+                background-color: #4b5563;
+            }
+
+            &.selected {
+                background-color: #1e40af;
+                border-color: #3b82f6;
+            }
+        }
+
+        .divider {
+            background-color: #4b5563;
+        }
     }
 
-    .payment-method-card {
-      background-color: #374151;
-      border-color: #4b5563;
-
-      &:hover {
-        background-color: #4b5563;
-      }
-
-      &.selected {
-        background-color: #1e40af;
-        border-color: #3b82f6;
-      }
+    // Анимации
+    &.fade-in {
+        animation: fadeIn 0.3s ease-in;
     }
 
-    .divider {
-      background-color: #4b5563;
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
-  }
 
-  // Анимации
-  &.fade-in {
-    animation: fadeIn 0.3s ease-in;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
+    // Кастомизация прогресс бара
+    &.progress-gradient-green .donation-progress__fill {
+        background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+
+    &.progress-gradient-purple .donation-progress__fill {
+        background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
     }
-  }
 
-  // Кастомизация прогресс бара
-  &.progress-gradient-green .donation-progress__fill {
-    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-  }
-
-  &.progress-gradient-purple .donation-progress__fill {
-    background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
-  }
-
-  &.progress-gradient-red .donation-progress__fill {
-    background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
-  }
+    &.progress-gradient-red .donation-progress__fill {
+        background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+    }
 }
 
 // Sticky виджет
 .donation-widget-sticky {
-  position: fixed;
-  z-index: 1000;
-  max-width: 400px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  animation: slideIn 0.3s ease-out;
+    position: fixed;
+    z-index: 1000;
+    max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
 
-  &.top-right {
-    top: 20px;
-    right: 20px;
-  }
-
-  &.top-left {
-    top: 20px;
-    left: 20px;
-  }
-
-  &.bottom-right {
-    bottom: 20px;
-    right: 20px;
-  }
-
-  &.bottom-left {
-    bottom: 20px;
-    left: 20px;
-  }
-
-  @keyframes slideIn {
-    from {
-      transform: translateY(-20px);
-      opacity: 0;
+    &.top-right {
+        top: 20px;
+        right: 20px;
     }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
 
+    &.top-left {
+        top: 20px;
+        left: 20px;
+    }
+
+    &.bottom-right {
+        bottom: 20px;
+        right: 20px;
+    }
+
+    &.bottom-left {
+        bottom: 20px;
+        left: 20px;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
 }
 
 // Модальное окно виджета
 .donation-widget-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-center;
-  padding: 20px;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.2s ease-out;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-out;
 
-  .donation-widget {
-    max-width: 500px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: slideInUp 0.3s ease-out;
-  }
+    .donation-widget {
+        max-width: 500px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideInUp 0.3s ease-out;
+    }
 
-  @keyframes slideInUp {
-    from {
-      transform: translateY(20px) scale(0.95);
-      opacity: 0;
+    @keyframes slideInUp {
+        from {
+            transform: translateY(20px) scale(0.95);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
     }
-    to {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
-  }
 }
-

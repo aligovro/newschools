@@ -20,6 +20,7 @@ export default function OrganizationForm({
     organization,
     referenceData,
     organizationSettings,
+    defaultPaymentSettings,
 }: OrganizationFormProps) {
     const isEdit = mode === 'edit' && !!organization?.id;
 
@@ -43,6 +44,7 @@ export default function OrganizationForm({
         organization,
         organizationSettings,
         isEdit,
+        defaultPaymentSettings,
     });
 
     // Slug
