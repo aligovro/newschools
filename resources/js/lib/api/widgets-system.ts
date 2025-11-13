@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api';
+import type { MoneyAmount } from '@/types/money';
 
 // Типы для API ответов системы виджетов
 export interface Widget {
@@ -75,18 +76,26 @@ export interface SimpleSuccessResponse<T> {
 export interface PaymentMethod {
     id: number;
     name: string;
-    type: string;
+    type?: string;
     slug?: string;
-    is_active: boolean;
-    config: Record<string, unknown>;
+    is_active?: boolean;
+    config?: Record<string, unknown>;
     description?: string;
     icon?: string;
     min_amount?: number;
     max_amount?: number;
+    available?: boolean;
 }
 
 export interface DonationWidgetData {
     terminology: Record<string, string>;
+    merchant?: {
+        id: number;
+        status: string;
+        activation_date?: string | null;
+        is_operational?: boolean;
+        is_test_mode?: boolean;
+    } | null;
     fundraiser?: {
         id: number;
         title: string;
@@ -103,18 +112,21 @@ export interface DonationWidgetData {
         name: string;
     };
     organization_needs?: {
-        target_amount: number | null;
-        collected_amount: number | null;
-        target_amount_rubles: number | null;
-        collected_amount_rubles: number | null;
-        currency: string;
-        is_active: boolean;
-    };
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+        is_active?: boolean;
+    } | null;
     project?: {
         id: number;
         title: string;
         description?: string;
         image?: string | null;
+        funding?: {
+            target: MoneyAmount;
+            collected: MoneyAmount;
+            progress_percentage: number;
+        };
         target_amount?: number;
         collected_amount?: number;
         target_amount_rubles?: number;
@@ -125,6 +137,11 @@ export interface DonationWidgetData {
             id: number;
             title: string;
             description?: string;
+            funding?: {
+                target: MoneyAmount;
+                collected: MoneyAmount;
+                progress_percentage: number;
+            };
             target_amount?: number;
             collected_amount?: number;
             target_amount_rubles?: number;
@@ -155,9 +172,20 @@ export interface DonationRequest {
     failure_url: string;
 }
 
+export interface DonationPaymentData {
+    success: boolean;
+    transaction_id?: string;
+    payment_id?: string;
+    redirect_url?: string;
+    confirmation_url?: string;
+    qr_code?: string;
+    deep_link?: string;
+    error?: string;
+}
+
 export interface DonationResponse {
     success: boolean;
-    payment_url?: string;
+    data?: DonationPaymentData;
     message?: string;
     errors?: Record<string, string[]>;
 }

@@ -20,6 +20,8 @@ export interface Settlement {
     city_id: number;
 }
 
+import type { MoneyAmount } from '@/types/money';
+
 export interface OrganizationLite {
     id: number;
     name: string;
@@ -39,8 +41,11 @@ export interface OrganizationLite {
     region?: Region | null;
     city?: City | null;
     settlement?: Settlement | null;
-    needs_target_amount?: number | null;
-    needs_collected_amount?: number | null;
+    needs?: {
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+    } | null;
 }
 
 export interface OrganizationDirector {
@@ -92,8 +97,11 @@ export interface OrganizationShow {
     donations_count?: number;
     donations_total?: number | null;
     donations_sum?: number | null;
-    needs_target_amount?: number | null;
-    needs_collected_amount?: number | null;
+    needs?: {
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+    } | null;
     director?: OrganizationDirector;
     staff?: OrganizationStaffMember[];
     primary_site?: {

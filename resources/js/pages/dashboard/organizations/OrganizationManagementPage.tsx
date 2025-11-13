@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
+import type { MoneyAmount } from '@/types/money';
 import { Head, Link, router } from '@inertiajs/react';
 import {
     Building2,
@@ -53,8 +54,11 @@ interface Organization {
     };
     latitude?: number | null;
     longitude?: number | null;
-    needs_target_amount?: number | null;
-    needs_collected_amount?: number | null;
+    needs?: {
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+    } | null;
 }
 
 interface Props {

@@ -1,65 +1,246 @@
 import { YandexMap, type MapMarker } from '@/components/maps/YandexMap';
+import { useYandexMap } from '@/hooks/useYandexMap';
 import { X } from 'lucide-react';
 import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
+    type ChangeEvent,
     type MouseEvent,
 } from 'react';
-import CitySelector, { type City } from './CitySelector';
 
 interface MapSelectModalProps {
     isOpen: boolean;
     initialCoordinates?: { lat: number; lng: number } | null;
     onSelect: (coordinates: { lat: number; lng: number }) => void;
     onClose: () => void;
-    citySelectorEnabled?: boolean;
-    city?: City | null;
-    onCityChange?: (city: City | null) => void;
+    cityName?: string;
+    onCityNameChange?: (value: string) => void;
 }
 
 const DEFAULT_CENTER: [number, number] = [55.751244, 37.618423];
 const DEFAULT_ZOOM = 11;
-const CITY_ZOOM = 13;
-const POINT_ZOOM = 15;
+const CITY_ZOOM = 15;
+const POINT_ZOOM = 16;
 
 export function MapSelectModal({
     isOpen,
     initialCoordinates = null,
     onSelect,
     onClose,
-    citySelectorEnabled = false,
-    city = null,
-    onCityChange,
+    cityName,
+    onCityNameChange,
 }: MapSelectModalProps) {
+    const { ymaps, isReady: isYandexReady } = useYandexMap();
+    const isCityEditable = typeof onCityNameChange === 'function';
+    const [cityInput, setCityInput] = useState(cityName ?? '');
     const [markerCoords, setMarkerCoords] = useState<{
         lat: number;
         lng: number;
     } | null>(initialCoordinates);
     const [currentZoom, setCurrentZoom] = useState<number>(DEFAULT_ZOOM);
     const [hasUserZoomed, setHasUserZoomed] = useState(false);
+    const [resolvedCityCoords, setResolvedCityCoords] = useState<{
+        lat: number;
+        lng: number;
+    } | null>(null);
+    const [isResolvingCity, setIsResolvingCity] = useState(false);
+    const [resolveError, setResolveError] = useState<string | null>(null);
+    const cityInputRef = useRef<HTMLInputElement | null>(null);
+    const geocodeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+        null,
+    );
+    const lastGeocodeQueryRef = useRef<string | null>(null);
+    const pendingGeocodeRequestRef = useRef(0);
+    const wasOpenRef = useRef(false);
+    const userPlacedMarkerRef = useRef(false);
 
     const computeInitialZoom = useCallback(
         (
             coords: { lat: number; lng: number } | null,
-            targetCity: City | null,
+            hasCityCenter: boolean,
         ) => {
             if (coords) return POINT_ZOOM;
-            if (targetCity?.latitude != null && targetCity.longitude != null)
-                return CITY_ZOOM;
+            if (hasCityCenter) return CITY_ZOOM;
             return DEFAULT_ZOOM;
         },
         [],
     );
 
     useEffect(() => {
-        if (isOpen) {
-            setMarkerCoords(initialCoordinates);
-            setHasUserZoomed(false);
-            setCurrentZoom(computeInitialZoom(initialCoordinates, city));
+        if (!isOpen) {
+            wasOpenRef.current = false;
+            userPlacedMarkerRef.current = false;
+            if (geocodeTimeoutRef.current) {
+                clearTimeout(geocodeTimeoutRef.current);
+                geocodeTimeoutRef.current = null;
+            }
+            pendingGeocodeRequestRef.current = 0;
+            lastGeocodeQueryRef.current = null;
+            setResolvedCityCoords(null);
+            setResolveError(null);
+            setIsResolvingCity(false);
+            return;
         }
-    }, [isOpen, initialCoordinates, city, computeInitialZoom]);
+
+        if (wasOpenRef.current) {
+            return;
+        }
+        wasOpenRef.current = true;
+
+        userPlacedMarkerRef.current = Boolean(initialCoordinates);
+        setMarkerCoords(initialCoordinates);
+        setHasUserZoomed(false);
+        setResolvedCityCoords(null);
+        setResolveError(null);
+        lastGeocodeQueryRef.current = null;
+        pendingGeocodeRequestRef.current = 0;
+        setCityInput(cityName ?? '');
+        setCurrentZoom(
+            computeInitialZoom(initialCoordinates, Boolean(initialCoordinates)),
+        );
+    }, [cityName, computeInitialZoom, initialCoordinates, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const nextValue = cityName ?? '';
+        if (nextValue === cityInput) return;
+        if (
+            cityInputRef.current &&
+            cityInputRef.current === document.activeElement
+        ) {
+            return;
+        }
+        setCityInput(nextValue);
+        userPlacedMarkerRef.current = Boolean(initialCoordinates);
+        setMarkerCoords(initialCoordinates);
+        setHasUserZoomed(false);
+        lastGeocodeQueryRef.current = null;
+    }, [cityInput, cityName, initialCoordinates, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const trimmedCity = cityInput.trim();
+        if (trimmedCity === '') {
+            if (geocodeTimeoutRef.current) {
+                clearTimeout(geocodeTimeoutRef.current);
+                geocodeTimeoutRef.current = null;
+            }
+            pendingGeocodeRequestRef.current = 0;
+            lastGeocodeQueryRef.current = null;
+            setResolvedCityCoords(null);
+            setResolveError(null);
+            setIsResolvingCity(false);
+            return;
+        }
+
+        if (!ymaps || !isYandexReady) {
+            return;
+        }
+
+        if (trimmedCity === lastGeocodeQueryRef.current) {
+            return;
+        }
+
+        if (geocodeTimeoutRef.current) {
+            clearTimeout(geocodeTimeoutRef.current);
+        }
+
+        geocodeTimeoutRef.current = setTimeout(() => {
+            geocodeTimeoutRef.current = null;
+            const requestId = ++pendingGeocodeRequestRef.current;
+            setIsResolvingCity(true);
+            setResolveError(null);
+
+            ymaps
+                .geocode(trimmedCity, { results: 1 })
+                .then((result: unknown) => {
+                    if (pendingGeocodeRequestRef.current !== requestId) {
+                        return;
+                    }
+
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const firstGeoObject = (result as any)?.geoObjects?.get?.(
+                        0,
+                    );
+                    const coords =
+                        firstGeoObject?.geometry?.getCoordinates?.() as
+                            | [number, number]
+                            | undefined;
+
+                    if (
+                        Array.isArray(coords) &&
+                        coords.length === 2 &&
+                        coords.every((value) => typeof value === 'number')
+                    ) {
+                        lastGeocodeQueryRef.current = trimmedCity;
+                        setResolvedCityCoords({
+                            lat: coords[0],
+                            lng: coords[1],
+                        });
+                        setResolveError(null);
+                    } else {
+                        lastGeocodeQueryRef.current = trimmedCity;
+                        setResolvedCityCoords(null);
+                        setResolveError(
+                            'Не удалось найти населённый пункт в Яндекс.Картах',
+                        );
+                    }
+                })
+                .catch((error: unknown) => {
+                    if (pendingGeocodeRequestRef.current !== requestId) {
+                        return;
+                    }
+                    console.debug(
+                        'Failed to geocode city via Yandex Maps',
+                        error,
+                    );
+                    lastGeocodeQueryRef.current = null;
+                    setResolvedCityCoords(null);
+                    setResolveError(
+                        'Не удалось определить координаты в Яндекс.Картах',
+                    );
+                })
+                .finally(() => {
+                    if (pendingGeocodeRequestRef.current === requestId) {
+                        setIsResolvingCity(false);
+                    }
+                });
+        }, 400);
+
+        return () => {
+            if (geocodeTimeoutRef.current) {
+                clearTimeout(geocodeTimeoutRef.current);
+                geocodeTimeoutRef.current = null;
+                setIsResolvingCity(false);
+            }
+        };
+    }, [cityInput, isOpen, isYandexReady, ymaps]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        if (!resolvedCityCoords) return;
+        if (userPlacedMarkerRef.current) return;
+
+        setMarkerCoords((prev) => {
+            if (
+                prev &&
+                Math.abs(prev.lat - resolvedCityCoords.lat) < 1e-6 &&
+                Math.abs(prev.lng - resolvedCityCoords.lng) < 1e-6
+            ) {
+                return prev;
+            }
+            return {
+                lat: resolvedCityCoords.lat,
+                lng: resolvedCityCoords.lng,
+            };
+        });
+        setHasUserZoomed(false);
+        setCurrentZoom(CITY_ZOOM);
+    }, [isOpen, resolvedCityCoords]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -84,14 +265,14 @@ export function MapSelectModal({
         if (markerCoords) {
             return [markerCoords.lat, markerCoords.lng];
         }
-        if (city?.latitude != null && city?.longitude != null) {
-            return [city.latitude, city.longitude];
+        if (resolvedCityCoords) {
+            return [resolvedCityCoords.lat, resolvedCityCoords.lng];
         }
         if (initialCoordinates) {
             return [initialCoordinates.lat, initialCoordinates.lng];
         }
         return DEFAULT_CENTER;
-    }, [markerCoords, city?.latitude, city?.longitude, initialCoordinates]);
+    }, [markerCoords, initialCoordinates, resolvedCityCoords]);
 
     const markers = useMemo<MapMarker[]>(() => {
         if (!markerCoords) {
@@ -106,7 +287,36 @@ export function MapSelectModal({
         ];
     }, [markerCoords]);
 
+    const handleCityInputChange = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            const value = event.target.value;
+
+            if (geocodeTimeoutRef.current) {
+                clearTimeout(geocodeTimeoutRef.current);
+                geocodeTimeoutRef.current = null;
+            }
+
+            pendingGeocodeRequestRef.current = 0;
+            userPlacedMarkerRef.current = false;
+            setCityInput(value);
+            setMarkerCoords(null);
+            setHasUserZoomed(false);
+            lastGeocodeQueryRef.current = null;
+            setResolvedCityCoords(null);
+            setResolveError(null);
+            setIsResolvingCity(false);
+
+            if (onCityNameChange) {
+                onCityNameChange(value);
+            }
+        },
+        [onCityNameChange],
+    );
+
     const handleMapClick = useCallback((coords: [number, number]) => {
+        userPlacedMarkerRef.current = true;
+        setResolveError(null);
+        setIsResolvingCity(false);
         setMarkerCoords({ lat: coords[0], lng: coords[1] });
     }, []);
 
@@ -126,22 +336,6 @@ export function MapSelectModal({
 
         onSelect(markerCoords);
     }, [markerCoords, onSelect]);
-
-    const handleCityChange = useCallback(
-        (nextCity: City | null) => {
-            if (onCityChange) {
-                onCityChange(nextCity);
-            }
-            if (nextCity) {
-                setMarkerCoords(null);
-                setHasUserZoomed(false);
-                setCurrentZoom(computeInitialZoom(null, nextCity));
-            }
-        },
-        [onCityChange, computeInitialZoom],
-    );
-
-    const showCitySelector = citySelectorEnabled && Boolean(onCityChange);
 
     const handleZoomChange = useCallback((zoom: number) => {
         setHasUserZoomed(true);
@@ -178,19 +372,39 @@ export function MapSelectModal({
                         </p>
                     </div>
 
-                    {showCitySelector && (
-                        <div className="rounded-xl border border-[#e8ecf3] bg-[#f6f8fc] p-4">
-                            <p className="mb-3 text-sm font-semibold text-[#1a1a1a]">
-                                Выберите город, чтобы переместить карту
+                    <div className="space-y-2 rounded-xl border border-[#e8ecf3] bg-[#f6f8fc] p-4">
+                        <label
+                            htmlFor="map-select-city"
+                            className="text-sm font-semibold text-[#1a1a1a]"
+                        >
+                            Город
+                        </label>
+                        <input
+                            id="map-select-city"
+                            type="text"
+                            ref={cityInputRef}
+                            value={cityInput}
+                            onChange={
+                                isCityEditable
+                                    ? handleCityInputChange
+                                    : undefined
+                            }
+                            readOnly={!isCityEditable}
+                            placeholder="Город не указан"
+                            autoComplete="off"
+                            className="w-full rounded-lg border border-[#d5dbe5] bg-white px-4 py-2 text-sm text-[#1a1a1a] placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        />
+                        {isResolvingCity && (
+                            <p className="text-xs text-gray-500">
+                                Определяем координаты…
                             </p>
-                            <CitySelector
-                                value={city ?? null}
-                                onChange={handleCityChange}
-                                detectOnMount={false}
-                                variant="light"
-                            />
-                        </div>
-                    )}
+                        )}
+                        {!isResolvingCity && resolveError && (
+                            <p className="text-xs text-red-500">
+                                {resolveError}
+                            </p>
+                        )}
+                    </div>
 
                     <div className="h-[420px] w-full overflow-hidden rounded-xl">
                         <YandexMap

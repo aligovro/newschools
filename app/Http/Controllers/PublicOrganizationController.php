@@ -195,12 +195,7 @@ class PublicOrganizationController extends Controller
                 'projects_count' => (int) ($org->projects_count ?? 0),
                 'donations_total' => (int) ($org->donations_total ?? 0),
                 'donations_collected' => (int) ($org->donations_total ?? 0),
-                'needs_target_amount' => $org->needs_target_amount !== null
-                    ? (int) $org->needs_target_amount
-                    : null,
-                'needs_collected_amount' => $org->needs_collected_amount !== null
-                    ? (int) $org->needs_collected_amount
-                    : null,
+                'needs' => $org->needs,
                 'director' => $org->director ? (new OrganizationStaffResource($org->director))->toArray(request()) : null,
             ];
         });

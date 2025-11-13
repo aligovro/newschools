@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Support\Money;
 
 class PaymentTransaction extends Model
 {
@@ -23,6 +24,7 @@ class PaymentTransaction extends Model
         'currency',
         'status',
         'payment_method_slug',
+        'payment_provider',
         'payment_details',
         'gateway_response',
         'webhook_data',
@@ -56,6 +58,11 @@ class PaymentTransaction extends Model
     public const STATUS_FAILED = 'failed';
     public const STATUS_CANCELLED = 'cancelled';
     public const STATUS_REFUNDED = 'refunded';
+
+    protected $appends = [
+        'amount_rubles',
+        'formatted_amount',
+    ];
 
     /**
      * Связь с организацией
@@ -208,7 +215,12 @@ class PaymentTransaction extends Model
      */
     public function getAmountInRublesAttribute(): float
     {
-        return $this->amount / 100;
+        return $this->getAmountRublesAttribute();
+    }
+
+    public function getAmountRublesAttribute(): float
+    {
+        return Money::toRubles($this->amount);
     }
 
     /**
@@ -216,7 +228,7 @@ class PaymentTransaction extends Model
      */
     public function getFormattedAmountAttribute(): string
     {
-        return number_format($this->amount / 100, 0, ',', ' ') . ' ₽';
+        return Money::format($this->amount, $this->currency ?? 'RUB');
     }
 
     /**

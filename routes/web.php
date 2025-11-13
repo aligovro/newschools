@@ -55,6 +55,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole'])->name('users.assign-role');
         Route::delete('/users/{user}/remove-role', [UserController::class, 'removeRole'])->name('users.remove-role');
 
+        Route::get('/yookassa/merchants', function () {
+            return Inertia::render('dashboard/yookassa/MerchantsPage');
+        })->name('yookassa.merchants');
+
+        Route::get('/yookassa/payments', function () {
+            return Inertia::render('dashboard/yookassa/PaymentsPage');
+        })->name('yookassa.payments');
+
+        Route::get('/yookassa/payouts', function () {
+            return Inertia::render('dashboard/yookassa/PayoutsPage');
+        })->name('yookassa.payouts');
+
+        Route::get('/yookassa/settings', function () {
+            return Inertia::render('dashboard/yookassa/SettingsPage');
+        })->name('yookassa.settings');
+
+
         // Organizations management
         Route::get('/organizations', [OrganizationController::class, 'index'])->name('organizations.index');
         Route::get('/organizations/create', [OrganizationCreationController::class, 'create'])->name('organizations.create');
@@ -276,6 +293,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/settings', [DashboardController::class, 'settings'])->name('settings.index');
     });
 });
+
+Route::post('/webhook/yookassa/partner', \App\Http\Controllers\Webhook\YooKassaPartnerWebhookController::class)
+    ->name('webhook.yookassa.partner');
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

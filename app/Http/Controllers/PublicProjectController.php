@@ -54,9 +54,12 @@ class PublicProjectController extends Controller
         // Форматируем данные проектов для отображения
         $projects->getCollection()->transform(function ($project) {
             $project->image = $project->image ? '/storage/' . ltrim($project->image, '/') : null;
-            $project->target_amount_rubles = $project->target_amount_rubles ?? ($project->target_amount ? $project->target_amount / 100 : 0);
-            $project->collected_amount_rubles = $project->collected_amount_rubles ?? ($project->collected_amount ? $project->collected_amount / 100 : 0);
-            $project->progress_percentage = $project->progress_percentage ?? 0;
+
+            $funding = $project->funding;
+            $project->funding = $funding;
+            $project->target_amount_rubles = $funding['target']['value'];
+            $project->collected_amount_rubles = $funding['collected']['value'];
+            $project->progress_percentage = $funding['progress_percentage'];
 
             // Форматируем данные организации
             if ($project->organization) {
@@ -118,15 +121,20 @@ class PublicProjectController extends Controller
         $stages = [];
         if ($project->stages && $project->stages->count() > 0) {
             $stages = $project->stages->map(function ($stage) use ($project) {
+                $funding = $stage->funding;
+
                 return [
                     'id' => $stage->id,
                     'stage_number' => $stage->order,
                     'title' => $stage->title,
                     'description' => $stage->description,
                     'image' => $stage->image ? '/storage/' . ltrim($stage->image, '/') : null,
-                    'target_amount_rubles' => $stage->target_amount_rubles ?? ($stage->target_amount ? $stage->target_amount / 100 : 0),
-                    'collected_amount_rubles' => $stage->collected_amount_rubles ?? ($stage->collected_amount ? $stage->collected_amount / 100 : 0),
-                    'progress_percentage' => $stage->progress_percentage ?? 0,
+                    'funding' => $funding,
+                    'target_amount_rubles' => $funding['target']['value'],
+                    'collected_amount_rubles' => $funding['collected']['value'],
+                    'progress_percentage' => $funding['progress_percentage'],
+                    'formatted_target_amount' => $funding['target']['formatted'],
+                    'formatted_collected_amount' => $funding['collected']['formatted'],
                     'status' => $stage->status ?? 'pending',
                     'is_completed' => $stage->is_completed ?? false,
                     'is_active' => $stage->is_active ?? false,
@@ -138,6 +146,8 @@ class PublicProjectController extends Controller
         }
 
         // Подготавливаем данные проекта для отображения
+        $projectFunding = $project->funding;
+
         $projectData = [
             'id' => $project->id,
             'title' => $project->title,
@@ -146,9 +156,12 @@ class PublicProjectController extends Controller
             'short_description' => $project->short_description,
             'image' => $project->image ? '/storage/' . ltrim($project->image, '/') : null,
             'gallery' => $gallery,
-            'target_amount_rubles' => $project->target_amount_rubles ?? ($project->target_amount / 100),
-            'collected_amount_rubles' => $project->collected_amount_rubles ?? ($project->collected_amount / 100),
-            'progress_percentage' => $project->progress_percentage ?? 0,
+            'funding' => $projectFunding,
+            'target_amount_rubles' => $projectFunding['target']['value'],
+            'collected_amount_rubles' => $projectFunding['collected']['value'],
+            'progress_percentage' => $projectFunding['progress_percentage'],
+            'formatted_target_amount' => $projectFunding['target']['formatted'],
+            'formatted_collected_amount' => $projectFunding['collected']['formatted'],
             'has_stages' => $project->has_stages ?? false,
             'stages' => $stages,
             'category' => $project->category,

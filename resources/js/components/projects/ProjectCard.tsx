@@ -1,11 +1,20 @@
 import '@css/components/projects/project-card.scss';
 import { Link, router } from '@inertiajs/react';
 
+import type { MoneyAmount } from '@/types/money';
+
+interface FundingSummary {
+    target: MoneyAmount;
+    collected: MoneyAmount;
+    progress_percentage: number;
+}
+
 interface Project {
     id: number;
     title: string;
     slug?: string;
     description?: string;
+    funding?: FundingSummary;
     target_amount_rubles?: number;
     target_amount?: number;
     collected_amount_rubles?: number;
@@ -25,19 +34,24 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project }: ProjectCardProps) {
-    const formatCurrency = (amount: number): string => {
-        return new Intl.NumberFormat('ru-RU', {
+    const formatCurrency = (amount: number): string =>
+        new Intl.NumberFormat('ru-RU', {
             style: 'currency',
             currency: 'RUB',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
         }).format(amount);
-    };
 
     const targetAmount =
-        project.target_amount_rubles ?? project.target_amount ?? 0;
+        project.funding?.target.value ??
+        project.target_amount_rubles ??
+        project.target_amount ??
+        0;
     const collectedAmount =
-        project.collected_amount_rubles ?? project.collected_amount ?? 0;
+        project.funding?.collected.value ??
+        project.collected_amount_rubles ??
+        project.collected_amount ??
+        0;
     const projectUrl = project.slug
         ? `/project/${project.slug}`
         : `/project/${project.id}`;
@@ -48,7 +62,15 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         ? `/organization/${organizationSlug}`
         : null;
 
-    const progressPercentage = Math.min(project.progress_percentage, 100);
+    const progressPercentage = Math.min(
+        project.funding?.progress_percentage ?? project.progress_percentage,
+        100,
+    );
+
+    const targetDisplay =
+        project.funding?.target.formatted ?? formatCurrency(targetAmount);
+    const collectedDisplay =
+        project.funding?.collected.formatted ?? formatCurrency(collectedAmount);
 
     return (
         <div
@@ -101,10 +123,10 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                     </div>
                     <div className="project-donation-amounts">
                         <span className="project-donation-target">
-                            {formatCurrency(targetAmount)}
+                            {targetDisplay}
                         </span>
                         <span className="project-donation-collected">
-                            {formatCurrency(collectedAmount)}
+                            {collectedDisplay}
                         </span>
                     </div>
                 </div>

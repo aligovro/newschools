@@ -33,12 +33,13 @@ class ProjectResource extends JsonResource
       ),
 
       // Финансы (в рублях для удобства)
-      'target_amount' => $this->target_amount,
-      'target_amount_rubles' => $this->target_amount_rubles,
-      'collected_amount' => $this->collected_amount,
-      'collected_amount_rubles' => $this->collected_amount_rubles,
-      'formatted_target_amount' => $this->formatted_target_amount,
-      'formatted_collected_amount' => $this->formatted_collected_amount,
+      'funding' => $this->funding,
+      'target_amount' => $this->funding['target']['minor'],
+      'target_amount_rubles' => $this->funding['target']['value'],
+      'collected_amount' => $this->funding['collected']['minor'],
+      'collected_amount_rubles' => $this->funding['collected']['value'],
+      'formatted_target_amount' => $this->funding['target']['formatted'],
+      'formatted_collected_amount' => $this->funding['collected']['formatted'],
 
       // Прогресс
       'progress_percentage' => $this->progress_percentage,
@@ -111,19 +112,22 @@ class ProjectResource extends JsonResource
       'has_stages' => $this->has_stages ?? false,
       'stages' => $this->whenLoaded('stages', function () {
         return $this->stages->map(function ($stage) {
+          $funding = $stage->funding;
+
           return [
             'id' => $stage->id,
             'title' => $stage->title,
             'description' => $stage->description,
             'image' => $stage->image ? asset('storage/' . $stage->image) : null,
             'gallery' => $stage->gallery ? collect($stage->gallery)->map(fn($item) => asset('storage/' . $item))->toArray() : [],
-            'target_amount' => $stage->target_amount,
-            'target_amount_rubles' => $stage->target_amount_rubles,
-            'collected_amount' => $stage->collected_amount,
-            'collected_amount_rubles' => $stage->collected_amount_rubles,
-            'progress_percentage' => $stage->progress_percentage,
-            'formatted_target_amount' => number_format($stage->target_amount_rubles, 0, '.', ' ') . ' ₽',
-            'formatted_collected_amount' => number_format($stage->collected_amount_rubles, 0, '.', ' ') . ' ₽',
+            'funding' => $funding,
+            'target_amount' => $funding['target']['minor'],
+            'target_amount_rubles' => $funding['target']['value'],
+            'collected_amount' => $funding['collected']['minor'],
+            'collected_amount_rubles' => $funding['collected']['value'],
+            'progress_percentage' => $funding['progress_percentage'],
+            'formatted_target_amount' => $funding['target']['formatted'],
+            'formatted_collected_amount' => $funding['collected']['formatted'],
             'status' => $stage->status ?? 'pending',
             'is_completed' => $stage->is_completed,
             'is_active' => $stage->is_active,

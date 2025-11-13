@@ -16,12 +16,21 @@ interface Organization {
     };
 }
 
+import type { MoneyAmount } from '@/types/money';
+
+interface FundingSummary {
+    target: MoneyAmount;
+    collected: MoneyAmount;
+    progress_percentage: number;
+}
+
 interface Project {
     id: number;
     title: string;
     slug: string;
     description?: string;
     image?: string;
+    funding?: FundingSummary;
     target_amount_rubles: number;
     collected_amount_rubles: number;
     progress_percentage: number;

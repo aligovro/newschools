@@ -12,7 +12,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use App\Traits\HasSlug;
 use App\Enums\OrganizationStatus;
+use App\Enums\DonationStatus;
 use App\Models\OrganizationStaff;
+use App\Support\Money;
 
 class Organization extends Model
 {
@@ -35,6 +37,7 @@ class Organization extends Model
         'latitude',
         'longitude',
         'logo',
+        'yookassa_partner_merchant_id',
         'images',
         'contacts',
         'type',
@@ -57,6 +60,10 @@ class Organization extends Model
         'status' => OrganizationStatus::class,
         'needs_target_amount' => 'integer',
         'needs_collected_amount' => 'integer',
+    ];
+
+    protected $appends = [
+        'needs',
     ];
 
     // Связи
@@ -149,6 +156,11 @@ class Organization extends Model
         return $this->hasMany(Site::class);
     }
 
+    public function yookassaPartnerMerchant(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Payments\YooKassaPartnerMerchant::class, 'yookassa_partner_merchant_id');
+    }
+
     /**
      * Публичные сайты
      */
@@ -186,6 +198,121 @@ class Organization extends Model
         return $this->hasOne(OrganizationStaff::class)
             ->where('position', OrganizationStaff::POSITION_DIRECTOR)
             ->whereNull('deleted_at');
+    }
+
+    public function getNeedsAttribute(): array
+    {
+        [$targetMinor, $collectedMinor] = $this->resolveNeedTotals();
+
+        $target = Money::toArray($targetMinor);
+        $collected = Money::toArray($collectedMinor);
+
+        $targetValue = $target['value'] ?? 0.0;
+        $collectedValue = $collected['value'] ?? 0.0;
+
+        $progress = $targetValue > 0
+            ? min(100, ($collectedValue / $targetValue) * 100)
+            : 0;
+
+        return [
+            'target' => $target,
+            'collected' => $collected,
+            'progress_percentage' => round($progress, 2),
+        ];
+    }
+
+    protected function resolveNeedTotals(): array
+    {
+        return [
+            $this->resolveTargetMinor(),
+            $this->resolveCollectedMinor(),
+        ];
+    }
+
+    protected function resolveTargetMinor(): int
+    {
+        $directValue = (int) ($this->needs_target_amount ?? 0);
+
+        if ($directValue > 0) {
+            return $directValue;
+        }
+
+        $sum = $this->memoizeComputed('__needs_target_minor', function () {
+            $projects = $this->sumActiveProjects('target_amount');
+
+            if ($projects > 0) {
+                return $projects;
+            }
+
+            return $this->sumActiveFundraisers('target_amount');
+        });
+
+        return max(0, $sum);
+    }
+
+    protected function resolveCollectedMinor(): int
+    {
+        $directValue = (int) ($this->needs_collected_amount ?? 0);
+
+        if ($directValue > 0) {
+            return $directValue;
+        }
+
+        $sum = $this->memoizeComputed('__needs_collected_minor', function () {
+            $projects = $this->sumActiveProjects('collected_amount');
+
+            if ($projects > 0) {
+                return $projects;
+            }
+
+            $fundraisers = $this->sumActiveFundraisers('collected_amount');
+
+            if ($fundraisers > 0) {
+                return $fundraisers;
+            }
+
+            return (int) $this->donations()
+                ->where('status', DonationStatus::Completed)
+                ->whereNotNull('paid_at')
+                ->sum('amount');
+        });
+
+        return max(0, $sum);
+    }
+
+    protected function sumActiveProjects(string $column): int
+    {
+        if ($this->relationLoaded('projects')) {
+            return (int) $this->projects
+                ->where('status', 'active')
+                ->sum($column);
+        }
+
+        return (int) $this->projects()
+            ->where('status', 'active')
+            ->sum($column);
+    }
+
+    protected function sumActiveFundraisers(string $column): int
+    {
+        if ($this->relationLoaded('fundraisers')) {
+            return (int) $this->fundraisers
+                ->where('status', 'active')
+                ->sum($column);
+        }
+
+        return (int) $this->fundraisers()
+            ->where('status', 'active')
+            ->sum($column);
+    }
+
+    protected function memoizeComputed(string $key, callable $resolver): int
+    {
+        if (! array_key_exists($key, $this->attributes)) {
+            $this->attributes[$key] = (int) $resolver();
+        }
+
+        return (int) $this->attributes[$key];
     }
 
     /**

@@ -1,10 +1,11 @@
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
-import ProjectStageCard from '@/components/projects/ProjectStageCard';
 import ProjectSponsorsSection from '@/components/projects/ProjectSponsorsSection';
+import ProjectStageCard from '@/components/projects/ProjectStageCard';
 import MainLayout from '@/layouts/MainLayout';
+import type { MoneyAmount } from '@/types/money';
 import { Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 
 interface Organization {
     id: number;
@@ -19,12 +20,19 @@ interface Organization {
     };
 }
 
+interface FundingSummary {
+    target: MoneyAmount;
+    collected: MoneyAmount;
+    progress_percentage: number;
+}
+
 interface ProjectStage {
     id: number;
     title: string;
     description?: string;
     image?: string;
     gallery?: string[];
+    funding: FundingSummary;
     target_amount_rubles: number;
     collected_amount_rubles: number;
     progress_percentage: number;
@@ -47,6 +55,7 @@ interface Project {
     short_description?: string;
     image?: string;
     gallery?: string[];
+    funding: FundingSummary;
     target_amount_rubles: number;
     collected_amount_rubles: number;
     progress_percentage: number;
@@ -57,8 +66,8 @@ interface Project {
     category?: string;
     start_date?: string;
     end_date?: string;
-    beneficiaries?: any[];
-    progress_updates?: any[];
+    beneficiaries?: unknown[];
+    progress_updates?: unknown[];
     organization?: Organization;
 }
 
@@ -83,10 +92,12 @@ interface SponsorsPayload {
     };
 }
 
+type LayoutProps = ComponentProps<typeof MainLayout>;
+
 interface ProjectShowProps {
-    site: any;
-    positions: any[];
-    position_settings?: any[];
+    site: LayoutProps['site'];
+    positions: LayoutProps['positions'];
+    position_settings?: LayoutProps['position_settings'];
     project: Project;
     sponsors: SponsorsPayload;
 }

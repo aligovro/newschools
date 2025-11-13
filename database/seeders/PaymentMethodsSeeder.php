@@ -16,19 +16,21 @@ class PaymentMethodsSeeder extends Seeder
       [
         'name' => 'Система быстрых платежей (СБП)',
         'slug' => 'sbp',
-        'gateway' => 'App\Services\Payment\SBPGateway',
+        'gateway' => 'App\Services\Payment\YooKassaGateway',
         'icon' => 'sbp.svg',
         'description' => 'Оплата через СБП - быстро, безопасно и удобно',
         'settings' => [
-          'merchant_id' => env('SBP_MERCHANT_ID', ''),
-          'secret_key' => env('SBP_SECRET_KEY', ''),
+          'shop_id' => env('YOOKASSA_SHOP_ID', ''),
+          'secret_key' => env('YOOKASSA_SECRET_KEY', ''),
+          'payment_method_data' => ['type' => 'sbp'],
+          'confirmation' => ['type' => 'qr'],
         ],
         'fee_percentage' => 0.00, // СБП обычно без комиссии
         'fee_fixed' => 0,
         'min_amount' => 100, // 1 рубль
         'max_amount' => 0, // без ограничений
         'is_active' => true,
-        'is_test_mode' => env('SBP_TEST_MODE', true),
+        'is_test_mode' => env('YOOKASSA_TEST_MODE', true),
         'sort_order' => 1,
       ],
       [
@@ -40,6 +42,7 @@ class PaymentMethodsSeeder extends Seeder
         'settings' => [
           'shop_id' => env('YOOKASSA_SHOP_ID', ''),
           'secret_key' => env('YOOKASSA_SECRET_KEY', ''),
+          'payment_method_data' => ['type' => 'bank_card'],
         ],
         'fee_percentage' => 2.90, // Комиссия ЮKassa
         'fee_fixed' => 0,
@@ -58,6 +61,7 @@ class PaymentMethodsSeeder extends Seeder
         'settings' => [
           'shop_id' => env('YOOKASSA_SHOP_ID', ''),
           'secret_key' => env('YOOKASSA_SECRET_KEY', ''),
+          'payment_method_data' => ['type' => 'sberbank'],
         ],
         'fee_percentage' => 2.90,
         'fee_fixed' => 0,
@@ -70,12 +74,13 @@ class PaymentMethodsSeeder extends Seeder
       [
         'name' => 'Тинькофф',
         'slug' => 'tinkoff',
-        'gateway' => 'App\Services\Payment\TinkoffGateway',
+        'gateway' => 'App\Services\Payment\YooKassaGateway',
         'icon' => 'tinkoff.svg',
         'description' => 'Оплата через Тинькофф Банк',
         'settings' => [
-          'terminal_key' => env('TINKOFF_TERMINAL_KEY', ''),
-          'password' => env('TINKOFF_PASSWORD', ''),
+          'shop_id' => env('YOOKASSA_SHOP_ID', ''),
+          'secret_key' => env('YOOKASSA_SECRET_KEY', ''),
+          'payment_method_data' => ['type' => 'tinkoff_bank'],
         ],
         'fee_percentage' => 2.75, // Комиссия Тинькофф
         'fee_fixed' => 0,

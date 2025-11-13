@@ -1,7 +1,8 @@
 import YandexMap, { MapMarker } from '@/components/maps/YandexMap';
 import OrganizationCard from '@/components/organizations/OrganizationCard';
-import { useMemo, useState, useCallback } from 'react';
+import type { MoneyAmount } from '@/types/money';
 import { X } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
 interface OrganizationData {
     id: number;
@@ -20,8 +21,11 @@ interface OrganizationData {
     donations_total: number;
     donations_collected: number;
     director_name?: string;
-    needs_target_amount?: number | null;
-    needs_collected_amount?: number | null;
+    needs?: {
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+    } | null;
     latitude?: number | null;
     longitude?: number | null;
 }
@@ -32,11 +36,12 @@ interface MapTabProps {
 }
 
 export default function MapTab({ mapMarkers, mapCenter }: MapTabProps) {
-    const [selectedOrganization, setSelectedOrganization] = useState<OrganizationData | null>(null);
+    const [selectedOrganization, setSelectedOrganization] =
+        useState<OrganizationData | null>(null);
 
     // Для множественных маркеров используем autoFitBounds для автоматической подстройки
     const shouldAutoFit = mapMarkers.length > 1;
-    
+
     // Для одиночного маркера используем зум для города (не для конкретного адреса)
     const mapZoom = useMemo(() => {
         if (mapMarkers.length === 0) return 12; // Зум для города по умолчанию
@@ -68,7 +73,7 @@ export default function MapTab({ mapMarkers, mapCenter }: MapTabProps) {
                     markers={mapMarkers}
                     height="600px"
                     autoFitBounds={shouldAutoFit}
-                    grayscale={true}
+                    grayscale
                     customIconUrl="/icons/map-blue-marker.svg"
                     selectedIconUrl="/icons/map-black-marker.svg"
                     selectedMarkerId={selectedMarkerId}
@@ -76,7 +81,7 @@ export default function MapTab({ mapMarkers, mapCenter }: MapTabProps) {
                     onClick={handleMapClick}
                 />
             </div>
-            
+
             {/* Карточка организации поверх карты */}
             {selectedOrganization && (
                 <div className="absolute left-2 top-2 z-10 w-full max-w-sm md:left-4 md:top-4 md:w-80">
@@ -101,12 +106,11 @@ export default function MapTab({ mapMarkers, mapCenter }: MapTabProps) {
 
             {mapMarkers.length === 0 && (
                 <div className="p-8 text-center text-gray-500">
-                    <p>
-                        У организаций нет координат для отображения
-                        на карте
-                    </p>
+                    <p>У организаций нет координат для отображения на карте</p>
                 </div>
             )}
         </div>
     );
 }
+
+

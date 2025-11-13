@@ -8,6 +8,7 @@ use App\Models\PaymentTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use App\Http\Resources\PaymentTransactionResource;
 
 class PaymentController extends Controller
 {
@@ -274,10 +275,10 @@ class PaymentController extends Controller
         ->orderBy('created_at', 'desc')
         ->paginate($perPage);
 
-      return response()->json([
-        'success' => true,
-        'data' => $transactions,
-      ]);
+      $resource = PaymentTransactionResource::collection($transactions);
+      $payload = $resource->response()->getData(true);
+
+      return response()->json(array_merge(['success' => true], $payload));
     } catch (ValidationException $e) {
       return response()->json([
         'success' => false,
@@ -302,38 +303,11 @@ class PaymentController extends Controller
         ->with(['paymentMethod', 'organization', 'fundraiser', 'project', 'logs'])
         ->firstOrFail();
 
+      $resource = new PaymentTransactionResource($transaction);
+
       return response()->json([
         'success' => true,
-        'data' => [
-          'transaction_id' => $transaction->transaction_id,
-          'external_id' => $transaction->external_id,
-          'amount' => $transaction->amount,
-          'formatted_amount' => $transaction->formatted_amount,
-          'currency' => $transaction->currency,
-          'status' => $transaction->status,
-          'payment_method' => $transaction->paymentMethod->name,
-          'payment_method_slug' => $transaction->payment_method_slug,
-          'description' => $transaction->description,
-          'organization' => $transaction->organization->name,
-          'fundraiser' => $transaction->fundraiser?->title,
-          'project' => $transaction->project?->title,
-          'created_at' => $transaction->created_at,
-          'paid_at' => $transaction->paid_at,
-          'failed_at' => $transaction->failed_at,
-          'refunded_at' => $transaction->refunded_at,
-          'expires_at' => $transaction->expires_at,
-          'is_expired' => $transaction->isExpired(),
-          'masked_payment_details' => $transaction->masked_payment_details,
-          'logs' => $transaction->logs->map(function ($log) {
-            return [
-              'action' => $log->action,
-              'level' => $log->level,
-              'message' => $log->message,
-              'context' => $log->context,
-              'created_at' => $log->created_at,
-            ];
-          }),
-        ],
+        'data' => $resource->toArray($request),
       ]);
     } catch (\Exception $e) {
       return response()->json([

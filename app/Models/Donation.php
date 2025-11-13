@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Enums\DonationStatus;
+use App\Support\Money;
+use Illuminate\Support\Facades\Cache;
 
 class Donation extends Model
 {
@@ -50,6 +52,11 @@ class Donation extends Model
     'paid_at' => 'datetime',
     'refunded_at' => 'datetime',
     'status' => DonationStatus::class,
+  ];
+
+  protected $appends = [
+    'amount_rubles',
+    'formatted_amount',
   ];
 
   // Связи
@@ -132,17 +139,17 @@ class Donation extends Model
   // Методы для работы с копейками
   public function getAmountRublesAttribute(): float
   {
-    return $this->amount / 100;
+    return Money::toRubles($this->amount);
   }
 
   public function setAmountRublesAttribute($value)
   {
-    $this->attributes['amount'] = $value * 100;
+    $this->attributes['amount'] = Money::fromRubles($value);
   }
 
   public function getFormattedAmountAttribute(): string
   {
-    return number_format($this->amount_rubles, 0, '.', ' ') . ' ' . $this->currency;
+    return Money::format($this->amount, $this->currency ?? 'RUB');
   }
 
   public function getDonorDisplayNameAttribute(): string
@@ -175,7 +182,26 @@ class Donation extends Model
     parent::boot();
 
     static::saved(function ($donation) {
-      if ($donation->wasChanged('status') && $donation->status === 'completed') {
+      Cache::forget('alumni_stats_all');
+
+      $affectedOrganizationIds = collect([
+        $donation->organization_id,
+        $donation->getOriginal('organization_id'),
+      ])->filter()->unique();
+
+      foreach ($affectedOrganizationIds as $organizationId) {
+        Cache::forget("alumni_stats_org_{$organizationId}");
+      }
+
+      $shouldRefreshAggregates = $donation->status === DonationStatus::Completed
+        && (
+          $donation->wasRecentlyCreated
+          || $donation->wasChanged('status')
+          || $donation->wasChanged('amount')
+          || $donation->wasChanged('organization_id')
+        );
+
+      if ($shouldRefreshAggregates) {
         // Обновляем собранную сумму в проекте/сборе
         if ($donation->project) {
           $donation->project->update([
@@ -203,6 +229,13 @@ class Donation extends Model
               ->sum('amount'),
           ]);
         }
+      }
+    });
+
+    static::deleted(function ($donation) {
+      Cache::forget('alumni_stats_all');
+      if ($donation->organization_id) {
+        Cache::forget("alumni_stats_org_{$donation->organization_id}");
       }
     });
   }

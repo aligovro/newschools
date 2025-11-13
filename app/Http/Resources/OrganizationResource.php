@@ -29,8 +29,7 @@ class OrganizationResource extends JsonResource
             'website' => $this->website,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
-            'needs_target_amount' => $this->needs_target_amount,
-            'needs_collected_amount' => $this->needs_collected_amount,
+            'needs' => $this->needs,
             'created_at' => optional($this->created_at)->toISOString(),
             'updated_at' => optional($this->updated_at)->toISOString(),
 

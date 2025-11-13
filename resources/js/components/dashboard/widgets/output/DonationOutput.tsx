@@ -34,8 +34,24 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
 
     const publicContext = useMemo(() => {
         const safeNumber = (value: unknown): number => {
+            if (
+                value &&
+                typeof value === 'object' &&
+                'value' in (value as Record<string, unknown>)
+            ) {
+                const raw = (value as Record<string, unknown>).value;
+                const numeric =
+                    typeof raw === 'string'
+                        ? Number.parseFloat(raw)
+                        : Number(raw);
+                return Number.isFinite(numeric) ? numeric : 0;
+            }
+
             if (value == null) return 0;
-            const num = typeof value === 'string' ? Number.parseFloat(value) : Number(value);
+            const num =
+                typeof value === 'string'
+                    ? Number.parseFloat(value)
+                    : Number(value);
             return Number.isFinite(num) ? num : 0;
         };
 
@@ -45,17 +61,29 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
             );
 
             const stageTarget = activeStage
-                ? safeNumber(activeStage.target_amount_rubles ?? activeStage.target_amount)
+                ? safeNumber(
+                      activeStage.funding?.target ??
+                          activeStage.target_amount_rubles ??
+                          activeStage.target_amount,
+                  )
                 : 0;
             const stageCollected = activeStage
-                ? safeNumber(activeStage.collected_amount_rubles ?? activeStage.collected_amount)
+                ? safeNumber(
+                      activeStage.funding?.collected ??
+                          activeStage.collected_amount_rubles ??
+                          activeStage.collected_amount,
+                  )
                 : 0;
 
             const projectTarget = safeNumber(
-                pageProject.target_amount_rubles ?? pageProject.target_amount,
+                pageProject.funding?.target ??
+                    pageProject.target_amount_rubles ??
+                    pageProject.target_amount,
             );
             const projectCollected = safeNumber(
-                pageProject.collected_amount_rubles ?? pageProject.collected_amount,
+                pageProject.funding?.collected ??
+                    pageProject.collected_amount_rubles ??
+                    pageProject.collected_amount,
             );
 
             if (activeStage && stageTarget > 0) {
@@ -94,8 +122,8 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
         }
 
         if (pageOrganization?.id) {
-            const needsTarget = safeNumber(pageOrganization.needs_target_amount);
-            const needsCollected = safeNumber(pageOrganization.needs_collected_amount);
+            const needsTarget = safeNumber(pageOrganization.needs?.target);
+            const needsCollected = safeNumber(pageOrganization.needs?.collected);
 
             return {
                 organizationId:

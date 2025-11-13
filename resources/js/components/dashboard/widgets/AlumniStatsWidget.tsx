@@ -1,5 +1,7 @@
+import { useAlumniStatsData } from '@/hooks/useAlumniStats';
 import { cn } from '@/lib/utils';
-import React, { useEffect, useState } from 'react';
+import { usePage } from '@inertiajs/react';
+import React from 'react';
 
 interface ColumnConfig {
     label: string;
@@ -18,56 +20,30 @@ interface AlumniStatsWidgetProps {
     styling?: Record<string, unknown>;
 }
 
-interface AlumniStats {
-    supporters_count: number;
-    total_donated: number;
-    projects_count: number;
-}
-
 export const AlumniStatsWidget: React.FC<AlumniStatsWidgetProps> = ({
     config = {},
     styling,
 }) => {
-    const [stats, setStats] = useState<AlumniStats | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
     const { organization_id, title, showIcons = true, columns } = config;
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                setLoading(true);
-                const params = new URLSearchParams();
-                if (organization_id) {
-                    params.append(
-                        'organization_id',
-                        organization_id.toString(),
-                    );
-                }
+    const page = usePage();
+    const propsAny = (page?.props as any) || {};
 
-                const response = await fetch(
-                    `/api/public/alumni-stats?${params.toString()}`,
-                );
-                if (!response.ok) {
-                    throw new Error('Failed to fetch alumni stats');
-                }
+    const parseId = (value: unknown): number | undefined => {
+        const numeric = Number(value);
+        return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+    };
 
-                const data = await response.json();
-                setStats(data);
-            } catch (err) {
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : 'Failed to load statistics',
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
+    const configOrganizationId =
+        parseId(organization_id) ?? parseId((config as any)?.organizationId);
 
-        fetchStats();
-    }, [organization_id]);
+    const pageOrganizationId =
+        parseId(propsAny?.organization?.id) ??
+        parseId(propsAny?.site?.organization_id);
+
+    const resolvedOrganizationId = configOrganizationId ?? pageOrganizationId;
+
+    const { stats, loading, error } = useAlumniStatsData(resolvedOrganizationId);
 
     const formatNumber = (num: number): string => {
         return num.toLocaleString('ru-RU');
