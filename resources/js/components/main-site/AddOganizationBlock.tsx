@@ -112,17 +112,25 @@ export default function AddoOganizationBlock({
         [],
     );
 
-    const handleModalCityChange = useCallback(
-        (city: City | null) => {
-            setFormData((prev) => ({
-                ...prev,
-                city,
-                cityName:
-                    useSimpleCityInput && city ? city.name : prev.cityName,
-            }));
+    const handleModalCityNameChange = useCallback(
+        (value: string) => {
+            if (!useSimpleCityInput) return;
+            setFormData((prev) => {
+                if (prev.cityName === value) {
+                    return prev;
+                }
+                return {
+                    ...prev,
+                    cityName: value,
+                };
+            });
         },
         [useSimpleCityInput],
     );
+
+    const modalCityName = useSimpleCityInput
+        ? formData.cityName
+        : (formData.city?.name ?? '');
 
     return (
         <>
@@ -283,9 +291,10 @@ export default function AddoOganizationBlock({
             <MapSelectModal
                 isOpen={showMapSelector}
                 initialCoordinates={formData.mapCoordinates}
-                citySelectorEnabled
-                city={formData.city}
-                onCityChange={handleModalCityChange}
+                cityName={modalCityName}
+                onCityNameChange={
+                    useSimpleCityInput ? handleModalCityNameChange : undefined
+                }
                 onSelect={handleMapSelect}
                 onClose={handleMapModalClose}
             />

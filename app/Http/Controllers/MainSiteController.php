@@ -144,6 +144,8 @@ class MainSiteController extends Controller
         }
 
         // Подготавливаем данные организации для отображения
+        $needsSummary = $organization->needs;
+
         $organizationData = [
             'id' => $organization->id,
             'name' => $organization->name,
@@ -151,16 +153,7 @@ class MainSiteController extends Controller
             'description' => $organization->description,
             'logo' => $organization->logo ? '/storage/' . $organization->logo : null,
             'gallery' => $gallery,
-            'needs_target_amount' => $organization->needs_target_amount,
-            'needs_collected_amount' => $organization->needs_collected_amount,
-            'needs_progress_percentage' => $organization->needs_target_amount
-                ? min(
-                    100,
-                    ($organization->needs_collected_amount ?? 0.0) /
-                        max(0.01, (float) $organization->needs_target_amount) *
-                        100,
-                )
-                : 0,
+            'needs' => $needsSummary,
             'region' => $organization->region ? [
                 'id' => $organization->region->id,
                 'name' => $organization->region->name,

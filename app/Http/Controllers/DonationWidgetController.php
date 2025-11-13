@@ -7,6 +7,7 @@ use App\Models\Fundraiser;
 use App\Models\Project;
 use App\Models\ProjectStage;
 use App\Models\PaymentMethod;
+use App\Models\Payments\YooKassaPartnerMerchant;
 use App\Models\PaymentTransaction;
 use App\Models\Donation;
 use App\Services\Payment\PaymentService;
@@ -32,22 +33,43 @@ class DonationWidgetController extends Controller
         $fundraiserId = $request->input('fundraiser_id');
         $projectId = $request->input('project_id');
 
+        $organization->loadMissing('yookassaPartnerMerchant');
+
+        $merchant = $organization->yookassaPartnerMerchant;
+        $merchantStatus = $merchant?->status ?? 'inactive';
+        $hasCredentials = $merchant
+            && is_array($merchant->credentials)
+            && !empty(data_get($merchant->credentials, 'shop_id'))
+            && !empty(data_get($merchant->credentials, 'secret_key'));
+
+        $isMerchantOperational = $merchantStatus === YooKassaPartnerMerchant::STATUS_ACTIVE;
+
+        if ($hasCredentials) {
+            $isMerchantOperational = true;
+        }
+
+        if (!$merchant) {
+            $isMerchantOperational = true;
+        }
+
         $data = [
             'organization' => [
                 'id' => $organization->id,
                 'name' => $organization->name,
                 'logo' => $organization->logo ? asset('storage/' . $organization->logo) : null,
             ],
-            'organization_needs' => [
-                'target_amount' => $organization->needs_target_amount,
-                'collected_amount' => $organization->needs_collected_amount,
-                'target_amount_rubles' => $organization->needs_target_amount,
-                'collected_amount_rubles' => $organization->needs_collected_amount,
-                'currency' => 'RUB',
-                'is_active' => ($organization->needs_target_amount ?? 0) > 0,
-            ],
+            'organization_needs' => tap($organization->needs, function (&$needs) {
+                $needs['is_active'] = ($needs['target']['minor'] ?? 0) > 0;
+            }),
             'terminology' => [],
             'payment_methods' => [],
+            'merchant' => $merchant ? [
+                'id' => $merchant->id,
+                'status' => $merchantStatus,
+                'activation_date' => $merchant->activated_at?->toIso8601String(),
+                'is_operational' => $isMerchantOperational,
+                'is_test_mode' => (bool) data_get($merchant->settings, 'is_test_mode', false),
+            ] : null,
         ];
 
         // Терминология: безопасно с дефолтами, чтобы не падать на проде
@@ -75,7 +97,7 @@ class DonationWidgetController extends Controller
 
         // Защищаем блок получения методов оплаты, чтобы не отдавать 500 из-за внешних ошибок
         try {
-            $data['payment_methods'] = PaymentMethod::active()->ordered()->get()->map(function ($method) {
+            $paymentMethods = PaymentMethod::active()->ordered()->get()->map(function ($method) use ($isMerchantOperational) {
                 return [
                     'id' => $method->id,
                     'name' => $method->name,
@@ -84,8 +106,11 @@ class DonationWidgetController extends Controller
                     'description' => $method->description,
                     'min_amount' => $method->min_amount,
                     'max_amount' => $method->max_amount,
+                    'available' => $isMerchantOperational,
                 ];
             });
+
+            $data['payment_methods'] = $paymentMethods;
         } catch (\Throwable $e) {
             Log::error('DonationWidget getWidgetData payment_methods failed', [
                 'organization_id' => $organization->id,
@@ -129,29 +154,35 @@ class DonationWidgetController extends Controller
                 ->orderBy('order')
                 ->first();
 
+            $projectFunding = $project->funding;
+
             $data['project'] = [
                 'id' => $project->id,
                 'title' => $project->title,
                 'description' => $project->description,
                 'image' => $project->image ? asset('storage/' . $project->image) : null,
-                'target_amount' => $project->target_amount,
-                'collected_amount' => $project->collected_amount,
-                'target_amount_rubles' => $project->target_amount_rubles,
-                'collected_amount_rubles' => $project->collected_amount_rubles,
-                'progress_percentage' => $project->progress_percentage,
+                'funding' => $projectFunding,
+                'target_amount' => $projectFunding['target']['minor'],
+                'collected_amount' => $projectFunding['collected']['minor'],
+                'target_amount_rubles' => $projectFunding['target']['value'],
+                'collected_amount_rubles' => $projectFunding['collected']['value'],
+                'progress_percentage' => $projectFunding['progress_percentage'],
                 'has_stages' => (bool) $project->has_stages,
             ];
 
             if ($activeStage) {
+                $stageFunding = $activeStage->funding;
+
                 $data['project']['active_stage'] = [
                     'id' => $activeStage->id,
                     'title' => $activeStage->title,
                     'description' => $activeStage->description,
-                    'target_amount' => $activeStage->target_amount,
-                    'collected_amount' => $activeStage->collected_amount,
-                    'target_amount_rubles' => $activeStage->target_amount_rubles,
-                    'collected_amount_rubles' => $activeStage->collected_amount_rubles,
-                    'progress_percentage' => $activeStage->progress_percentage,
+                    'funding' => $stageFunding,
+                    'target_amount' => $stageFunding['target']['minor'],
+                    'collected_amount' => $stageFunding['collected']['minor'],
+                    'target_amount_rubles' => $stageFunding['target']['value'],
+                    'collected_amount_rubles' => $stageFunding['collected']['value'],
+                    'progress_percentage' => $stageFunding['progress_percentage'],
                     'status' => $activeStage->status,
                     'order' => $activeStage->order,
                 ];
@@ -321,6 +352,8 @@ class DonationWidgetController extends Controller
                     'transaction_id' => $transaction->transaction_id,
                     'status' => $transaction->status,
                     'amount' => $transaction->amount,
+                    'amount_rubles' => $transaction->amount_rubles,
+                    'formatted_amount' => $transaction->formatted_amount,
                     'currency' => $transaction->currency,
                     'payment_method' => $transaction->payment_method_slug,
                     'created_at' => $transaction->created_at->toIso8601String(),
@@ -340,7 +373,20 @@ class DonationWidgetController extends Controller
      */
     public function getPaymentMethods(Organization $organization)
     {
-        $methods = PaymentMethod::active()->ordered()->get()->map(function ($method) {
+        $organization->loadMissing('yookassaPartnerMerchant');
+        $merchant = $organization->yookassaPartnerMerchant;
+        $merchantStatus = $merchant?->status ?? 'inactive';
+        $hasCredentials = $merchant
+            && is_array($merchant->credentials)
+            && !empty(data_get($merchant->credentials, 'shop_id'))
+            && !empty(data_get($merchant->credentials, 'secret_key'));
+
+        $isOperational = true;
+        if ($merchant) {
+            $isOperational = $merchantStatus === YooKassaPartnerMerchant::STATUS_ACTIVE || $hasCredentials;
+        }
+
+        $methods = PaymentMethod::active()->ordered()->get()->map(function ($method) use ($isOperational) {
             return [
                 'id' => $method->id,
                 'name' => $method->name,
@@ -351,6 +397,7 @@ class DonationWidgetController extends Controller
                 'max_amount' => $method->max_amount,
                 'min_amount_rubles' => $method->min_amount / 100,
                 'max_amount_rubles' => $method->max_amount > 0 ? $method->max_amount / 100 : null,
+                'available' => $isOperational,
             ];
         });
 
@@ -376,6 +423,7 @@ class DonationWidgetController extends Controller
                 'max_amount' => $method->max_amount,
                 'min_amount_rubles' => $method->min_amount / 100,
                 'max_amount_rubles' => $method->max_amount > 0 ? $method->max_amount / 100 : null,
+                'available' => true,
             ];
         });
 

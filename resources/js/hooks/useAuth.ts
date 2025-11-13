@@ -15,21 +15,21 @@ export const useAuth = () => {
     );
 
     const login = useCallback(
-        (credentials: { email: string; password: string }) => {
-            return dispatch(loginUser(credentials));
-        },
+        (credentials: { login: string; password: string; remember?: boolean }) =>
+            dispatch(loginUser(credentials)),
         [dispatch],
     );
 
     const register = useCallback(
         (userData: {
             name: string;
-            email: string;
+            email?: string | null;
+            phone?: string | null;
             password: string;
             password_confirmation: string;
-        }) => {
-            return dispatch(registerUser(userData));
-        },
+            organization_id?: number;
+            site_id?: number;
+        }) => dispatch(registerUser(userData)),
         [dispatch],
     );
 

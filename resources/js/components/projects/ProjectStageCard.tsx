@@ -1,4 +1,11 @@
 import '@css/components/projects/project-stage-card.scss';
+import type { MoneyAmount } from '@/types/money';
+
+interface StageFunding {
+    target: MoneyAmount;
+    collected: MoneyAmount;
+    progress_percentage: number;
+}
 
 interface ProjectStage {
     id: number;
@@ -6,11 +13,12 @@ interface ProjectStage {
     title: string;
     slug?: string;
     description?: string;
+    funding?: StageFunding;
     target_amount_rubles?: number;
     target_amount?: number;
     collected_amount_rubles?: number;
     collected_amount?: number;
-    progress_percentage: number;
+    progress_percentage?: number;
     image?: string;
     project_url?: string;
 }
@@ -20,19 +28,35 @@ interface ProjectStageCardProps {
 }
 
 export default function ProjectStageCard({ stage }: ProjectStageCardProps) {
-    const formatCurrency = (amount: number): string => {
-        return new Intl.NumberFormat('ru-RU', {
+    const funding = stage.funding;
+
+    const formatCurrency = (amount: number): string =>
+        new Intl.NumberFormat('ru-RU', {
             style: 'currency',
             currency: 'RUB',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
         }).format(amount);
-    };
 
-    const targetAmount = stage.target_amount_rubles ?? stage.target_amount ?? 0;
+    const targetAmount =
+        funding?.target.value ??
+        stage.target_amount_rubles ??
+        stage.target_amount ??
+        0;
     const collectedAmount =
-        stage.collected_amount_rubles ?? stage.collected_amount ?? 0;
-    const progressPercentage = Math.min(stage.progress_percentage, 100);
+        funding?.collected.value ??
+        stage.collected_amount_rubles ??
+        stage.collected_amount ??
+        0;
+    const progressPercentage = Math.min(
+        funding?.progress_percentage ?? stage.progress_percentage ?? 0,
+        100,
+    );
+
+    const targetDisplay =
+        funding?.target.formatted ?? formatCurrency(targetAmount);
+    const collectedDisplay =
+        funding?.collected.formatted ?? formatCurrency(collectedAmount);
 
     return (
         <div className="project-stage-card">
@@ -95,10 +119,10 @@ export default function ProjectStageCard({ stage }: ProjectStageCardProps) {
                         </div>
                         <div className="project-stage-donation-amounts">
                             <span className="project-stage-donation-target">
-                                {formatCurrency(targetAmount)}
+                                {targetDisplay}
                             </span>
                             <span className="project-stage-donation-collected">
-                                {formatCurrency(collectedAmount)}
+                                {collectedDisplay}
                             </span>
                         </div>
                     </div>

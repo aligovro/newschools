@@ -9,6 +9,7 @@ import { List, MapPin, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ListTab from './ListTab';
 import MapTab from './MapTab';
+import type { MoneyAmount } from '@/types/money';
 
 interface OrganizationData {
     id: number;
@@ -32,8 +33,11 @@ interface OrganizationData {
     donations_total: number;
     donations_collected: number;
     director_name?: string;
-    needs_target_amount?: number | null;
-    needs_collected_amount?: number | null;
+    needs?: {
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+    } | null;
     latitude?: number | null;
     longitude?: number | null;
 }

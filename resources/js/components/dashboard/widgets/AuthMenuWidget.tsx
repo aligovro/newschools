@@ -1,22 +1,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSelector } from '@/store';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { AuthLoginDialog } from './auth/AuthLoginDialog';
+import { AuthRegisterDialog } from './auth/AuthRegisterDialog';
+import { useAuthModals } from './auth/useAuthModals';
 
 interface AuthMenuWidgetProps {
     config?: Record<string, unknown>;
@@ -29,7 +25,6 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         user,
         isAuthenticated,
         isLoading,
-        error,
         login,
         register,
         logout,
@@ -45,13 +40,18 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
     > | null>(null);
     const [isCheckingSession, setIsCheckingSession] = useState(false);
 
-    const [loginEmail, setLoginEmail] = useState('');
-    const [loginPassword, setLoginPassword] = useState('');
-
-    const [regName, setRegName] = useState('');
-    const [regEmail, setRegEmail] = useState('');
-    const [regPassword, setRegPassword] = useState('');
-    const [regPassword2, setRegPassword2] = useState('');
+    const {
+        loginState,
+        registerState,
+        setLoginField,
+        setRegisterField,
+        setLoginErrors,
+        setRegisterErrors,
+        resetLoginState,
+        resetRegisterState,
+        validateLogin,
+        validateRegister,
+    } = useAuthModals();
 
     const organizationId = useMemo(() => {
         // 1) из конфига
@@ -116,50 +116,137 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         };
     }, [isAuthenticated]);
 
-    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!loginEmail || !loginPassword) return;
-        type WithType = { type?: string };
-        const res = (await login({
-            email: loginEmail,
-            password: loginPassword,
-        })) as unknown as WithType;
-        if (res.type?.endsWith('/fulfilled')) {
-            setIsLoginOpen(false);
-            setLoginEmail('');
-            setLoginPassword('');
-        }
-    };
+    const handleLoginOpenChange = useCallback(
+        (open: boolean) => {
+            setIsLoginOpen(open);
+            if (!open) {
+                resetLoginState();
+                clearAuthError();
+                return;
+            }
+            setLoginErrors({});
+            clearAuthError();
+        },
+        [clearAuthError, resetLoginState, setLoginErrors],
+    );
 
-    const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!regName || !regEmail || !regPassword || !regPassword2) return;
+    const handleRegisterOpenChange = useCallback(
+        (open: boolean) => {
+            setIsRegisterOpen(open);
+            if (!open) {
+                resetRegisterState();
+                clearAuthError();
+                return;
+            }
+            setRegisterErrors({});
+            clearAuthError();
+        },
+        [clearAuthError, resetRegisterState, setRegisterErrors],
+    );
+
+    const handleLoginSubmit = useCallback(async () => {
+        if (!validateLogin()) {
+            return;
+        }
+
+        clearAuthError();
+        setLoginErrors({});
+
+        type AuthResult = { type?: string; payload?: unknown };
+        const result = (await login({
+            login: loginState.identifier.trim(),
+            password: loginState.password,
+            remember: loginState.remember,
+        })) as AuthResult;
+
+        if (result.type?.endsWith('/fulfilled')) {
+            resetLoginState();
+            setIsLoginOpen(false);
+            return;
+        }
+
+        const message =
+            typeof result.payload === 'string'
+                ? result.payload
+                : 'Не удалось выполнить вход';
+        setLoginErrors({ general: message });
+    }, [
+        clearAuthError,
+        login,
+        loginState.identifier,
+        loginState.password,
+        loginState.remember,
+        resetLoginState,
+        setLoginErrors,
+        validateLogin,
+    ]);
+
+    const handleRegisterSubmit = useCallback(async () => {
+        if (!validateRegister()) {
+            return;
+        }
+
+        clearAuthError();
+        setRegisterErrors({});
+
         const payload: {
             name: string;
-            email: string;
+            email?: string;
+            phone?: string;
             password: string;
             password_confirmation: string;
             organization_id?: number;
             site_id?: number;
         } = {
-            name: regName,
-            email: regEmail,
-            password: regPassword,
-            password_confirmation: regPassword2,
+            name: registerState.name.trim(),
+            password: registerState.password,
+            password_confirmation: registerState.passwordConfirmation,
         };
-        if (organizationId) payload.organization_id = organizationId;
-        if (siteId) payload.site_id = siteId;
 
-        type WithType = { type?: string };
-        const res = (await register(payload)) as unknown as WithType;
-        if (res.type?.endsWith('/fulfilled')) {
-            setIsRegisterOpen(false);
-            setRegName('');
-            setRegEmail('');
-            setRegPassword('');
-            setRegPassword2('');
+        const trimmedEmail = registerState.email.trim();
+        const trimmedPhone = registerState.phone.trim();
+
+        if (trimmedEmail) {
+            payload.email = trimmedEmail;
         }
-    };
+        if (trimmedPhone) {
+            payload.phone = trimmedPhone;
+        }
+        if (organizationId) {
+            payload.organization_id = organizationId;
+        }
+        if (siteId) {
+            payload.site_id = siteId;
+        }
+
+        type AuthResult = { type?: string; payload?: unknown };
+        const result = (await register(payload)) as AuthResult;
+
+        if (result.type?.endsWith('/fulfilled')) {
+            resetRegisterState();
+            setIsRegisterOpen(false);
+            return;
+        }
+
+        const message =
+            typeof result.payload === 'string'
+                ? result.payload
+                : 'Не удалось завершить регистрацию';
+        setRegisterErrors({ general: message });
+    }, [
+        clearAuthError,
+        organizationId,
+        register,
+        registerState.email,
+        registerState.name,
+        registerState.password,
+        registerState.passwordConfirmation,
+        registerState.phone,
+        resetRegisterState,
+        setRegisterErrors,
+        siteId,
+        validateRegister,
+    ]);
 
     const handleLogout = async () => {
         try {
@@ -226,7 +313,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                         <button
                             type="button"
                             className="btn-outline-primary auth-btn login-btn"
-                            onClick={() => setIsLoginOpen(true)}
+                            onClick={() => handleLoginOpenChange(true)}
                         >
                             {loginButtonText}
                         </button>
@@ -235,7 +322,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                         <button
                             type="button"
                             className="btn-accent auth-btn register-btn"
-                            onClick={() => setIsRegisterOpen(true)}
+                            onClick={() => handleRegisterOpenChange(true)}
                         >
                             {registerButtonText}
                         </button>
@@ -249,156 +336,27 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                         </a>
                     )}
 
-                    <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Вход</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleLogin} className="space-y-3">
-                                <div>
-                                    <Label htmlFor="login_email">Email</Label>
-                                    <Input
-                                        id="login_email"
-                                        type="email"
-                                        value={loginEmail}
-                                        onChange={(e) =>
-                                            setLoginEmail(e.target.value)
-                                        }
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="login_password">
-                                        Пароль
-                                    </Label>
-                                    <Input
-                                        id="login_password"
-                                        type="password"
-                                        value={loginPassword}
-                                        onChange={(e) =>
-                                            setLoginPassword(e.target.value)
-                                        }
-                                        required
-                                    />
-                                </div>
-                                {error && (
-                                    <div className="text-sm text-red-600">
-                                        {error}
-                                    </div>
-                                )}
-                                <div className="flex justify-end gap-2">
-                                    <button
-                                        type="button"
-                                        className="btn-outline-primary auth-btn"
-                                        onClick={() => setIsLoginOpen(false)}
-                                    >
-                                        Отмена
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="btn-accent auth-btn"
-                                        disabled={isLoading}
-                                    >
-                                        {isLoading ? 'Вход...' : 'Войти'}
-                                    </button>
-                                </div>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                    <AuthLoginDialog
+                        open={isLoginOpen}
+                        onOpenChange={handleLoginOpenChange}
+                        state={loginState}
+                        onFieldChange={setLoginField}
+                        onSubmit={handleLoginSubmit}
+                        isLoading={isLoading}
+                        globalError={null}
+                    />
 
-                    <Dialog
+                    <AuthRegisterDialog
                         open={isRegisterOpen}
-                        onOpenChange={setIsRegisterOpen}
-                    >
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Регистрация</DialogTitle>
-                            </DialogHeader>
-                            <form
-                                onSubmit={handleRegister}
-                                className="space-y-3"
-                            >
-                                <div>
-                                    <Label htmlFor="reg_name">Имя</Label>
-                                    <Input
-                                        id="reg_name"
-                                        value={regName}
-                                        onChange={(e) =>
-                                            setRegName(e.target.value)
-                                        }
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="reg_email">Email</Label>
-                                    <Input
-                                        id="reg_email"
-                                        type="email"
-                                        value={regEmail}
-                                        onChange={(e) =>
-                                            setRegEmail(e.target.value)
-                                        }
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="reg_password">Пароль</Label>
-                                    <Input
-                                        id="reg_password"
-                                        type="password"
-                                        value={regPassword}
-                                        onChange={(e) =>
-                                            setRegPassword(e.target.value)
-                                        }
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="reg_password2">
-                                        Подтверждение пароля
-                                    </Label>
-                                    <Input
-                                        id="reg_password2"
-                                        type="password"
-                                        value={regPassword2}
-                                        onChange={(e) =>
-                                            setRegPassword2(e.target.value)
-                                        }
-                                        required
-                                    />
-                                </div>
-                                {error && (
-                                    <div className="text-sm text-red-600">
-                                        {error}
-                                    </div>
-                                )}
-                                <div className="flex justify-between text-xs text-gray-500">
-                                    <div>
-                                        organization_id: {organizationId ?? '-'}
-                                    </div>
-                                    <div>site_id: {siteId ?? '-'}</div>
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                    <button
-                                        type="button"
-                                        className="btn-outline-primary auth-btn"
-                                        onClick={() => setIsRegisterOpen(false)}
-                                    >
-                                        Отмена
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="btn-accent auth-btn"
-                                        disabled={isLoading}
-                                    >
-                                        {isLoading
-                                            ? 'Регистрация...'
-                                            : 'Зарегистрироваться'}
-                                    </button>
-                                </div>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                        onOpenChange={handleRegisterOpenChange}
+                        state={registerState}
+                        onFieldChange={setRegisterField}
+                        onSubmit={handleRegisterSubmit}
+                        isLoading={isLoading}
+                        globalError={null}
+                        organizationId={organizationId}
+                        siteId={siteId}
+                    />
                 </>
             ) : (
                 <>

@@ -7,6 +7,7 @@ export { projectsApi } from './projects';
 export { sitesApi } from './sites';
 export { widgetImagesApi } from './widget-images';
 export { widgetsApi } from './widgets';
+export { yookassaApi } from './yookassa';
 export { widgetsSystemApi } from './widgets-system';
 export { newsApi } from './news';
 
@@ -31,6 +32,7 @@ export type {
 } from './widgets';
 export type {
     DonationWidgetData,
+    DonationPaymentData,
     PaymentMethod,
     Widget,
     WidgetPosition,

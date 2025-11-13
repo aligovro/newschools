@@ -9,15 +9,22 @@ use Illuminate\Support\Facades\Log;
 class PaymentGatewayFactory
 {
     /**
-     * Создание экземпляра шлюза по методу платежа
+     * Создание экземпляра шлюза по методу платежа.
      */
     public static function create(PaymentMethod $paymentMethod): AbstractPaymentGateway
     {
-        $gatewayClass = $paymentMethod->gateway;
+        return self::createForProvider(
+            self::guessProviderFromGatewayClass($paymentMethod->gateway),
+            $paymentMethod
+        );
+    }
 
-        if (!$gatewayClass) {
-            throw new InvalidArgumentException("Gateway not specified for payment method: {$paymentMethod->slug}");
-        }
+    /**
+     * Создание экземпляра шлюза по методу платежа и провайдеру.
+     */
+    public static function createForProvider(string $provider, PaymentMethod $paymentMethod): AbstractPaymentGateway
+    {
+        $gatewayClass = self::gatewayClassForProvider($provider, $paymentMethod);
 
         if (!class_exists($gatewayClass)) {
             throw new InvalidArgumentException("Gateway class not found: {$gatewayClass}");
@@ -31,7 +38,8 @@ class PaymentGatewayFactory
     }
 
     /**
-     * Создание шлюза по slug метода платежа
+     * Создание шлюза по slug метода платежа.
+     * Использует провайдер, указанный в самом методе.
      */
     public static function createBySlug(string $slug): AbstractPaymentGateway
     {
@@ -54,7 +62,10 @@ class PaymentGatewayFactory
 
         foreach ($paymentMethods as $paymentMethod) {
             try {
-                $gateways[] = self::create($paymentMethod);
+                $gateways[] = self::createForProvider(
+                    self::guessProviderFromGatewayClass($paymentMethod->gateway),
+                    $paymentMethod
+                );
             } catch (\Exception $e) {
                 // Логируем ошибку, но не прерываем выполнение
                 Log::error("Failed to create gateway for payment method {$paymentMethod->slug}: " . $e->getMessage());
@@ -115,5 +126,33 @@ class PaymentGatewayFactory
         }
 
         return $methods;
+    }
+
+    /**
+     * Определяем провайдера по имени класса шлюза.
+     */
+    public static function guessProviderFromGatewayClass(?string $gatewayClass): string
+    {
+        return match ($gatewayClass) {
+            \App\Services\Payment\TinkoffGateway::class => 'tinkoff',
+            \App\Services\Payment\SBPGateway::class => 'sbp',
+            \App\Services\Payment\YooKassaGateway::class => 'yookassa',
+            default => 'yookassa',
+        };
+    }
+
+    /**
+     * Получаем класс шлюза для указанного провайдера.
+     */
+    protected static function gatewayClassForProvider(string $provider, PaymentMethod $fallback): string
+    {
+        $normalized = strtolower($provider);
+
+        return match ($normalized) {
+            'yookassa', 'yoomoney' => \App\Services\Payment\YooKassaGateway::class,
+            'tinkoff' => \App\Services\Payment\TinkoffGateway::class,
+            'sbp' => \App\Services\Payment\SBPGateway::class,
+            default => $fallback->gateway ?? \App\Services\Payment\YooKassaGateway::class,
+        };
     }
 }

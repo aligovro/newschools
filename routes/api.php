@@ -27,6 +27,25 @@ use App\Http\Controllers\Api\NewsController;
 use App\Http\Controllers\Api\Public\SuggestedOrganizationController;
 use App\Http\Controllers\Api\UserController;
 
+Route::middleware(['web', 'auth', 'verified'])
+    ->prefix('dashboard/yookassa')
+    ->name('dashboard.yookassa.')
+    ->group(function () {
+        Route::get('/merchants', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'index']);
+        Route::post('/organizations/{organization}/merchants', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'store']);
+        Route::get('/merchants/{merchant}', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'show']);
+        Route::post('/merchants/{merchant}/sync', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'sync']);
+
+        Route::get('/payments', [App\Http\Controllers\Dashboard\YooKassa\PaymentController::class, 'index']);
+        Route::get('/payments/{payment}', [App\Http\Controllers\Dashboard\YooKassa\PaymentController::class, 'show']);
+
+        Route::get('/payouts', [App\Http\Controllers\Dashboard\YooKassa\PayoutController::class, 'index']);
+        Route::get('/payouts/{payout}', [App\Http\Controllers\Dashboard\YooKassa\PayoutController::class, 'show']);
+
+        Route::get('/settings', [App\Http\Controllers\Dashboard\YooKassa\SettingsController::class, 'show']);
+        Route::put('/settings', [App\Http\Controllers\Dashboard\YooKassa\SettingsController::class, 'update']);
+    });
+
 // Получение текущего пользователя для API
 Route::get('/user', [AuthController::class, 'me'])->middleware('auth:sanctum');
 

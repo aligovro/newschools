@@ -15,6 +15,7 @@ import {
     BookOpen,
     Building2,
     CalendarClock,
+    CreditCard,
     FileText,
     Folder,
     Globe,
@@ -83,6 +84,11 @@ export function AppSidebar() {
                       title: 'Все отчеты',
                       href: '/dashboard/reports',
                       icon: FileText,
+                  } satisfies NavItem,
+                  {
+                      title: 'ЮKassa',
+                      href: '/dashboard/yookassa/merchants',
+                      icon: CreditCard,
                   } satisfies NavItem,
               ]
             : []),

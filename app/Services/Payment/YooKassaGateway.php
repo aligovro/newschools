@@ -18,12 +18,17 @@ class YooKassaGateway extends AbstractPaymentGateway
     {
         parent::__construct($paymentMethod);
 
-        $this->apiUrl = $this->isTestMode()
-            ? 'https://api.yookassa.ru/v3/payments'
-            : 'https://api.yookassa.ru/v3/payments';
+        $this->apiUrl = 'https://api.yookassa.ru/v3/payments';
 
-        $this->shopId = $this->getSetting('shop_id');
-        $this->secretKey = $this->getSetting('secret_key');
+        $shopId = $this->getSetting('shop_id');
+        $secretKey = $this->getSetting('secret_key');
+
+        if (empty($shopId) || empty($secretKey)) {
+            throw new \RuntimeException('YooKassa credentials are not configured for payment method: ' . $paymentMethod->slug);
+        }
+
+        $this->shopId = (string) $shopId;
+        $this->secretKey = (string) $secretKey;
     }
 
     public function getName(): string
@@ -52,10 +57,8 @@ class YooKassaGateway extends AbstractPaymentGateway
                     'value' => $this->formatAmount($transaction->amount),
                     'currency' => $transaction->currency,
                 ],
-                'confirmation' => [
-                    'type' => 'redirect',
-                    'return_url' => $this->getReturnUrl($transaction),
-                ],
+                'capture' => true,
+                'confirmation' => $this->buildConfirmation($transaction),
                 'description' => $this->getPaymentDescription($transaction),
                 'metadata' => [
                     'transaction_id' => $transaction->transaction_id,
@@ -66,9 +69,9 @@ class YooKassaGateway extends AbstractPaymentGateway
             ];
 
             // Добавляем методы оплаты в зависимости от типа платежа
-            $paymentMethods = $this->getPaymentMethods();
-            if (!empty($paymentMethods)) {
-                $paymentData['payment_method_data'] = $paymentMethods;
+            $paymentMethodData = $this->getPaymentMethodData();
+            if (!empty($paymentMethodData)) {
+                $paymentData['payment_method_data'] = $paymentMethodData;
             }
 
             $response = Http::withBasicAuth($this->shopId, $this->secretKey)
@@ -86,6 +89,7 @@ class YooKassaGateway extends AbstractPaymentGateway
                     'gateway_response' => $responseData,
                     'payment_details' => [
                         'confirmation_url' => $responseData['confirmation']['confirmation_url'] ?? null,
+                        'qr_code' => $responseData['confirmation']['confirmation_data'] ?? null,
                         'payment_method' => $responseData['payment_method']['type'] ?? null,
                     ],
                 ]);
@@ -103,6 +107,7 @@ class YooKassaGateway extends AbstractPaymentGateway
                     'payment_id' => $responseData['id'] ?? null,
                     'confirmation_url' => $responseData['confirmation']['confirmation_url'] ?? null,
                     'redirect_url' => $responseData['confirmation']['confirmation_url'] ?? null,
+                    'qr_code' => $responseData['confirmation']['confirmation_data'] ?? null,
                 ];
             } else {
                 $errorMessage = 'Ошибка создания платежа в ЮKassa: ' . $response->body();
@@ -280,14 +285,76 @@ class YooKassaGateway extends AbstractPaymentGateway
     /**
      * Получение методов оплаты в зависимости от типа
      */
-    private function getPaymentMethods(): array
+    private function getPaymentMethodData(): array
     {
-        $paymentMethodSlug = $this->paymentMethod->slug;
+        $settings = $this->paymentMethod->settings ?? [];
 
-        return match ($paymentMethodSlug) {
+        if (!empty($settings['payment_method_data']) && is_array($settings['payment_method_data'])) {
+            return $settings['payment_method_data'];
+        }
+
+        if (!empty($settings['payment_method_type']) && is_string($settings['payment_method_type'])) {
+            return ['type' => $settings['payment_method_type']];
+        }
+
+        return match ($this->paymentMethod->slug) {
+            'sbp' => ['type' => 'sbp'],
             'sberpay' => ['type' => 'sberbank'],
+            'tinkoff' => ['type' => 'tinkoff_bank'],
             'bankcard' => ['type' => 'bank_card'],
             default => [],
+        };
+    }
+
+    /**
+     * Формирование данных подтверждения оплаты.
+     */
+    private function buildConfirmation(PaymentTransaction $transaction): array
+    {
+        $settings = $this->paymentMethod->settings ?? [];
+        $confirmation = $settings['confirmation'] ?? null;
+
+        if (is_array($confirmation) && !empty($confirmation['type'])) {
+            return $this->normalizeConfirmation($confirmation, $transaction);
+        }
+
+        $methodData = $this->getPaymentMethodData();
+        $type = $methodData['type'] ?? null;
+
+        return match ($type) {
+            'sbp' => ['type' => 'qr'],
+            'sberbank', 'tinkoff_bank' => [
+                'type' => 'redirect',
+                'return_url' => $this->getReturnUrl($transaction),
+            ],
+            default => [
+                'type' => 'redirect',
+                'return_url' => $this->getReturnUrl($transaction),
+            ],
+        };
+    }
+
+    /**
+     * Нормализация пользовательских настроек подтверждения.
+     */
+    private function normalizeConfirmation(array $confirmation, PaymentTransaction $transaction): array
+    {
+        $type = strtolower((string) ($confirmation['type'] ?? 'redirect'));
+
+        return match ($type) {
+            'qr' => ['type' => 'qr'],
+            'embedded' => [
+                'type' => 'embedded',
+                'locale' => $confirmation['locale'] ?? 'ru_RU',
+            ],
+            'mobile_application' => [
+                'type' => 'mobile_application',
+                'return_url' => $confirmation['return_url'] ?? $this->getReturnUrl($transaction),
+            ],
+            default => [
+                'type' => 'redirect',
+                'return_url' => $confirmation['return_url'] ?? $this->getReturnUrl($transaction),
+            ],
         };
     }
 

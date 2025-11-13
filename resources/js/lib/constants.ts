@@ -108,6 +108,12 @@ export const CURRENCIES = {
     EUR: 'EUR',
 } as const;
 
+export const CURRENCY_SYMBOLS = {
+    RUB: '₽',
+    USD: '$',
+    EUR: '€',
+} as const;
+
 // Лимиты
 export const LIMITS = {
     MIN_DONATION: 1,

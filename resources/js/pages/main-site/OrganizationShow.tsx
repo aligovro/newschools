@@ -3,6 +3,7 @@ import { GallerySlider } from '@/components/main-site/GallerySlider';
 import ProjectCard from '@/components/projects/ProjectCard';
 import MainLayout from '@/layouts/MainLayout';
 import { useState } from 'react';
+import type { MoneyAmount } from '@/types/money';
 
 interface Project {
     id: number;
@@ -31,8 +32,11 @@ interface Organization {
     };
     type: string;
     projects?: Project[];
-    needs_target_amount?: number | null;
-    needs_collected_amount?: number | null;
+    needs?: {
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+    };
 }
 
 interface OrganizationShowProps {

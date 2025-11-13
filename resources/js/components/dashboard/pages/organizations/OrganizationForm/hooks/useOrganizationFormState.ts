@@ -53,15 +53,15 @@ export function useOrganizationFormState({
         organization?.is_public ?? true,
     );
     const [needsTargetAmount, setNeedsTargetAmount] = useState<string>(
-        organization?.needs_target_amount !== undefined &&
-            organization?.needs_target_amount !== null
-            ? String(organization.needs_target_amount)
+        organization?.needs?.target?.value !== undefined &&
+            organization?.needs?.target?.value !== null
+            ? String(organization.needs.target.value)
             : '',
     );
     const [needsCollectedAmount, setNeedsCollectedAmount] = useState<string>(
-        organization?.needs_collected_amount !== undefined &&
-            organization?.needs_collected_amount !== null
-            ? String(organization.needs_collected_amount)
+        organization?.needs?.collected?.value !== undefined &&
+            organization?.needs?.collected?.value !== null
+            ? String(organization.needs.collected.value)
             : '',
     );
 

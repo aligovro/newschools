@@ -13,414 +13,716 @@ use App\Models\ProjectStage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Support\Money;
 
 class PaymentService
 {
-  /**
-   * Создание платежа
-   */
-  public function createPayment(array $data): array
-  {
-    DB::beginTransaction();
+    /**
+     * Создание платежа
+     */
+    public function createPayment(array $data): array
+    {
+        DB::beginTransaction();
 
-    try {
-      // Валидация данных
-      $this->validatePaymentData($data);
+        try {
+            // Валидация данных
+            $this->validatePaymentData($data);
 
-      // Получаем метод платежа
-      $paymentMethod = PaymentMethod::where('slug', $data['payment_method_slug'])
-        ->where('is_active', true)
-        ->firstOrFail();
+            $organization = Organization::with(['yookassaPartnerMerchant', 'settings'])->findOrFail($data['organization_id']);
 
-      // Создаем транзакцию
-      $transaction = PaymentTransaction::create([
-        'organization_id' => $data['organization_id'],
-        'fundraiser_id' => $data['fundraiser_id'] ?? null,
-        'project_id' => $data['project_id'] ?? null,
-        'project_stage_id' => $data['project_stage_id'] ?? null,
-        'payment_method_id' => $paymentMethod->id,
-        'transaction_id' => PaymentTransaction::generateTransactionId(),
-        'amount' => $data['amount'],
-        'currency' => $data['currency'] ?? 'RUB',
-        'status' => PaymentTransaction::STATUS_PENDING,
-        'payment_method_slug' => $paymentMethod->slug,
-        'description' => $data['description'] ?? null,
-        'return_url' => $data['return_url'] ?? null,
-        'success_url' => $data['success_url'] ?? null,
-        'failure_url' => $data['failure_url'] ?? null,
-        'payment_details' => $data['payment_details'] ?? null,
-        'expires_at' => now()->addHours(24), // Платеж действителен 24 часа
-      ]);
+            // Получаем метод платежа
+            $paymentMethod = PaymentMethod::where('slug', $data['payment_method_slug'])
+                ->where('is_active', true)
+                ->firstOrFail();
 
-      // Создаем шлюз и инициируем платеж
-      $gateway = PaymentGatewayFactory::create($paymentMethod);
-      $paymentResult = $gateway->createPayment($transaction);
+            $organizationPaymentSettings = $this->getOrganizationPaymentSettings($organization);
 
-      if ($paymentResult['success']) {
-        // Обновляем транзакцию с данными от шлюза
-        $transaction->update([
-          'external_id' => $paymentResult['payment_id'] ?? null,
-          'gateway_response' => $paymentResult,
-        ]);
+            // Определяем провайдера платежей
+            $paymentProvider = $this->resolvePaymentProvider($organization, $organizationPaymentSettings, $paymentMethod, $data);
 
-        DB::commit();
+            $gatewayPaymentMethod = $this->applyProviderCredentials(
+                clone $paymentMethod,
+                $paymentProvider,
+                $organizationPaymentSettings,
+                $data
+            );
 
-        PaymentLog::createLog(
-          $transaction->id,
-          PaymentLog::ACTION_CREATED,
-          'Платеж успешно создан',
-          PaymentLog::LEVEL_INFO,
-          ['gateway' => $gateway->getName()]
-        );
+            // Создаем транзакцию
+            $transaction = PaymentTransaction::create([
+                'organization_id' => $data['organization_id'],
+                'fundraiser_id' => $data['fundraiser_id'] ?? null,
+                'project_id' => $data['project_id'] ?? null,
+                'project_stage_id' => $data['project_stage_id'] ?? null,
+                'payment_method_id' => $paymentMethod->id,
+                'transaction_id' => PaymentTransaction::generateTransactionId(),
+                'amount' => $data['amount'],
+                'currency' => $data['currency'] ?? 'RUB',
+                'status' => PaymentTransaction::STATUS_PENDING,
+                'payment_method_slug' => $paymentMethod->slug,
+                'payment_provider' => $paymentProvider,
+                'description' => $data['description'] ?? null,
+                'return_url' => $data['return_url'] ?? null,
+                'success_url' => $data['success_url'] ?? null,
+                'failure_url' => $data['failure_url'] ?? null,
+                'payment_details' => $data['payment_details'] ?? null,
+                'expires_at' => now()->addHours(24), // Платеж действителен 24 часа
+            ]);
 
-        return [
-          'success' => true,
-          'transaction_id' => $transaction->transaction_id,
-          'payment_id' => $paymentResult['payment_id'] ?? null,
-          'redirect_url' => $paymentResult['redirect_url'] ?? null,
-          'qr_code' => $paymentResult['qr_code'] ?? null,
-          'deep_link' => $paymentResult['deep_link'] ?? null,
-          'confirmation_url' => $paymentResult['confirmation_url'] ?? null,
-        ];
-      } else {
-        // Обновляем статус транзакции на неудачный
-        $transaction->update([
-          'status' => PaymentTransaction::STATUS_FAILED,
-          'failed_at' => now(),
-          'gateway_response' => $paymentResult,
-        ]);
+            // Создаем шлюз и инициируем платеж
+            $gateway = PaymentGatewayFactory::createForProvider($paymentProvider, $gatewayPaymentMethod);
+            $paymentResult = $gateway->createPayment($transaction);
 
-        DB::commit();
+            if ($paymentResult['success']) {
+                // Обновляем транзакцию с данными от шлюза
+                $transaction->update([
+                    'external_id' => $paymentResult['payment_id'] ?? null,
+                    'gateway_response' => $paymentResult,
+                ]);
 
-        PaymentLog::createErrorLog(
-          $transaction->id,
-          PaymentLog::ACTION_FAILED,
-          'Ошибка создания платежа: ' . ($paymentResult['error'] ?? 'Неизвестная ошибка'),
-          ['gateway' => $gateway->getName()]
-        );
+                DB::commit();
 
-        return [
-          'success' => false,
-          'error' => $paymentResult['error'] ?? 'Неизвестная ошибка',
-        ];
-      }
-    } catch (\Exception $e) {
-      DB::rollBack();
+                PaymentLog::createLog(
+                    $transaction->id,
+                    PaymentLog::ACTION_CREATED,
+                    'Платеж успешно создан',
+                    PaymentLog::LEVEL_INFO,
+                    [
+                        'gateway' => $gateway->getName(),
+                        'amount' => $transaction->amount,
+                        'amount_rubles' => Money::toRubles($transaction->amount),
+                    ]
+                );
 
-      Log::error('Payment creation failed', [
-        'error' => $e->getMessage(),
-        'data' => $data,
-      ]);
+                if ($gatewayPaymentMethod->is_test_mode) {
+                    $this->completeTestPayment($transaction);
+                }
 
-      return [
-        'success' => false,
-        'error' => 'Ошибка создания платежа: ' . $e->getMessage(),
-      ];
-    }
-  }
+                return [
+                    'success' => true,
+                    'transaction_id' => $transaction->transaction_id,
+                    'payment_id' => $paymentResult['payment_id'] ?? null,
+                    'redirect_url' => $paymentResult['redirect_url'] ?? null,
+                    'qr_code' => $paymentResult['qr_code'] ?? null,
+                    'deep_link' => $paymentResult['deep_link'] ?? null,
+                    'confirmation_url' => $paymentResult['confirmation_url'] ?? null,
+                ];
+            } else {
+                // Обновляем статус транзакции на неудачный
+                $transaction->update([
+                    'status' => PaymentTransaction::STATUS_FAILED,
+                    'failed_at' => now(),
+                    'gateway_response' => $paymentResult,
+                ]);
 
-  /**
-   * Обработка webhook'а
-   */
-  public function handleWebhook(string $gatewaySlug, Request $request): array
-  {
-    try {
-      $gateway = PaymentGatewayFactory::createBySlug($gatewaySlug);
-      return $gateway->handleWebhook($request);
-    } catch (\Exception $e) {
-      Log::error('Webhook handling failed', [
-        'gateway' => $gatewaySlug,
-        'error' => $e->getMessage(),
-        'request' => $request->all(),
-      ]);
+                DB::commit();
 
-      return [
-        'success' => false,
-        'error' => 'Ошибка обработки webhook: ' . $e->getMessage(),
-      ];
-    }
-  }
+                PaymentLog::createErrorLog(
+                    $transaction->id,
+                    PaymentLog::ACTION_FAILED,
+                    'Ошибка создания платежа: ' . ($paymentResult['error'] ?? 'Неизвестная ошибка'),
+                    ['gateway' => $gateway->getName()]
+                );
 
-  /**
-   * Получение статуса платежа
-   */
-  public function getPaymentStatus(string $transactionId): array
-  {
-    try {
-      $transaction = PaymentTransaction::where('transaction_id', $transactionId)->firstOrFail();
+                return [
+                    'success' => false,
+                    'error' => $paymentResult['error'] ?? 'Неизвестная ошибка',
+                ];
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-      // Если платеж еще не завершен, проверяем статус в шлюзе
-      if ($transaction->isPending()) {
-        $gateway = PaymentGatewayFactory::create($transaction->paymentMethod);
-        $externalStatus = $gateway->getPaymentStatus($transaction->external_id);
+            Log::error('Payment creation failed', [
+                'error' => $e->getMessage(),
+                'data' => $data,
+            ]);
 
-        if ($externalStatus !== $transaction->status) {
-          $transaction->update(['status' => $externalStatus]);
+            return [
+                'success' => false,
+                'error' => 'Ошибка создания платежа: ' . $e->getMessage(),
+            ];
         }
-      }
-
-      return [
-        'success' => true,
-        'transaction_id' => $transaction->transaction_id,
-        'status' => $transaction->status,
-        'amount' => $transaction->amount,
-        'currency' => $transaction->currency,
-        'created_at' => $transaction->created_at,
-        'paid_at' => $transaction->paid_at,
-        'failed_at' => $transaction->failed_at,
-        'is_expired' => $transaction->isExpired(),
-      ];
-    } catch (\Exception $e) {
-      Log::error('Payment status check failed', [
-        'transaction_id' => $transactionId,
-        'error' => $e->getMessage(),
-      ]);
-
-      return [
-        'success' => false,
-        'error' => 'Ошибка получения статуса платежа: ' . $e->getMessage(),
-      ];
     }
-  }
 
-  /**
-   * Отмена платежа
-   */
-  public function cancelPayment(string $transactionId): array
-  {
-    try {
-      $transaction = PaymentTransaction::where('transaction_id', $transactionId)->firstOrFail();
+    /**
+     * Обработка webhook'а
+     */
+    public function handleWebhook(string $gatewaySlug, Request $request): array
+    {
+        try {
+            $gateway = PaymentGatewayFactory::createBySlug($gatewaySlug);
+            return $gateway->handleWebhook($request);
+        } catch (\Exception $e) {
+            Log::error('Webhook handling failed', [
+                'gateway' => $gatewaySlug,
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
 
-      if (!$transaction->isPending()) {
-        return [
-          'success' => false,
-          'error' => 'Платеж не может быть отменен',
-        ];
-      }
+            return [
+                'success' => false,
+                'error' => 'Ошибка обработки webhook: ' . $e->getMessage(),
+            ];
+        }
+    }
 
-      $gateway = PaymentGatewayFactory::create($transaction->paymentMethod);
-      $cancelled = $gateway->cancelPayment($transaction->external_id);
+    /**
+     * Получение статуса платежа
+     */
+    public function getPaymentStatus(string $transactionId): array
+    {
+        try {
+            $transaction = PaymentTransaction::where('transaction_id', $transactionId)->firstOrFail();
 
-      if ($cancelled) {
-        $transaction->update([
-          'status' => PaymentTransaction::STATUS_CANCELLED,
-          'failed_at' => now(),
+            // Если платеж еще не завершен, проверяем статус в шлюзе
+            if ($transaction->isPending()) {
+                $transaction->loadMissing('paymentMethod');
+
+                if (!$transaction->paymentMethod) {
+                    throw new \RuntimeException('Payment method is missing for transaction ' . $transaction->transaction_id);
+                }
+
+                $organization = $transaction->organization()->with(['yookassaPartnerMerchant', 'settings'])->first();
+                $organizationSettings = $this->getOrganizationPaymentSettings($organization);
+
+                $gatewayPaymentMethod = $this->applyProviderCredentials(
+                    clone $transaction->paymentMethod,
+                    $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
+                        $transaction->paymentMethod->gateway
+                    ),
+                    $organizationSettings
+                );
+
+                $gateway = PaymentGatewayFactory::createForProvider(
+                    $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
+                        $transaction->paymentMethod->gateway
+                    ),
+                    $gatewayPaymentMethod
+                );
+                $externalStatus = $gateway->getPaymentStatus($transaction->external_id);
+
+                if ($externalStatus !== $transaction->status) {
+                    $transaction->update(['status' => $externalStatus]);
+                }
+            }
+
+            return [
+                'success' => true,
+                'transaction_id' => $transaction->transaction_id,
+                'status' => $transaction->status,
+                'amount' => $transaction->amount,
+                'amount_rubles' => Money::toRubles($transaction->amount),
+                'formatted_amount' => Money::format($transaction->amount, $transaction->currency ?? 'RUB'),
+                'currency' => $transaction->currency,
+                'created_at' => $transaction->created_at,
+                'paid_at' => $transaction->paid_at,
+                'failed_at' => $transaction->failed_at,
+                'is_expired' => $transaction->isExpired(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Payment status check failed', [
+                'transaction_id' => $transactionId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'Ошибка получения статуса платежа: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Отмена платежа
+     */
+    public function cancelPayment(string $transactionId): array
+    {
+        try {
+            $transaction = PaymentTransaction::where('transaction_id', $transactionId)->firstOrFail();
+
+            if (!$transaction->isPending()) {
+                return [
+                    'success' => false,
+                    'error' => 'Платеж не может быть отменен',
+                ];
+            }
+
+            $transaction->loadMissing('paymentMethod');
+
+            if (!$transaction->paymentMethod) {
+                throw new \RuntimeException('Payment method is missing for transaction ' . $transaction->transaction_id);
+            }
+
+            $organization = $transaction->organization()->with(['yookassaPartnerMerchant', 'settings'])->first();
+            $organizationSettings = $this->getOrganizationPaymentSettings($organization);
+
+            $gatewayPaymentMethod = $this->applyProviderCredentials(
+                clone $transaction->paymentMethod,
+                $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
+                    $transaction->paymentMethod->gateway
+                ),
+                $organizationSettings
+            );
+
+            $gateway = PaymentGatewayFactory::createForProvider(
+                $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
+                    $transaction->paymentMethod->gateway
+                ),
+                $gatewayPaymentMethod
+            );
+            $cancelled = $gateway->cancelPayment($transaction->external_id);
+
+            if ($cancelled) {
+                $transaction->update([
+                    'status' => PaymentTransaction::STATUS_CANCELLED,
+                    'failed_at' => now(),
+                ]);
+
+                PaymentLog::createLog(
+                    $transaction->id,
+                    PaymentLog::ACTION_CANCELLED,
+                    'Платеж отменен'
+                );
+
+                return [
+                    'success' => true,
+                    'message' => 'Платеж успешно отменен',
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => 'Не удалось отменить платеж в платежной системе',
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('Payment cancellation failed', [
+                'transaction_id' => $transactionId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'Ошибка отмены платежа: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Возврат платежа
+     */
+    public function refundPayment(string $transactionId, int $amount = null): array
+    {
+        try {
+            $transaction = PaymentTransaction::where('transaction_id', $transactionId)->firstOrFail();
+
+            if (!$transaction->isCompleted()) {
+                return [
+                    'success' => false,
+                    'error' => 'Можно вернуть только завершенные платежи',
+                ];
+            }
+
+            $refundAmount = $amount ?? $transaction->amount;
+
+            if ($refundAmount > $transaction->amount) {
+                return [
+                    'success' => false,
+                    'error' => 'Сумма возврата не может превышать сумму платежа',
+                ];
+            }
+
+            $transaction->loadMissing('paymentMethod');
+
+            if (!$transaction->paymentMethod) {
+                throw new \RuntimeException('Payment method is missing for transaction ' . $transaction->transaction_id);
+            }
+
+            $organization = $transaction->organization()->with(['yookassaPartnerMerchant', 'settings'])->first();
+            $organizationSettings = $this->getOrganizationPaymentSettings($organization);
+
+            $gatewayPaymentMethod = $this->applyProviderCredentials(
+                clone $transaction->paymentMethod,
+                $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
+                    $transaction->paymentMethod->gateway
+                ),
+                $organizationSettings
+            );
+
+            $gateway = PaymentGatewayFactory::createForProvider(
+                $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
+                    $transaction->paymentMethod->gateway
+                ),
+                $gatewayPaymentMethod
+            );
+            $refunded = $gateway->refundPayment($transaction->external_id, $refundAmount);
+
+            if ($refunded) {
+                $newStatus = $refundAmount === $transaction->amount
+                    ? PaymentTransaction::STATUS_REFUNDED
+                    : PaymentTransaction::STATUS_COMPLETED;
+
+                $transaction->update([
+                    'status' => $newStatus,
+                    'refunded_at' => now(),
+                ]);
+
+                PaymentLog::createLog(
+                    $transaction->id,
+                    PaymentLog::ACTION_REFUNDED,
+                    "Возврат платежа на сумму {$refundAmount} копеек"
+                );
+
+                return [
+                    'success' => true,
+                    'message' => 'Возврат успешно выполнен',
+                    'refunded_amount' => $refundAmount,
+                    'refunded_amount_rubles' => Money::toRubles($refundAmount),
+                    'refunded_amount_formatted' => Money::format($refundAmount, $transaction->currency ?? 'RUB'),
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => 'Не удалось выполнить возврат в платежной системе',
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('Payment refund failed', [
+                'transaction_id' => $transactionId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'Ошибка возврата платежа: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Определяем провайдера платежей для организации.
+     */
+    protected function resolvePaymentProvider(Organization $organization, array $organizationPaymentSettings, PaymentMethod $paymentMethod, array $data): string
+    {
+        if (!empty($data['payment_provider']) && is_string($data['payment_provider'])) {
+            return strtolower($data['payment_provider']);
+        }
+
+        $merchant = $organization->yookassaPartnerMerchant;
+        if ($merchant && $merchant->status === \App\Models\Payments\YooKassaPartnerMerchant::STATUS_ACTIVE) {
+            return 'yookassa';
+        }
+
+        if (!empty($organizationPaymentSettings['enabled_gateways'][0])) {
+            return strtolower((string) $organizationPaymentSettings['enabled_gateways'][0]);
+        }
+
+        return PaymentGatewayFactory::guessProviderFromGatewayClass($paymentMethod->gateway);
+    }
+
+    protected function getOrganizationPaymentSettings(?Organization $organization): array
+    {
+        if ($organization && $organization->yookassaPartnerMerchant && $organization->yookassaPartnerMerchant->credentials) {
+            $merchant = $organization->yookassaPartnerMerchant;
+            $credentials = is_array($merchant->credentials) ? $merchant->credentials : [];
+            $merchantSettings = is_array($merchant->settings) ? $merchant->settings : [];
+            $isTestMode = (bool) data_get($merchantSettings, 'is_test_mode', data_get($credentials, 'is_test_mode', false));
+
+            return [
+                'credentials' => [
+                    'yookassa' => $credentials,
+                ],
+                'options' => [
+                    'yookassa' => [
+                        'is_test_mode' => $isTestMode,
+                    ],
+                ],
+                'enabled_gateways' => ['yookassa'],
+                'test_mode' => $isTestMode,
+            ];
+        }
+
+        $raw = $organization?->settings?->payment_settings;
+
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        return (new PaymentSettingsNormalizer())->normalize($raw);
+    }
+
+    protected function applyProviderCredentials(PaymentMethod $paymentMethod, string $provider, array $organizationSettings, array $requestData = []): PaymentMethod
+    {
+        $settings = $paymentMethod->settings ?? [];
+
+        $credentials = $organizationSettings['credentials'][$provider] ?? null;
+        if (is_array($credentials)) {
+            $settings = array_replace_recursive($settings, $credentials);
+        }
+
+        $options = $organizationSettings['options'][$provider] ?? null;
+        if (is_array($options)) {
+            $settings = array_replace_recursive($settings, $options);
+        }
+
+        if (!empty($requestData['gateway_overrides']) && is_array($requestData['gateway_overrides'])) {
+            $settings = array_replace_recursive($settings, $requestData['gateway_overrides']);
+        }
+
+        $paymentMethod->setAttribute('settings', $settings);
+        $testMode = $organizationSettings['test_mode'] ?? $paymentMethod->is_test_mode ?? false;
+        if (isset($organizationSettings['options'][$provider]['is_test_mode'])) {
+            $testMode = filter_var($organizationSettings['options'][$provider]['is_test_mode'], FILTER_VALIDATE_BOOLEAN);
+        } elseif (isset($settings['is_test_mode'])) {
+            $testMode = filter_var($settings['is_test_mode'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $paymentMethod->setAttribute('is_test_mode', (bool) $testMode);
+
+        return $paymentMethod;
+    }
+
+    protected function completeTestPayment(PaymentTransaction $transaction): void
+    {
+        DB::transaction(function () use ($transaction) {
+            $transaction->refresh();
+
+            $testMeta = [
+                'test_mode' => true,
+                'auto_completed_at' => now()->toIso8601String(),
+                'amount' => $transaction->amount,
+                'amount_rubles' => Money::toRubles($transaction->amount),
+            ];
+
+            if (!$transaction->isCompleted()) {
+                $transaction->update([
+                    'status' => PaymentTransaction::STATUS_COMPLETED,
+                    'paid_at' => $transaction->paid_at ?? now(),
+                    'gateway_response' => array_replace_recursive(
+                        $transaction->gateway_response ?? [],
+                        ['test' => $testMeta]
+                    ),
+                ]);
+
+                PaymentLog::createLog(
+                    $transaction->id,
+                    PaymentLog::ACTION_COMPLETED,
+                    'Тестовый платеж автоматически помечен как оплаченный',
+                    PaymentLog::LEVEL_INFO,
+                    $testMeta
+                );
+            } else {
+                $transaction->update([
+                    'gateway_response' => array_replace_recursive(
+                        $transaction->gateway_response ?? [],
+                        ['test' => $testMeta]
+                    ),
+                ]);
+            }
+
+            $this->ensureDonationForTransaction($transaction);
+        });
+    }
+
+    public function ensureDonationForTransaction(PaymentTransaction $transaction): void
+    {
+        DB::transaction(function () use ($transaction) {
+            $transaction->refresh();
+
+            if (!$transaction->isCompleted()) {
+                return;
+            }
+
+            $existingDonation = Donation::where('payment_transaction_id', $transaction->id)->first();
+
+            if ($existingDonation) {
+                Log::info('Donation already exists for transaction', [
+                    'transaction_id' => $transaction->id,
+                    'donation_id' => $existingDonation->id,
+                ]);
+
+                return;
+            }
+
+            $donation = $this->createDonation($transaction);
+
+            $this->updateDonationAggregates($transaction);
+
+            PaymentLog::createLog(
+                $transaction->id,
+                PaymentLog::ACTION_COMPLETED,
+                'Донат создан на основе успешного платежа',
+                PaymentLog::LEVEL_INFO,
+                [
+                    'donation_id' => $donation->id,
+                    'amount' => $transaction->amount,
+                    'amount_rubles' => Money::toRubles($transaction->amount),
+                ]
+            );
+        });
+    }
+
+    protected function updateDonationAggregates(PaymentTransaction $transaction): void
+    {
+        $transaction->loadMissing('project', 'fundraiser', 'organization');
+
+        try {
+            if ($transaction->project) {
+                $projectDonations = $transaction->project->donations()->completed();
+                $transaction->project->update([
+                    'collected_amount' => $projectDonations->sum('amount'),
+                    'donations_count' => $projectDonations->count(),
+                ]);
+            }
+
+            if ($transaction->fundraiser) {
+                $fundraiserDonations = $transaction->fundraiser->donations()->completed();
+                $transaction->fundraiser->update([
+                    'collected_amount' => $fundraiserDonations->sum('amount'),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to update donation aggregates', [
+                'transaction_id' => $transaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Создание доната после успешного платежа
+     */
+    public function createDonation(PaymentTransaction $transaction): Donation
+    {
+        return Donation::create([
+            'organization_id' => $transaction->organization_id,
+            'fundraiser_id' => $transaction->fundraiser_id,
+            'project_id' => $transaction->project_id,
+            'project_stage_id' => $transaction->project_stage_id,
+            'payment_transaction_id' => $transaction->id,
+            'amount' => $transaction->amount,
+            'currency' => $transaction->currency,
+            'status' => 'completed',
+            'payment_method' => $transaction->payment_method_slug,
+            'payment_id' => $transaction->external_id,
+            'transaction_id' => $transaction->transaction_id,
+            'is_anonymous' => false, // Можно добавить в данные платежа
+            'donor_name' => $transaction->payment_details['donor_name'] ?? null,
+            'donor_email' => $transaction->payment_details['donor_email'] ?? null,
+            'donor_phone' => $transaction->payment_details['donor_phone'] ?? null,
+            'donor_message' => $transaction->payment_details['donor_message'] ?? null,
+            'send_receipt' => true,
+            'payment_details' => $transaction->payment_details,
+            'webhook_data' => $transaction->webhook_data,
+            'paid_at' => $transaction->paid_at,
+            // переносим реферера, если был захвачен при создании платежа
+            'referrer_user_id' => $transaction->payment_details['referrer_user_id'] ?? null,
         ]);
+    }
 
-        PaymentLog::createLog(
-          $transaction->id,
-          PaymentLog::ACTION_CANCELLED,
-          'Платеж отменен'
-        );
+    /**
+     * Валидация данных платежа
+     */
+    private function validatePaymentData(array $data): void
+    {
+        $required = ['organization_id', 'amount', 'payment_method_slug'];
+
+        foreach ($required as $field) {
+            if (!isset($data[$field])) {
+                throw new \InvalidArgumentException("Required field missing: {$field}");
+            }
+        }
+
+        // Проверяем организацию
+        Organization::findOrFail($data['organization_id']);
+
+        // Проверяем фандрайзер или проект
+        if (isset($data['fundraiser_id'])) {
+            Fundraiser::findOrFail($data['fundraiser_id']);
+        }
+
+        if (isset($data['project_id'])) {
+            Project::findOrFail($data['project_id']);
+        }
+
+        if (isset($data['project_stage_id'])) {
+            $stage = ProjectStage::with('project')->findOrFail($data['project_stage_id']);
+
+            if (isset($data['project_id']) && (int) $stage->project_id !== (int) $data['project_id']) {
+                throw new \InvalidArgumentException('Project stage does not belong to the specified project');
+            }
+
+            if ($stage->project && (int) $stage->project->organization_id !== (int) $data['organization_id']) {
+                throw new \InvalidArgumentException('Project stage does not belong to the specified organization');
+            }
+        }
+
+        // Проверяем сумму
+        if ($data['amount'] <= 0) {
+            throw new \InvalidArgumentException('Amount must be positive');
+        }
+    }
+
+    /**
+     * Получение доступных методов платежа
+     */
+    public function getAvailablePaymentMethods(): array
+    {
+        return PaymentGatewayFactory::getAvailablePaymentMethods();
+    }
+
+    /**
+     * Получение статистики платежей
+     */
+    public function getPaymentStatistics(int $organizationId, array $filters = []): array
+    {
+        $query = PaymentTransaction::forOrganization($organizationId);
+
+        if (isset($filters['date_from'])) {
+            $query->where('created_at', '>=', $filters['date_from']);
+        }
+
+        if (isset($filters['date_to'])) {
+            $query->where('created_at', '<=', $filters['date_to']);
+        }
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        $transactions = $query->get();
+
+        $totalAmount = $transactions->sum('amount');
+        $completedAmount = $transactions
+            ->where('status', PaymentTransaction::STATUS_COMPLETED)
+            ->sum('amount');
 
         return [
-          'success' => true,
-          'message' => 'Платеж успешно отменен',
+            'total_transactions' => $transactions->count(),
+            'total_amount' => $totalAmount,
+            'total_amount_rubles' => Money::toRubles($totalAmount),
+            'total_amount_formatted' => Money::format($totalAmount),
+            'completed_transactions' => $transactions->where('status', PaymentTransaction::STATUS_COMPLETED)->count(),
+            'completed_amount' => $completedAmount,
+            'completed_amount_rubles' => Money::toRubles($completedAmount),
+            'completed_amount_formatted' => Money::format($completedAmount),
+            'failed_transactions' => $transactions->where('status', PaymentTransaction::STATUS_FAILED)->count(),
+            'pending_transactions' => $transactions->where('status', PaymentTransaction::STATUS_PENDING)->count(),
+            'by_payment_method' => $transactions->groupBy('payment_method_slug')->map(function ($group) {
+                $sum = $group->sum('amount');
+                $completedSum = $group
+                    ->where('status', PaymentTransaction::STATUS_COMPLETED)
+                    ->sum('amount');
+
+                return [
+                    'count' => $group->count(),
+                    'amount' => $sum,
+                    'amount_rubles' => Money::toRubles($sum),
+                    'amount_formatted' => Money::format($sum),
+                    'completed_count' => $group->where('status', PaymentTransaction::STATUS_COMPLETED)->count(),
+                    'completed_amount' => $completedSum,
+                    'completed_amount_rubles' => Money::toRubles($completedSum),
+                    'completed_amount_formatted' => Money::format($completedSum),
+                ];
+            })->toArray(),
         ];
-      } else {
-        return [
-          'success' => false,
-          'error' => 'Не удалось отменить платеж в платежной системе',
-        ];
-      }
-    } catch (\Exception $e) {
-      Log::error('Payment cancellation failed', [
-        'transaction_id' => $transactionId,
-        'error' => $e->getMessage(),
-      ]);
-
-      return [
-        'success' => false,
-        'error' => 'Ошибка отмены платежа: ' . $e->getMessage(),
-      ];
     }
-  }
-
-  /**
-   * Возврат платежа
-   */
-  public function refundPayment(string $transactionId, int $amount = null): array
-  {
-    try {
-      $transaction = PaymentTransaction::where('transaction_id', $transactionId)->firstOrFail();
-
-      if (!$transaction->isCompleted()) {
-        return [
-          'success' => false,
-          'error' => 'Можно вернуть только завершенные платежи',
-        ];
-      }
-
-      $refundAmount = $amount ?? $transaction->amount;
-
-      if ($refundAmount > $transaction->amount) {
-        return [
-          'success' => false,
-          'error' => 'Сумма возврата не может превышать сумму платежа',
-        ];
-      }
-
-      $gateway = PaymentGatewayFactory::create($transaction->paymentMethod);
-      $refunded = $gateway->refundPayment($transaction->external_id, $refundAmount);
-
-      if ($refunded) {
-        $newStatus = $refundAmount === $transaction->amount
-          ? PaymentTransaction::STATUS_REFUNDED
-          : PaymentTransaction::STATUS_COMPLETED;
-
-        $transaction->update([
-          'status' => $newStatus,
-          'refunded_at' => now(),
-        ]);
-
-        PaymentLog::createLog(
-          $transaction->id,
-          PaymentLog::ACTION_REFUNDED,
-          "Возврат платежа на сумму {$refundAmount} копеек"
-        );
-
-        return [
-          'success' => true,
-          'message' => 'Возврат успешно выполнен',
-          'refunded_amount' => $refundAmount,
-        ];
-      } else {
-        return [
-          'success' => false,
-          'error' => 'Не удалось выполнить возврат в платежной системе',
-        ];
-      }
-    } catch (\Exception $e) {
-      Log::error('Payment refund failed', [
-        'transaction_id' => $transactionId,
-        'error' => $e->getMessage(),
-      ]);
-
-      return [
-        'success' => false,
-        'error' => 'Ошибка возврата платежа: ' . $e->getMessage(),
-      ];
-    }
-  }
-
-  /**
-   * Создание доната после успешного платежа
-   */
-  public function createDonation(PaymentTransaction $transaction): Donation
-  {
-    return Donation::create([
-      'organization_id' => $transaction->organization_id,
-      'fundraiser_id' => $transaction->fundraiser_id,
-      'project_id' => $transaction->project_id,
-      'project_stage_id' => $transaction->project_stage_id,
-      'payment_transaction_id' => $transaction->id,
-      'amount' => $transaction->amount,
-      'currency' => $transaction->currency,
-      'status' => 'completed',
-      'payment_method' => $transaction->payment_method_slug,
-      'payment_id' => $transaction->external_id,
-      'transaction_id' => $transaction->transaction_id,
-      'is_anonymous' => false, // Можно добавить в данные платежа
-      'donor_name' => $transaction->payment_details['donor_name'] ?? null,
-      'donor_email' => $transaction->payment_details['donor_email'] ?? null,
-      'donor_phone' => $transaction->payment_details['donor_phone'] ?? null,
-      'donor_message' => $transaction->payment_details['donor_message'] ?? null,
-      'send_receipt' => true,
-      'payment_details' => $transaction->payment_details,
-      'webhook_data' => $transaction->webhook_data,
-      'paid_at' => $transaction->paid_at,
-      // переносим реферера, если был захвачен при создании платежа
-      'referrer_user_id' => $transaction->payment_details['referrer_user_id'] ?? null,
-    ]);
-  }
-
-  /**
-   * Валидация данных платежа
-   */
-  private function validatePaymentData(array $data): void
-  {
-    $required = ['organization_id', 'amount', 'payment_method_slug'];
-
-    foreach ($required as $field) {
-      if (!isset($data[$field])) {
-        throw new \InvalidArgumentException("Required field missing: {$field}");
-      }
-    }
-
-    // Проверяем организацию
-    Organization::findOrFail($data['organization_id']);
-
-    // Проверяем фандрайзер или проект
-    if (isset($data['fundraiser_id'])) {
-      Fundraiser::findOrFail($data['fundraiser_id']);
-    }
-
-    if (isset($data['project_id'])) {
-      Project::findOrFail($data['project_id']);
-    }
-
-    if (isset($data['project_stage_id'])) {
-      $stage = ProjectStage::with('project')->findOrFail($data['project_stage_id']);
-
-      if (isset($data['project_id']) && (int) $stage->project_id !== (int) $data['project_id']) {
-        throw new \InvalidArgumentException('Project stage does not belong to the specified project');
-      }
-
-      if ($stage->project && (int) $stage->project->organization_id !== (int) $data['organization_id']) {
-        throw new \InvalidArgumentException('Project stage does not belong to the specified organization');
-      }
-    }
-
-    // Проверяем сумму
-    if ($data['amount'] <= 0) {
-      throw new \InvalidArgumentException('Amount must be positive');
-    }
-  }
-
-  /**
-   * Получение доступных методов платежа
-   */
-  public function getAvailablePaymentMethods(): array
-  {
-    return PaymentGatewayFactory::getAvailablePaymentMethods();
-  }
-
-  /**
-   * Получение статистики платежей
-   */
-  public function getPaymentStatistics(int $organizationId, array $filters = []): array
-  {
-    $query = PaymentTransaction::forOrganization($organizationId);
-
-    if (isset($filters['date_from'])) {
-      $query->where('created_at', '>=', $filters['date_from']);
-    }
-
-    if (isset($filters['date_to'])) {
-      $query->where('created_at', '<=', $filters['date_to']);
-    }
-
-    if (isset($filters['status'])) {
-      $query->where('status', $filters['status']);
-    }
-
-    $transactions = $query->get();
-
-    return [
-      'total_transactions' => $transactions->count(),
-      'total_amount' => $transactions->sum('amount'),
-      'completed_transactions' => $transactions->where('status', PaymentTransaction::STATUS_COMPLETED)->count(),
-      'completed_amount' => $transactions->where('status', PaymentTransaction::STATUS_COMPLETED)->sum('amount'),
-      'failed_transactions' => $transactions->where('status', PaymentTransaction::STATUS_FAILED)->count(),
-      'pending_transactions' => $transactions->where('status', PaymentTransaction::STATUS_PENDING)->count(),
-      'by_payment_method' => $transactions->groupBy('payment_method_slug')->map(function ($group) {
-        return [
-          'count' => $group->count(),
-          'amount' => $group->sum('amount'),
-          'completed_count' => $group->where('status', PaymentTransaction::STATUS_COMPLETED)->count(),
-          'completed_amount' => $group->where('status', PaymentTransaction::STATUS_COMPLETED)->sum('amount'),
-        ];
-      }),
-    ];
-  }
 }

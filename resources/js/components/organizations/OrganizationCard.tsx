@@ -1,3 +1,4 @@
+import type { MoneyAmount } from '@/types/money';
 import '@css/components/organizations/organization-card.scss';
 import { Link, router } from '@inertiajs/react';
 import { FolderKanban, HandHeart, User, Users } from 'lucide-react';
@@ -14,8 +15,11 @@ interface School {
     logo?: string;
     donations_total?: number;
     donations_collected?: number;
-    needs_target_amount?: number | null;
-    needs_collected_amount?: number | null;
+    needs?: {
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+    };
     members_count?: number;
     sponsors_count?: number;
     projects_count?: number;
@@ -60,21 +64,32 @@ export default function OrganizationCard({
         .filter(Boolean)
         .join(', ');
 
-    const targetAmount = organization.needs_target_amount ?? 0;
+    const targetAmount =
+        organization.needs?.target?.value ?? organization.donations_total ?? 0;
     const collectedAmount =
-        organization.needs_collected_amount ??
+        organization.needs?.collected?.value ??
         organization.donations_collected ??
         organization.donations_total ??
         0;
     const safeTargetAmount = Math.max(0, targetAmount);
     const safeCollectedAmount = Math.max(0, collectedAmount);
 
-    const progressPercentage =
-        safeTargetAmount > 0
-            ? Math.round(
-                  Math.min((safeCollectedAmount / safeTargetAmount) * 100, 100),
-              )
-            : 0;
+    const progressPercentage = (() => {
+        if (
+            organization.needs &&
+            typeof organization.needs.progress_percentage === 'number'
+        ) {
+            return organization.needs.progress_percentage;
+        }
+
+        if (safeTargetAmount > 0) {
+            return Math.round(
+                Math.min((safeCollectedAmount / safeTargetAmount) * 100, 100),
+            );
+        }
+
+        return 0;
+    })();
 
     const directorName =
         organization.director?.full_name || organization.director_name || null;

@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useAlumniStatsData } from '@/hooks/useAlumniStats';
+import { usePage } from '@inertiajs/react';
+import React from 'react';
 import { WidgetOutputProps } from './types';
 
 interface ColumnConfig {
@@ -8,21 +10,11 @@ interface ColumnConfig {
     isVisible: boolean;
 }
 
-interface AlumniStats {
-    supporters_count: number;
-    total_donated: number;
-    projects_count: number;
-}
-
 export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
     widget,
     className,
     style,
 }) => {
-    const [stats, setStats] = useState<AlumniStats | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
     const config = widget.config as {
         organization_id?: number;
         title?: string;
@@ -33,40 +25,28 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
 
     const { organization_id, title, show_title = true, showIcons = true, columns } = config || {};
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                setLoading(true);
-                const params = new URLSearchParams();
-                if (organization_id) {
-                    params.append(
-                        'organization_id',
-                        organization_id.toString(),
-                    );
-                }
+    const page = usePage();
+    const propsAny = (page?.props as any) || {};
 
-                const response = await fetch(
-                    `/api/public/alumni-stats?${params.toString()}`,
-                );
-                if (!response.ok) {
-                    throw new Error('Failed to fetch alumni stats');
-                }
+    const parseId = (value: unknown): number | undefined => {
+        const numeric = Number(value);
+        return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+    };
 
-                const data = await response.json();
-                setStats(data);
-            } catch (err) {
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : 'Failed to load statistics',
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
+    const configOrganizationId =
+        parseId(organization_id) ??
+        parseId((config as any)?.organizationId) ??
+        parseId((widget as any)?.organization_id);
 
-        fetchStats();
-    }, [organization_id]);
+    const pageOrganizationId =
+        parseId(propsAny?.organizationId) ??
+        parseId(propsAny?.organization?.id) ??
+        parseId(propsAny?.project?.organization?.id) ??
+        parseId(propsAny?.site?.organization_id);
+
+    const resolvedOrganizationId = configOrganizationId ?? pageOrganizationId;
+
+    const { stats, loading, error } = useAlumniStatsData(resolvedOrganizationId);
 
     const formatNumber = (num: number): string => {
         return num.toLocaleString('ru-RU');
