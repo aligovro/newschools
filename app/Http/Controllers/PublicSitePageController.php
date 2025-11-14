@@ -214,7 +214,7 @@ class PublicSitePageController extends Controller
                 'template' => $site->template,
                 'site_type' => $site->site_type,
                 'widgets_config' => $widgetsConfig,
-                'seo_config' => $site->seo_config ?? [],
+                'seo_config' => $site->formatted_seo_config ?? [],
                 'layout_config' => $site->layout_config ?? [],
             ],
             'positions' => $positions,
@@ -227,7 +227,7 @@ class PublicSitePageController extends Controller
      */
     private function getPageSeoData(SitePage $page, Site $site): array
     {
-        $seoConfig = $site->seo_config ?? [];
+        $seoConfig = $site->formatted_seo_config ?? [];
         $pageSeo = $page->seo_config ?? [];
 
         return [

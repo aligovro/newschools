@@ -19,6 +19,7 @@ import MultiImageUploader, {
     type UploadedImage,
 } from '@/components/ui/image-uploader/MultiImageUploader';
 import { organizationsApi } from '@/lib/api/organizations';
+import RichTextEditor from '@/components/RichTextEditor';
 
 interface Site {
     id: number;
@@ -352,22 +353,18 @@ export default function SitePageForm({
                                             <Label htmlFor="content">
                                                 Содержимое
                                             </Label>
-                                            <Textarea
-                                                id="content"
+                                            <RichTextEditor
                                                 value={data.content || ''}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        'content',
-                                                        e.target.value,
-                                                    )
+                                                onChange={(html) =>
+                                                    setData('content', html)
                                                 }
                                                 placeholder="Основное содержимое страницы"
-                                                rows={15}
-                                                className={
-                                                    errors.content
-                                                        ? 'border-destructive'
-                                                        : ''
-                                                }
+                                                height={400}
+                                                level="advanced"
+                                                showHtmlToggle={true}
+                                                showTemplates={true}
+                                                showWordCount={true}
+                                                showImageUpload={true}
                                             />
                                             {errors.content && (
                                                 <p className="text-destructive mt-1 text-sm">

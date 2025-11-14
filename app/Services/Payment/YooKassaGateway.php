@@ -68,10 +68,29 @@ class YooKassaGateway extends AbstractPaymentGateway
                 ],
             ];
 
-            // Добавляем методы оплаты в зависимости от типа платежа
-            $paymentMethodData = $this->getPaymentMethodData();
-            if (!empty($paymentMethodData)) {
-                $paymentData['payment_method_data'] = $paymentMethodData;
+            // Проверяем, является ли это регулярным пожертвованием
+            $isRecurring = isset($transaction->payment_details['is_recurring']) 
+                && ($transaction->payment_details['is_recurring'] === true 
+                    || $transaction->payment_details['is_recurring'] === 'true'
+                    || $transaction->payment_details['is_recurring'] === 1)
+                || isset($transaction->payment_details['recurring_period']);
+
+            // Для регулярных платежей сохраняем способ оплаты
+            if ($isRecurring) {
+                $paymentData['save_payment_method'] = true;
+            }
+
+            // Если это повторный платеж по сохраненному способу оплаты
+            if (isset($transaction->payment_details['saved_payment_method_id'])) {
+                $paymentData['payment_method_id'] = $transaction->payment_details['saved_payment_method_id'];
+                // Для повторных платежей не нужна страница подтверждения
+                unset($paymentData['confirmation']);
+            } else {
+                // Добавляем методы оплаты в зависимости от типа платежа
+                $paymentMethodData = $this->getPaymentMethodData();
+                if (!empty($paymentMethodData)) {
+                    $paymentData['payment_method_data'] = $paymentMethodData;
+                }
             }
 
             $response = Http::withBasicAuth($this->shopId, $this->secretKey)
@@ -84,15 +103,32 @@ class YooKassaGateway extends AbstractPaymentGateway
             if ($response->successful()) {
                 $responseData = $response->json();
 
-                $transaction->update([
+                // Сохраняем существующие payment_details и дополняем их данными от gateway
+                $existingPaymentDetails = $transaction->payment_details ?? [];
+                $updateData = [
                     'external_id' => $responseData['id'] ?? null,
                     'gateway_response' => $responseData,
-                    'payment_details' => [
+                    'payment_details' => array_merge($existingPaymentDetails, [
                         'confirmation_url' => $responseData['confirmation']['confirmation_url'] ?? null,
                         'qr_code' => $responseData['confirmation']['confirmation_data'] ?? null,
                         'payment_method' => $responseData['payment_method']['type'] ?? null,
-                    ],
-                ]);
+                    ]),
+                ];
+
+                // Для повторных платежей confirmation может отсутствовать
+                if (!isset($responseData['confirmation'])) {
+                    $updateData['payment_details']['confirmation_url'] = null;
+                    $updateData['payment_details']['qr_code'] = null;
+                }
+
+                // Сохраняем payment_method_id для регулярных платежей
+                $savedPaymentMethodId = null;
+                if ($isRecurring && isset($responseData['payment_method']['saved']) && $responseData['payment_method']['saved'] === true) {
+                    $savedPaymentMethodId = $responseData['payment_method']['id'] ?? null;
+                    $updateData['payment_details']['saved_payment_method_id'] = $savedPaymentMethodId;
+                }
+
+                $transaction->update($updateData);
 
                 $this->log(
                     $transaction->id,
@@ -108,6 +144,9 @@ class YooKassaGateway extends AbstractPaymentGateway
                     'confirmation_url' => $responseData['confirmation']['confirmation_url'] ?? null,
                     'redirect_url' => $responseData['confirmation']['confirmation_url'] ?? null,
                     'qr_code' => $responseData['confirmation']['confirmation_data'] ?? null,
+                    'saved_payment_method_id' => $savedPaymentMethodId,
+                    // Для повторных платежей статус может быть сразу succeeded
+                    'status' => $responseData['status'] ?? null,
                 ];
             } else {
                 $errorMessage = 'Ошибка создания платежа в ЮKassa: ' . $response->body();

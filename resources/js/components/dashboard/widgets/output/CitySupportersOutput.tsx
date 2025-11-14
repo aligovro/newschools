@@ -1,7 +1,9 @@
 import { widgetsApi } from '@/lib/api/widgets';
+import { getPluralForm } from '@/lib/helpers';
 import { getOrganizationId as getOrgIdFromConfig } from '@/utils/widgetHelpers';
 import { usePage } from '@inertiajs/react';
-import React from 'react';
+import React, { useMemo } from 'react';
+import './city-supporters-output.css';
 import { CitySupportersOutputConfig, WidgetOutputProps } from './types';
 
 export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
@@ -27,10 +29,26 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
             rating: number;
             votes: number;
             description?: string;
+            _city?: {
+                schools_count?: number;
+                supporters_count?: number;
+                subscriptions_count?: number | null;
+                alumni_count?: number | null;
+                total_amount?: number;
+            };
         }>
     >([]);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [isLoadingMore, setIsLoadingMore] = React.useState(false);
     const [hasTriedLoad, setHasTriedLoad] = React.useState(false);
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const [hasMore, setHasMore] = React.useState(false);
+    const [pagination, setPagination] = React.useState<{
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    } | null>(null);
 
     // Пытаемся определить organizationId: приоритет config, затем глобальные props страницы
     const page = usePage();
@@ -59,108 +77,171 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
         }
     }, [organizationId, hasTriedLoad]);
 
-    React.useEffect(() => {
-        // Если нет преднастроенных регионов, попробуем загрузить с бэкенда
-        if ((regions?.length ?? 0) === 0 && !hasTriedLoad) {
-            setHasTriedLoad(true);
-            setIsLoading(true);
+    // Функция загрузки данных
+    const loadData = React.useCallback(
+        async (page: number = 1, append: boolean = false) => {
+            if (append) {
+                setIsLoadingMore(true);
+            } else {
+                setIsLoading(true);
+            }
 
-            // Для главного сайта используем публичный API, для сайта организации - API с organizationId
-            // Если для организации нет данных, используем публичный API как fallback
-            const loadData = async () => {
-                try {
-                    let dataArray = [];
+            try {
+                let response;
+                let dataArray = [];
+                let paginationData = null;
 
-                    // Сначала пробуем загрузить данные для организации (если указана)
-                    if (organizationId) {
-                        try {
-                            const orgResp = await widgetsApi.getCitySupporters(
-                                organizationId,
-                                {
-                                    per_page: limit,
-                                },
-                            );
+                // Сначала пробуем загрузить данные для организации (если указана)
+                if (organizationId) {
+                    try {
+                        response = await widgetsApi.getCitySupporters(
+                            organizationId,
+                            {
+                                page,
+                                per_page: 6,
+                            },
+                        );
 
-                            // Обрабатываем разные форматы ответа API
-                            if (Array.isArray(orgResp?.data)) {
-                                dataArray = orgResp.data;
-                            } else if (
-                                orgResp?.data &&
-                                typeof orgResp.data === 'object' &&
-                                'data' in orgResp.data
-                            ) {
-                                dataArray = Array.isArray(orgResp.data.data)
-                                    ? orgResp.data.data
-                                    : [];
-                            }
-
-                            console.log(
-                                'CitySupportersOutput: organization data',
-                                {
-                                    organizationId,
-                                    dataCount: dataArray.length,
-                                },
-                            );
-                        } catch (orgErr) {
-                            console.warn(
-                                'CitySupportersOutput: failed to load organization data, using public API',
-                                orgErr,
-                            );
-                        }
-                    }
-
-                    // Если данных для организации нет, используем публичный API
-                    if (dataArray.length === 0) {
-                        const publicResp =
-                            await widgetsApi.getCitySupportersPublic({
-                                per_page: limit,
-                            });
-
-                        if (Array.isArray(publicResp?.data)) {
-                            dataArray = publicResp.data;
+                        // Обрабатываем разные форматы ответа API
+                        if (response?.data && Array.isArray(response.data)) {
+                            dataArray = response.data;
+                            paginationData = response.pagination;
                         } else if (
-                            publicResp?.data &&
-                            typeof publicResp.data === 'object' &&
-                            'data' in publicResp.data
+                            response?.data &&
+                            typeof response.data === 'object' &&
+                            'data' in response.data
                         ) {
-                            dataArray = Array.isArray(publicResp.data.data)
-                                ? publicResp.data.data
+                            dataArray = Array.isArray(response.data.data)
+                                ? response.data.data
                                 : [];
+                            paginationData =
+                                response.data.pagination || response.pagination;
                         }
-
-                        console.log('CitySupportersOutput: public data', {
-                            dataCount: dataArray.length,
-                        });
+                    } catch (orgErr) {
+                        console.warn(
+                            'CitySupportersOutput: failed to load organization data, using public API',
+                            orgErr,
+                        );
                     }
+                }
 
-                    const mapped = dataArray.map((c) => ({
+                // Если данных для организации нет, используем публичный API
+                if (dataArray.length === 0 && !response) {
+                    response = await widgetsApi.getCitySupportersPublic({
+                        page,
+                        per_page: 6,
+                    });
+
+                    if (response?.data && Array.isArray(response.data)) {
+                        dataArray = response.data;
+                        paginationData = response.pagination;
+                    } else if (
+                        response?.data &&
+                        typeof response.data === 'object' &&
+                        'data' in response.data
+                    ) {
+                        dataArray = Array.isArray(response.data.data)
+                            ? response.data.data
+                            : [];
+                        paginationData =
+                            response.data.pagination || response.pagination;
+                    }
+                }
+
+                const mapped = dataArray.map((c) => {
+                    return {
                         id: c.id,
                         name: c.region_name
                             ? `${c.name} и ${c.region_name}`
                             : c.name,
                         rating: 5,
-                        votes: c.supporters_count,
+                        votes: c.supporters_count || 0,
                         description: undefined,
-                        _city: c,
-                    }));
+                        _city: {
+                            schools_count: c.schools_count ?? 0,
+                            supporters_count: c.supporters_count,
+                            subscriptions_count: c.subscriptions_count ?? 0,
+                            alumni_count: c.alumni_count,
+                            total_amount: c.total_amount,
+                        },
+                    };
+                });
 
+                if (append) {
+                    setLoadedRegions((prev) => [...prev, ...mapped]);
+                } else {
                     setLoadedRegions(mapped);
-                } catch (err) {
-                    console.error('Error loading city supporters data:', err);
-                    setLoadedRegions([]);
-                } finally {
-                    setIsLoading(false);
                 }
-            };
 
-            loadData();
+                if (paginationData) {
+                    setPagination(paginationData);
+                    setHasMore(
+                        paginationData.current_page < paginationData.last_page,
+                    );
+                    setCurrentPage(paginationData.current_page);
+                }
+            } catch (err) {
+                console.error('Error loading city supporters data:', err);
+                if (!append) {
+                    setLoadedRegions([]);
+                }
+            } finally {
+                setIsLoading(false);
+                setIsLoadingMore(false);
+            }
+        },
+        [organizationId],
+    );
+
+    // Загрузка следующей страницы
+    const loadMore = React.useCallback(() => {
+        if (!hasMore || isLoadingMore || isLoading) return;
+        const nextPage = (pagination?.current_page || currentPage) + 1;
+        loadData(nextPage, true);
+    }, [hasMore, isLoadingMore, isLoading, pagination, currentPage, loadData]);
+
+    React.useEffect(() => {
+        // Если нет преднастроенных регионов, загружаем с бэкенда
+        if ((regions?.length ?? 0) === 0 && !hasTriedLoad) {
+            setHasTriedLoad(true);
+            loadData(1, false);
         }
-    }, [regions, organizationId, limit, hasTriedLoad]);
+    }, [regions, hasTriedLoad, loadData]);
 
-    const effectiveRegions =
-        regions && regions.length > 0 ? regions : loadedRegions;
-    const displayRegions =
-        limit > 0 ? effectiveRegions.slice(0, limit) : effectiveRegions;
+    const effectiveRegions = useMemo(
+        () => (regions && regions.length > 0 ? regions : loadedRegions),
+        [regions, loadedRegions],
+    );
+
+    // Для преднастроенных регионов используем limit, для загруженных - показываем все
+    const displayRegions = useMemo(() => {
+        if (regions && regions.length > 0) {
+            return limit > 0
+                ? effectiveRegions.slice(0, limit)
+                : effectiveRegions;
+        }
+        return effectiveRegions;
+    }, [effectiveRegions, limit, regions]);
+
+    // Форматирование чисел с пробелами для разделения тысяч
+    const formatNumber = useMemo(
+        () => (num: number) => {
+            return new Intl.NumberFormat('ru-RU', {
+                useGrouping: true,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            }).format(num);
+        },
+        [],
+    );
+
+    const formatAmount = useMemo(
+        () => (amount: number) => {
+            const rubles = amount / 100;
+            return `${formatNumber(Math.round(rubles))} ₽`;
+        },
+        [formatNumber],
+    );
 
     if ((!effectiveRegions || effectiveRegions.length === 0) && isLoading) {
         return (
@@ -192,65 +273,110 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
         );
     }
 
-    // Убрали звезды/рейтинги — для городов выводим списочные метрики
+    const renderCityRow = (region: (typeof displayRegions)[0]) => {
+        const city = region._city;
+        if (!city) return null;
 
-    const renderRegion = (region: any, index: number) => {
-        const city = (region as any)._city as
-            | {
-                  schools_count?: number;
-                  supporters_count?: number;
-                  subscriptions_count?: number | null;
-                  alumni_count?: number | null;
-                  total_amount?: number;
-              }
-            | undefined;
         return (
-            <div
-                key={region.id}
-                className="region-item rounded-lg bg-white p-4 shadow-sm"
-            >
-                <div className="flex items-start gap-4">
-                    <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">
-                        {index + 1}
+            <div key={region.id} className="city-supporters-output__row">
+                {/* Первая колонка: Иконка + Название города */}
+                <div className="city-supporters-output__column city-supporters-output__column--city">
+                    <div className="city-supporters-output__column-icon">
+                        <img
+                            src="/icons/map-black-icon.svg"
+                            alt=""
+                            className="h-full w-full object-contain"
+                        />
                     </div>
-                    <div className="min-w-0 flex-1">
-                        <div className="text-lg font-semibold text-gray-900">
-                            {region.name}
-                        </div>
-                        <div className="mt-1 space-y-1 text-sm text-gray-700">
-                            {city?.schools_count !== undefined && (
-                                <div>
-                                    {city.schools_count.toLocaleString('ru-RU')}{' '}
-                                    школ
-                                </div>
-                            )}
-                            {city?.alumni_count != null && (
-                                <div>
-                                    {city.alumni_count.toLocaleString('ru-RU')}{' '}
-                                    выпускников
-                                </div>
-                            )}
-                            {city?.subscriptions_count != null && (
-                                <div>
-                                    {city.subscriptions_count.toLocaleString(
-                                        'ru-RU',
-                                    )}{' '}
-                                    подписок
-                                </div>
-                            )}
-                            {typeof city?.total_amount === 'number' && (
-                                <div>
-                                    {(city.total_amount / 100)
-                                        .toFixed(0)
-                                        .replace(
-                                            /\B(?=(\d{3})+(?!\d))/g,
-                                            ' ',
-                                        )}{' '}
-                                    ₽
-                                </div>
-                            )}
-                        </div>
+                    <div className="city-supporters-output__column-text">
+                        {region.name}
                     </div>
+                </div>
+
+                {/* Вторая колонка: Количество школ */}
+                <div className="city-supporters-output__column city-supporters-output__column--metric">
+                    {city.schools_count !== undefined ? (
+                        <>
+                            <span className="city-supporters-output__number">
+                                {formatNumber(city.schools_count)}
+                            </span>{' '}
+                            <span>
+                                {getPluralForm(city.schools_count, [
+                                    'школа',
+                                    'школы',
+                                    'школ',
+                                ])}
+                            </span>
+                        </>
+                    ) : (
+                        '-'
+                    )}
+                </div>
+
+                {/* Третья колонка: Количество выпускников */}
+                <div className="city-supporters-output__column city-supporters-output__column--metric">
+                    {city.alumni_count != null ? (
+                        <>
+                            <span className="city-supporters-output__number">
+                                {formatNumber(city.alumni_count)}
+                            </span>{' '}
+                            <span>
+                                {getPluralForm(city.alumni_count, [
+                                    'выпускник',
+                                    'выпускника',
+                                    'выпускников',
+                                ])}
+                            </span>
+                        </>
+                    ) : (
+                        '-'
+                    )}
+                </div>
+
+                {/* Четвертая колонка: Иконка + Количество подписок */}
+                <div className="city-supporters-output__column city-supporters-output__column--metric city-supporters-output__column--metric-icon">
+                    <div className="city-supporters-output__column-icon">
+                        <img
+                            src="/icons/lovely-blue.svg"
+                            alt=""
+                            className="h-full w-full object-contain"
+                        />
+                    </div>
+                    <div className="city-supporters-output__column-text">
+                        {city.subscriptions_count !== undefined &&
+                        city.subscriptions_count !== null ? (
+                            <>
+                                <span className="city-supporters-output__number">
+                                    {formatNumber(city.subscriptions_count)}
+                                </span>{' '}
+                                <span>
+                                    {getPluralForm(city.subscriptions_count, [
+                                        'подписчик',
+                                        'подписчика',
+                                        'подписчиков',
+                                    ])}
+                                </span>
+                            </>
+                        ) : (
+                            '-'
+                        )}
+                    </div>
+                </div>
+
+                {/* Пятая колонка: Общая сумма сборов */}
+                <div className="city-supporters-output__column city-supporters-output__column--metric city-supporters-output__column--amount">
+                    {typeof city.total_amount === 'number' ? (
+                        <>
+                            <span className="city-supporters-output__number">
+                                {formatNumber(
+                                    Math.round(city.total_amount / 100),
+                                )}
+                            </span>{' '}
+                            <span>₽</span>
+                        </>
+                    ) : (
+                        '-'
+                    )}
                 </div>
             </div>
         );
@@ -262,24 +388,37 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
             style={style}
         >
             {title && show_title && (
-                <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                    {title}
-                </h2>
+                <h2 className="city-supporters-output__title">{title}</h2>
             )}
 
             {subtitle && <p className="mb-6 text-gray-600">{subtitle}</p>}
 
-            <div className="space-y-3">
-                {displayRegions.map((region, index) =>
-                    renderRegion(region, index),
-                )}
+            <div className="city-supporters-output__list">
+                {displayRegions.map((region) => renderCityRow(region))}
             </div>
 
-            <div className="mt-6 text-center">
-                <button className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm hover:bg-gray-50">
-                    Загрузить ещё
-                </button>
-            </div>
+            {/* Кнопка "Загрузить еще" для пагинации */}
+            {(!regions || regions.length === 0) && hasMore && (
+                <div className="city-supporters-output__load-more">
+                    <button
+                        type="button"
+                        onClick={loadMore}
+                        disabled={isLoadingMore || isLoading}
+                        className="city-supporters-output__load-more-button"
+                    >
+                        {isLoadingMore ? (
+                            <>
+                                <span className="city-supporters-output__load-more-spinner">
+                                    ⏳
+                                </span>
+                                Загрузка...
+                            </>
+                        ) : (
+                            'Загрузить еще'
+                        )}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import React, { useMemo, useRef, useState } from 'react';
 import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
+import { getImageUrl } from '@/utils/getImageUrl';
 import {
     Autoplay,
     EffectCards,
@@ -97,10 +98,11 @@ const SliderSlideRenderer: React.FC<{
     layout: 'fullwidth' | 'grid';
     css_class?: string;
 }> = ({ slide, height, layout, css_class }) => {
-    // Filter out blob URLs for non-interactive viewing
+    // Filter out blob URLs and format image URL
     const bg = slide.backgroundImage || '';
-    const safeImage =
+    const rawImage =
         typeof bg === 'string' && bg.startsWith('blob:') ? '' : bg;
+    const safeImage = rawImage ? getImageUrl(rawImage) : '';
 
     const overlayStyle =
         slide.overlayOpacity &&
@@ -409,6 +411,11 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
         return [];
     }, [widget, slides, singleSlide]);
 
+    // Скрываем стрелки и пагинацию, если слайд только один
+    const hasMultipleSlides = currentSlides.length > 1;
+    const shouldShowArrows = showArrows && hasMultipleSlides;
+    const shouldShowDots = showDots && hasMultipleSlides;
+
     // Swiper modules configuration
     const swiperModules = useMemo(() => {
         const modules = [];
@@ -449,13 +456,13 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
                       disableOnInteraction: false,
                   }
                 : false,
-            navigation: showArrows
+            navigation: shouldShowArrows
                 ? {
                       nextEl: `.${navigationNextClass}`,
                       prevEl: `.${navigationPrevClass}`,
                   }
                 : false,
-            pagination: showDots
+            pagination: shouldShowDots
                 ? {
                       clickable: true,
                       dynamicBullets: false,
@@ -544,8 +551,8 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
         loop,
         autoplay,
         autoplayDelay,
-        showArrows,
-        showDots,
+        shouldShowArrows,
+        shouldShowDots,
         showProgress,
         animation,
         layout,
@@ -704,7 +711,7 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
                 ))}
 
                 {/* Добавляем стрелки навигации */}
-                {showArrows && (
+                {shouldShowArrows && (
                     <>
                         <div className={navigationPrevClass}></div>
                         <div className={navigationNextClass}></div>
@@ -713,7 +720,7 @@ export const SliderOutput: React.FC<WidgetOutputProps> = ({
             </Swiper>
 
             {/* Контейнер для пагинации */}
-            {showDots && <div className={paginationClass}></div>}
+            {shouldShowDots && <div className={paginationClass}></div>}
 
             {/* Контейнер для прогресс-бара */}
             {showProgress && (

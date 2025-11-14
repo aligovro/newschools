@@ -11,6 +11,7 @@ export function SubscribeBlockOutput({ widget }: WidgetOutputProps) {
               backgroundImage?: string;
               schoolsLimit?: number;
               columns?: number;
+              autoDetectCity?: boolean;
           }
         | undefined;
 

@@ -156,6 +156,9 @@ export const SeoSettings: React.FC<SeoSettingsProps> = React.memo(
                                 if (serverUrl)
                                     updateSetting('og_image', serverUrl);
                             }}
+                            onImageDelete={() => {
+                                updateSetting('og_image', '');
+                            }}
                             onImageCrop={undefined as unknown as any}
                             imageType="image"
                             widgetSlug="og"

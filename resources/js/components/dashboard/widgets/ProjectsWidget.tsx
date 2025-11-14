@@ -105,7 +105,7 @@ export const ProjectsWidget: React.FC<ProjectsWidgetProps> = ({
 
     return (
         <section className={cn('py-8', className)}>
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
                     {title}
                 </h2>

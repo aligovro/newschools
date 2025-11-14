@@ -1,5 +1,6 @@
 /* Styles for public site rendering (SSR-friendly) */
 @import 'variables';
+@import 'pages/page-content.scss';
 
 .site-preview {
     min-height: 100vh;
@@ -77,11 +78,13 @@
     border: 1px solid #e8ecf3;
     border-radius: 20px;
 }
-.mt-60 {
-    margin-top: 60px;
-}
-.mb-60 {
-    margin-bottom: 60px;
+.site-preview {
+    .mt-60 {
+        margin-top: 60px;
+    }
+    .mb-60 {
+        margin-bottom: 60px;
+    }
 }
 
 .hero-texts {
@@ -146,7 +149,7 @@
     .site-header .btn-outline-primary {
         color: #fff;
     }
-    .image-output__caption {
+    .logo-widget .image-output__caption {
         color: #fff;
     }
 }

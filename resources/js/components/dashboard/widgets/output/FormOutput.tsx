@@ -170,7 +170,7 @@ export const FormOutput: React.FC<WidgetOutputProps> = ({
                             onChange={(e) =>
                                 handleInputChange(field.id, e.target.checked)
                             }
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black checked:bg-black checked:border-black"
                         />
                         <label
                             htmlFor={field.id}

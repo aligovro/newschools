@@ -1,21 +1,15 @@
 /**
- * Утилита для генерации URL изображений
- * @param imagePath - путь к изображению (например: "widgets/hero/original_image.jpg")
- * @returns полный URL изображения
+ * Утилита для получения URL изображения
+ * @param imagePath - путь к изображению (бэкенд уже добавляет /storage/ префикс)
+ * @returns URL изображения как есть (бэкенд уже форматирует URL)
+ *
+ * ВАЖНО: Префикс /storage/ добавляется на бэкенде в методе formatImageUrl,
+ * поэтому здесь мы просто возвращаем URL как есть для обратной совместимости
  */
 export const getImageUrl = (imagePath: string | null | undefined): string => {
     if (!imagePath) return '';
-
-    // Если уже полный URL, возвращаем как есть
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-        return imagePath;
-    }
-
-    // Убираем лишние слеши в начале
-    const cleanPath = imagePath.replace(/^\/+/, '');
-
-    // Возвращаем полный URL
-    return `${window.location.origin}/storage/${cleanPath}`;
+    // Бэкенд уже добавил /storage/ префикс, просто возвращаем как есть
+    return imagePath;
 };
 
 /**

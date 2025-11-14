@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
+import { getImageUrl } from '@/utils/getImageUrl';
 import { router } from '@inertiajs/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -36,10 +37,11 @@ const HeroSlideRenderer: React.FC<{
     ) => string;
     css_class?: string;
 }> = ({ slide, height, getGradientStyle, css_class }) => {
-    // Filter out blob URLs for non-interactive viewing, keep only normal URLs
+    // Filter out blob URLs and format image URL
     const bg = slide.backgroundImage || '';
-    const safeImage =
+    const rawImage =
         typeof bg === 'string' && bg.startsWith('blob:') ? '' : bg;
+    const safeImage = rawImage ? getImageUrl(rawImage) : '';
 
     const slideStyle: React.CSSProperties = {
         backgroundImage: safeImage

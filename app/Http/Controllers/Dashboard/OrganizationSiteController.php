@@ -257,7 +257,7 @@ class OrganizationSiteController extends Controller
                 'is_maintenance_mode' => (bool) $site->is_maintenance_mode,
                 'layout_config' => $site->layout_config ?? [],
                 'theme_config' => $site->theme_config ?? [],
-                'seo_config' => $site->seo_config ?? [],
+                'seo_config' => $site->formatted_seo_config ?? [],
                 'payment_settings' => $site->payment_settings ?? [],
                 'custom_settings' => $site->custom_settings ?? [],
                 'created_at' => $site->created_at,

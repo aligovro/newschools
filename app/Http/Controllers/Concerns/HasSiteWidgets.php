@@ -53,7 +53,7 @@ trait HasSiteWidgets
                 'template' => $site->template,
                 'site_type' => $site->site_type,
                 'widgets_config' => $widgetsConfig,
-                'seo_config' => $site->seo_config ?? [],
+                'seo_config' => $site->formatted_seo_config ?? [],
                 'layout_config' => $site->layout_config ?? [],
             ],
             'positions' => $positions,

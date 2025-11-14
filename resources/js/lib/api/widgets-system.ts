@@ -151,6 +151,7 @@ export interface DonationWidgetData {
             order?: number;
         } | null;
     };
+    subscribers_count?: number;
 }
 
 export interface DonationRequest {

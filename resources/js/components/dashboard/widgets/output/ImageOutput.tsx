@@ -1,4 +1,5 @@
 import { isInternalLink, normalizeInternalUrl } from '@/lib/linkUtils';
+import { getImageUrl } from '@/utils/getImageUrl';
 import { Link } from '@inertiajs/react';
 import React from 'react';
 import { ImageOutputConfig, WidgetOutputProps } from './types';
@@ -37,10 +38,10 @@ export const ImageOutput: React.FC<WidgetOutputProps> = ({
     }
 
     // Filter out blob URLs for non-interactive viewing
-    const safeImage =
+    const rawImage =
         typeof image === 'string' && image.startsWith('blob:') ? '' : image;
 
-    if (!safeImage) {
+    if (!rawImage) {
         return (
             <div
                 className={`image-output image-output--placeholder ${className || ''}`}
@@ -82,6 +83,9 @@ export const ImageOutput: React.FC<WidgetOutputProps> = ({
                 return '';
         }
     };
+
+    // Форматируем URL изображения с добавлением /storage/ если нужно
+    const safeImage = getImageUrl(rawImage);
 
     const imageElement = (
         <img

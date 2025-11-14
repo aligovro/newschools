@@ -1,4 +1,6 @@
 import { useAlumniStatsData } from '@/hooks/useAlumniStats';
+import { getPluralForm } from '@/lib/helpers';
+import { getImageUrl } from '@/utils/getImageUrl';
 import { usePage } from '@inertiajs/react';
 import React from 'react';
 import { WidgetOutputProps } from './types';
@@ -23,7 +25,13 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
         columns?: ColumnConfig[];
     };
 
-    const { organization_id, title, show_title = true, showIcons = true, columns } = config || {};
+    const {
+        organization_id,
+        title,
+        show_title = true,
+        showIcons = true,
+        columns,
+    } = config || {};
 
     const page = usePage();
     const propsAny = (page?.props as any) || {};
@@ -46,7 +54,9 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
 
     const resolvedOrganizationId = configOrganizationId ?? pageOrganizationId;
 
-    const { stats, loading, error } = useAlumniStatsData(resolvedOrganizationId);
+    const { stats, loading, error } = useAlumniStatsData(
+        resolvedOrganizationId,
+    );
 
     const formatNumber = (num: number): string => {
         return num.toLocaleString('ru-RU');
@@ -149,10 +159,19 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
     }
 
     // Значения для трех колонок (по умолчанию из API)
+    // Для третьей колонки используем общее количество всех проектов
+    const projectsCount = Number(
+        stats.total_projects_count ?? stats.projects_count ?? 0,
+    );
+    const projectsLabel = getPluralForm(projectsCount, [
+        'проект',
+        'проекта',
+        'проектов',
+    ]);
     const columnValues = [
         formatNumber(stats.supporters_count),
         formatAmount(stats.total_donated),
-        formatNumber(stats.projects_count),
+        formatNumber(projectsCount),
     ];
 
     // Дефолтные иконки SVG
@@ -162,20 +181,37 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
     const statsItems = columns
         ? columns
               .filter((col) => col.isVisible !== false)
-              .map((col, index) => ({
-                  icon: col.icon ? (
-                      <img
-                          src={col.icon}
-                          alt={col.label}
-                          className="h-22 w-22 object-contain"
-                      />
-                  ) : (
-                      defaultIcons[index]
-                  ),
-                  value: columnValues[index],
-                  label: col.label,
-                  subtitle: col.subtitle,
-              }))
+              .map((col, index) => {
+                  // Для третьей колонки (проекты) применяем склонение, если label содержит "проект"
+                  let label = col.label;
+                  // Проверяем, является ли это колонкой с проектами (по индексу или по содержимому label)
+                  const isProjectsColumn =
+                      index === 2 ||
+                      (col.label && col.label.toLowerCase().includes('проект'));
+
+                  if (isProjectsColumn) {
+                      label = getPluralForm(projectsCount, [
+                          'проект',
+                          'проекта',
+                          'проектов',
+                      ]);
+                  }
+
+                  return {
+                      icon: col.icon ? (
+                          <img
+                              src={getImageUrl(col.icon)}
+                              alt={col.label}
+                              className="h-22 w-22 object-contain"
+                          />
+                      ) : (
+                          defaultIcons[index]
+                      ),
+                      value: columnValues[index],
+                      label: label,
+                      subtitle: col.subtitle,
+                  };
+              })
         : // Иначе используем дефолтные
           [
               {
@@ -192,8 +228,8 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
               },
               {
                   icon: <LightbulbIcon />,
-                  value: formatNumber(stats.projects_count),
-                  label: 'проектов',
+                  value: formatNumber(projectsCount),
+                  label: projectsLabel,
                   subtitle: 'Реализовали бывшие выпускники',
               },
           ];
@@ -201,7 +237,7 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
     return (
         <div className={`alumni-stats-output ${className || ''}`} style={style}>
             <section className="py-12">
-                <div className="container mx-auto px-4">
+                <div className="container mx-auto">
                     {title && show_title && (
                         <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
                             {title}
@@ -212,7 +248,7 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
                         {statsItems.map((item, index) => (
                             <div
                                 key={index}
-                                className="flex items-end rounded-lg bg-white p-6"
+                                className="flex items-end rounded-lg bg-white py-6"
                             >
                                 <div>
                                     <div className="alumni-stats-output__value mb-2">

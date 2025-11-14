@@ -50,6 +50,18 @@
         /* Font family */
         --font-family: Montserrat, sans-serif;
     }
+
+    /* Убираем стрелки у number полей во всех браузерах */
+    input[type='number'] {
+        -moz-appearance: textfield; /* Firefox */
+        
+        /* WebKit браузеры (Chrome, Safari, Edge) */
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    }
 }
 
 /* Import custom colors after Tailwind */
@@ -88,6 +100,7 @@
 
 /* Sites pages */
 @import 'pages/sites/create-site.scss';
+@import 'pages/page-content.scss';
 
 /* Main site components */
 @import 'components/main-site/AddOrganizationBlock.scss';

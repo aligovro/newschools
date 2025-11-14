@@ -95,9 +95,6 @@ export const BasicSettings: React.FC<BasicSettingsProps> = React.memo(
                                     updateSetting('favicon', blobUrl);
                                 }
                             }}
-                            onImageCrop={(url) => {
-                                updateSetting('favicon', url);
-                            }}
                             onImageDelete={() => {
                                 updateSetting('favicon', '');
                             }}

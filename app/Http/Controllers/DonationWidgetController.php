@@ -15,6 +15,8 @@ use App\Helpers\TerminologyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class DonationWidgetController extends Controller
 {
@@ -52,6 +54,64 @@ class DonationWidgetController extends Controller
             $isMerchantOperational = true;
         }
 
+        // Подсчет подписчиков (регулярные пожертвования) с кешированием
+        $subscribersCount = Cache::remember(
+            "donation_widget_subscribers_count_{$organization->id}",
+            now()->addMinutes(10),
+            function () use ($organization) {
+                // Ищем регулярные пожертвования
+                // Используем комбинацию идентификаторов:
+                // 1. Если есть donor_id - используем его
+                // 2. Если нет donor_id - используем donor_email из payment_details
+                // 3. Если нет ни того, ни другого (анонимное) - считаем как отдельного подписчика
+                $recurringDonations = DB::table('donations')
+                    ->join('payment_transactions', 'donations.payment_transaction_id', '=', 'payment_transactions.id')
+                    ->where('donations.organization_id', $organization->id)
+                    ->where('donations.status', 'completed')
+                    ->where('payment_transactions.status', 'completed')
+                    ->where(function ($query) {
+                        // Проверяем payment_transactions.payment_details
+                        $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring')) = 'true'")
+                            ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring') = 1")
+                            ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring') = true")
+                            // Проверяем наличие recurring_period как альтернативный признак
+                            ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.recurring_period') IS NOT NULL")
+                            // Проверяем donations.payment_details (на случай если данные там)
+                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(donations.payment_details, '$.is_recurring')) = 'true'")
+                            ->orWhereRaw("JSON_EXTRACT(donations.payment_details, '$.is_recurring') = 1")
+                            ->orWhereRaw("JSON_EXTRACT(donations.payment_details, '$.is_recurring') = true")
+                            ->orWhereRaw("JSON_EXTRACT(donations.payment_details, '$.recurring_period') IS NOT NULL")
+                            // Проверяем gateway_response
+                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.gateway_response, '$.recurring')) = 'true'")
+                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.gateway_response, '$.is_recurring')) = 'true'");
+                    })
+                    ->select(
+                        'donations.donor_id',
+                        'donations.id as donation_id',
+                        DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.donor_email')) as donor_email"),
+                        DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.is_anonymous')) as is_anonymous")
+                    )
+                    ->get();
+
+                // Подсчитываем уникальных подписчиков
+                $uniqueSubscribers = [];
+                foreach ($recurringDonations as $donation) {
+                    // Приоритет: donor_id > donor_email > donation_id (для анонимных)
+                    $identifier = $donation->donor_id
+                        ?? $donation->donor_email
+                        ?? ('anonymous_' . $donation->donation_id);
+
+                    if ($identifier) {
+                        $uniqueSubscribers[$identifier] = true;
+                    }
+                }
+
+                $count = count($uniqueSubscribers);
+
+                return $count;
+            }
+        );
+
         $data = [
             'organization' => [
                 'id' => $organization->id,
@@ -70,6 +130,7 @@ class DonationWidgetController extends Controller
                 'is_operational' => $isMerchantOperational,
                 'is_test_mode' => (bool) data_get($merchant->settings, 'is_test_mode', false),
             ] : null,
+            'subscribers_count' => $subscribersCount,
         ];
 
         // Терминология: безопасно с дефолтами, чтобы не падать на проде

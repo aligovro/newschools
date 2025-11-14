@@ -4,6 +4,7 @@ export interface AlumniStatsData {
     supporters_count: number;
     total_donated: number;
     projects_count: number;
+    total_projects_count?: number;
 }
 
 const statsPromiseCache = new Map<string, Promise<AlumniStatsData>>();
@@ -28,7 +29,9 @@ const fetchAlumniStats = (
         )
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error('Не удалось загрузить статистику выпускников');
+                    throw new Error(
+                        'Не удалось загрузить статистику выпускников',
+                    );
                 }
                 return response.json() as Promise<AlumniStatsData>;
             })
@@ -129,4 +132,3 @@ export const clearAlumniStatsCache = (organizationId?: number | null): void => {
     statsPromiseCache.delete(cacheKey);
     statsValueCache.delete(cacheKey);
 };
-

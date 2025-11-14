@@ -57,14 +57,14 @@ class ImageProcessingService
 
         $processedImages = [];
 
-        // Сохраняем оригинал (сжатый)
-        $originalPath = $this->saveImage($image, $directory, $filename, 'original');
+        // Сохраняем оригинал (сжатый) с сохранением оригинального формата
+        $originalPath = $this->saveImage($image, $directory, $filename, 'original', $extension);
         $processedImages['original'] = $originalPath;
 
         // Создаем миниатюры для каждого размера
         foreach ($sizes as $sizeName => $sizeConfig) {
             $resizedImage = $this->resizeImage($image, $sizeConfig);
-            $thumbnailPath = $this->saveImage($resizedImage, $directory, $filename, $sizeName);
+            $thumbnailPath = $this->saveImage($resizedImage, $directory, $filename, $sizeName, $extension);
             $processedImages[$sizeName] = $thumbnailPath;
         }
 
@@ -245,15 +245,28 @@ class ImageProcessingService
     /**
      * Сохранить изображение
      */
-    private function saveImage($image, string $directory, string $filename, string $size): string
+    private function saveImage($image, string $directory, string $filename, string $size, ?string $originalExtension = null): string
     {
         $path = $directory . '/' . $size . '_' . $filename;
 
         // Определяем качество сжатия
         $quality = $this->getQualityForSize($size);
 
-        // Конвертируем в JPEG для лучшего сжатия
-        $image->toJpeg($quality);
+        // Определяем формат сохранения на основе оригинального расширения
+        // Для PNG и WebP сохраняем без потерь, для остальных - JPEG с высоким качеством
+        $extension = strtolower($originalExtension ?? pathinfo($filename, PATHINFO_EXTENSION));
+        
+        if ($extension === 'png') {
+            // PNG сохраняем без потерь
+            $image->toPng();
+        } elseif ($extension === 'webp') {
+            // WebP сохраняем с высоким качеством (100 для hero/slider, 95 для original, иначе по quality)
+            $webpQuality = $size === 'hero' || $size === 'slider' ? 100 : ($size === 'original' ? 95 : $quality);
+            $image->toWebp($webpQuality);
+        } else {
+            // Для JPEG и других форматов используем JPEG с высоким качеством
+            $image->toJpeg($quality);
+        }
 
         // Сохраняем в storage
         Storage::disk('public')->put($path, $image->encode());
@@ -267,11 +280,10 @@ class ImageProcessingService
     private function getQualityForSize(string $size): int
     {
         return match ($size) {
-            'original' => 95,
-            'logo', 'slider', 'gallery', 'content' => 85,
-            'thumbnail' => 75,
-            'small' => 70,
-            default => 80
+            'original' => 98, // Увеличено с 95 для лучшего качества больших изображений
+            'hero', 'slider' => 100, // Максимальное качество для слайдеров и hero виджетов
+            'logo', 'gallery', 'content', 'thumbnail', 'small' => 95, // Высокое качество для всех остальных размеров
+            default => 95 // Высокое качество по умолчанию
         };
     }
 

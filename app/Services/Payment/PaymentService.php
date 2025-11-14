@@ -13,6 +13,7 @@ use App\Models\ProjectStage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use App\Support\Money;
 
 class PaymentService
@@ -47,6 +48,31 @@ class PaymentService
                 $data
             );
 
+            // Подготавливаем payment_details с информацией о регулярных пожертвованиях
+            $paymentDetails = $data['payment_details'] ?? [];
+            if (isset($data['is_recurring']) && $data['is_recurring']) {
+                $paymentDetails['is_recurring'] = true;
+                if (isset($data['recurring_period'])) {
+                    $paymentDetails['recurring_period'] = $data['recurring_period'];
+                }
+            }
+            // Сохраняем данные донора в payment_details
+            if (isset($data['donor_name'])) {
+                $paymentDetails['donor_name'] = $data['donor_name'];
+            }
+            if (isset($data['donor_email'])) {
+                $paymentDetails['donor_email'] = $data['donor_email'];
+            }
+            if (isset($data['donor_phone'])) {
+                $paymentDetails['donor_phone'] = $data['donor_phone'];
+            }
+            if (isset($data['donor_message'])) {
+                $paymentDetails['donor_message'] = $data['donor_message'];
+            }
+            if (isset($data['is_anonymous'])) {
+                $paymentDetails['is_anonymous'] = $data['is_anonymous'];
+            }
+
             // Создаем транзакцию
             $transaction = PaymentTransaction::create([
                 'organization_id' => $data['organization_id'],
@@ -64,7 +90,7 @@ class PaymentService
                 'return_url' => $data['return_url'] ?? null,
                 'success_url' => $data['success_url'] ?? null,
                 'failure_url' => $data['failure_url'] ?? null,
-                'payment_details' => $data['payment_details'] ?? null,
+                'payment_details' => !empty($paymentDetails) ? $paymentDetails : null,
                 'expires_at' => now()->addHours(24), // Платеж действителен 24 часа
             ]);
 
@@ -592,7 +618,7 @@ class PaymentService
      */
     public function createDonation(PaymentTransaction $transaction): Donation
     {
-        return Donation::create([
+        $donation = Donation::create([
             'organization_id' => $transaction->organization_id,
             'fundraiser_id' => $transaction->fundraiser_id,
             'project_id' => $transaction->project_id,
@@ -604,18 +630,32 @@ class PaymentService
             'payment_method' => $transaction->payment_method_slug,
             'payment_id' => $transaction->external_id,
             'transaction_id' => $transaction->transaction_id,
-            'is_anonymous' => false, // Можно добавить в данные платежа
+            'is_anonymous' => $transaction->payment_details['is_anonymous'] ?? false,
             'donor_name' => $transaction->payment_details['donor_name'] ?? null,
             'donor_email' => $transaction->payment_details['donor_email'] ?? null,
             'donor_phone' => $transaction->payment_details['donor_phone'] ?? null,
             'donor_message' => $transaction->payment_details['donor_message'] ?? null,
-            'send_receipt' => true,
+            'send_receipt' => $transaction->payment_details['send_receipt'] ?? true,
             'payment_details' => $transaction->payment_details,
             'webhook_data' => $transaction->webhook_data,
             'paid_at' => $transaction->paid_at,
             // переносим реферера, если был захвачен при создании платежа
             'referrer_user_id' => $transaction->payment_details['referrer_user_id'] ?? null,
         ]);
+
+        // Сбрасываем кеш количества подписчиков для организации
+        // Проверяем, является ли это регулярным пожертвованием
+        $isRecurring = isset($transaction->payment_details['is_recurring']) 
+            && ($transaction->payment_details['is_recurring'] === true 
+                || $transaction->payment_details['is_recurring'] === 'true'
+                || $transaction->payment_details['is_recurring'] === 1)
+            || isset($transaction->payment_details['recurring_period']);
+
+        if ($isRecurring) {
+            Cache::forget("donation_widget_subscribers_count_{$transaction->organization_id}");
+        }
+
+        return $donation;
     }
 
     /**

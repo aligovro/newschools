@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { getConfigValue, WidgetConfig } from '@/utils/getConfigValue';
+import { getImageUrl } from '@/utils/getImageUrl';
 import { Link } from '@inertiajs/react';
 import React from 'react';
 
@@ -59,6 +60,10 @@ export const ImageWidget: React.FC<ImageWidgetProps> = ({
     if (!configImage) {
         return null;
     }
+
+    // Форматируем URL изображения с добавлением /storage/ если нужно
+    const safeImage = getImageUrl(configImage);
+
     const sizeClasses = {
         small: 'max-w-sm',
         medium: 'max-w-md',
@@ -72,15 +77,21 @@ export const ImageWidget: React.FC<ImageWidgetProps> = ({
         right: 'ml-auto mx-0',
     };
 
+    // Получаем классы из настроек стилизации, если они заданы
+    const customClasses = styling?.customClass || '';
+    const hasCustomClasses = Boolean(customClasses);
+
     const imageElement = (
         <img
-            src={configImage}
+            src={safeImage}
             alt={configAltText}
             className={cn(
-                'rounded-lg shadow-md',
+                // Применяем дефолтные классы только если не заданы кастомные
+                !hasCustomClasses && 'rounded-lg shadow-md',
                 configSize === 'full'
                     ? 'h-auto w-full'
                     : 'h-auto w-full object-cover',
+                customClasses,
             )}
         />
     );
