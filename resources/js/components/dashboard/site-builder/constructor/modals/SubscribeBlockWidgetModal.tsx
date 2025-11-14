@@ -1,6 +1,7 @@
 import ImageUploader from '@/components/dashboard/settings/sites/ImageUploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import React, { useCallback, useMemo } from 'react';
 
@@ -95,6 +96,7 @@ export function SubscribeBlockWidgetModal({
         (currentConfig.backgroundImage as string) || '';
     const schoolsLimit = Number(currentConfig.schoolsLimit || 6);
     const columns = Number(currentConfig.columns || 3);
+    const autoDetectCity = (currentConfig.autoDetectCity as boolean) ?? false;
 
     return (
         <div className="space-y-6">
@@ -242,6 +244,22 @@ export function SubscribeBlockWidgetModal({
                             className="mt-1"
                         />
                     </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id="autoDetectCity"
+                        checked={autoDetectCity}
+                        onCheckedChange={(checked) =>
+                            handleUpdate('autoDetectCity', checked === true)
+                        }
+                    />
+                    <Label
+                        htmlFor="autoDetectCity"
+                        className="cursor-pointer text-sm font-normal"
+                    >
+                        Включить автоопределение города
+                    </Label>
                 </div>
             </div>
         </div>

@@ -15,6 +15,7 @@ interface DonationRecurringSectionProps {
     amount: number;
     currency: 'RUB' | 'USD' | 'EUR';
     borderRadiusClass: string;
+    subscribersCount?: number | null;
 }
 
 export const DonationRecurringSection: React.FC<DonationRecurringSectionProps> =
@@ -31,6 +32,7 @@ export const DonationRecurringSection: React.FC<DonationRecurringSectionProps> =
             onRecurringPeriodChange,
             recurringPeriod,
             recurringPeriods,
+            subscribersCount,
         }) => {
             if (!enabled) {
                 return null;
@@ -42,10 +44,10 @@ export const DonationRecurringSection: React.FC<DonationRecurringSectionProps> =
                         <button
                             type="button"
                             onClick={() => onRecurringChange(false)}
-                            className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
+                            className={`donation-recurring-btn ${
                                 !isRecurring
-                                    ? 'border-blue-600 bg-blue-600 text-white'
-                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                    ? 'donation-recurring-btn--active'
+                                    : ''
                             }`}
                         >
                             Единоразово
@@ -53,13 +55,25 @@ export const DonationRecurringSection: React.FC<DonationRecurringSectionProps> =
                         <button
                             type="button"
                             onClick={() => onRecurringChange(true)}
-                            className={`flex-1 px-4 py-2 ${borderRadiusClass} border transition-colors ${
+                            className={`donation-recurring-btn ${
                                 isRecurring
-                                    ? 'border-blue-600 bg-blue-600 text-white'
-                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                    ? 'donation-recurring-btn--active'
+                                    : ''
                             }`}
                         >
                             Регулярно
+                            {subscribersCount !== null &&
+                                subscribersCount !== undefined &&
+                                subscribersCount > 0 && (
+                                    <span className="donation-recurring-btn__badge">
+                                        <img
+                                            src="/icons/heart-white.svg"
+                                            alt=""
+                                            className="donation-recurring-btn__badge-icon"
+                                        />
+                                        {subscribersCount}
+                                    </span>
+                                )}
                         </button>
                     </div>
 
@@ -75,10 +89,10 @@ export const DonationRecurringSection: React.FC<DonationRecurringSectionProps> =
                                                 period as 'daily' | 'weekly' | 'monthly',
                                             )
                                         }
-                                        className={`px-3 py-2 text-sm ${borderRadiusClass} border transition-colors ${
+                                        className={`donation-recurring-period-btn ${
                                             recurringPeriod === period
-                                                ? 'border-blue-600 bg-blue-600 text-white'
-                                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                                ? 'donation-recurring-period-btn--active'
+                                                : ''
                                         }`}
                                     >
                                         {
@@ -90,7 +104,7 @@ export const DonationRecurringSection: React.FC<DonationRecurringSectionProps> =
                                 ))}
                             </div>
 
-                            <div className="flex items-start space-x-2">
+                            <div className="donation-policy-checkbox">
                                 <Checkbox
                                     id="agreed_to_recurring"
                                     checked={agreedToRecurring}
@@ -101,7 +115,7 @@ export const DonationRecurringSection: React.FC<DonationRecurringSectionProps> =
                                 />
                                 <Label
                                     htmlFor="agreed_to_recurring"
-                                    className="text-xs text-gray-600"
+                                    className="donation-policy-checkbox__label"
                                 >
                                     Я согласен на подписку на платежи на сумму {amount}{' '}
                                     {CURRENCY_SYMBOLS[currency]}. Подписка будет списываться{' '}

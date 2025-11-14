@@ -209,7 +209,7 @@ export default function OrganizationManagementPage({
                                 <div className="flex items-center space-x-2">
                                     <Search className="h-4 w-4 text-gray-400" />
                                     <Input
-                                        placeholder="Поиск организаций..."
+                                        placeholder="Поиск школ..."
                                         value={search}
                                         onChange={(e) =>
                                             setSearch(e.target.value)

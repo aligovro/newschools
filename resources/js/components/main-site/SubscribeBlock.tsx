@@ -28,6 +28,7 @@ interface SubscribeBlockProps {
         backgroundImage?: string;
         schoolsLimit?: number;
         columns?: number;
+        autoDetectCity?: boolean; // Автоопределение города по геолокации
     };
 }
 
@@ -58,6 +59,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
     const backgroundImage = config.backgroundImage || '';
     const schoolsLimit = config.schoolsLimit || 6;
     const columns = config.columns || 3;
+    const autoDetectCity = config.autoDetectCity ?? false;
 
     // Используем глобальную терминологию
     const orgSingular = useMemo(() => {
@@ -240,7 +242,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                             <CitySelector
                                 value={selectedCity}
                                 onChange={setSelectedCity}
-                                detectOnMount={true}
+                                detectOnMount={autoDetectCity}
                             />
                         </div>
 

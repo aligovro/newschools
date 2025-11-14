@@ -569,12 +569,13 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
 
     // Слайдер проектов
     projects_slider: ({ widget }) => {
-        const title =
-            (widget.name && widget.name.trim()) || 'Слайдер проектов';
+        const title = (widget.name && widget.name.trim()) || 'Слайдер проектов';
         return (
             <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
                 <div className="text-2xl font-bold text-gray-800">{title}</div>
-                <div className="mt-1 text-sm text-gray-500">projects_slider</div>
+                <div className="mt-1 text-sm text-gray-500">
+                    projects_slider
+                </div>
             </div>
         );
     },
@@ -610,8 +611,7 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
 
     // Поиск организаций (только для главного сайта) — в конструкторе показываем плейсхолдер
     organization_search: ({ widget }) => {
-        const title =
-            (widget.name && widget.name.trim()) || 'Поиск организаций';
+        const title = (widget.name && widget.name.trim()) || 'Поиск школ';
         return (
             <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
                 <div className="text-2xl font-bold text-gray-800">{title}</div>

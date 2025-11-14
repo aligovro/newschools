@@ -54,10 +54,17 @@ class AlumniStatsController extends Controller
                     $projectsQuery->where('organization_id', $organizationId);
                 }
 
+                // Общее количество всех проектов (независимо от статуса)
+                $totalProjectsQuery = Project::query();
+                if ($organizationId) {
+                    $totalProjectsQuery->where('organization_id', $organizationId);
+                }
+
                 return [
                     'supporters_count' => $supportersCount,
                     'total_donated' => $totalDonated,
                     'projects_count' => (int) $projectsQuery->count(),
+                    'total_projects_count' => (int) $totalProjectsQuery->count(),
                 ];
             }
         );

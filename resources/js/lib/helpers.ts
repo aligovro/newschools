@@ -80,6 +80,26 @@ export const formatNumber = (number: number): string => {
     return new Intl.NumberFormat('ru-RU').format(number);
 };
 
+/**
+ * Получить правильную форму слова для числа (склонение)
+ * @param count - число
+ * @param forms - массив из 3 форм: [форма для 1, форма для 2-4, форма для 5+]
+ * @returns правильная форма слова
+ * 
+ * Примеры:
+ * - getPluralForm(1, ['школа', 'школы', 'школ']) => 'школа'
+ * - getPluralForm(2, ['школа', 'школы', 'школ']) => 'школы'
+ * - getPluralForm(5, ['школа', 'школы', 'школ']) => 'школ'
+ */
+export const getPluralForm = (count: number, forms: [string, string, string]): string => {
+    const cases = [2, 0, 1, 1, 1, 2];
+    const caseIndex = (count % 100 > 4 && count % 100 < 20) 
+        ? 2 
+        : cases[Math.min(count % 10, 5)];
+    
+    return forms[caseIndex] || forms[1];
+};
+
 // Утилиты для работы со строками
 export const truncateText = (text: string, maxLength: number): string => {
     if (text.length <= maxLength) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SiteWidgetResource;
 use App\Models\Site;
+use App\Models\SiteWidget;
 use App\Models\Widget;
 use App\Models\WidgetPosition;
 use App\Services\WidgetService;
@@ -43,9 +44,9 @@ class SiteController extends Controller
                 'description' => $request->description,
             ];
 
-            // Добавляем favicon если он был передан
+            // Добавляем favicon если он был передан (извлекаем путь без домена)
             if ($request->has('favicon')) {
-                $updateData['favicon'] = $request->favicon;
+                $updateData['favicon'] = SiteWidget::extractImagePathFromUrl($request->favicon);
             }
 
             $site->update($updateData);
@@ -145,6 +146,14 @@ class SiteController extends Controller
                 'twitter_description',
                 'twitter_image',
             ]);
+
+            // Извлекаем пути изображений без домена
+            if (isset($incoming['og_image']) && !empty($incoming['og_image'])) {
+                $incoming['og_image'] = SiteWidget::extractImagePathFromUrl($incoming['og_image']);
+            }
+            if (isset($incoming['twitter_image']) && !empty($incoming['twitter_image'])) {
+                $incoming['twitter_image'] = SiteWidget::extractImagePathFromUrl($incoming['twitter_image']);
+            }
 
             $seoConfig = $this->siteSeoService->applyDefaultsToIncoming($site, $incoming);
 

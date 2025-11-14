@@ -94,7 +94,8 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                                     ? Number(project.target_amount) / 100
                                     : 0;
                           const collectedRubles =
-                              typeof project.collected_amount_rubles === 'number'
+                              typeof project.collected_amount_rubles ===
+                              'number'
                                   ? project.collected_amount_rubles
                                   : project.collected_amount
                                     ? Number(project.collected_amount) / 100
@@ -105,12 +106,14 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                                   : targetRubles > 0
                                     ? Math.min(
                                           100,
-                                          (collectedRubles / targetRubles) * 100,
+                                          (collectedRubles / targetRubles) *
+                                              100,
                                       )
                                     : 0;
 
                           const organization: ProjectOrganization | null =
-                              project.organization && typeof project.organization === 'object'
+                              project.organization &&
+                              typeof project.organization === 'object'
                                   ? {
                                         id: project.organization.id,
                                         name: project.organization.name,
@@ -181,7 +184,7 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
 
     return (
         <section className="py-8">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 {(title && show_title) || showHeaderActions ? (
                     <div className="mb-6 flex items-center justify-between">
                         {title && show_title && (
@@ -214,7 +217,9 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
 
                 {!loading && !error && items.length === 0 && (
                     <div className="flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
-                        <span className="text-gray-500">Проекты не найдены</span>
+                        <span className="text-gray-500">
+                            Проекты не найдены
+                        </span>
                     </div>
                 )}
 
@@ -292,4 +297,3 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
 };
 
 export default ProjectsSliderWidget;
-

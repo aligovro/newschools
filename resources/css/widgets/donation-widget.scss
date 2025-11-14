@@ -453,3 +453,314 @@
         }
     }
 }
+
+// Donation Payment Methods Styles
+.donation-payment-methods {
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 10px;
+        min-height: 58px;
+        transition: all 0.2s;
+
+        &--checked {
+            background: #f5f6f8;
+            border: none;
+        }
+
+        &--unchecked {
+            border: 1px solid #e8ecf3;
+            background: white;
+        }
+
+        &--disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    }
+
+    &__icon {
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+    }
+
+    &__content {
+        flex: 1;
+    }
+
+    &__title {
+        font-weight: 600;
+        font-size: 14px;
+        color: #1a1a1a;
+    }
+
+    &__description {
+        font-weight: 500;
+        font-size: 10px;
+        color: #b5b9c3;
+    }
+
+    &__checkbox {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s;
+
+        &--checked {
+            background-color: #1a1a1a;
+            border: none;
+        }
+
+        &--unchecked {
+            border: 1px solid #b5b9c3;
+            background-color: transparent;
+        }
+    }
+}
+
+// Donation Name and Anonymous Field
+.donation-name-field {
+    height: 60px;
+    border: 1px solid #e8ecf3;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+
+    &__input-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        justify-content: center;
+    }
+
+    &__label {
+        font-weight: 500;
+        font-size: 12px;
+        color: #1a1a1a;
+    }
+
+    &__input {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-weight: 500;
+        font-size: 16px;
+        color: #b5b9c3;
+        width: 100%;
+
+        &::placeholder {
+            color: #b5b9c3;
+        }
+    }
+
+    &__anonymous {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        max-width: 40%;
+        margin-left: auto;
+    }
+
+    &__anonymous-label {
+        font-weight: 500;
+        font-size: 10px;
+        color: #b5b9c3;
+        cursor: pointer;
+        line-height: 120%;
+    }
+}
+
+// Donation Amount Field
+.donation-amount-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e8ecf3;
+    border-radius: 10px;
+    height: 50px;
+    background: white;
+    overflow: hidden;
+    padding: 0 16px;
+
+    &__input {
+        width: 100%;
+        height: 100%;
+        border: none !important;
+        outline: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        text-align: center;
+        font-weight: 700;
+        font-size: 28px;
+        color: #1a1a1a;
+        caret-color: #1a1a1a;
+
+        &::placeholder {
+            color: #b5b9c3;
+        }
+
+        &:focus {
+            box-shadow: none !important;
+            border: none !important;
+        }
+    }
+}
+
+// Donation Preset Amount Buttons
+.donation-preset-amount-btn {
+    border-radius: 10px;
+    height: 24px;
+    background: #f5f6f8;
+    padding: 5px 14px;
+    border: none;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 120%;
+    text-align: center;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+
+    &--active {
+        background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+        color: white;
+    }
+
+    &:hover:not(&--active) {
+        background: #e8ecf3;
+    }
+}
+
+// Donation Recurring Buttons
+.donation-recurring-btn {
+    flex: 1;
+    border: 1px solid #e1e5ec;
+    border-radius: 10px;
+    height: 40px;
+    padding: 0 16px;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 120%;
+    letter-spacing: 0.01em;
+    text-align: center;
+    color: #1a1a1a;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+
+    &--active {
+        background: #1a1a1a;
+        color: white;
+        border: none;
+    }
+
+    &__badge {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 10px;
+        height: 24px;
+        padding: 6px 8px;
+        background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 120%;
+        letter-spacing: 0.01em;
+        color: #fff;
+        margin-left: auto;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    &__badge-icon {
+        width: 12px;
+        height: 12px;
+        flex-shrink: 0;
+    }
+}
+
+// Donation Recurring Period Buttons
+.donation-recurring-period-btn {
+    border: 1px solid #e1e5ec;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 10px;
+    line-height: 120%;
+    letter-spacing: 0.01em;
+    text-align: center;
+    color: #1a1a1a;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--active {
+        background: #1a1a1a;
+        color: white;
+        border: none;
+    }
+
+    &:hover:not(&--active) {
+        background: #f5f6f8;
+    }
+}
+
+// Donation Policy Checkbox
+.donation-policy-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    &__label {
+        font-family: var(--font-family);
+        font-weight: 500;
+        font-size: 9px;
+        line-height: 120%;
+        color: #a1a6b2;
+        margin-top: 2px; // Выравнивание с чекбоксом
+    }
+
+    &__link {
+        color: #a1a6b2;
+        text-decoration: underline;
+
+        &:hover {
+            color: #a1a6b2;
+            text-decoration: underline;
+        }
+    }
+}
+
+// Global checkbox styles - черные чекбоксы с белыми галочками
+input[type='checkbox']:checked {
+    background-color: #1a1a1a !important;
+    border-color: #1a1a1a !important;
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L4 12.586l7.793-7.793a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+}

@@ -84,13 +84,15 @@ class TinkoffGateway extends AbstractPaymentGateway
         $responseData = $response->json();
 
         if ($responseData['Success'] ?? false) {
+          // Сохраняем существующие payment_details и дополняем их данными от gateway
+          $existingPaymentDetails = $transaction->payment_details ?? [];
           $transaction->update([
             'external_id' => $responseData['PaymentId'] ?? null,
             'gateway_response' => $responseData,
-            'payment_details' => [
+            'payment_details' => array_merge($existingPaymentDetails, [
               'payment_url' => $responseData['PaymentURL'] ?? null,
               'status' => $responseData['Status'] ?? null,
-            ],
+            ]),
           ]);
 
           $this->log(

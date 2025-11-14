@@ -72,13 +72,15 @@ class SBPGateway extends AbstractPaymentGateway
             if ($response->successful()) {
                 $responseData = $response->json();
 
+                // Сохраняем существующие payment_details и дополняем их данными от gateway
+                $existingPaymentDetails = $transaction->payment_details ?? [];
                 $transaction->update([
                     'external_id' => $responseData['paymentId'] ?? null,
                     'gateway_response' => $responseData,
-                    'payment_details' => [
+                    'payment_details' => array_merge($existingPaymentDetails, [
                         'qr_code' => $responseData['qrCode'] ?? null,
                         'deep_link' => $responseData['deepLink'] ?? null,
-                    ],
+                    ]),
                 ]);
 
                 $this->log(

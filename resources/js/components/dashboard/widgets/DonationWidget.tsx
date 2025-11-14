@@ -57,6 +57,9 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     const [merchant, setMerchant] = useState<
         DonationWidgetData['merchant'] | null
     >(null);
+    const [subscribersCount, setSubscribersCount] = useState<number | null>(
+        null,
+    );
 
     const resolvedOrganizationId =
         parseNumericId(organizationId) ??
@@ -179,6 +182,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
             );
 
             setMerchant(widgetData.merchant ?? null);
+            setSubscribersCount(widgetData.subscribers_count ?? null);
 
             if (widgetData.terminology) {
                 setTerminology(
@@ -702,6 +706,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 onSelect: handlePaymentMethodSelect,
                 isMerchantActive,
             }}
+            subscribersCount={subscribersCount}
         />
     );
 
@@ -712,7 +717,6 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 onToggleSettings={toggleSettings}
                 localConfig={localConfig}
                 setLocalConfig={setLocalConfig}
-                renderPreview={renderPublic()}
             />
         );
     }

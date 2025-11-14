@@ -1,3 +1,4 @@
+import { getImageUrl } from '@/utils/getImageUrl';
 import React, { useState } from 'react';
 import { GalleryOutputConfig, WidgetOutputProps } from './types';
 
@@ -30,10 +31,10 @@ export const GalleryOutput: React.FC<WidgetOutputProps> = ({
         );
     }
 
-    // Filter out blob URLs for non-interactive viewing
-    const safeImages = images.filter(
-        (img) => typeof img === 'string' && !img.startsWith('blob:'),
-    );
+    // Filter out blob URLs and format image URLs
+    const safeImages = images
+        .filter((img) => typeof img === 'string' && !img.startsWith('blob:'))
+        .map((img) => getImageUrl(img as string));
 
     if (safeImages.length === 0) {
         return (

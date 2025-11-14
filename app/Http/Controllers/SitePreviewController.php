@@ -60,7 +60,7 @@ class SitePreviewController extends Controller
                     'description' => $site->description,
                     'template' => $site->template,
                     'widgets_config' => $widgetsConfig,
-                    'seo_config' => $site->seo_config ?? [],
+                    'seo_config' => $site->formatted_seo_config ?? [],
                 ],
                 'positions' => $positions,
                 'position_settings' => $positionSettings,

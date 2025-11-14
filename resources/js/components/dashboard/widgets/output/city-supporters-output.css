@@ -1,0 +1,145 @@
+.city-supporters-output {
+    width: 100%;
+}
+
+.city-supporters-output__title {
+    font-weight: 700;
+    font-size: 28px;
+    color: #1a1a1a;
+    margin-bottom: 24px;
+}
+
+.city-supporters-output__row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.city-supporters-output__column {
+    border-radius: 6px;
+    height: 40px;
+    background: #f5f6f8;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    flex: 1;
+}
+
+.city-supporters-output__row:nth-child(even) .city-supporters-output__column {
+    background: transparent;
+}
+
+.city-supporters-output__column--city {
+    gap: 8px;
+}
+
+.city-supporters-output__column-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.city-supporters-output__column-text {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 120%;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.city-supporters-output__column--metric {
+    font-weight: 500;
+    font-size: 12px;
+    color: #1a1a1a;
+    justify-content: flex-start;
+}
+
+.city-supporters-output__column--metric-icon {
+    gap: 6px;
+}
+
+.city-supporters-output__column--metric-icon
+    .city-supporters-output__column-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Жирные цифры во всех колонках */
+.city-supporters-output__number {
+    font-weight: 700;
+    margin-right: 4px;
+}
+
+/* Специальные стили для колонки суммы */
+.city-supporters-output__column--amount {
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 120%;
+}
+
+/* Кнопка "Загрузить еще" */
+.city-supporters-output__load-more {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.city-supporters-output__load-more-button {
+    padding: 12px 24px;
+    background: #f5f6f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 14px;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.city-supporters-output__load-more-button:hover:not(:disabled) {
+    background: #e8e9eb;
+    border-color: #d0d0d0;
+}
+
+.city-supporters-output__load-more-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.city-supporters-output__load-more-spinner {
+    display: inline-block;
+    margin-right: 8px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .city-supporters-output__row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .city-supporters-output__column {
+        height: auto;
+        min-height: 40px;
+        padding: 8px 12px;
+    }
+
+    .city-supporters-output__column-text {
+        font-size: 12px;
+    }
+}

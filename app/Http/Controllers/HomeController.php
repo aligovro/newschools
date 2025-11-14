@@ -29,7 +29,7 @@ class HomeController extends Controller
 
         // Получаем настройки главного сайта
         $mainSite = Site::where('site_type', 'main')->first();
-        $seoConfig = $mainSite ? ($mainSite->seo_config ?? []) : [];
+        $seoConfig = $mainSite ? ($mainSite->formatted_seo_config ?? []) : [];
         $mainSiteSettings = $mainSite ? [
             'site_name' => $mainSite->name,
             'site_description' => $mainSite->description,

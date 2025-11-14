@@ -380,6 +380,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         }
 
         return new Promise((resolve) => {
+            // Используем более высокое качество для больших изображений
+            // Для изображений больше 1920px используем качество 0.98, иначе 0.95
+            const isLargeImage = outWidth > 1920 || outHeight > 1920;
+            const quality = isLargeImage ? 0.98 : 0.95;
+            
             canvas.toBlob(
                 (blob) => {
                     if (DEBUG_CROP)
@@ -390,7 +395,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     resolve(blob);
                 },
                 'image/jpeg',
-                0.92,
+                quality,
             );
         });
     };

@@ -101,7 +101,7 @@ const SitePageShow: React.FC<PageShowProps> = ({
         if (page.content.includes('<')) {
             return (
                 <div
-                    className="prose prose-gray max-w-none"
+                    className="page-content-html"
                     dangerouslySetInnerHTML={{ __html: page.content }}
                 />
             );
@@ -167,15 +167,19 @@ const SitePageShow: React.FC<PageShowProps> = ({
     }, [page.children]);
 
     const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
-        if (!page.parent) {
-            return [];
+        const items: BreadcrumbItem[] = [
+            { title: 'Главная', href: '/' },
+        ];
+
+        if (page.parent) {
+            items.push(
+                { title: page.parent.title, href: `/${page.parent.slug}` },
+            );
         }
 
-        return [
-            { title: 'Главная', href: '/' },
-            { title: page.parent.title, href: `/${page.parent.slug}` },
-            { title: page.title, href: '' },
-        ];
+        items.push({ title: page.title, href: '' });
+
+        return items;
     }, [page.parent, page.title]);
 
     // Формируем SEO заголовок
@@ -215,7 +219,7 @@ const SitePageShow: React.FC<PageShowProps> = ({
             pageDescription={seoDescription}
             breadcrumbs={breadcrumbs}
         >
-            <article className="mx-auto max-w-4xl">
+            <article className="w-full">
                 {/* Main Image */}
                 {page.image && (
                     <div className="mb-8">
@@ -248,31 +252,6 @@ const SitePageShow: React.FC<PageShowProps> = ({
 
                 {/* Children Pages */}
                 {renderedChildren}
-
-                {/* Page Footer */}
-                <footer className="mt-8 border-t pt-8">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <div>
-                            <p>Сайт: {site.name}</p>
-                            {page.published_at && (
-                                <p>
-                                    Опубликовано:{' '}
-                                    {new Date(
-                                        page.published_at,
-                                    ).toLocaleDateString('ru-RU')}
-                                </p>
-                            )}
-                        </div>
-                        <div>
-                            <p>
-                                Обновлено:{' '}
-                                {new Date(page.updated_at).toLocaleDateString(
-                                    'ru-RU',
-                                )}
-                            </p>
-                        </div>
-                    </div>
-                </footer>
             </article>
         </MainLayout>
     );

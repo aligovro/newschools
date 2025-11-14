@@ -177,21 +177,14 @@ class Site extends Model
       return null;
     }
 
-    if (filter_var($this->logo, FILTER_VALIDATE_URL)) {
-      return $this->logo;
-    }
-
-    return asset('storage/' . $this->logo);
+    return SiteWidget::formatImageUrl($this->logo);
   }
 
   public function getFaviconUrlAttribute(): ?string
   {
     // Если у текущего сайта есть фавиконка, возвращаем её
     if ($this->favicon) {
-      if (filter_var($this->favicon, FILTER_VALIDATE_URL)) {
-        return $this->favicon;
-      }
-      return asset('storage/' . $this->favicon);
+      return SiteWidget::formatImageUrl($this->favicon);
     }
 
     // Если это не главный сайт, пытаемся получить фавиконку главного сайта
@@ -207,10 +200,7 @@ class Site extends Model
             ->first();
 
           if ($mainSite && $mainSite->favicon) {
-            if (filter_var($mainSite->favicon, FILTER_VALIDATE_URL)) {
-              return $mainSite->favicon;
-            }
-            return asset('storage/' . $mainSite->favicon);
+            return SiteWidget::formatImageUrl($mainSite->favicon);
           }
 
           return null;
@@ -224,6 +214,24 @@ class Site extends Model
 
     // Если даже у главного сайта нет фавиконки, возвращаем дефолтную
     return asset('favicon.ico');
+  }
+
+  /**
+   * Получить форматированный seo_config с URL изображений
+   */
+  public function getFormattedSeoConfigAttribute(): array
+  {
+    $seoConfig = $this->seo_config ?? [];
+    
+    // Форматируем URL изображений
+    if (isset($seoConfig['og_image']) && !empty($seoConfig['og_image'])) {
+      $seoConfig['og_image'] = SiteWidget::formatImageUrl($seoConfig['og_image']);
+    }
+    if (isset($seoConfig['twitter_image']) && !empty($seoConfig['twitter_image'])) {
+      $seoConfig['twitter_image'] = SiteWidget::formatImageUrl($seoConfig['twitter_image']);
+    }
+    
+    return $seoConfig;
   }
 
   public function isPublished(): bool

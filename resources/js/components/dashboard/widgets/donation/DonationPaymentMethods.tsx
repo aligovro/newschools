@@ -1,50 +1,59 @@
-import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import type { ApiPaymentMethod } from '@/lib/api/index';
-import { CreditCard, QrCode, Smartphone } from 'lucide-react';
+import type { PaymentMethod } from '@/lib/api/index';
+import { Check } from 'lucide-react';
+import React from 'react';
 import { normalizePaymentSlug } from './utils';
 
 interface DonationPaymentMethodsProps {
-    methods: ApiPaymentMethod[];
+    methods: PaymentMethod[];
     selectedMethod: string;
     onSelect: (slug: string) => void;
-    borderRadiusClass: string;
+    borderRadiusClass?: string;
     isMerchantActive: boolean;
 }
 
-const getPaymentMeta = (method: ApiPaymentMethod) => {
-    const slug = (method.slug || method.type || method.name || '').toLowerCase();
+const getPaymentMeta = (method: PaymentMethod) => {
+    const slug = (
+        method.slug ||
+        method.type ||
+        method.name ||
+        ''
+    ).toLowerCase();
     if (slug.includes('sbp') || slug === 'sbp' || slug.includes('qr')) {
         return {
             title: 'По QR коду через СБП',
             description: 'Через приложение вашего банка',
-            icon: <QrCode className="h-5 w-5 text-gray-400" />,
+            icon: '/icons/spb-qr.svg',
         };
     }
     if (slug.includes('sber')) {
         return {
             title: 'Оплата через SberPay',
             description: 'В приложении банка',
-            icon: <Smartphone className="h-5 w-5 text-gray-400" />,
+            icon: '/icons/sber.svg',
         };
     }
-    if (slug.includes('tinkoff') || slug.includes('tpay') || slug.includes('t-pay')) {
+    if (
+        slug.includes('tinkoff') ||
+        slug.includes('tpay') ||
+        slug.includes('t-pay')
+    ) {
         return {
             title: 'Оплата через T‑Pay',
             description: 'В приложении банка',
-            icon: <Smartphone className="h-5 w-5 text-gray-400" />,
+            icon: '/icons/t-bank.svg',
         };
     }
 
     return {
-        title: method.name || 'Банковской картой',
+        title: method.name || 'Банковская карта',
         description: 'Visa, Mastercard, МИР и другие',
-        icon: <CreditCard className="h-5 w-5 text-gray-400" />,
+        icon: '/icons/cards.svg',
     };
 };
 
 export const DonationPaymentMethods: React.FC<DonationPaymentMethodsProps> =
-    React.memo(({ methods, onSelect, selectedMethod, borderRadiusClass, isMerchantActive }) => {
+    React.memo(({ methods, onSelect, selectedMethod, isMerchantActive }) => {
         return (
             <div className="border-t pt-4">
                 <label className="mb-3 block text-sm font-medium text-gray-700">
@@ -53,8 +62,9 @@ export const DonationPaymentMethods: React.FC<DonationPaymentMethodsProps> =
                 {!isMerchantActive && (
                     <Alert className="mb-3 border-yellow-300 bg-yellow-50 text-yellow-700">
                         <AlertDescription>
-                            Приём платежей временно недоступен. Попробуйте позже или выберите другой
-                            способ, когда магазин будет активирован.
+                            Приём платежей временно недоступен. Попробуйте позже
+                            или выберите другой способ, когда магазин будет
+                            активирован.
                         </AlertDescription>
                     </Alert>
                 )}
@@ -62,11 +72,18 @@ export const DonationPaymentMethods: React.FC<DonationPaymentMethodsProps> =
                     {methods.length > 0 ? (
                         methods
                             .filter((method, idx, arr) => {
-                                const slugKey = normalizePaymentSlug(method).toLowerCase();
+                                const slugKey =
+                                    normalizePaymentSlug(method).toLowerCase();
+                                // Исключаем метод "cash" (наличные)
+                                if (slugKey.includes('cash')) {
+                                    return false;
+                                }
                                 return (
                                     arr.findIndex(
                                         (item) =>
-                                            normalizePaymentSlug(item).toLowerCase() === slugKey,
+                                            normalizePaymentSlug(
+                                                item,
+                                            ).toLowerCase() === slugKey,
                                     ) === idx
                                 );
                             })
@@ -74,44 +91,69 @@ export const DonationPaymentMethods: React.FC<DonationPaymentMethodsProps> =
                                 const slug = normalizePaymentSlug(method);
                                 const checked = selectedMethod === slug;
                                 const disabled =
-                                    !isMerchantActive && method.available === false;
+                                    !isMerchantActive &&
+                                    method.available === false;
                                 const meta = getPaymentMeta(method);
 
                                 return (
                                     <label
                                         key={slug}
-                                        className={`flex items-center gap-3 border p-3 ${borderRadiusClass} transition-colors ${
+                                        className={`donation-payment-methods__item ${
                                             checked
-                                                ? 'border-blue-600 bg-blue-50'
-                                                : 'border-gray-300 bg-white hover:bg-gray-50'
+                                                ? 'donation-payment-methods__item--checked'
+                                                : 'donation-payment-methods__item--unchecked'
                                         } ${
                                             disabled
-                                                ? 'cursor-not-allowed opacity-50'
+                                                ? 'donation-payment-methods__item--disabled'
                                                 : 'cursor-pointer'
                                         }`}
                                     >
+                                        <img
+                                            src={meta.icon}
+                                            alt={meta.title}
+                                            className="donation-payment-methods__icon"
+                                        />
+                                        <div className="donation-payment-methods__content">
+                                            <div className="donation-payment-methods__title">
+                                                {meta.title}
+                                            </div>
+                                            <div className="donation-payment-methods__description">
+                                                {meta.description}
+                                            </div>
+                                            {disabled && (
+                                                <div className="mt-1 text-xs text-yellow-700">
+                                                    Недоступно для текущего
+                                                    магазина
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div
+                                            className={`donation-payment-methods__checkbox ${
+                                                checked
+                                                    ? 'donation-payment-methods__checkbox--checked'
+                                                    : 'donation-payment-methods__checkbox--unchecked'
+                                            }`}
+                                        >
+                                            {checked && (
+                                                <Check
+                                                    className="text-white"
+                                                    size={16}
+                                                    strokeWidth={3}
+                                                />
+                                            )}
+                                        </div>
                                         <input
                                             type="checkbox"
                                             role="checkbox"
                                             value={slug}
                                             aria-checked={checked}
                                             checked={checked}
-                                            onChange={() => onSelect(slug)}
-                                            className="text-blue-600"
+                                            onChange={() =>
+                                                !disabled && onSelect(slug)
+                                            }
+                                            className="sr-only"
                                             disabled={disabled}
                                         />
-                                        <div className="flex-1">
-                                            <div className="font-medium">{meta.title}</div>
-                                            <div className="text-xs text-gray-600">
-                                                {meta.description}
-                                            </div>
-                                            {disabled && (
-                                                <div className="mt-1 text-xs text-yellow-700">
-                                                    Недоступно для текущего магазина
-                                                </div>
-                                            )}
-                                        </div>
-                                        {meta.icon}
                                     </label>
                                 );
                             })
@@ -126,4 +168,3 @@ export const DonationPaymentMethods: React.FC<DonationPaymentMethodsProps> =
     });
 
 DonationPaymentMethods.displayName = 'DonationPaymentMethods';
-
