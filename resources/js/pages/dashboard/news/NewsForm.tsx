@@ -20,7 +20,7 @@ import UniversalSelect, {
 import AppLayout from '@/layouts/app-layout';
 import type { NewsItem } from '@/lib/api/news';
 import { newsApi } from '@/lib/api/news';
-import { organizationsApi } from '@/lib/api/organizations';
+import { uploadFile } from '@/utils/uploadFile';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -109,6 +109,21 @@ const typeOptions = [
     { value: 'news', label: 'Новость' },
     { value: 'announcement', label: 'Анонс' },
 ];
+
+const mapGalleryToUploaded = (items: string[]): UploadedImage[] =>
+    items.map((item, index) => ({
+        id: `gallery-${index}-${item}`,
+        url: item,
+        name: item.split('/').pop() ?? `gallery-${index + 1}`,
+        size: 0,
+        type: 'image/jpeg',
+        status: 'success',
+    }));
+
+const extractGalleryUrls = (items: UploadedImage[]): string[] =>
+    items
+        .filter((image) => image.status === 'success' && Boolean(image.url))
+        .map((image) => image.url);
 
 function toDateTimeLocal(value?: string | null): string {
     if (!value) {
@@ -227,6 +242,9 @@ export default function NewsForm({
     } = useForm<NewsFormState>(initialState);
 
     const [uploadingGallery, setUploadingGallery] = useState(false);
+    const [galleryItems, setGalleryItems] = useState<UploadedImage[]>(() =>
+        mapGalleryToUploaded(initialState.gallery),
+    );
     const [targetOptions, setTargetOptions] = useState<SelectOption[]>([]);
     const [targetLoading, setTargetLoading] = useState(false);
     const [targetHasMore, setTargetHasMore] = useState(false);
@@ -288,21 +306,6 @@ export default function NewsForm({
 
         return result;
     }, [context, mode, news]);
-
-    const uploadedGallery = useMemo<UploadedImage[]>(() => {
-        if (!data.gallery?.length) {
-            return [];
-        }
-
-        return data.gallery.map((item, index) => ({
-            id: `gallery-${index}`,
-            url: item,
-            name: item.split('/').pop() ?? `gallery-${index}`,
-            size: 0,
-            type: 'image/jpeg',
-            status: 'success',
-        }));
-    }, [data.gallery]);
 
     useEffect(() => {
         if (
@@ -382,22 +385,30 @@ export default function NewsForm({
         data.organization_id,
     ]);
 
-    const handleGalleryChange = (items: UploadedImage[]) => {
-        const urls = items
-            .filter((image) => image.status === 'success' && image.url)
-            .map((image) => image.url);
+    useEffect(() => {
+        setGalleryItems(mapGalleryToUploaded(initialState.gallery));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [news?.id]);
 
+    const handleGalleryChange = (items: UploadedImage[]) => {
+        setGalleryItems(items);
+        const urls = extractGalleryUrls(items);
         setData('gallery', urls);
     };
 
     const handleGalleryUpload = async (file: File): Promise<string> => {
         setUploadingGallery(true);
         try {
-            const response = await organizationsApi.uploadImages(file);
-            const url = response.images[0]?.url;
+            const response = await uploadFile(file, 'news-gallery');
+            const url =
+                response.data?.gallery ||
+                response.data?.original ||
+                response.url;
+
             if (!url) {
                 throw new Error('Не удалось получить ссылку на изображение');
             }
+
             return url;
         } finally {
             setUploadingGallery(false);
@@ -700,6 +711,8 @@ export default function NewsForm({
 
         clearErrors();
 
+        const galleryUrls = extractGalleryUrls(galleryItems);
+
         transform((form) => {
             const payload = { ...form };
 
@@ -730,7 +743,7 @@ export default function NewsForm({
                 is_featured: form.is_featured,
                 tags: payload.tags,
                 image: form.image || null,
-                gallery: form.gallery,
+                gallery: galleryUrls,
                 starts_at: payload.starts_at || null,
                 ends_at: payload.ends_at || null,
                 timezone: form.timezone || null,
@@ -785,8 +798,8 @@ export default function NewsForm({
         }
     };
 
-    const handleImageUpload = (result: { url?: string }) => {
-        if (result?.url) {
+    const handleImageUpload = (result: { url: string }) => {
+        if (result.url) {
             setData('image', result.url);
         }
     };
@@ -1310,7 +1323,7 @@ export default function NewsForm({
                                 <div className="space-y-2">
                                     <Label>Основное изображение</Label>
                                     <ImageUpload
-                                        type="slider-image"
+                                        type="news-cover"
                                         currentImage={data.image || undefined}
                                         onUpload={handleImageUpload}
                                         onRemove={() => setData('image', '')}
@@ -1326,7 +1339,7 @@ export default function NewsForm({
                                 <div className="space-y-2">
                                     <Label>Галерея</Label>
                                     <MultiImageUploader
-                                        images={uploadedGallery}
+                                        images={galleryItems}
                                         onChange={handleGalleryChange}
                                         onUpload={handleGalleryUpload}
                                         maxFiles={12}

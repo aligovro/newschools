@@ -14,6 +14,8 @@ export interface UploadImageResponse {
         small?: string;
         slider?: string;
         gallery?: string;
+        cover?: string;
+        news?: string;
     };
     data?: {
         original?: string;
@@ -22,6 +24,8 @@ export interface UploadImageResponse {
         small?: string;
         slider?: string;
         gallery?: string;
+        cover?: string;
+        news?: string;
         filename?: string;
         original_name?: string;
         size?: number;
@@ -32,7 +36,13 @@ export interface UploadImageResponse {
     };
 }
 
-export type UploadType = 'logo' | 'slider' | 'gallery' | 'text-widget';
+export type UploadType =
+    | 'logo'
+    | 'slider'
+    | 'gallery'
+    | 'text-widget'
+    | 'news-cover'
+    | 'news-gallery';
 
 /**
  * Загрузка файла на сервер
@@ -54,6 +64,8 @@ export const uploadFile = async (
             slider: '/dashboard/api/upload/slider-image',
             gallery: '/dashboard/api/upload/gallery-image',
             'text-widget': '/dashboard/api/upload/text-widget-image',
+            'news-cover': '/dashboard/api/upload/news-cover-image',
+            'news-gallery': '/dashboard/api/upload/news-gallery-image',
         };
 
         const uploadUrl = uploadUrls[type];
@@ -108,6 +120,8 @@ export const uploadFile = async (
                     small: responseData.data.small,
                     slider: responseData.data.slider,
                     gallery: responseData.data.gallery,
+                    cover: responseData.data.cover,
+                    news: responseData.data.news,
                 },
                 data: responseData.data,
             };

@@ -2,16 +2,25 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Upload, X, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import axios from 'axios';
+import {
+    uploadFile,
+    type UploadImageResponse,
+    type UploadType,
+} from '@/utils/uploadFile';
+
+interface ImageUploadResult {
+    url: string;
+    response: UploadImageResponse;
+}
 
 interface ImageUploadProps {
-    onUpload: (result: any) => void;
+    onUpload: (result: ImageUploadResult) => void;
     onError?: (error: string) => void;
     onRemove?: () => void;
     currentImage?: string;
-    type: 'organization-logo' | 'slider-image' | 'gallery-image';
+    type: 'organization-logo' | 'slider-image' | 'gallery-image' | 'news-cover';
     maxSize?: number; // in MB
     className?: string;
     disabled?: boolean;
@@ -33,17 +42,11 @@ export function ImageUpload({
     const [preview, setPreview] = useState<string | null>(currentImage || null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const getUploadEndpoint = () => {
-        switch (type) {
-            case 'organization-logo':
-                return '/dashboard/api/upload/organization-logo';
-            case 'slider-image':
-                return '/dashboard/api/upload/slider-image';
-            case 'gallery-image':
-                return '/dashboard/api/upload/gallery-image';
-            default:
-                return '/dashboard/api/upload/organization-logo';
-        }
+    const uploadTypeMap: Record<ImageUploadProps['type'], UploadType> = {
+        'organization-logo': 'logo',
+        'slider-image': 'slider',
+        'gallery-image': 'gallery',
+        'news-cover': 'news-cover',
     };
 
     const handleFileSelect = (file: File) => {
@@ -68,42 +71,44 @@ export function ImageUpload({
         reader.readAsDataURL(file);
 
         // Загружаем файл
-        uploadFile(file);
+        performUpload(file);
     };
 
-    const uploadFile = async (file: File) => {
+    const resolvePreviewUrl = (result: Awaited<ReturnType<typeof uploadFile>>): string | null => {
+        return (
+            result.data?.cover ||
+            result.data?.slider ||
+            result.data?.gallery ||
+            result.data?.news ||
+            result.data?.original ||
+            result.url ||
+            null
+        );
+    };
+
+    const performUpload = async (file: File) => {
         setIsUploading(true);
         setUploadProgress(0);
 
         try {
-            const formData = new FormData();
-            formData.append('image', file);
+            const uploadKind = uploadTypeMap[type] ?? 'logo';
+            const response = await uploadFile(file, uploadKind, setUploadProgress);
 
-            const response = await axios.post(getUploadEndpoint(), formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                onUploadProgress: (progressEvent) => {
-                    const progress = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
-                    setUploadProgress(progress);
-                },
-            });
-
-            if (response.data.message === 'Image uploaded and processed successfully') {
-                setPreview(response.data.url);
-                onUpload({
-                    filename: response.data.filename,
-                    url: response.data.url,
-                    variants: response.data.variants,
-                });
-                setUploadProgress(100);
-            } else {
-                throw new Error(response.data.message || 'Ошибка загрузки');
+            const previewUrl = resolvePreviewUrl(response);
+            if (!previewUrl) {
+                throw new Error('Не удалось получить ссылку на изображение');
             }
-        } catch (error: any) {
+
+            setPreview(previewUrl);
+            onUpload({
+                url: previewUrl,
+                response,
+            });
+            setUploadProgress(100);
+        } catch (error: unknown) {
             console.error('Upload error:', error);
-            const errorMessage = error.response?.data?.message || error.message || 'Ошибка загрузки файла';
+            const errorMessage =
+                error instanceof Error ? error.message : 'Ошибка загрузки файла';
             onError?.(errorMessage);
             setPreview(null);
         } finally {

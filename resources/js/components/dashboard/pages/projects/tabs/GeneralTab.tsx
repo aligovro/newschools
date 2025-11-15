@@ -7,6 +7,7 @@ import { SettingsSection } from '../ProjectForm/SettingsSection';
 import type {
     PaymentSettings,
     ProjectFormData,
+    SlugValidationState,
     UploadedImage,
 } from '../ProjectForm/types';
 
@@ -27,6 +28,13 @@ interface GeneralTabProps {
     projectImages: UploadedImage[];
     onProjectImageChange: (file: string | File | null) => void;
     onProjectImagesChange: (images: UploadedImage[]) => void;
+    slug: string;
+    autoGenerateSlug: boolean;
+    isSlugGenerating: boolean;
+    slugValidation: SlugValidationState;
+    onSlugChange: (value: string) => void;
+    onAutoGenerateSlugChange: (checked: boolean) => void;
+    onRegenerateSlug: () => void;
 }
 
 export default function GeneralTab({
@@ -41,6 +49,13 @@ export default function GeneralTab({
     projectImages,
     onProjectImageChange,
     onProjectImagesChange,
+    slug,
+    autoGenerateSlug,
+    isSlugGenerating,
+    slugValidation,
+    onSlugChange,
+    onAutoGenerateSlugChange,
+    onRegenerateSlug,
 }: GeneralTabProps) {
     return (
         <>
@@ -50,6 +65,13 @@ export default function GeneralTab({
                     errors={errors}
                     projectCategories={projectCategories}
                     onDataChange={onDataChange}
+                    slug={slug}
+                    autoGenerateSlug={autoGenerateSlug}
+                    isSlugGenerating={isSlugGenerating}
+                    slugValidation={slugValidation}
+                    onSlugChange={onSlugChange}
+                    onAutoGenerateSlugChange={onAutoGenerateSlugChange}
+                    onRegenerateSlug={onRegenerateSlug}
                 />
 
                 <FinancialInfoSection

@@ -20,7 +20,7 @@ class UpdateNewsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'organization_id' => 'sometimes|integer|exists:organizations,id',
+            'organization_id' => 'sometimes|nullable|integer|exists:organizations,id',
             'title' => 'sometimes|required|string|max:255',
             'subtitle' => 'sometimes|nullable|string|max:255',
             'slug' => 'sometimes|nullable|string|max:255',
@@ -89,6 +89,10 @@ class UpdateNewsRequest extends FormRequest
 
     public function newsable(): ?array
     {
+        if ($this->exists('target') && $this->input('target') === null) {
+            return [];
+        }
+
         $target = $this->input('target');
         if (!$target || !is_array($target)) {
             return null;

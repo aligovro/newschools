@@ -19,6 +19,13 @@ export function BasicInfoSection({
     errors,
     projectCategories = [],
     onDataChange,
+    slug,
+    autoGenerateSlug,
+    isSlugGenerating,
+    slugValidation,
+    onSlugChange,
+    onAutoGenerateSlugChange,
+    onRegenerateSlug,
 }: BasicInfoSectionProps) {
     const handleCategoryToggle = (categoryId: number) => {
         const currentIds = new Set(data.category_ids || []);
@@ -64,7 +71,10 @@ export function BasicInfoSection({
             <div className="create-organization__section-content">
                 <div className="create-organization__field-group create-organization__field-group--two-columns">
                     <div className="create-organization__field">
-                        <Label htmlFor="title">
+                        <Label
+                            htmlFor="title"
+                            className="create-organization__label mb-1"
+                        >
                             Название проекта
                             <span className="create-organization__required">
                                 *
@@ -87,16 +97,79 @@ export function BasicInfoSection({
                     </div>
 
                     <div className="create-organization__field">
-                        <Label htmlFor="slug">URL slug</Label>
-                        <Input
-                            id="slug"
-                            value={data.slug}
-                            onChange={(e) =>
-                                onDataChange('slug', e.target.value)
-                            }
-                            placeholder="url-slug"
-                            className={errors.slug ? 'border-red-500' : ''}
-                        />
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <Label htmlFor="slug">URL slug</Label>
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    id="project-auto-generate-slug"
+                                    checked={autoGenerateSlug}
+                                    onCheckedChange={(checked) => {
+                                        onAutoGenerateSlugChange(!!checked);
+                                        if (checked) {
+                                            onRegenerateSlug();
+                                        }
+                                    }}
+                                />
+                                <Label
+                                    htmlFor="project-auto-generate-slug"
+                                    className="cursor-pointer text-sm font-normal"
+                                >
+                                    Сгенерировать автоматически
+                                </Label>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Input
+                                id="slug"
+                                value={slug}
+                                onChange={(e) => onSlugChange(e.target.value)}
+                                placeholder="url-slug"
+                                className={
+                                    errors.slug ||
+                                    (!slugValidation.isUnique &&
+                                        slugValidation.isValid)
+                                        ? 'border-red-500'
+                                        : ''
+                                }
+                            />
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    onRegenerateSlug();
+                                    onAutoGenerateSlugChange(true);
+                                }}
+                                disabled={isSlugGenerating}
+                                className="rounded-md border border-gray-300 px-3 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                title="Перегенерировать slug"
+                            >
+                                {isSlugGenerating ? '...' : '⟳'}
+                            </button>
+                        </div>
+                        {autoGenerateSlug && !slug && (
+                            <p className="mt-1 text-xs text-gray-500">
+                                Слаг будет сгенерирован из названия проекта
+                            </p>
+                        )}
+                        {slugValidation.isValid && !slugValidation.isUnique && (
+                            <p className="mt-1 text-sm text-red-600">
+                                Такой slug уже существует
+                                {slugValidation.suggestedSlug &&
+                                    slugValidation.suggestedSlug !== slug && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                onSlugChange(
+                                                    slugValidation.suggestedSlug!,
+                                                )
+                                            }
+                                            className="ml-2 text-blue-600 underline hover:text-blue-800"
+                                        >
+                                            Использовать:{' '}
+                                            {slugValidation.suggestedSlug}
+                                        </button>
+                                    )}
+                            </p>
+                        )}
                         {errors.slug && (
                             <p className="mt-1 text-sm text-red-600">
                                 {errors.slug}

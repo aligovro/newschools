@@ -12,12 +12,15 @@ import type {
     ProjectFormData,
     ProjectFormProps,
     ProjectStageFormData,
+    SlugValidationState,
     UploadedImage,
 } from './types';
 import {
     ALLOWED_PAYMENT_GATEWAYS,
     normalizePaymentSettings,
 } from '@/lib/payments/normalizePaymentSettings';
+import { slugify } from '@/lib/helpers';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type StageRequestPayload = {
     id?: number;
@@ -166,6 +169,14 @@ export default function ProjectForm({
     const { data, setData, processing, errors, progress } = useForm(
         initialFormData as any,
     );
+
+    const [autoGenerateSlug, setAutoGenerateSlug] = useState(!isEdit);
+    const [isSlugGenerating, setIsSlugGenerating] = useState(false);
+    const [slugValidation, setSlugValidation] = useState<SlugValidationState>({
+        isUnique: true,
+        isValid: true,
+    });
+    const debouncedSlug = useDebounce(data.slug, 500);
 
     useEffect(() => {
         const selectedIds = Array.isArray((data as any).category_ids)
@@ -343,18 +354,116 @@ export default function ProjectForm({
         (setData as any)('gallery', files);
     }, [projectImages, setData]);
 
-    // Generate slug from title (only when creating)
+    const regenerateSlug = useCallback(() => {
+        const generated = data.title?.trim()
+            ? slugify(data.title)
+            : '';
+        (setData as any)('slug', generated);
+    }, [data.title, setData]);
+
     useEffect(() => {
-        if (!isEdit && data.title && !data.slug) {
-            const slug = data.title
-                .toLowerCase()
-                .replace(/[^a-z0-9\s-]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-')
-                .trim();
-            (setData as any)('slug', slug);
+        if (!autoGenerateSlug) return;
+        const generated = data.title?.trim()
+            ? slugify(data.title)
+            : '';
+        if (generated !== data.slug) {
+            (setData as any)('slug', generated);
         }
-    }, [data.title, data.slug, setData, isEdit]);
+    }, [data.title, autoGenerateSlug, data.slug, setData]);
+
+    useEffect(() => {
+        const currentSlug = (debouncedSlug || '').trim();
+        if (!currentSlug) {
+            setSlugValidation({
+                isUnique: true,
+                isValid: false,
+                suggestedSlug: undefined,
+            });
+            return;
+        }
+
+        if (!/^[a-z0-9-]+$/.test(currentSlug) || currentSlug.length < 3) {
+            setSlugValidation({
+                isUnique: false,
+                isValid: false,
+                suggestedSlug: undefined,
+            });
+            return;
+        }
+
+        let cancelled = false;
+        setIsSlugGenerating(true);
+        const payload: {
+            text: string;
+            table: string;
+            column: string;
+            exclude_id?: number;
+        } = {
+            text: currentSlug,
+            table: 'projects',
+            column: 'slug',
+        };
+
+        if (isEdit && project?.id) {
+            payload.exclude_id = project.id;
+        }
+
+        fetch('/api/slug/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN':
+                    document
+                        .querySelector('meta[name="csrf-token"]')
+                        ?.getAttribute('content') || '',
+            },
+            body: JSON.stringify(payload),
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Validation failed');
+                }
+                return response.json();
+            })
+            .then((result) => {
+                if (cancelled) return;
+                setSlugValidation({
+                    isUnique: result.is_unique,
+                    isValid: true,
+                    suggestedSlug: result.suggested_slug,
+                });
+            })
+            .catch((error) => {
+                if (cancelled) return;
+                console.error('Ошибка валидации slug проекта:', error);
+                setSlugValidation({
+                    isUnique: true,
+                    isValid: true,
+                    suggestedSlug: undefined,
+                });
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setIsSlugGenerating(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [debouncedSlug, isEdit, project?.id]);
+
+    const handleSlugChange = useCallback(
+        (value: string) => {
+            setAutoGenerateSlug(false);
+            (setData as any)('slug', value);
+        },
+        [setData],
+    );
+
+    const handleAutoGenerateSlugChange = useCallback((checked: boolean) => {
+        setAutoGenerateSlug(checked);
+    }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -581,6 +690,13 @@ export default function ProjectForm({
                             projectImages={projectImages}
                             onProjectImageChange={setProjectImage}
                             onProjectImagesChange={setProjectImages}
+                            slug={data.slug}
+                            autoGenerateSlug={autoGenerateSlug}
+                            isSlugGenerating={isSlugGenerating}
+                            slugValidation={slugValidation}
+                            onSlugChange={handleSlugChange}
+                            onAutoGenerateSlugChange={handleAutoGenerateSlugChange}
+                            onRegenerateSlug={regenerateSlug}
                         />
                     ) : (
                         <StagesTab

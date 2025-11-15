@@ -1,14 +1,14 @@
 import { fetchPublicOrganizations } from '@/lib/api/public';
 import '@css/components/main-site/SubscribeBlock.scss';
 import { usePage } from '@inertiajs/react';
+import axios from 'axios';
 import { Plus, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import axios from 'axios';
 import { toast } from 'sonner';
 
+import type { User as AppUser, Auth } from '@/types';
 import CitySelector from './CitySelector';
 import { SubscribeSponsorModal } from './SubscribeSponsorModal';
-import type { Auth, User as AppUser } from '@/types';
 
 interface Organization {
     id: number;
@@ -243,6 +243,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                                 value={selectedCity}
                                 onChange={setSelectedCity}
                                 detectOnMount={autoDetectCity}
+                                disableAutoSet={!autoDetectCity}
                             />
                         </div>
 
@@ -305,10 +306,9 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                                     {/* Текст */}
                                     <div className="min-w-0 flex-1">
                                         <div className="subscribe-block__school-address truncate">
-                                            {school.address ||
-                                                (school.city?.name
-                                                    ? `${school.city.name}`
-                                                    : '')}
+                                            {[school.city?.name, school.address]
+                                                .filter(Boolean)
+                                                .join(', ')}
                                         </div>
                                         <div className="subscribe-block__school-name truncate">
                                             {school.name}

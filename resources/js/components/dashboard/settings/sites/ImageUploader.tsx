@@ -249,7 +249,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         },
         [
             maxSize,
-            aspectRatio,
             onImageUpload,
             onImageCrop,
             enableServerUpload,
@@ -384,7 +383,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             // Для изображений больше 1920px используем качество 0.98, иначе 0.95
             const isLargeImage = outWidth > 1920 || outHeight > 1920;
             const quality = isLargeImage ? 0.98 : 0.95;
-            
+
             canvas.toBlob(
                 (blob) => {
                     if (DEBUG_CROP)

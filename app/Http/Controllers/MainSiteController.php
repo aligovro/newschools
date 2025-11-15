@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\HasSiteWidgets;
 use App\Models\Organization;
 use App\Http\Resources\OrganizationStaffResource;
+use App\Enums\DonationStatus;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -47,7 +48,8 @@ class MainSiteController extends Controller
                 'donations as sponsors_count' => function ($q) {
                     $q->where('status', 'completed')
                         ->whereNotNull('paid_at')
-                        ->selectRaw('COUNT(DISTINCT user_id)');
+                        ->whereNotNull('donor_id')
+                        ->selectRaw('COUNT(DISTINCT donor_id)');
                 }
             ]);
 
@@ -130,9 +132,22 @@ class MainSiteController extends Controller
         $organization = Organization::where('slug', $slug)
             ->where('status', 'active')
             ->where('is_public', true)
-            ->with(['region', 'city', 'projects' => function ($q) {
-                $q->where('status', 'active')->limit(6);
-            }])
+            ->with([
+                'region',
+                'city',
+                'projects' => function ($q) {
+                    $q->where('status', 'active')->limit(6);
+                },
+                'director',
+            ])
+            ->withCount([
+                'donations as sponsors_count' => function ($q) {
+                    $q->where('status', DonationStatus::Completed)
+                        ->whereNotNull('paid_at')
+                        ->whereNotNull('donor_id')
+                        ->selectRaw('COUNT(DISTINCT donor_id)');
+                },
+            ])
             ->firstOrFail();
 
         // Подготавливаем галерею изображений
@@ -141,6 +156,46 @@ class MainSiteController extends Controller
             $gallery = array_map(function ($image) {
                 return '/storage/' . ltrim($image, '/');
             }, $organization->images);
+        }
+
+        // Статистика
+        $completedDonationsQuery = $organization->donations()
+            ->where('status', DonationStatus::Completed)
+            ->whereNotNull('paid_at');
+
+        $sponsorsCount = $organization->sponsors_count ?? (clone $completedDonationsQuery)
+            ->whereNotNull('donor_id')
+            ->distinct('donor_id')
+            ->count('donor_id');
+
+        $autoPaymentsCount = (clone $completedDonationsQuery)
+            ->where(function ($query) {
+                $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_details, '$.is_recurring')) = 'true'")
+                    ->orWhereRaw("JSON_EXTRACT(payment_details, '$.is_recurring') = 1")
+                    ->orWhereRaw("JSON_EXTRACT(payment_details, '$.is_recurring') = true")
+                    ->orWhereRaw("JSON_EXTRACT(payment_details, '$.recurring_period') IS NOT NULL");
+            })
+            ->count();
+
+        $alumniCount = $organization->members()
+            ->where('is_public', true)
+            ->count();
+
+        $projectsCount = $organization->projects()
+            ->where('status', 'active')
+            ->count();
+
+        $directorData = null;
+        if ($organization->relationLoaded('director') && $organization->director) {
+            $directorData = (new OrganizationStaffResource($organization->director))->toArray(request());
+        } else {
+            $fallbackDirector = $organization->adminUser();
+            if ($fallbackDirector) {
+                $directorData = [
+                    'full_name' => $fallbackDirector->name,
+                    'photo' => null,
+                ];
+            }
         }
 
         // Подготавливаем данные организации для отображения
@@ -175,6 +230,13 @@ class MainSiteController extends Controller
                     'progress_percentage' => $project->progress_percentage ?? 0,
                 ];
             }),
+            'stats' => [
+                'alumni' => $alumniCount,
+                'sponsors' => $sponsorsCount,
+                'autopayments' => $autoPaymentsCount,
+                'projects' => $projectsCount,
+            ],
+            'director' => $directorData,
         ];
 
         $data = $this->getSiteWidgetsAndPositions();

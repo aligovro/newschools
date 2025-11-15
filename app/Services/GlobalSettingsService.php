@@ -7,399 +7,402 @@ use Illuminate\Support\Facades\Cache;
 
 class GlobalSettingsService
 {
-  public function __construct(
-    private readonly GlobalPaymentSettingsService $globalPaymentSettingsService,
-  ) {
-  }
+    public function __construct(
+        private readonly GlobalPaymentSettingsService $globalPaymentSettingsService,
+    ) {}
 
-  /**
-   * Получить глобальные настройки
-   */
-  public function getSettings(): GlobalSettings
-  {
-    return Cache::remember('global_settings', 86400, function () { // Кеш на 24 часа
-      return GlobalSettings::instance();
-    });
-  }
-
-  /**
-   * Очистить кеш настроек
-   */
-  public function clearCache(): void
-  {
-    Cache::forget('global_settings');
-    Cache::forget('global_payment_settings:instance');
-  }
-
-  /**
-   * Получить терминологию
-   */
-  public function getTerminology(): array
-  {
-    $settings = $this->getSettings();
-
-    // Безопасные фолбэки на случай пустых полей
-    $f = function ($value, $default) {
-      return $value !== null && $value !== '' ? $value : $default;
-    };
-
-    $orgSingular = $f($settings->org_singular_nominative ?? $settings->organization_singular ?? null, 'Организация');
-    $orgPlural = $f($settings->org_plural_nominative ?? $settings->organization_plural ?? null, 'Организации');
-    $orgGenitive = $f($settings->org_plural_genitive ?? $settings->organization_genitive ?? null, 'организаций');
-    $orgAccusative = $f($settings->org_singular_accusative ?? null, $orgSingular);
-    $orgInstrumentalPlural = $f($settings->org_plural_instrumental ?? null, $orgPlural);
-
-    $memberSingular = $f($settings->member_singular_nominative ?? $settings->member_singular ?? null, 'участник');
-    $memberPlural = $f($settings->member_plural_nominative ?? $settings->member_plural ?? null, 'участники');
-    $memberGenitive = $f($settings->member_plural_genitive ?? $settings->member_genitive ?? null, 'участников');
-
-    // Sponsors
-    $sponsorSingular = $f($settings->sponsor_singular_nominative ?? null, 'спонсор');
-    $sponsorPlural = $f($settings->sponsor_plural_nominative ?? null, 'спонсоры');
-    $sponsorGenitive = $f($settings->sponsor_plural_genitive ?? null, 'спонсоров');
-
-    return [
-      'organization' => [
-        // Единственное число
-        'singular_nominative' => $orgSingular,
-        'singular_genitive' => $f($settings->org_singular_genitive ?? null, $orgGenitive),
-        'singular_dative' => $f($settings->org_singular_dative ?? null, $orgSingular),
-        'singular_accusative' => $orgAccusative,
-        'singular_instrumental' => $f($settings->org_singular_instrumental ?? null, $orgSingular),
-        'singular_prepositional' => $f($settings->org_singular_prepositional ?? null, $orgSingular),
-
-        // Множественное число
-        'plural_nominative' => $orgPlural,
-        'plural_genitive' => $orgGenitive,
-        'plural_dative' => $f($settings->org_plural_dative ?? null, $orgPlural),
-        'plural_accusative' => $f($settings->org_plural_accusative ?? null, $orgPlural),
-        'plural_instrumental' => $orgInstrumentalPlural,
-        'plural_prepositional' => $f($settings->org_plural_prepositional ?? null, $orgPlural),
-      ],
-      'member' => [
-        // Единственное число
-        'singular_nominative' => $memberSingular,
-        'singular_genitive' => $f($settings->member_singular_genitive ?? null, $memberGenitive),
-        'singular_dative' => $f($settings->member_singular_dative ?? null, $memberSingular),
-        'singular_accusative' => $f($settings->member_singular_accusative ?? null, $memberSingular),
-        'singular_instrumental' => $f($settings->member_singular_instrumental ?? null, $memberSingular),
-        'singular_prepositional' => $f($settings->member_singular_prepositional ?? null, $memberSingular),
-
-        // Множественное число
-        'plural_nominative' => $memberPlural,
-        'plural_genitive' => $memberGenitive,
-        'plural_dative' => $f($settings->member_plural_dative ?? null, $memberPlural),
-        'plural_accusative' => $f($settings->member_plural_accusative ?? null, $memberPlural),
-        'plural_instrumental' => $f($settings->member_plural_instrumental ?? null, $memberPlural),
-        'plural_prepositional' => $f($settings->member_plural_prepositional ?? null, $memberPlural),
-      ],
-      'sponsor' => [
-        'singular_nominative' => $sponsorSingular,
-        'singular_genitive' => $f($settings->sponsor_singular_genitive ?? null, 'спонсора'),
-        'singular_dative' => $f($settings->sponsor_singular_dative ?? null, 'спонсору'),
-        'singular_accusative' => $f($settings->sponsor_singular_accusative ?? null, 'спонсора'),
-        'singular_instrumental' => $f($settings->sponsor_singular_instrumental ?? null, 'спонсором'),
-        'singular_prepositional' => $f($settings->sponsor_singular_prepositional ?? null, 'спонсоре'),
-        'plural_nominative' => $sponsorPlural,
-        'plural_genitive' => $sponsorGenitive,
-        'plural_dative' => $f($settings->sponsor_plural_dative ?? null, 'спонсорам'),
-        'plural_accusative' => $f($settings->sponsor_plural_accusative ?? null, 'спонсоров'),
-        'plural_instrumental' => $f($settings->sponsor_plural_instrumental ?? null, 'спонсорами'),
-        'plural_prepositional' => $f($settings->sponsor_plural_prepositional ?? null, 'спонсорах'),
-      ],
-      'actions' => [
-        'join' => $f($settings->action_join ?? null, 'Присоединиться'),
-        'leave' => $f($settings->action_leave ?? null, 'Покинуть'),
-        'support' => $f($settings->action_support ?? null, 'Поддержать'),
-      ],
-    ];
-  }
-
-  /**
-   * Терминология для организации (с простым кешом под ключом org)
-   */
-  public function getTerminologyForOrganization(int $organizationId): array
-  {
-    $key = "terminology:org:{$organizationId}";
-    return Cache::remember($key, 900, function () { // 15 минут
-      return $this->getTerminology();
-    });
-  }
-
-  /**
-   * Очистка кеша терминологии (глобальной и организационной)
-   */
-  public function clearTerminologyCache(?int $organizationId = null): void
-  {
-    if ($organizationId) {
-      Cache::forget("terminology:org:{$organizationId}");
-    }
-    Cache::forget('terminology:global');
-  }
-
-  /**
-   * Получить настройки системы
-   */
-  public function getSystemSettings(): array
-  {
-    $settings = $this->getSettings();
-
-    return [
-      'name' => $settings->system_name,
-      'description' => $settings->system_description,
-      'language' => $settings->default_language,
-      'timezone' => $settings->default_timezone,
-      'currency' => $settings->default_currency,
-      'settings' => $settings->system_settings ?? [],
-      'feature_flags' => $settings->feature_flags ?? [],
-      'integrations' => $settings->integration_settings ?? [],
-    ];
-  }
-
-  /**
-   * Получить настройки по умолчанию для новых организаций
-   */
-  public function getDefaultOrganizationSettings(): array
-  {
-    $settings = $this->getSettings();
-
-    return [
-      'organization' => $settings->default_organization_settings ?? [],
-      'payment' => $this->globalPaymentSettingsService->getNormalizedSettings(),
-      'notification' => $settings->default_notification_settings ?? [],
-      'seo' => $settings->default_seo_settings ?? [],
-    ];
-  }
-
-  /**
-   * Обновить глобальные настройки
-   */
-  public function updateSettings(array $data): GlobalSettings
-  {
-    $settings = $this->getSettings();
-
-    // Обновляем только переданные поля
-    $allowedFields = [
-      // Новая схема (полная система склонений)
-      'org_singular_nominative',
-      'org_singular_genitive',
-      'org_singular_dative',
-      'org_singular_accusative',
-      'org_singular_instrumental',
-      'org_singular_prepositional',
-      'org_plural_nominative',
-      'org_plural_genitive',
-      'org_plural_dative',
-      'org_plural_accusative',
-      'org_plural_instrumental',
-      'org_plural_prepositional',
-
-      'member_singular_nominative',
-      'member_singular_genitive',
-      'member_singular_dative',
-      'member_singular_accusative',
-      'member_singular_instrumental',
-      'member_singular_prepositional',
-      'member_plural_nominative',
-      'member_plural_genitive',
-      'member_plural_dative',
-      'member_plural_accusative',
-      'member_plural_instrumental',
-      'member_plural_prepositional',
-
-      // Sponsors terminology
-      'sponsor_singular_nominative',
-      'sponsor_singular_genitive',
-      'sponsor_singular_dative',
-      'sponsor_singular_accusative',
-      'sponsor_singular_instrumental',
-      'sponsor_singular_prepositional',
-      'sponsor_plural_nominative',
-      'sponsor_plural_genitive',
-      'sponsor_plural_dative',
-      'sponsor_plural_accusative',
-      'sponsor_plural_instrumental',
-      'sponsor_plural_prepositional',
-
-      // Действия
-      'action_join',
-      'action_leave',
-      'action_support',
-
-      // Система и конфиги
-      'system_name',
-      'system_description',
-      'default_language',
-      'default_timezone',
-      'default_currency',
-      'default_organization_settings',
-      'default_notification_settings',
-      'system_settings',
-      'feature_flags',
-      'integration_settings',
-      'default_seo_settings',
-      'metadata',
-    ];
-
-    // Поддержка legacy-ключей => маппим к новой схеме, если пришли
-    $legacyMap = [
-      'organization_singular' => 'org_singular_nominative',
-      'organization_plural' => 'org_plural_nominative',
-      'organization_genitive' => 'org_plural_genitive',
-      'organization_dative' => 'org_singular_dative',
-      'organization_instrumental' => 'org_singular_instrumental',
-      'member_singular' => 'member_singular_nominative',
-      'member_plural' => 'member_plural_nominative',
-      'member_genitive' => 'member_plural_genitive',
-    ];
-
-    foreach ($legacyMap as $old => $new) {
-      if (isset($data[$old]) && !isset($data[$new])) {
-        $data[$new] = $data[$old];
-        unset($data[$old]);
-      }
+    /**
+     * Получить глобальные настройки
+     */
+    public function getSettings(): GlobalSettings
+    {
+        return Cache::remember('global_settings', 86400, function () { // Кеш на 24 часа
+            return GlobalSettings::instance();
+        });
     }
 
-    foreach ($allowedFields as $field) {
-      if (isset($data[$field])) {
-        $settings->$field = $data[$field];
-      }
+    /**
+     * Очистить кеш настроек
+     */
+    public function clearCache(): void
+    {
+        Cache::forget('global_settings');
+        Cache::forget('global_payment_settings:instance');
     }
 
-    $settings->save();
+    /**
+     * Получить терминологию
+     */
+    public function getTerminology(): array
+    {
+        $settings = $this->getSettings();
 
-    // Очищаем кеш
-    $this->clearCache();
-    $this->clearTerminologyCache();
+        // Безопасные фолбэки на случай пустых полей
+        $f = function ($value, $default) {
+            return $value !== null && $value !== '' ? $value : $default;
+        };
 
-    return $settings;
-  }
+        $orgSingular = $f($settings->org_singular_nominative ?? $settings->organization_singular ?? null, 'Организация');
+        $orgPlural = $f($settings->org_plural_nominative ?? $settings->organization_plural ?? null, 'Организации');
+        $orgGenitive = $f($settings->org_plural_genitive ?? $settings->organization_genitive ?? null, 'организаций');
+        $orgAccusative = $f($settings->org_singular_accusative ?? null, $orgSingular);
+        $orgInstrumentalPlural = $f($settings->org_plural_instrumental ?? null, $orgPlural);
 
-  /**
-   * Получить текст с правильной терминологией
-   */
-  public function getText(string $key, array $params = []): string
-  {
-    $terminology = $this->getTerminology();
-    $systemSettings = $this->getSystemSettings();
+        $memberSingular = $f($settings->member_singular_nominative ?? $settings->member_singular ?? null, 'участник');
+        $memberPlural = $f($settings->member_plural_nominative ?? $settings->member_plural ?? null, 'участники');
+        $memberGenitive = $f($settings->member_plural_genitive ?? $settings->member_genitive ?? null, 'участников');
 
-    $texts = [
-      // Организации
-      'organizations_page_title' => "Управление {$terminology['organization']['plural_instrumental']}",
-      'organizations_page_description' => "Управляйте {$terminology['organization']['plural_instrumental']} в системе",
-      'create_organization' => "Создать {$terminology['organization']['singular_accusative']}",
-      'organization_created' => "{$terminology['organization']['singular_nominative']} успешно создана",
-      'organization_updated' => "{$terminology['organization']['singular_nominative']} успешно обновлена",
-      'organization_deleted' => "{$terminology['organization']['singular_nominative']} успешно удалена",
-      'no_organizations' => "{$terminology['organization']['plural_nominative']} не найдены",
+        // Sponsors
+        $sponsorSingular = $f($settings->sponsor_singular_nominative ?? null, 'спонсор');
+        $sponsorPlural = $f($settings->sponsor_plural_nominative ?? null, 'спонсоры');
+        $sponsorGenitive = $f($settings->sponsor_plural_genitive ?? null, 'спонсоров');
 
-      // Члены
-      'members_page_title' => "Управление {$terminology['member']['plural_instrumental']}",
-      'members_page_description' => "Управляйте {$terminology['member']['plural_instrumental']} в системе",
-      'member_registered' => "{$terminology['member']['singular_nominative']} зарегистрирован",
+        return [
+            'organization' => [
+                // Единственное число
+                'singular_nominative' => $orgSingular,
+                'singular_genitive' => $f($settings->org_singular_genitive ?? null, $orgGenitive),
+                'singular_dative' => $f($settings->org_singular_dative ?? null, $orgSingular),
+                'singular_accusative' => $orgAccusative,
+                'singular_instrumental' => $f($settings->org_singular_instrumental ?? null, $orgSingular),
+                'singular_prepositional' => $f($settings->org_singular_prepositional ?? null, $orgSingular),
 
-      // Действия
-      'join_organization' => "{$terminology['actions']['join']} в {$terminology['organization']['singular_accusative']}",
-      'leave_organization' => "{$terminology['actions']['leave']} из {$terminology['organization']['plural_genitive']}",
-      'support_organization' => "{$terminology['actions']['support']} {$terminology['organization']['singular_accusative']}",
+                // Множественное число
+                'plural_nominative' => $orgPlural,
+                'plural_genitive' => $orgGenitive,
+                'plural_dative' => $f($settings->org_plural_dative ?? null, $orgPlural),
+                'plural_accusative' => $f($settings->org_plural_accusative ?? null, $orgPlural),
+                'plural_instrumental' => $orgInstrumentalPlural,
+                'plural_prepositional' => $f($settings->org_plural_prepositional ?? null, $orgPlural),
+            ],
+            'member' => [
+                // Единственное число
+                'singular_nominative' => $memberSingular,
+                'singular_genitive' => $f($settings->member_singular_genitive ?? null, $memberGenitive),
+                'singular_dative' => $f($settings->member_singular_dative ?? null, $memberSingular),
+                'singular_accusative' => $f($settings->member_singular_accusative ?? null, $memberSingular),
+                'singular_instrumental' => $f($settings->member_singular_instrumental ?? null, $memberSingular),
+                'singular_prepositional' => $f($settings->member_singular_prepositional ?? null, $memberSingular),
 
-      // Система
-      'system_name' => $systemSettings['name'],
-      'system_description' => $systemSettings['description'],
-      'dashboard_title' => "Панель управления {$systemSettings['name']}",
-
-      // Статистика
-      'total_organizations' => "Всего {$terminology['organization']['plural_genitive']}",
-      'total_members' => "Всего {$terminology['member']['plural_genitive']}",
-      'recent_organizations' => "Последние {$terminology['organization']['plural_nominative']}",
-      'recent_members' => "Последние {$terminology['member']['plural_nominative']}",
-    ];
-
-    $text = $texts[$key] ?? $key;
-
-    // Заменяем параметры
-    foreach ($params as $param => $value) {
-      $text = str_replace("{{$param}}", $value, $text);
+                // Множественное число
+                'plural_nominative' => $memberPlural,
+                'plural_genitive' => $memberGenitive,
+                'plural_dative' => $f($settings->member_plural_dative ?? null, $memberPlural),
+                'plural_accusative' => $f($settings->member_plural_accusative ?? null, $memberPlural),
+                'plural_instrumental' => $f($settings->member_plural_instrumental ?? null, $memberPlural),
+                'plural_prepositional' => $f($settings->member_plural_prepositional ?? null, $memberPlural),
+            ],
+            'sponsor' => [
+                'singular_nominative' => $sponsorSingular,
+                'singular_genitive' => $f($settings->sponsor_singular_genitive ?? null, 'спонсора'),
+                'singular_dative' => $f($settings->sponsor_singular_dative ?? null, 'спонсору'),
+                'singular_accusative' => $f($settings->sponsor_singular_accusative ?? null, 'спонсора'),
+                'singular_instrumental' => $f($settings->sponsor_singular_instrumental ?? null, 'спонсором'),
+                'singular_prepositional' => $f($settings->sponsor_singular_prepositional ?? null, 'спонсоре'),
+                'plural_nominative' => $sponsorPlural,
+                'plural_genitive' => $sponsorGenitive,
+                'plural_dative' => $f($settings->sponsor_plural_dative ?? null, 'спонсорам'),
+                'plural_accusative' => $f($settings->sponsor_plural_accusative ?? null, 'спонсоров'),
+                'plural_instrumental' => $f($settings->sponsor_plural_instrumental ?? null, 'спонсорами'),
+                'plural_prepositional' => $f($settings->sponsor_plural_prepositional ?? null, 'спонсорах'),
+            ],
+            'actions' => [
+                'join' => $f($settings->action_join ?? null, 'Присоединиться'),
+                'leave' => $f($settings->action_leave ?? null, 'Покинуть'),
+                'support' => $f($settings->action_support ?? null, 'Поддержать'),
+            ],
+        ];
     }
 
-    return $text;
-  }
+    /**
+     * Терминология для организации (с простым кешом под ключом org)
+     */
+    public function getTerminologyForOrganization(int $organizationId): array
+    {
+        $key = "terminology:org:{$organizationId}";
+        return Cache::remember($key, 900, function () { // 15 минут
+            return $this->getTerminology();
+        });
+    }
 
-  /**
-   * Получить правильную форму слова для числа
-   */
-  public function getPluralForm(int $count, array $forms): string
-  {
-    $terminology = $this->getTerminology();
+    /**
+     * Очистка кеша терминологии (глобальной и организационной)
+     */
+    public function clearTerminologyCache(?int $organizationId = null): void
+    {
+        if ($organizationId) {
+            Cache::forget("terminology:org:{$organizationId}");
+        }
+        Cache::forget('terminology:global');
+    }
 
-    $cases = [2, 0, 1, 1, 1, 2];
-    $case = $cases[($count % 100 > 4 && $count % 100 < 20) ? 2 : $cases[min($count % 10, 5)]];
+    /**
+     * Получить настройки системы
+     */
+    public function getSystemSettings(): array
+    {
+        $settings = $this->getSettings();
 
-    return $forms[$case] ?? $forms[1];
-  }
+        return [
+            'name' => $settings->system_name,
+            'description' => $settings->system_description,
+            'language' => $settings->default_language,
+            'timezone' => $settings->default_timezone,
+            'currency' => $settings->default_currency,
+            'settings' => $settings->system_settings ?? [],
+            'feature_flags' => $settings->feature_flags ?? [],
+            'integrations' => $settings->integration_settings ?? [],
+        ];
+    }
 
-  /**
-   * Получить правильную форму организации для числа
-   */
-  public function getOrganizationForm(int $count): string
-  {
-    $terminology = $this->getTerminology();
+    /**
+     * Получить настройки по умолчанию для новых организаций
+     */
+    public function getDefaultOrganizationSettings(): array
+    {
+        $settings = $this->getSettings();
 
-    return $this->getPluralForm($count, [
-      2 => $terminology['organization']['plural'], // школы
-      0 => $terminology['organization']['genitive'], // школ
-      1 => $terminology['organization']['singular'], // школа
-    ]);
-  }
+        return [
+            'organization' => $settings->default_organization_settings ?? [],
+            'payment' => $this->globalPaymentSettingsService->getNormalizedSettings(),
+            'notification' => $settings->default_notification_settings ?? [],
+            'seo' => $settings->default_seo_settings ?? [],
+        ];
+    }
 
-  /**
-   * Получить правильную форму члена для числа
-   */
-  public function getMemberForm(int $count): string
-  {
-    $terminology = $this->getTerminology();
+    /**
+     * Обновить глобальные настройки
+     */
+    public function updateSettings(array $data): GlobalSettings
+    {
+        $settings = $this->getSettings();
 
-    return $this->getPluralForm($count, [
-      2 => $terminology['member']['plural'], // выпускники
-      0 => $terminology['member']['genitive'], // выпускников
-      1 => $terminology['member']['singular'], // выпускник
-    ]);
-  }
+        // Обновляем только переданные поля
+        $allowedFields = [
+            // Новая схема (полная система склонений)
+            'org_singular_nominative',
+            'org_singular_genitive',
+            'org_singular_dative',
+            'org_singular_accusative',
+            'org_singular_instrumental',
+            'org_singular_prepositional',
+            'org_plural_nominative',
+            'org_plural_genitive',
+            'org_plural_dative',
+            'org_plural_accusative',
+            'org_plural_instrumental',
+            'org_plural_prepositional',
 
-  /**
-   * Проверить включена ли функция
-   */
-  public function isFeatureEnabled(string $feature): bool
-  {
-    $settings = $this->getSettings();
-    $featureFlags = $settings->feature_flags ?? [];
+            'member_singular_nominative',
+            'member_singular_genitive',
+            'member_singular_dative',
+            'member_singular_accusative',
+            'member_singular_instrumental',
+            'member_singular_prepositional',
+            'member_plural_nominative',
+            'member_plural_genitive',
+            'member_plural_dative',
+            'member_plural_accusative',
+            'member_plural_instrumental',
+            'member_plural_prepositional',
 
-    return $featureFlags[$feature] ?? false;
-  }
+            // Sponsors terminology
+            'sponsor_singular_nominative',
+            'sponsor_singular_genitive',
+            'sponsor_singular_dative',
+            'sponsor_singular_accusative',
+            'sponsor_singular_instrumental',
+            'sponsor_singular_prepositional',
+            'sponsor_plural_nominative',
+            'sponsor_plural_genitive',
+            'sponsor_plural_dative',
+            'sponsor_plural_accusative',
+            'sponsor_plural_instrumental',
+            'sponsor_plural_prepositional',
 
-  /**
-   * Получить настройку системы
-   */
-  public function getSystemSetting(string $key, $default = null)
-  {
-    $settings = $this->getSettings();
-    $systemSettings = $settings->system_settings ?? [];
+            // Действия
+            'action_join',
+            'action_leave',
+            'action_support',
 
-    return $systemSettings[$key] ?? $default;
-  }
+            // Система и конфиги
+            'system_name',
+            'system_description',
+            'default_language',
+            'default_timezone',
+            'default_currency',
+            'default_organization_settings',
+            'default_notification_settings',
+            'system_settings',
+            'feature_flags',
+            'integration_settings',
+            'default_seo_settings',
+            'metadata',
+        ];
 
-  /**
-   * Сбросить настройки к значениям по умолчанию
-   */
-  public function resetToDefaults(): GlobalSettings
-  {
-    // Удаляем текущие настройки
-    GlobalSettings::truncate();
+        // Поддержка legacy-ключей => маппим к новой схеме, если пришли
+        $legacyMap = [
+            'organization_singular' => 'org_singular_nominative',
+            'organization_plural' => 'org_plural_nominative',
+            'organization_genitive' => 'org_plural_genitive',
+            'organization_dative' => 'org_singular_dative',
+            'organization_instrumental' => 'org_singular_instrumental',
+            'member_singular' => 'member_singular_nominative',
+            'member_plural' => 'member_plural_nominative',
+            'member_genitive' => 'member_plural_genitive',
+        ];
 
-    // Очищаем кеш
-    $this->clearCache();
+        foreach ($legacyMap as $old => $new) {
+            if (isset($data[$old]) && !isset($data[$new])) {
+                $data[$new] = $data[$old];
+                unset($data[$old]);
+            }
+        }
 
-    // Создаем новые настройки по умолчанию
-    return GlobalSettings::createDefault();
-  }
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $settings->$field = $data[$field];
+            }
+        }
+
+        $settings->save();
+
+        // Очищаем кеш
+        $this->clearCache();
+        $this->clearTerminologyCache();
+
+        return $settings;
+    }
+
+    /**
+     * Получить текст с правильной терминологией
+     */
+    public function getText(string $key, array $params = []): string
+    {
+        $terminology = $this->getTerminology();
+        $systemSettings = $this->getSystemSettings();
+
+        $texts = [
+            // Организации
+            'organizations_page_title' => "Управление {$terminology['organization']['plural_instrumental']}",
+            'organizations_page_description' => "Управляйте {$terminology['organization']['plural_instrumental']} в системе",
+            'create_organization' => "Создать {$terminology['organization']['singular_accusative']}",
+            'organization_created' => "{$terminology['organization']['singular_nominative']} успешно создана",
+            'organization_updated' => "{$terminology['organization']['singular_nominative']} успешно обновлена",
+            'organization_deleted' => "{$terminology['organization']['singular_nominative']} успешно удалена",
+            'no_organizations' => "{$terminology['organization']['plural_nominative']} не найдены",
+
+            // Члены
+            'members_page_title' => "Управление {$terminology['member']['plural_instrumental']}",
+            'members_page_description' => "Управляйте {$terminology['member']['plural_instrumental']} в системе",
+            'member_registered' => "{$terminology['member']['singular_nominative']} зарегистрирован",
+
+            // Действия
+            'join_organization' => "{$terminology['actions']['join']} в {$terminology['organization']['singular_accusative']}",
+            'leave_organization' => "{$terminology['actions']['leave']} из {$terminology['organization']['plural_genitive']}",
+            'support_organization' => "{$terminology['actions']['support']} {$terminology['organization']['singular_accusative']}",
+
+            // Система
+            'system_name' => $systemSettings['name'],
+            'system_description' => $systemSettings['description'],
+            'dashboard_title' => "Панель управления {$systemSettings['name']}",
+
+            // Статистика
+            'total_organizations' => "Всего {$terminology['organization']['plural_genitive']}",
+            'total_members' => "Всего {$terminology['member']['plural_genitive']}",
+            'recent_organizations' => "Последние {$terminology['organization']['plural_nominative']}",
+            'recent_members' => "Последние {$terminology['member']['plural_nominative']}",
+        ];
+
+        $text = $texts[$key] ?? $key;
+
+        // Заменяем параметры
+        foreach ($params as $param => $value) {
+            $text = str_replace("{{$param}}", $value, $text);
+        }
+
+        return $text;
+    }
+
+    /**
+     * Получить правильную форму слова для числа
+     */
+    public function getPluralForm(int $count, array $forms): string
+    {
+        $cases = [2, 0, 1, 1, 1, 2];
+        $case = $cases[($count % 100 > 4 && $count % 100 < 20) ? 2 : $cases[min($count % 10, 5)]];
+
+        return $forms[$case] ?? $forms[1];
+    }
+
+    /**
+     * Получить правильную форму организации для числа
+     */
+    public function getOrganizationForm(int $count): string
+    {
+        $terminology = $this->getTerminology();
+        $organization = $terminology['organization'] ?? [];
+
+        $forms = [
+            2 => $organization['plural_nominative'] ?? $organization['plural'] ?? 'Организации',
+            0 => $organization['plural_genitive'] ?? $organization['genitive'] ?? 'организаций',
+            1 => $organization['singular_nominative'] ?? $organization['singular'] ?? 'Организация',
+        ];
+
+        return $this->getPluralForm($count, $forms);
+    }
+
+    /**
+     * Получить правильную форму члена для числа
+     */
+    public function getMemberForm(int $count): string
+    {
+        $terminology = $this->getTerminology();
+        $member = $terminology['member'] ?? [];
+
+        $forms = [
+            2 => $member['plural_nominative'] ?? $member['plural'] ?? 'участники',
+            0 => $member['plural_genitive'] ?? $member['genitive'] ?? 'участников',
+            1 => $member['singular_nominative'] ?? $member['singular'] ?? 'участник',
+        ];
+
+        return $this->getPluralForm($count, $forms);
+    }
+
+    /**
+     * Проверить включена ли функция
+     */
+    public function isFeatureEnabled(string $feature): bool
+    {
+        $settings = $this->getSettings();
+        $featureFlags = $settings->feature_flags ?? [];
+
+        return $featureFlags[$feature] ?? false;
+    }
+
+    /**
+     * Получить настройку системы
+     */
+    public function getSystemSetting(string $key, $default = null)
+    {
+        $settings = $this->getSettings();
+        $systemSettings = $settings->system_settings ?? [];
+
+        return $systemSettings[$key] ?? $default;
+    }
+
+    /**
+     * Сбросить настройки к значениям по умолчанию
+     */
+    public function resetToDefaults(): GlobalSettings
+    {
+        // Удаляем текущие настройки
+        GlobalSettings::truncate();
+
+        // Очищаем кеш
+        $this->clearCache();
+
+        // Создаем новые настройки по умолчанию
+        return GlobalSettings::createDefault();
+    }
 }

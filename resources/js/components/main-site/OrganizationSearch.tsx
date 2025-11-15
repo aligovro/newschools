@@ -182,6 +182,7 @@ export default function OrganizationSearch({
                                 value={selectedCity}
                                 onChange={setSelectedCity}
                                 detectOnMount={false}
+                                disableAutoSet
                             />
                         </div>
                     )}
@@ -227,7 +228,7 @@ export default function OrganizationSearch({
                                 {results.map((org) => (
                                     <li key={org.id}>
                                         <Link
-                                            href={`/organizations/${org.slug}`}
+                                            href={`/organization/${org.slug}`}
                                             className="organization-search__result-item flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
                                             onClick={() =>
                                                 setShowResults(false)

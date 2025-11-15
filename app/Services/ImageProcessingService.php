@@ -29,7 +29,7 @@ class ImageProcessingService
         $filename = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '_' . time() . '.' . $extension;
 
         // Создаем директории если не существуют
-        $this->ensureDirectoriesExist($directory);
+        $this->ensureDirectoriesExist($directory, array_keys($sizes));
 
         // SVG обрабатываем как есть без ресайза/сжатия
         if (strtolower($file->getClientOriginalExtension()) === 'svg' || $file->getMimeType() === 'image/svg+xml') {
@@ -121,6 +121,35 @@ class ImageProcessingService
         ];
 
         return $this->processAndSave($file, 'galleries', $sizes);
+    }
+
+    /**
+     * Обработать основное изображение новости
+     */
+    public function processNewsCoverImage(UploadedFile $file): array
+    {
+        $sizes = [
+            'cover' => ['width' => 1280, 'height' => 720, 'fit' => 'cover'],
+            'news' => ['width' => 960, 'height' => 540, 'fit' => 'cover'],
+            'thumbnail' => ['width' => 480, 'height' => 270, 'fit' => 'cover'],
+            'small' => ['width' => 240, 'height' => 135, 'fit' => 'cover'],
+        ];
+
+        return $this->processAndSave($file, 'news/covers', $sizes);
+    }
+
+    /**
+     * Обработать изображение галереи новости
+     */
+    public function processNewsGalleryImage(UploadedFile $file): array
+    {
+        $sizes = [
+            'gallery' => ['width' => 1024, 'height' => 768, 'fit' => 'cover'],
+            'thumbnail' => ['width' => 320, 'height' => 240, 'fit' => 'cover'],
+            'small' => ['width' => 160, 'height' => 120, 'fit' => 'cover'],
+        ];
+
+        return $this->processAndSave($file, 'news/gallery', $sizes);
     }
 
     /**
@@ -281,8 +310,8 @@ class ImageProcessingService
     {
         return match ($size) {
             'original' => 98, // Увеличено с 95 для лучшего качества больших изображений
-            'hero', 'slider' => 100, // Максимальное качество для слайдеров и hero виджетов
-            'logo', 'gallery', 'content', 'thumbnail', 'small' => 95, // Высокое качество для всех остальных размеров
+            'hero', 'slider', 'cover' => 100, // Максимальное качество для крупных обложек
+            'logo', 'gallery', 'content', 'thumbnail', 'small', 'news' => 95, // Высокое качество для остальных
             default => 95 // Высокое качество по умолчанию
         };
     }
@@ -290,9 +319,22 @@ class ImageProcessingService
     /**
      * Создать директории если не существуют
      */
-    private function ensureDirectoriesExist(string $directory): void
+    private function ensureDirectoriesExist(string $directory, array $customSizes = []): void
     {
-        $sizes = ['original', 'logo', 'slider', 'gallery', 'content', 'thumbnail', 'small'];
+        $defaultSizes = [
+            'original',
+            'logo',
+            'slider',
+            'gallery',
+            'content',
+            'thumbnail',
+            'small',
+            'hero',
+            'cover',
+            'news',
+        ];
+
+        $sizes = array_unique(array_merge($defaultSizes, $customSizes));
 
         foreach ($sizes as $size) {
             $path = $directory . '/' . $size;
@@ -317,7 +359,18 @@ class ImageProcessingService
         }
 
         // Для остальных типов удаляем все варианты с префиксами
-        $sizes = ['original', 'logo', 'slider', 'gallery', 'content', 'thumbnail', 'small'];
+        $sizes = [
+            'original',
+            'logo',
+            'slider',
+            'gallery',
+            'content',
+            'thumbnail',
+            'small',
+            'hero',
+            'cover',
+            'news',
+        ];
         $deleted = true;
 
         foreach ($sizes as $size) {
