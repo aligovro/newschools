@@ -75,7 +75,7 @@ export const TextOutput: React.FC<WidgetOutputProps> = ({
 
     const titleStyle: React.CSSProperties = {
         ...(resolvedTitleColor ? { color: resolvedTitleColor } : {}),
-        ...(title && content ? { marginBottom: '16px' } : {}),
+        ...(title && content ? { marginBottom: '' } : {}),
     };
 
     // Render content: prefer HTML from editor; fallback to plain text with line breaks

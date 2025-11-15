@@ -176,6 +176,127 @@ class ImageUploadController extends Controller
     }
 
     /**
+     * Загрузить основное изображение новости
+     */
+    public function uploadNewsCoverImage(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $file = $request->file('image');
+
+            $validationErrors = $this->imageService->validateImage($file);
+            if (!empty($validationErrors)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка валидации изображения',
+                    'errors' => $validationErrors
+                ], 422);
+            }
+
+            $result = $this->imageService->processNewsCoverImage($file);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Изображение новости успешно загружено',
+                'data' => [
+                    'original' => $this->imageService->getImageUrl($result['original']),
+                    'cover' => isset($result['thumbnails']['cover'])
+                        ? $this->imageService->getImageUrl($result['thumbnails']['cover'])
+                        : $this->imageService->getImageUrl($result['original']),
+                    'news' => isset($result['thumbnails']['news'])
+                        ? $this->imageService->getImageUrl($result['thumbnails']['news'])
+                        : null,
+                    'thumbnail' => isset($result['thumbnails']['thumbnail'])
+                        ? $this->imageService->getImageUrl($result['thumbnails']['thumbnail'])
+                        : null,
+                    'small' => isset($result['thumbnails']['small'])
+                        ? $this->imageService->getImageUrl($result['thumbnails']['small'])
+                        : null,
+                    'filename' => $result['filename'],
+                    'original_name' => $result['original_name'],
+                    'size' => $result['size'],
+                    'dimensions' => $result['dimensions']
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при загрузке изображения: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Загрузить изображение для галереи новости
+     */
+    public function uploadNewsGalleryImage(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $file = $request->file('image');
+
+            $validationErrors = $this->imageService->validateImage($file);
+            if (!empty($validationErrors)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка валидации изображения',
+                    'errors' => $validationErrors
+                ], 422);
+            }
+
+            $result = $this->imageService->processNewsGalleryImage($file);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Изображение галереи новости успешно загружено',
+                'data' => [
+                    'original' => $this->imageService->getImageUrl($result['original']),
+                    'gallery' => isset($result['thumbnails']['gallery'])
+                        ? $this->imageService->getImageUrl($result['thumbnails']['gallery'])
+                        : $this->imageService->getImageUrl($result['original']),
+                    'thumbnail' => isset($result['thumbnails']['thumbnail'])
+                        ? $this->imageService->getImageUrl($result['thumbnails']['thumbnail'])
+                        : null,
+                    'small' => isset($result['thumbnails']['small'])
+                        ? $this->imageService->getImageUrl($result['thumbnails']['small'])
+                        : null,
+                    'filename' => $result['filename'],
+                    'original_name' => $result['original_name'],
+                    'size' => $result['size'],
+                    'dimensions' => $result['dimensions']
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при загрузке изображения: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Загрузить изображение для текстового виджета
      */
     public function uploadTextWidgetImage(Request $request): JsonResponse

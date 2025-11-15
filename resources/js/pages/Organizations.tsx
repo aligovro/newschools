@@ -347,7 +347,7 @@ export default function Organizations({
 
                                         <div className="mt-6 flex space-x-3">
                                             <Link
-                                                href={`/organizations/${organization.slug}`}
+                                                href={`/organization/${organization.slug}`}
                                                 className="flex-1"
                                             >
                                                 <Button className="w-full">

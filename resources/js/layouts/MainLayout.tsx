@@ -4,6 +4,7 @@ import type {
     WidgetData,
     WidgetPosition,
 } from '@/components/dashboard/site-builder/types';
+import { useSmoothAnchorNavigation } from '@/hooks';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import React, { ReactNode } from 'react';
@@ -51,6 +52,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     pageDescription,
     breadcrumbs = [],
 }) => {
+    useSmoothAnchorNavigation();
+
     const MemoWidgetDisplay = React.useMemo(
         () => React.memo(WidgetDisplay),
         [],
@@ -489,7 +492,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
                 {/* Footer: четыре колонки (footer-col-1..4) */}
                 <footer className="site-footer mb-60 mt-60">
-                    <div className="site-foote--wrapper container">
+                    <div className="site-footer--wrapper container">
                         {(() => {
                             const { footerCols, footerOther } = positionsByArea;
 
@@ -497,8 +500,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                 <div className="footer-container p-8">
                                     {footerCols.length > 0 && (
                                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                                            {footerCols.map((p) => (
-                                                <div key={p.id}>
+                                            {footerCols.map((p, index) => (
+                                                <div
+                                                    key={p.id}
+                                                    className={`footer-grid-${index + 1}`}
+                                                >
                                                     {renderPosition(
                                                         p,
                                                         site.widgets_config,

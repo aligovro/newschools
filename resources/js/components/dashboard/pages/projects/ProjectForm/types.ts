@@ -112,11 +112,24 @@ export interface ProjectFormProps {
     isEdit?: boolean;
 }
 
+export interface SlugValidationState {
+    isUnique: boolean;
+    isValid: boolean;
+    suggestedSlug?: string;
+}
+
 export interface BasicInfoSectionProps {
     data: ProjectFormData;
     errors: Record<string, string>;
     projectCategories?: ProjectCategory[];
     onDataChange: (key: keyof ProjectFormData, value: unknown) => void;
+    slug: string;
+    autoGenerateSlug: boolean;
+    isSlugGenerating: boolean;
+    slugValidation: SlugValidationState;
+    onSlugChange: (value: string) => void;
+    onAutoGenerateSlugChange: (checked: boolean) => void;
+    onRegenerateSlug: () => void;
 }
 
 export interface FinancialInfoSectionProps {

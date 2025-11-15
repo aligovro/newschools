@@ -195,6 +195,13 @@ export default function CitySelector({
         setCities([]);
     };
 
+    const handleClearCity = () => {
+        onChange(null);
+        setIsOpen(false);
+        setSearchQuery('');
+        setCities([]);
+    };
+
     // Формируем дефолтный город для отображения в списке
     const getDefaultCityForList = (): City | null => {
         if (!defaultId || !defaultName) return null;
@@ -251,10 +258,8 @@ export default function CitySelector({
                                 Определение...
                             </span>
                         </span>
-                    ) : value ? (
-                        value.name
                     ) : (
-                        <span className="text-gray-500">Выберите город</span>
+                        value?.name ?? 'Все города'
                     )}
                 </span>
                 <img
@@ -288,6 +293,19 @@ export default function CitySelector({
                                 </div>
                             ) : finalCities.length > 0 ? (
                                 <ul className="py-1">
+                                    <li>
+                                        <button
+                                            type="button"
+                                            onClick={handleClearCity}
+                                            className={`city-selector__city-item w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${
+                                                !value
+                                                    ? 'city-selector__city-item--selected bg-blue-50 text-blue-600'
+                                                    : 'text-gray-900'
+                                            }`}
+                                        >
+                                            Все города
+                                        </button>
+                                    </li>
                                     {finalCities.map((city) => (
                                         <li key={city.id}>
                                             <button

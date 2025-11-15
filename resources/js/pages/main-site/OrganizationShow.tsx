@@ -1,9 +1,10 @@
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
-import ProjectCard from '@/components/projects/ProjectCard';
+import ProjectWideCard from '@/components/projects/ProjectWideCard';
 import MainLayout from '@/layouts/MainLayout';
-import { useState } from 'react';
 import type { MoneyAmount } from '@/types/money';
+import '@css/pages/organizations/organization-show.scss';
+import { useState } from 'react';
 
 interface Project {
     id: number;
@@ -14,6 +15,7 @@ interface Project {
     target_amount_rubles: number;
     collected_amount_rubles: number;
     progress_percentage: number;
+    organization_name?: string;
 }
 
 interface Organization {
@@ -37,6 +39,16 @@ interface Organization {
         collected: MoneyAmount;
         progress_percentage: number;
     };
+    stats?: {
+        alumni?: number;
+        sponsors?: number;
+        autopayments?: number;
+        projects?: number;
+    };
+    director?: {
+        full_name?: string;
+        photo?: string | null;
+    } | null;
 }
 
 interface OrganizationShowProps {
@@ -54,6 +66,9 @@ export default function OrganizationShow({
 }: OrganizationShowProps) {
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
     const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
+
+    const formatNumber = (value?: number) =>
+        new Intl.NumberFormat('ru-RU').format(value ?? 0);
 
     const handleImageClick = (index: number) => {
         setGalleryInitialIndex(index);
@@ -82,7 +97,7 @@ export default function OrganizationShow({
                 { title: organization.name, href: '' },
             ]}
         >
-            <div className="space-y-8">
+            <div className="organization-show space-y-8">
                 {/* Слайдер галереи */}
                 {organization.gallery && organization.gallery.length > 0 && (
                     <div>
@@ -100,15 +115,7 @@ export default function OrganizationShow({
                 )}
 
                 {/* Заголовок с названием организации */}
-                <h1
-                    style={{
-                        fontFamily: 'var(--font-family)',
-                        fontWeight: 700,
-                        fontSize: '40px',
-                        lineHeight: '120%',
-                        color: '#1a1a1a',
-                    }}
-                >
+                <h1 className="organization-show__title">
                     {organization.name}
                 </h1>
 
@@ -120,20 +127,83 @@ export default function OrganizationShow({
                             alt=""
                             className="h-4 w-4 flex-shrink-0"
                         />
-                        <span
-                            style={{
-                                fontFamily: 'var(--font-family)',
-                                fontWeight: 600,
-                                fontSize: '12px',
-                                lineHeight: '120%',
-                                letterSpacing: '0.01em',
-                                color: '#1a1a1a',
-                            }}
-                        >
+                        <span className="organization-show__address">
                             {fullAddress}
                         </span>
                     </div>
                 )}
+
+                <div className="organization-show__stats">
+                    {[
+                        {
+                            label: 'Выпускники',
+                            value: formatNumber(organization.stats?.alumni),
+                            icon: '/icons/organization/graduates.svg',
+                        },
+                        {
+                            label: 'Спонсоры',
+                            value: formatNumber(organization.stats?.sponsors),
+                            icon: '/icons/organization/sponsors.svg',
+                        },
+                        {
+                            label: 'Автоплатежи',
+                            value: formatNumber(
+                                organization.stats?.autopayments,
+                            ),
+                            icon: '/icons/organization/auto-payments.svg',
+                        },
+                        {
+                            label: 'Проекты',
+                            value: formatNumber(organization.stats?.projects),
+                            icon: '/icons/organization/projects.svg',
+                        },
+                    ].map((stat) => (
+                        <div
+                            key={stat.label}
+                            className="organization-show__stat-card"
+                        >
+                            <img
+                                src={stat.icon}
+                                alt=""
+                                className="organization-show__stat-icon"
+                            />
+                            <div className="organization-show__stat-label">
+                                {stat.label}
+                            </div>
+                            <div className="organization-show__stat-value">
+                                {stat.value}
+                            </div>
+                        </div>
+                    ))}
+
+                    {organization.director && (
+                        <div className="organization-show__director-card">
+                            <div className="organization-show__director-avatar">
+                                {organization.director.photo ? (
+                                    <img
+                                        src={organization.director.photo}
+                                        alt={organization.director.full_name}
+                                        className="organization-show__director-photo"
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500">
+                                        {organization.director.full_name
+                                            ?.charAt(0)
+                                            .toUpperCase() || '—'}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="organization-show__director-info">
+                                <div className="organization-show__director-label">
+                                    Директор школы
+                                </div>
+                                <div className="organization-show__director-name">
+                                    {organization.director.full_name}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Описание организации */}
                 {organization.description && (
@@ -148,11 +218,14 @@ export default function OrganizationShow({
                         <h2 className="mb-6 text-2xl font-bold text-gray-900">
                             Проекты
                         </h2>
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="space-y-6">
                             {organization.projects.map((project) => (
-                                <ProjectCard
+                                <ProjectWideCard
                                     key={project.id}
-                                    project={project}
+                                    project={{
+                                        ...project,
+                                        organization_name: organization.name,
+                                    }}
                                 />
                             ))}
                         </div>

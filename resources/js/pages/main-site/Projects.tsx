@@ -6,7 +6,7 @@ import { useDefaultCity } from '@/hooks/useDefaultCity';
 import MainLayout from '@/layouts/MainLayout';
 import { fetchCityById } from '@/lib/api/public';
 import { router } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Organization {
     name: string;
@@ -95,8 +95,6 @@ export default function Projects({
     const [isCityManuallySelected, setIsCityManuallySelected] = useState(
         !!initialFilters.city_id,
     );
-    const cityChangeRef = useRef(!!initialFilters.city_id); // Если город в URL - блокируем автоустановку
-    const isInitialMountRef = useRef(true); // Флаг для отслеживания первой загрузки
 
     // Синхронизация с новыми данными при изменении фильтров
     useEffect(() => {
@@ -109,65 +107,52 @@ export default function Projects({
         initialProjects.last_page,
     ]);
 
-    // Инициализация города из URL при загрузке страницы или обновлении
+    // Синхронизация города из URL (если пользователь выбирал его ранее)
     useEffect(() => {
         const cityId = initialFilters.city_id;
 
-        // Если город в URL и он еще не установлен или отличается от текущего
-        if (cityId && typeof cityId === 'number') {
-            // Проверяем, нужно ли обновлять город
-            const needsUpdate = !selectedCity || selectedCity.id !== cityId;
-
-            if (needsUpdate) {
-                // Если это дефолтный город и данные уже загружены - используем их
-                if (
-                    defaultCityLoaded &&
-                    defaultCityId &&
-                    cityId === defaultCityId &&
-                    defaultCityName
-                ) {
-                    setSelectedCity({
-                        id: defaultCityId,
-                        name: defaultCityName,
-                    });
-                    setIsCityManuallySelected(true);
-                    cityChangeRef.current = true;
-                } else if (
-                    !defaultCityLoaded ||
-                    !defaultCityId ||
-                    cityId !== defaultCityId
-                ) {
-                    // Если это не дефолтный город - загружаем его данные
-                    fetchCityById(cityId)
-                        .then((cityData) => {
-                            setSelectedCity({
-                                id: cityData.id,
-                                name: cityData.name,
-                            });
-                            setIsCityManuallySelected(true);
-                            cityChangeRef.current = true;
-                        })
-                        .catch(() => {
-                            setSelectedCity({
-                                id: cityId,
-                                name: '',
-                            });
-                            setIsCityManuallySelected(true);
-                            cityChangeRef.current = true;
-                        });
-                }
-            }
-        } else if (!cityId && isInitialMountRef.current) {
-            // Нет города в URL при первой загрузке - помечаем, что инициализация завершена
-            // CitySelector сам установит дефолтный город
-            isInitialMountRef.current = false;
+        if (!cityId) {
+            setSelectedCity(null);
+            setIsCityManuallySelected(false);
+            return;
         }
 
-        // Помечаем, что инициализация завершена после первого рендера
-        if (isInitialMountRef.current) {
-            isInitialMountRef.current = false;
+        setIsCityManuallySelected(true);
+
+        if (
+            defaultCityLoaded &&
+            defaultCityId &&
+            cityId === defaultCityId &&
+            defaultCityName
+        ) {
+            setSelectedCity({
+                id: defaultCityId,
+                name: defaultCityName,
+            });
+            return;
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
+        let isMounted = true;
+
+        fetchCityById(cityId)
+            .then((cityData) => {
+                if (!isMounted) return;
+                setSelectedCity({
+                    id: cityData.id,
+                    name: cityData.name,
+                });
+            })
+            .catch(() => {
+                if (!isMounted) return;
+                setSelectedCity({
+                    id: cityId,
+                    name: '',
+                });
+            });
+
+        return () => {
+            isMounted = false;
+        };
     }, [
         initialFilters.city_id,
         defaultCityLoaded,
@@ -236,49 +221,17 @@ export default function Projects({
     // Обработчик изменения города
     const handleCityChange = useCallback(
         (city: City | null) => {
-            // Защита от повторных вызовов: если город уже выбран и это тот же город - игнорируем
-            if (city && selectedCity && city.id === selectedCity.id) {
-                return;
-            }
-
-            // Если это автоматическая установка дефолтного города при первой загрузке (нет города в URL)
-            // и инициализация еще не завершена - не добавляем в URL
-            const isAutoDefaultOnFirstLoad =
-                isInitialMountRef.current &&
-                !initialFilters.city_id &&
-                city &&
-                defaultCityLoaded &&
-                defaultCityId &&
-                city.id === defaultCityId;
-
-            // Устанавливаем город (CitySelector уже передал полные данные с id и name)
             setSelectedCity(city);
-            cityChangeRef.current = true; // Помечаем, что город был изменен пользователем
-            isInitialMountRef.current = false; // Помечаем, что инициализация завершена
 
             if (city) {
-                if (isAutoDefaultOnFirstLoad) {
-                    // Автоматическая установка дефолтного города при первой загрузке - не добавляем в URL
-                    setIsCityManuallySelected(false);
-                } else {
-                    // Ручной выбор любого города (включая дефолтный) - добавляем в URL
-                    setIsCityManuallySelected(true);
-                    updateFilters({ city_id: city.id, page: 1 });
-                }
+                setIsCityManuallySelected(true);
+                updateFilters({ city_id: city.id, page: 1 });
             } else {
-                // Город сброшен - убираем из URL
                 setIsCityManuallySelected(false);
-                cityChangeRef.current = false;
                 updateFilters({ city_id: null, page: 1 });
             }
         },
-        [
-            updateFilters,
-            initialFilters.city_id,
-            defaultCityLoaded,
-            defaultCityId,
-            selectedCity,
-        ],
+        [updateFilters],
     );
 
     // Загрузка следующей страницы
@@ -367,9 +320,7 @@ export default function Projects({
                             value={selectedCity}
                             onChange={handleCityChange}
                             variant="dark"
-                            disableAutoSet={
-                                cityChangeRef.current || isCityManuallySelected
-                            }
+                            disableAutoSet={!isCityManuallySelected}
                         />
                     </div>
                 </div>

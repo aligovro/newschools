@@ -145,8 +145,9 @@ class NewsController extends Controller
         }
 
         $payload = $request->validatedPayload();
+        $isMainSite = (bool) ($payload['is_main_site'] ?? false);
 
-        if ($organization) {
+        if ($organization && !$isMainSite) {
             $payload['organization_id'] = $organization->id;
         }
 
@@ -205,8 +206,11 @@ class NewsController extends Controller
         }
 
         $payload = $request->validatedPayload();
+        $isMainSite = array_key_exists('is_main_site', $payload)
+            ? (bool) $payload['is_main_site']
+            : ($news->organization_id === null);
 
-        if ($organization) {
+        if ($organization && !$isMainSite) {
             $payload['organization_id'] = $organization->id;
         }
 

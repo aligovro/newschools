@@ -52,8 +52,8 @@ const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
     acceptedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
     className,
     disabled = false,
-    showPreview = true,
-    enableDragDrop = true,
+    showPreview: _showPreview = true,
+    enableDragDrop: _enableDragDrop = true,
     enableSorting = true,
     enableDeletion = true,
     onUpload,
@@ -70,97 +70,123 @@ const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
     const generateId = () => Math.random().toString(36).substr(2, 9);
 
     // Валидация файла
-    const validateFile = (file: File): { valid: boolean; error?: string } => {
-        if (file.size > maxSize) {
-            return {
-                valid: false,
-                error: `Размер файла не должен превышать ${(maxSize / (1024 * 1024)).toFixed(1)}MB`
-            };
-        }
+    const validateFile = useCallback(
+        (file: File): { valid: boolean; error?: string } => {
+            if (file.size > maxSize) {
+                return {
+                    valid: false,
+                    error: `Размер файла не должен превышать ${(
+                        maxSize /
+                        (1024 * 1024)
+                    ).toFixed(1)}MB`,
+                };
+            }
 
-        if (!acceptedTypes.includes(file.type)) {
-            return {
-                valid: false,
-                error: `Неподдерживаемый формат файла. Разрешены: ${acceptedTypes.map(type => type.split('/')[1]).join(', ')}`
-            };
-        }
+            if (!acceptedTypes.includes(file.type)) {
+                return {
+                    valid: false,
+                    error: `Неподдерживаемый формат файла. Разрешены: ${acceptedTypes
+                        .map((type) => type.split('/')[1])
+                        .join(', ')}`,
+                };
+            }
 
-        return { valid: true };
-    };
+            return { valid: true };
+        },
+        [acceptedTypes, maxSize],
+    );
 
     // Добавление файлов
-    const addFiles = useCallback(async (newFiles: File[]) => {
-        if (disabled) return;
+    const addFiles = useCallback(
+        async (newFiles: File[]) => {
+            if (disabled) return;
 
-        const filesToAdd = newFiles.slice(0, maxFiles - images.length);
-        const newImages: UploadedImage[] = [];
+            const filesToAdd = newFiles.slice(0, maxFiles - images.length);
+            const pendingImages: UploadedImage[] = [];
 
-        for (const file of filesToAdd) {
-            const validation = validateFile(file);
-            if (!validation.valid) {
-                newImages.push({
+            for (const file of filesToAdd) {
+                const validation = validateFile(file);
+                if (!validation.valid) {
+                    pendingImages.push({
+                        id: generateId(),
+                        file,
+                        url: '',
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        status: 'error',
+                        error: validation.error,
+                    });
+                    continue;
+                }
+
+                pendingImages.push({
                     id: generateId(),
                     file,
-                    url: '',
+                    url: URL.createObjectURL(file),
                     name: file.name,
                     size: file.size,
                     type: file.type,
-                    status: 'error',
-                    error: validation.error,
+                    status: 'pending',
                 });
-                continue;
             }
 
-            const image: UploadedImage = {
-                id: generateId(),
-                file,
-                url: URL.createObjectURL(file),
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                status: 'pending',
-            };
+            let currentImages: UploadedImage[] = [
+                ...images,
+                ...pendingImages,
+            ];
+            onChange(currentImages);
 
-            newImages.push(image);
-        }
+            if (onUpload) {
+                for (const image of pendingImages) {
+                    if (image.status !== 'pending' || !image.file) {
+                        continue;
+                    }
 
-        const updatedImages = [...images, ...newImages];
-        onChange(updatedImages);
+                    currentImages = currentImages.map((img) =>
+                        img.id === image.id
+                            ? {
+                                  ...img,
+                                  status: 'uploading',
+                                  progress: 0,
+                              }
+                            : img,
+                    );
+                    onChange(currentImages);
 
-        // Загружаем файлы на сервер если есть обработчик
-        if (onUpload) {
-            for (const image of newImages) {
-                if (image.status === 'pending' && image.file) {
                     try {
-                        // Обновляем статус на загрузку
-                        const uploadingImages = updatedImages.map(img =>
-                            img.id === image.id ? { ...img, status: 'uploading' as const, progress: 0 } : img
-                        );
-                        onChange(uploadingImages);
-
-                        // Загружаем файл
                         const uploadedUrl = await onUpload(image.file);
-
-                        // Обновляем статус на успех
-                        const successImages = uploadingImages.map(img =>
-                            img.id === image.id ? { ...img, status: 'success' as const, url: uploadedUrl, progress: 100 } : img
+                        currentImages = currentImages.map((img) =>
+                            img.id === image.id
+                                ? {
+                                      ...img,
+                                      status: 'success',
+                                      url: uploadedUrl,
+                                      progress: 100,
+                                  }
+                                : img,
                         );
-                        onChange(successImages);
+                        onChange(currentImages);
                     } catch (error) {
-                        // Обновляем статус на ошибку
-                        const errorImages = updatedImages.map(img =>
-                            img.id === image.id ? {
-                                ...img,
-                                status: 'error' as const,
-                                error: error instanceof Error ? error.message : 'Ошибка загрузки'
-                            } : img
+                        currentImages = currentImages.map((img) =>
+                            img.id === image.id
+                                ? {
+                                      ...img,
+                                      status: 'error',
+                                      error:
+                                          error instanceof Error
+                                              ? error.message
+                                              : 'Ошибка загрузки',
+                                  }
+                                : img,
                         );
-                        onChange(errorImages);
+                        onChange(currentImages);
                     }
                 }
             }
-        }
-    }, [images, onChange, disabled, maxFiles, maxSize, acceptedTypes, onUpload]);
+        },
+        [disabled, images, maxFiles, onChange, onUpload, validateFile],
+    );
 
     // Удаление изображения
     const removeImage = useCallback(async (imageId: string) => {

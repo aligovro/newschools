@@ -112,12 +112,66 @@ export const capitalizeFirst = (str: string): string => {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
+const cyrillicToLatinMap: Record<string, string> = {
+    а: 'a',
+    б: 'b',
+    в: 'v',
+    г: 'g',
+    д: 'd',
+    е: 'e',
+    ё: 'e',
+    ж: 'zh',
+    з: 'z',
+    и: 'i',
+    й: 'y',
+    к: 'k',
+    л: 'l',
+    м: 'm',
+    н: 'n',
+    о: 'o',
+    п: 'p',
+    р: 'r',
+    с: 's',
+    т: 't',
+    у: 'u',
+    ф: 'f',
+    х: 'h',
+    ц: 'ts',
+    ч: 'ch',
+    ш: 'sh',
+    щ: 'shch',
+    ъ: '',
+    ы: 'y',
+    ь: '',
+    э: 'e',
+    ю: 'yu',
+    я: 'ya',
+};
+
 export const slugify = (text: string): string => {
-    return text
+    if (!text) {
+        return '';
+    }
+
+    const normalized = text
         .toLowerCase()
-        .replace(/[^\w\s-]/g, '') // Удаляем специальные символы
-        .replace(/[\s_-]+/g, '-') // Заменяем пробелы и подчеркивания на дефисы
-        .replace(/^-+|-+$/g, ''); // Удаляем дефисы в начале и конце
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+    const transliterated = normalized
+        .split('')
+        .map((char) => {
+            if (cyrillicToLatinMap[char]) {
+                return cyrillicToLatinMap[char];
+            }
+            return char;
+        })
+        .join('');
+
+    return transliterated
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
 };
 
 // Утилиты для работы с файлами

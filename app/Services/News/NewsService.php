@@ -19,8 +19,27 @@ class NewsService
         return DB::transaction(function () use ($payload, $newsable, $user) {
             $isMainSite = (bool) ($payload['is_main_site'] ?? false);
 
-            $organizationId = $this->resolveOrganizationId($payload['organization_id'] ?? null, $user, $isMainSite);
+            $organizationId = $this->resolveOrganizationId(
+                $payload['organization_id'] ?? null,
+                $user,
+                $isMainSite,
+            );
+
             $newsableData = $this->resolveNewsable($newsable, $organizationId, $isMainSite);
+
+            if (!$isMainSite) {
+                if ($organizationId === null && $newsableData) {
+                    $organizationId = $newsableData['organization_id'] ?? null;
+                }
+
+                if ($organizationId === null) {
+                    throw ValidationException::withMessages([
+                        'organization_id' => 'Укажите организацию или выберите сущность, связанную с организацией.',
+                    ]);
+                }
+            } else {
+                $organizationId = null;
+            }
 
             unset($payload['organization_id'], $payload['is_main_site']);
 
@@ -45,7 +64,11 @@ class NewsService
     public function update(News $news, array $payload, ?array $newsable, User $user): News
     {
         return DB::transaction(function () use ($news, $payload, $newsable, $user) {
-            if (!$user->isSuperAdmin() && !$user->belongsToOrganization($news->organization_id)) {
+            if (
+                $news->organization_id !== null
+                && !$user->isSuperAdmin()
+                && !$user->belongsToOrganization($news->organization_id)
+            ) {
                 throw new AuthorizationException('Недостаточно прав для изменения записи.');
             }
 
@@ -58,6 +81,22 @@ class NewsService
                 : $news->organization_id;
 
             $resolvedOrganizationId = $this->resolveOrganizationId($newOrganizationId, $user, $isMainSite);
+
+            $newsableData = $this->resolveNewsable($newsable, $resolvedOrganizationId, $isMainSite);
+
+            if (!$isMainSite) {
+                if ($resolvedOrganizationId === null && $newsableData) {
+                    $resolvedOrganizationId = $newsableData['organization_id'] ?? null;
+                }
+
+                if ($resolvedOrganizationId === null) {
+                    throw ValidationException::withMessages([
+                        'organization_id' => 'Укажите организацию или выберите сущность, связанную с организацией.',
+                    ]);
+                }
+            } else {
+                $resolvedOrganizationId = null;
+            }
 
             if (array_key_exists('is_main_site', $payload)) {
                 unset($payload['is_main_site']);
@@ -74,7 +113,6 @@ class NewsService
                     $news->newsable_type = null;
                     $news->newsable_id = null;
                 } else {
-                    $newsableData = $this->resolveNewsable($newsable, $news->organization_id, $isMainSite);
                     $news->newsable_type = $newsableData['type'];
                     $news->newsable_id = $newsableData['id'];
                 }
@@ -108,9 +146,7 @@ class NewsService
 
         if ($user->isSuperAdmin()) {
             if (!$organizationId) {
-                throw ValidationException::withMessages([
-                    'organization_id' => 'Выберите организацию для материала.',
-                ]);
+                return null;
             }
 
             $organization = Organization::find($organizationId);
@@ -141,7 +177,7 @@ class NewsService
     }
 
     /**
-     * @return array{type: class-string, id: int}|null
+     * @return array{type: class-string, id: int, organization_id: ?int}|null
      */
     private function resolveNewsable(?array $newsable, ?int $organizationId, bool $isMainSite): ?array
     {
@@ -177,6 +213,10 @@ class NewsService
             ]);
         }
 
+        $modelOrganizationId = $model instanceof Organization
+            ? $model->id
+            : ($model->organization_id ?? null);
+
         if ($isMainSite) {
             if (!$model instanceof Site || $model->site_type !== 'main') {
                 throw ValidationException::withMessages([
@@ -187,20 +227,11 @@ class NewsService
             return [
                 'type' => $type,
                 'id' => (int) $model->getKey(),
+                'organization_id' => null,
             ];
         }
 
-        if ($organizationId === null) {
-            throw ValidationException::withMessages([
-                'organization_id' => 'Укажите организацию для материала.',
-            ]);
-        }
-
-        $modelOrganizationId = $model instanceof Organization
-            ? $model->id
-            : ($model->organization_id ?? null);
-
-        if ($modelOrganizationId !== $organizationId) {
+        if ($organizationId !== null && $modelOrganizationId !== $organizationId) {
             throw ValidationException::withMessages([
                 'target.id' => 'Сущность относится к другой организации.',
             ]);
@@ -209,6 +240,7 @@ class NewsService
         return [
             'type' => $type,
             'id' => (int) $model->getKey(),
+            'organization_id' => $modelOrganizationId,
         ];
     }
 }

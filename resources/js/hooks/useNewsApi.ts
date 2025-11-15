@@ -1,4 +1,9 @@
-import { newsApi, type NewsItem, type NewsPayload, type PaginatedNewsResponse } from '@/lib/api';
+import {
+    newsApi,
+    type NewsItem,
+    type NewsPayload,
+    type PaginatedNewsResponse,
+} from '@/lib/api/index';
 import { useCallback } from 'react';
 
 export const useNewsApi = () => {

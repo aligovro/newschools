@@ -134,6 +134,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/api/upload/organization-logo', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadOrganizationLogo'])->name('api.upload.organization-logo');
         Route::post('/api/upload/slider-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadSliderImage'])->name('api.upload.slider-image');
         Route::post('/api/upload/gallery-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadGalleryImage'])->name('api.upload.gallery-image');
+        Route::post('/api/upload/news-cover-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadNewsCoverImage'])->name('api.upload.news-cover-image');
+        Route::post('/api/upload/news-gallery-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadNewsGalleryImage'])->name('api.upload.news-gallery-image');
         Route::post('/api/upload/text-widget-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadTextWidgetImage'])->name('api.upload.text-widget-image');
         Route::delete('/api/upload/delete-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'deleteImage'])->name('api.upload.delete-image');
         Route::get('/api/upload/image-info', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'getImageInfo'])->name('api.upload.image-info');
