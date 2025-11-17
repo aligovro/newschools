@@ -21,7 +21,6 @@ interface Project {
     slug: string;
     short_description?: string;
     description?: string;
-    category: string;
     target_amount: number;
     collected_amount: number;
     status: 'draft' | 'active' | 'completed' | 'cancelled' | 'suspended';
@@ -33,6 +32,13 @@ interface Project {
     donations_count: number;
     created_at: string;
     updated_at: string;
+    categories?: ProjectCategory[];
+}
+
+interface ProjectCategory {
+    id: number;
+    name: string;
+    slug: string;
 }
 
 interface Props {
@@ -44,10 +50,10 @@ interface Props {
         per_page: number;
         total: number;
     };
-    categories: Record<string, string>;
+    projectCategories: ProjectCategory[];
     filters: {
         status?: string;
-        category?: string;
+        category_id?: number;
         search?: string;
         featured?: boolean;
     };
@@ -56,13 +62,13 @@ interface Props {
 export default function ProjectsIndex({
     organization,
     projects,
-    categories,
+    projectCategories,
     filters,
 }: Props) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
     const [categoryFilter, setCategoryFilter] = useState(
-        filters.category || '',
+        filters.category_id ? String(filters.category_id) : '',
     );
 
     const handleFilter = () => {
@@ -75,7 +81,7 @@ export default function ProjectsIndex({
             query.status = statusFilter;
         }
         if (categoryFilter) {
-            query.category = categoryFilter;
+            query.category_id = categoryFilter;
         }
 
         router.visit(`/dashboard/organizations/${organization.id}/projects`, {
@@ -194,13 +200,14 @@ export default function ProjectsIndex({
                                 }
                             >
                                 <option value="">Все категории</option>
-                                {Object.entries(categories).map(
-                                    ([value, label]) => (
-                                        <option key={value} value={value}>
-                                            {label}
-                                        </option>
-                                    ),
-                                )}
+                                {projectCategories.map((category) => (
+                                    <option
+                                        key={category.id}
+                                        value={category.id.toString()}
+                                    >
+                                        {category.name}
+                                    </option>
+                                ))}
                             </Select>
                             <Button onClick={handleFilter}>
                                 <Search className="mr-2 h-4 w-4" />
@@ -280,15 +287,23 @@ export default function ProjectsIndex({
                                     </p>
                                 </div>
                                 <div className="flex items-center justify-between text-sm text-gray-600">
-                                    <div className="flex items-center gap-2">
-                                        <Badge
-                                            className={`${getStatusColor(
-                                                project.status,
-                                            )} text-white`}
-                                        >
-                                            {categories[project.category] ||
-                                                project.category}
-                                        </Badge>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {(project.categories ?? []).length ? (
+                                            project.categories?.map(
+                                                (category) => (
+                                                    <Badge
+                                                        key={category.id}
+                                                        variant="outline"
+                                                    >
+                                                        {category.name}
+                                                    </Badge>
+                                                ),
+                                            )
+                                        ) : (
+                                            <Badge variant="outline">
+                                                Без категории
+                                            </Badge>
+                                        )}
                                     </div>
                                     <Badge
                                         className={`${getStatusColor(

@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Enums\NewsStatus;
 use App\Enums\NewsVisibility;
+use App\Models\SiteWidget;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -28,7 +29,7 @@ class NewsResource extends JsonResource
             'content' => $this->content,
 
             'image' => $this->imageUrl,
-            'gallery' => $this->gallery ?? [],
+            'gallery' => $this->formatGallery(),
 
             'status' => $this->status?->value ?? NewsStatus::Draft->value,
             'status_label' => $this->status?->label(),
@@ -83,6 +84,23 @@ class NewsResource extends JsonResource
                 ];
             }),
         ];
+    }
+    /**
+     * Сформировать массив URL галереи с единым форматом
+     */
+    protected function formatGallery(): array
+    {
+        if (empty($this->gallery) || !is_array($this->gallery)) {
+            return [];
+        }
+
+        return collect($this->gallery)
+            ->filter(fn ($item) => filled($item))
+            ->map(function ($item) {
+                return SiteWidget::formatImageUrl((string) $item);
+            })
+            ->values()
+            ->toArray();
     }
 }
 

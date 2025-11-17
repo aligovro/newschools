@@ -1,6 +1,6 @@
 import ProjectCard from '@/components/projects/ProjectCard';
 import { fetchLatestProjects } from '@/lib/api/public';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Swiper as SwiperType } from 'swiper';
@@ -62,6 +62,11 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     const navigationPrevRef = useRef<HTMLButtonElement>(null);
     const navigationNextRef = useRef<HTMLButtonElement>(null);
 
+    const page = usePage<{ project?: { slug?: string } }>();
+    const currentProjectSlug =
+        (page?.props as any)?.project?.slug ?? undefined;
+    const effectiveTitle = currentProjectSlug ? 'Другие проекты' : title;
+
     const shouldShowArrows = useMemo(
         () => items.length > slidesPerView,
         [items.length, slidesPerView],
@@ -78,7 +83,11 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                 const payload = await fetchLatestProjects(
                     {
                         organization_id,
-                        limit,
+                        limit: Math.min(
+                            limit + (currentProjectSlug ? 1 : 0),
+                            30,
+                        ),
+                        exclude_slug: currentProjectSlug,
                     },
                     {
                         signal: controller.signal,
@@ -143,7 +152,13 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                       })
                     : [];
 
-                setItems(projects);
+                const filteredProjects = currentProjectSlug
+                    ? projects.filter(
+                          (project) => project.slug !== currentProjectSlug,
+                      )
+                    : projects;
+
+                setItems(filteredProjects.slice(0, limit));
             } catch (fetchError) {
                 if ((fetchError as { name?: string })?.name === 'AbortError') {
                     return;
@@ -161,7 +176,7 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
         run();
 
         return () => controller.abort();
-    }, [organization_id, limit]);
+    }, [organization_id, limit, currentProjectSlug]);
 
     useEffect(() => {
         const swiper = swiperRef.current;
@@ -185,11 +200,11 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     return (
         <section className="py-8">
             <div className="container mx-auto">
-                {(title && show_title) || showHeaderActions ? (
+                {(effectiveTitle && show_title) || showHeaderActions ? (
                     <div className="mb-6 flex items-center justify-between">
-                        {title && show_title && (
+                        {effectiveTitle && show_title && (
                             <h2 className="text-2xl font-bold text-gray-900">
-                                {title}
+                                {effectiveTitle}
                             </h2>
                         )}
                         {showHeaderActions && (

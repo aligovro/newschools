@@ -6,16 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\CompletePhoneProfileRequest;
 use App\Http\Requests\Auth\RequestPhoneVerificationRequest;
 use App\Http\Requests\Auth\VerifyPhoneCodeRequest;
+use App\Models\Project;
 use App\Services\Auth\PhoneVerificationService;
+use App\Services\Sponsors\ProjectSponsorshipManager;
 use App\Support\PhoneNumber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PhoneAuthController extends Controller
 {
-    public function __construct(private PhoneVerificationService $phoneVerificationService)
+    public function __construct(
+        private PhoneVerificationService $phoneVerificationService,
+        private ProjectSponsorshipManager $projectSponsorshipManager
+    )
     {
         $this->middleware('web');
         $this->middleware('auth')->only(['completeProfile', 'uploadPhoto', 'attach']);
@@ -26,6 +33,7 @@ class PhoneAuthController extends Controller
         $verification = $this->phoneVerificationService->requestCode(
             $request->input('phone'),
             $request->integer('organization_id'),
+            $request->integer('project_id'),
             Auth::user()
         );
 
@@ -48,6 +56,7 @@ class PhoneAuthController extends Controller
             $request->input('token'),
             $request->input('code'),
             $request->integer('organization_id'),
+            $request->integer('project_id'),
             $request->boolean('remember', false)
         );
 
@@ -55,11 +64,23 @@ class PhoneAuthController extends Controller
 
         $user = $result['user'];
         $requiresProfileCompletion = $result['is_new_user'] || blank($user->name);
+        $requiresPassword = $result['is_new_user'] || blank($user->password);
+
+        $projectId = $request->integer('project_id') ?: $result['verification']->project_id;
+
+        if ($projectId) {
+            if ($project = Project::query()->find($projectId)) {
+                $this->projectSponsorshipManager->attach($project, $user, [
+                    'source' => 'subscription',
+                ]);
+            }
+        }
 
         return response()->json([
             'user' => $user,
             'is_new_user' => $result['is_new_user'],
             'requires_profile_completion' => $requiresProfileCompletion,
+            'requires_password' => $requiresPassword,
         ]);
     }
 
@@ -80,6 +101,10 @@ class PhoneAuthController extends Controller
 
         if (array_key_exists('photo', $data)) {
             $user->photo = $data['photo'] ?: null;
+        }
+
+        if (! empty($data['password'])) {
+            $user->password = Hash::make($data['password']);
         }
 
         $user->save();
@@ -109,15 +134,41 @@ class PhoneAuthController extends Controller
 
     public function attach(Request $request): JsonResponse
     {
-        $request->validate([
-            'organization_id' => ['required', 'exists:organizations,id'],
+        $data = $request->validate([
+            'organization_id' => ['nullable', 'exists:organizations,id'],
+            'project_id' => ['nullable', 'exists:projects,id'],
         ]);
 
+        if (empty($data['organization_id']) && empty($data['project_id'])) {
+            throw ValidationException::withMessages([
+                'organization_id' => __('Укажите организацию или проект для привязки.'),
+            ]);
+        }
+
         $user = $request->user();
-        $this->phoneVerificationService->attachSponsorToOrganization(
-            $user,
-            (int) $request->input('organization_id')
-        );
+        $project = null;
+        $organizationId = $data['organization_id'] ?? null;
+
+        if (! empty($data['project_id'])) {
+            $project = Project::query()->findOrFail($data['project_id']);
+            $organizationId = $organizationId ?: $project->organization_id;
+
+            if ($organizationId !== $project->organization_id) {
+                throw ValidationException::withMessages([
+                    'project_id' => __('Проект не принадлежит выбранной организации.'),
+                ]);
+            }
+        }
+
+        if ($organizationId) {
+            $this->phoneVerificationService->attachSponsorToOrganization($user, $organizationId);
+        }
+
+        if ($project) {
+            $this->projectSponsorshipManager->attach($project, $user, [
+                'source' => 'manual',
+            ]);
+        }
 
         return response()->json([
             'user' => $user->fresh(['roles', 'permissions', 'organizations']),

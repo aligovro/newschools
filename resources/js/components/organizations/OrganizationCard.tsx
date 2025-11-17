@@ -1,7 +1,7 @@
 import type { MoneyAmount } from '@/types/money';
 import '@css/components/organizations/organization-card.scss';
 import { Link, router } from '@inertiajs/react';
-import { FolderKanban, HandHeart, User, Users } from 'lucide-react';
+import { User } from 'lucide-react';
 
 interface School {
     id: number;
@@ -178,9 +178,6 @@ export default function OrganizationCard({
                 {/* Statistics */}
                 <div className="mb-4 grid grid-cols-3 gap-4">
                     <div className="organization-stat-item">
-                        <div className="mb-1 flex items-center justify-center text-gray-400">
-                            <Users className="h-5 w-5" />
-                        </div>
                         <div className="organization-stat-label">
                             Выпускники
                         </div>
@@ -189,18 +186,12 @@ export default function OrganizationCard({
                         </div>
                     </div>
                     <div className="organization-stat-item">
-                        <div className="mb-1 flex items-center justify-center text-gray-400">
-                            <HandHeart className="h-5 w-5" />
-                        </div>
                         <div className="organization-stat-label">Спонсоры</div>
                         <div className="organization-stat-value">
                             {formatNumber(organization.sponsors_count || 0)}
                         </div>
                     </div>
                     <div className="organization-stat-item">
-                        <div className="mb-1 flex items-center justify-center text-gray-400">
-                            <FolderKanban className="h-5 w-5" />
-                        </div>
                         <div className="organization-stat-label">Проекты</div>
                         <div className="organization-stat-value">
                             {formatNumber(organization.projects_count || 0)}

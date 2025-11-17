@@ -7,6 +7,7 @@ use App\Enums\NewsVisibility;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\Site;
+use App\Models\SiteWidget;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -73,8 +74,20 @@ class UpdateNewsRequest extends FormRequest
             unset($data['registration']);
         }
 
+        if (array_key_exists('image', $data) && filled($data['image'])) {
+            $data['image'] = SiteWidget::extractImagePathFromUrl($data['image']);
+        }
+
         if (array_key_exists('gallery', $data) && is_array($data['gallery'])) {
-            $data['gallery'] = array_values(array_filter($data['gallery'], fn ($item) => filled($item)));
+            $data['gallery'] = array_values(
+                array_filter(
+                    array_map(
+                        static fn ($item) => SiteWidget::extractImagePathFromUrl((string) $item),
+                        $data['gallery']
+                    ),
+                    fn ($item) => filled($item)
+                )
+            );
         }
 
         if (array_key_exists('is_main_site', $data)) {

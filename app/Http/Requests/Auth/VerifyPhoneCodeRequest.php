@@ -20,6 +20,7 @@ class VerifyPhoneCodeRequest extends FormRequest
             'token' => ['required', 'uuid'],
             'code' => ['required', 'digits:6'],
             'organization_id' => ['nullable', 'exists:organizations,id'],
+            'project_id' => ['nullable', 'exists:projects,id'],
             'remember' => ['sometimes', 'boolean'],
         ];
     }

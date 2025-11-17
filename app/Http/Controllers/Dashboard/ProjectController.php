@@ -80,7 +80,7 @@ class ProjectController extends Controller
                 Log::info('Stages data received:', ['stages' => $request->stages]);
             }
 
-            $data = $request->except(['image', 'gallery', 'organization_id']);
+            $data = $request->except(['image', 'gallery', 'organization_id', 'category_ids']);
 
             // Автоматически генерируем slug, если не указан
             if (empty($data['slug']) && !empty($data['title'])) {
@@ -130,12 +130,23 @@ class ProjectController extends Controller
                 $data['payment_settings'] = $payment;
             }
 
+            $categoryIds = collect($request->input('category_ids', []))
+                ->filter(fn ($id) => is_numeric($id))
+                ->map(fn ($id) => (int) $id)
+                ->values();
+
+            $primaryCategorySlug = null;
+            if ($categoryIds->isNotEmpty()) {
+                $primaryCategorySlug = ProjectCategory::where('id', $categoryIds->first())->value('slug');
+            }
+            $data['category'] = $primaryCategorySlug;
+
             // Создаем проект
             $project = Project::create($data);
 
             // Синхронизируем категории (если пришли)
-            if ($request->filled('category_ids') && is_array($request->category_ids)) {
-                $project->categories()->sync($request->category_ids);
+            if ($categoryIds->isNotEmpty()) {
+                $project->categories()->sync($categoryIds->all());
             }
 
             // Создаем этапы (если пришли вместе с проектом)
@@ -189,15 +200,23 @@ class ProjectController extends Controller
             'donations_count',
             'created_at',
             'updated_at'
-        ])->with('organization:id,name,slug');
+        ])->with(['organization:id,name,slug', 'categories:id,name,slug']);
 
         // Фильтрация
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
+        $categoryId = $request->integer('category_id');
+        if ($categoryId) {
+            $query->whereHas('categories', function ($q) use ($categoryId) {
+                $q->where('project_categories.id', $categoryId);
+            });
+        } elseif ($request->filled('category')) {
+            $categorySlug = $request->category;
+            $query->whereHas('categories', function ($q) use ($categorySlug) {
+                $q->where('project_categories.slug', $categorySlug);
+            });
         }
 
         if ($request->filled('search')) {
@@ -260,6 +279,7 @@ class ProjectController extends Controller
             'filters' => [
                 'status' => $request->get('status'),
                 'category' => $request->get('category'),
+                'category_id' => $request->get('category_id'),
                 'search' => $request->get('search'),
                 'featured' => $request->get('featured'),
                 'organization_id' => $request->get('organization_id'),
@@ -289,15 +309,23 @@ class ProjectController extends Controller
             'donations_count',
             'created_at',
             'updated_at'
-        ]);
+        ])->with('categories:id,name,slug');
 
         // Фильтрация
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
+        $categoryId = $request->integer('category_id');
+        if ($categoryId) {
+            $query->whereHas('categories', function ($q) use ($categoryId) {
+                $q->where('project_categories.id', $categoryId);
+            });
+        } elseif ($request->filled('category')) {
+            $categorySlug = $request->category;
+            $query->whereHas('categories', function ($q) use ($categorySlug) {
+                $q->where('project_categories.slug', $categorySlug);
+            });
         }
 
         if ($request->filled('search')) {
@@ -333,7 +361,7 @@ class ProjectController extends Controller
         $perPage = $request->get('per_page', 12);
         $projects = $query->paginate($perPage);
 
-        $categories = $organization->type_config['categories'] ?? [];
+        $projectCategories = ProjectCategory::active()->ordered()->get();
 
         // Если запрос API, возвращаем JSON с ресурсами
         if ($request->expectsJson() || $request->wantsJson()) {
@@ -350,12 +378,12 @@ class ProjectController extends Controller
         }
 
         return Inertia::render('dashboard/projects/ProjectsIndex', [
-            'organization' => $organization->only(['id', 'name', 'slug', 'type_config']),
+            'organization' => $organization->only(['id', 'name', 'slug']),
             'projects' => $projects,
-            'categories' => $categories,
+            'projectCategories' => $projectCategories,
             'filters' => [
                 'status' => $request->get('status'),
-                'category' => $request->get('category'),
+                'category_id' => $request->get('category_id'),
                 'search' => $request->get('search'),
                 'featured' => $request->get('featured'),
             ],
@@ -424,7 +452,6 @@ class ProjectController extends Controller
      */
     public function edit(Organization $organization, Project $project)
     {
-        $categories = $organization->type_config['categories'] ?? [];
         $projectCategories = ProjectCategory::active()->ordered()->get();
 
         // Загружаем этапы проекта и категории
@@ -444,7 +471,6 @@ class ProjectController extends Controller
         return Inertia::render('dashboard/projects/EditProject', [
             'organization' => $organization->only(['id', 'name', 'slug']),
             'project' => $project,
-            'categories' => $categories,
             'projectCategories' => $projectCategories,
             'defaultPaymentSettings' => $this->resolveDefaultPaymentSettings($organization),
         ]);
@@ -458,7 +484,7 @@ class ProjectController extends Controller
         Log::info('Update request all data:', $request->all());
 
         try {
-            $data = $request->except(['image', 'gallery', 'existing_gallery']);
+            $data = $request->except(['image', 'gallery', 'existing_gallery', 'category_ids']);
 
             // Преобразуем target_amount в копейки, если изменился
             // При PUT запросе с FormData данные приходят как строки в рублях
@@ -494,13 +520,24 @@ class ProjectController extends Controller
 
             Log::info('Data to update:', $data);
 
+            $categoryIds = collect($request->input('category_ids', []))
+                ->filter(fn ($id) => is_numeric($id))
+                ->map(fn ($id) => (int) $id)
+                ->values();
+
+            if ($categoryIds->isNotEmpty()) {
+                $primaryCategorySlug = ProjectCategory::where('id', $categoryIds->first())->value('slug');
+                $data['category'] = $primaryCategorySlug;
+            } else {
+                $data['category'] = null;
+            }
+
             // Обновляем проект
             $project->update($data);
 
             // Синхронизируем категории (если пришли)
-            if ($request->has('category_ids')) {
-                $categoryIds = is_array($request->category_ids) ? $request->category_ids : [];
-                $project->categories()->sync($categoryIds);
+            if ($categoryIds->isNotEmpty()) {
+                $project->categories()->sync($categoryIds->all());
             }
 
             // Обновляем этапы (если пришли вместе с проектом)

@@ -40,24 +40,6 @@ export function BasicInfoSection({
             .map((category) => category.id);
 
         onDataChange('category_ids', nextIds);
-
-        const primaryStillSelected = projectCategories.some(
-            (category) =>
-                category.slug === data.category &&
-                nextIds.includes(category.id),
-        );
-
-        if (!primaryStillSelected) {
-            const fallback =
-                projectCategories.find((category) =>
-                    nextIds.includes(category.id),
-                ) ?? null;
-            const nextCategory = fallback?.slug ?? '';
-
-            if (nextCategory !== data.category) {
-                onDataChange('category', nextCategory);
-            }
-        }
     };
 
     return (
@@ -230,11 +212,6 @@ export function BasicInfoSection({
                                 {errors.category_ids && (
                                     <p className="mt-1 text-sm text-red-600">
                                         {errors.category_ids}
-                                    </p>
-                                )}
-                                {errors.category && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {errors.category}
                                     </p>
                                 )}
                             </div>

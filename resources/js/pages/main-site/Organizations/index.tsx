@@ -2,14 +2,13 @@ import CitySelector, {
     type City as PublicCity,
 } from '@/components/main-site/CitySelector';
 import { MapMarker } from '@/components/maps/YandexMap';
-import { useDefaultCity } from '@/hooks/useDefaultCity';
 import MainLayout from '@/layouts/MainLayout';
+import type { MoneyAmount } from '@/types/money';
 import { router } from '@inertiajs/react';
 import { List, MapPin, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ListTab from './ListTab';
 import MapTab from './MapTab';
-import type { MoneyAmount } from '@/types/money';
 
 interface OrganizationData {
     id: number;
@@ -101,12 +100,6 @@ export default function Organizations({
     const [searchQuery, setSearchQuery] = useState(filters?.search || '');
     const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-    const {
-        id: defaultCityId,
-        name: defaultCityName,
-        loaded: defaultCityLoaded,
-    } = useDefaultCity();
-
     // Инициализация города из фильтров
     useEffect(() => {
         if (filters?.city_id && organizations.data.length > 0) {
@@ -121,18 +114,6 @@ export default function Organizations({
             }
         }
     }, [filters?.city_id, organizations.data]);
-
-    // Автоматическое назначение дефолтного города, если ещё не выбран
-    useEffect(() => {
-        if (
-            !selectedCity &&
-            defaultCityLoaded &&
-            typeof defaultCityId === 'number' &&
-            defaultCityName
-        ) {
-            setSelectedCity({ id: defaultCityId, name: defaultCityName });
-        }
-    }, [selectedCity, defaultCityLoaded, defaultCityId, defaultCityName]);
 
     // Загрузка координат выбранного города
     useEffect(() => {
@@ -296,39 +277,10 @@ export default function Organizations({
         return [55.751244, 37.618423];
     }, [cityCoordinates, mapMarkers]);
 
-    if (!defaultCityLoaded) {
-        return (
-            <MainLayout
-                site={site}
-                positions={positions}
-                position_settings={position_settings}
-                pageTitle="Загрузка..."
-                pageDescription="Список всех организаций"
-                breadcrumbs={[
-                    { title: 'Главная', href: '/' },
-                    { title: 'Школы', href: '' },
-                ]}
-            >
-                <div className="space-y-6">
-                    {/* Заголовок */}
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                        Загрузка города…
-                    </h1>
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div className="flex flex-1 items-center gap-4">
-                            {/* Селектор города */}
-                            <div className="min-w-[180px] animate-pulse rounded-lg bg-gray-100 px-3 py-2 text-gray-400">
-                                Загрузка города…
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </MainLayout>
-        );
-    }
-
     // Формирование заголовка с названием города (c безопасным дефолтом)
-    const pageTitle = `Школы ${selectedCity?.name || defaultCityName}`;
+    const pageTitle = selectedCity?.name
+        ? `Школы г. ${selectedCity.name}`
+        : 'Все школы';
 
     // Формирование URL для пагинации
     const getPaginationUrl = (page: number): string => {
@@ -369,7 +321,7 @@ export default function Organizations({
                         <CitySelector
                             value={selectedCity}
                             onChange={handleCityChange}
-                            defaultCityName="Казань"
+                            disableAutoSet
                         />
 
                         {/* Поиск */}

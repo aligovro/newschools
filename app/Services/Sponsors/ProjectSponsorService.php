@@ -4,8 +4,10 @@ namespace App\Services\Sponsors;
 
 use App\Enums\DonationStatus;
 use App\Models\Project;
+use App\Models\ProjectSponsor;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Query\Builder;
 
 class ProjectSponsorService
 {
@@ -21,10 +23,12 @@ class ProjectSponsorService
         $query = $this->buildAggregatedQuery($project);
 
         if ($sort === 'recent') {
-            $query->orderByDesc('latest_donation_at')
+            $query->orderBy('priority')
+                ->orderByDesc('latest_donation_at')
                 ->orderByDesc('total_amount');
         } else {
-            $query->orderByDesc('total_amount')
+            $query->orderBy('priority')
+                ->orderByDesc('total_amount')
                 ->orderByDesc('latest_donation_at');
         }
 
@@ -33,17 +37,70 @@ class ProjectSponsorService
         return $query->paginate($perPage, ['*'], 'page', $page);
     }
 
-    private function buildAggregatedQuery(Project $project)
+    private function buildAggregatedQuery(Project $project): Builder
+    {
+        $projectSponsors = $this->projectSponsorsSelect($project);
+        $legacySponsors = $this->legacySponsorsSelect($project);
+
+        $combined = $projectSponsors->unionAll($legacySponsors);
+
+        return DB::query()->fromSub($combined, 'sponsors');
+    }
+
+    private function projectSponsorsSelect(Project $project): Builder
+    {
+        $donationStats = DB::table('donations')
+            ->selectRaw('
+                donor_id,
+                COALESCE(SUM(amount), 0) as total_amount,
+                MAX(created_at) as latest_donation_at,
+                COUNT(id) as donations_count
+            ')
+            ->where('project_id', $project->id)
+            ->where('status', DonationStatus::Completed->value)
+            ->whereNotNull('donor_id')
+            ->groupBy('donor_id');
+
+        return ProjectSponsor::query()
+            ->selectRaw("
+                CONCAT('project_sponsor:', project_sponsors.id) as sponsor_key,
+                users.id as donor_id,
+                users.name as donor_name,
+                users.email as donor_email,
+                users.phone as donor_phone,
+                COALESCE(NULLIF(users.name, ''), users.phone, users.email, 'Спонсор') as display_name,
+                NULLIF(users.photo, '') as photo,
+                COALESCE(donation_stats.total_amount, project_sponsors.pledge_amount, 0) as total_amount,
+                COALESCE(donation_stats.latest_donation_at, project_sponsors.joined_at) as latest_donation_at,
+                COALESCE(donation_stats.donations_count, 0) as donations_count,
+                0 as priority
+            ")
+            ->join('organization_users', 'project_sponsors.organization_user_id', '=', 'organization_users.id')
+            ->join('users', 'organization_users.user_id', '=', 'users.id')
+            ->leftJoinSub($donationStats, 'donation_stats', 'donation_stats.donor_id', '=', 'users.id')
+            ->where('project_sponsors.project_id', $project->id)
+            ->whereIn('project_sponsors.status', ['pending', 'active'])
+            ->toBase();
+    }
+
+    private function legacySponsorsSelect(Project $project): Builder
     {
         $sponsorKeyExpression = $this->sponsorKeyExpression();
 
-        $aggregated = DB::table('donations')
+        return DB::table('donations')
             ->leftJoin('users', 'users.id', '=', 'donations.donor_id')
             ->where('donations.project_id', $project->id)
             ->where('donations.status', DonationStatus::Completed->value)
             ->where(function ($query) {
                 $query->whereNull('donations.is_anonymous')
                     ->orWhere('donations.is_anonymous', false);
+            })
+            ->whereNotExists(function ($sub) use ($project) {
+                $sub->select(DB::raw(1))
+                    ->from('organization_users')
+                    ->join('project_sponsors', 'project_sponsors.organization_user_id', '=', 'organization_users.id')
+                    ->whereColumn('organization_users.user_id', 'donations.donor_id')
+                    ->where('project_sponsors.project_id', $project->id);
             })
             ->groupBy(DB::raw($sponsorKeyExpression))
             ->selectRaw("
@@ -52,15 +109,24 @@ class ProjectSponsorService
                 MAX(donations.donor_name) as donor_name,
                 MAX(donations.donor_email) as donor_email,
                 MAX(donations.donor_phone) as donor_phone,
-                MAX(CASE WHEN users.name IS NOT NULL AND users.name != '' THEN users.name ELSE donations.donor_name END) as display_name,
-                MAX(CASE WHEN users.photo IS NOT NULL AND users.photo != '' THEN users.photo ELSE NULL END) as photo,
+                MAX(
+                    CASE
+                        WHEN users.name IS NOT NULL AND users.name != '' THEN users.name
+                        ELSE donations.donor_name
+                    END
+                ) as display_name,
+                MAX(
+                    CASE
+                        WHEN users.photo IS NOT NULL AND users.photo != '' THEN users.photo
+                        ELSE NULL
+                    END
+                ) as photo,
                 COALESCE(SUM(donations.amount), 0) as total_amount,
                 MAX(donations.created_at) as latest_donation_at,
-                COUNT(donations.id) as donations_count
+                COUNT(donations.id) as donations_count,
+                1 as priority
             ")
             ->havingRaw('total_amount > 0');
-
-        return DB::query()->fromSub($aggregated, 'sponsors');
     }
 
     private function normalizeSort(string $sort): string

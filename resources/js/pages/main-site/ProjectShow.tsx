@@ -1,11 +1,15 @@
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
+import SubscribeSponsorModal from '@/components/main-site/SubscribeSponsorModal';
 import ProjectSponsorsSection from '@/components/projects/ProjectSponsorsSection';
 import ProjectStageCard from '@/components/projects/ProjectStageCard';
 import MainLayout from '@/layouts/MainLayout';
 import type { MoneyAmount } from '@/types/money';
-import { Link } from '@inertiajs/react';
+import '@css/pages/projects/project-show.scss';
+import { Link, usePage } from '@inertiajs/react';
+import axios from 'axios';
 import { useState, type ComponentProps } from 'react';
+import { toast } from 'sonner';
 
 interface Organization {
     id: number;
@@ -111,6 +115,10 @@ export default function ProjectShow({
 }: ProjectShowProps) {
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
     const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
+    const [isSponsorModalOpen, setIsSponsorModalOpen] = useState(false);
+    const [isSponsorActionLoading, setIsSponsorActionLoading] = useState(false);
+    const { props } = usePage<{ auth?: { user?: any } }>();
+    const currentUser = props.auth?.user || null;
 
     const handleImageClick = (index: number) => {
         setGalleryInitialIndex(index);
@@ -127,6 +135,47 @@ export default function ProjectShow({
               .filter(Boolean)
               .join(', ')
         : null;
+
+    const organizationForModal = project.organization
+        ? {
+              id: project.organization.id,
+              name: project.organization.name,
+          }
+        : null;
+
+    const handleBecomeSponsor = async () => {
+        if (!organizationForModal) {
+            toast.error('Организация проекта не найдена');
+            return;
+        }
+
+        if (currentUser) {
+            try {
+                setIsSponsorActionLoading(true);
+                await axios.post(
+                    '/api/auth/phone/attach',
+                    {
+                        organization_id: organizationForModal.id,
+                        project_id: project.id,
+                    },
+                    { withCredentials: true },
+                );
+
+                toast.success('Вы подключены как спонсор проекта!');
+            } catch (error: any) {
+                const message =
+                    error?.response?.data?.message ||
+                    'Не удалось оформить спонсорство. Попробуйте позже.';
+                toast.error(message);
+            } finally {
+                setIsSponsorActionLoading(false);
+            }
+
+            return;
+        }
+
+        setIsSponsorModalOpen(true);
+    };
 
     return (
         <MainLayout
@@ -159,50 +208,60 @@ export default function ProjectShow({
                 )}
 
                 {/* Заголовок с названием проекта */}
-                <h1
-                    style={{
-                        fontFamily: 'var(--font-family)',
-                        fontWeight: 700,
-                        fontSize: '40px',
-                        lineHeight: '120%',
-                        color: '#1a1a1a',
-                    }}
-                >
-                    {project.title}
-                </h1>
-
-                {/* Адрес организации */}
-                {organizationAddress && (
-                    <div className="flex items-center gap-2">
-                        <img
-                            src="/icons/map.svg"
-                            alt=""
-                            className="h-4 w-4 flex-shrink-0"
-                        />
-                        <span
-                            style={{
-                                fontFamily: 'var(--font-family)',
-                                fontWeight: 600,
-                                fontSize: '12px',
-                                lineHeight: '120%',
-                                letterSpacing: '0.01em',
-                                color: '#1a1a1a',
-                            }}
-                        >
-                            {organizationAddress}
-                        </span>
-                    </div>
-                )}
+                <h1 className="project-show__title">{project.title}</h1>
 
                 {project.organization && (
-                    <p className="mb-4 text-gray-600">
-                        <Link
-                            href={`/organization/${project.organization.slug}`}
-                            className="hover:text-blue-600"
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2">
+                            <img
+                                src="/icons/map.svg"
+                                alt=""
+                                className="h-4 w-4 flex-shrink-0"
+                            />
+                            <span className="project-show__org-info">
+                                <Link
+                                    href={`/organization/${project.organization.slug}`}
+                                    className="hover:text-blue-600"
+                                >
+                                    {project.organization.name}
+                                </Link>
+                                {project.organization.city?.name && (
+                                    <>
+                                        {' · '}
+                                        {project.organization.city.name}
+                                    </>
+                                )}
+                                {project.organization.address && (
+                                    <>
+                                        {project.organization.city?.name
+                                            ? ', '
+                                            : ' · '}
+                                        {project.organization.address}
+                                    </>
+                                )}
+                            </span>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleBecomeSponsor}
+                            disabled={isSponsorActionLoading}
+                            className="project-show__cta inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-wait disabled:opacity-70"
                         >
-                            {project.organization.name}
-                        </Link>
-                    </p>
+                            {isSponsorActionLoading ? (
+                                'Подключаем...'
+                            ) : (
+                                <>
+                                    Стать спонсором
+                                    <img
+                                        src="/icons/heart-white.svg"
+                                        alt=""
+                                        className="ml-2 h-4 w-4"
+                                    />
+                                </>
+                            )}
+                        </button>
+                    </div>
                 )}
 
                 {!project.gallery && project.image && (
@@ -255,6 +314,18 @@ export default function ProjectShow({
                     }
                     initialSort={sponsors?.sort ?? 'top'}
                 />
+
+                {organizationForModal && (
+                    <SubscribeSponsorModal
+                        open={isSponsorModalOpen}
+                        onOpenChange={setIsSponsorModalOpen}
+                        organization={organizationForModal}
+                        projectId={project.id}
+                        onCompleted={() => {
+                            setIsSponsorModalOpen(false);
+                        }}
+                    />
+                )}
             </div>
         </MainLayout>
     );
