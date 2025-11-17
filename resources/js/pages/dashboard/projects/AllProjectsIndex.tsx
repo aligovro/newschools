@@ -23,7 +23,6 @@ interface Project {
     slug: string;
     short_description?: string;
     description?: string;
-    category: string;
     target_amount: number;
     collected_amount: number;
     status: 'draft' | 'active' | 'completed' | 'cancelled' | 'suspended';
@@ -35,6 +34,11 @@ interface Project {
     donations_count: number;
     created_at: string;
     updated_at: string;
+    categories?: {
+        id: number;
+        name: string;
+        slug: string;
+    }[];
 }
 
 interface Props {
@@ -274,10 +278,23 @@ export default function AllProjectsIndex({
                                     </p>
                                 </div>
                                 <div className="flex items-center justify-between text-sm text-gray-600">
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="outline">
-                                            {project.category}
-                                        </Badge>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {(project.categories ?? []).length ? (
+                                            project.categories?.map(
+                                                (category) => (
+                                                    <Badge
+                                                        key={category.id}
+                                                        variant="outline"
+                                                    >
+                                                        {category.name}
+                                                    </Badge>
+                                                ),
+                                            )
+                                        ) : (
+                                            <Badge variant="outline">
+                                                Без категории
+                                            </Badge>
+                                        )}
                                     </div>
                                     <Badge
                                         className={`${getStatusColor(

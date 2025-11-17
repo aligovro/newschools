@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Enums\DonationStatus;
 use App\Support\Money;
+use App\Models\ProjectSponsor;
 
 class Project extends Model
 {
@@ -93,6 +94,11 @@ class Project extends Model
     public function reports(): HasMany
     {
         return $this->hasMany(Report::class);
+    }
+
+    public function projectSponsors(): HasMany
+    {
+        return $this->hasMany(ProjectSponsor::class);
     }
 
     public function reportRuns(): HasMany
@@ -180,8 +186,11 @@ class Project extends Model
 
     public function getCategoryNameAttribute(): string
     {
-        $typeConfig = $this->organization->type_config;
-        return $typeConfig['categories'][$this->category] ?? $this->category;
+        if ($this->relationLoaded('categories') && $this->categories->isNotEmpty()) {
+            return (string) ($this->categories->first()->name ?? '');
+        }
+
+        return $this->category ?? '';
     }
 
     /**

@@ -5,9 +5,6 @@ interface Organization {
     id: number;
     name: string;
     slug: string;
-    type_config?: {
-        categories: Record<string, string>;
-    };
 }
 
 interface ProjectCategory {

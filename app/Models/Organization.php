@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -14,6 +15,8 @@ use App\Traits\HasSlug;
 use App\Enums\OrganizationStatus;
 use App\Enums\DonationStatus;
 use App\Models\OrganizationStaff;
+use App\Models\OrganizationUser;
+use App\Models\ProjectSponsor;
 use App\Support\Money;
 
 class Organization extends Model
@@ -112,6 +115,27 @@ class Organization extends Model
         return $this->hasMany(Fundraiser::class);
     }
 
+    public function organizationUsers(): HasMany
+    {
+        return $this->hasMany(OrganizationUser::class);
+    }
+
+    public function sponsorMemberships(): HasMany
+    {
+        return $this->organizationUsers()
+            ->where('role', 'sponsor');
+    }
+
+    public function projectSponsors(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            ProjectSponsor::class,
+            OrganizationUser::class,
+            'organization_id',
+            'organization_user_id'
+        );
+    }
+
     public function members(): HasMany
     {
         return $this->hasMany(Member::class);
@@ -146,7 +170,6 @@ class Organization extends Model
     {
         return $this->hasMany(ReportRun::class);
     }
-
 
     /**
      * Сайты организации

@@ -31,7 +31,7 @@ class PhoneVerificationService
      * @throws ValidationException
      * @throws SmsGatewayException
      */
-    public function requestCode(string $phone, ?int $organizationId = null, ?User $user = null): PhoneVerification
+    public function requestCode(string $phone, ?int $organizationId = null, ?int $projectId = null, ?User $user = null): PhoneVerification
     {
         $normalizedPhone = PhoneNumber::normalize($phone);
 
@@ -71,6 +71,7 @@ class PhoneVerificationService
         ]);
 
         $verification->organization_id = $organizationId;
+        $verification->project_id = $projectId;
         $verification->user_id = $user?->id ?? $verification->user_id;
         $verification->resend_count = ($existing?->resend_count ?? 0) + 1;
         $verification->attempts = 0;
@@ -94,7 +95,7 @@ class PhoneVerificationService
      *
      * @throws ValidationException
      */
-    public function verifyCode(string $token, string $code, ?int $organizationId = null, bool $remember = false): array
+    public function verifyCode(string $token, string $code, ?int $organizationId = null, ?int $projectId = null, bool $remember = false): array
     {
         /** @var PhoneVerification|null $verification */
         $verification = PhoneVerification::query()
@@ -142,6 +143,11 @@ class PhoneVerificationService
                 $user,
                 $organizationId ?? $verification->organization_id
             );
+        }
+
+        if ($projectId && ! $verification->project_id) {
+            $verification->project_id = $projectId;
+            $verification->save();
         }
 
         Auth::login($user, $remember);

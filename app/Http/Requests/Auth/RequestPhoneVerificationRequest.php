@@ -21,6 +21,7 @@ class RequestPhoneVerificationRequest extends FormRequest
         return [
             'phone' => ['required', new RussianPhoneNumber()],
             'organization_id' => ['nullable', 'exists:organizations,id'],
+            'project_id' => ['nullable', 'exists:projects,id'],
         ];
     }
 

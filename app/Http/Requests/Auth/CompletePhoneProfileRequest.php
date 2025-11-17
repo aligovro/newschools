@@ -29,6 +29,8 @@ class CompletePhoneProfileRequest extends FormRequest
                 Rule::unique(User::class, 'email')->ignore($this->user()?->id),
             ],
             'photo' => ['nullable', 'string', 'max:500'],
+            'password' => ['nullable', 'string', 'min:6', 'confirmed'],
+            'password_confirmation' => ['nullable', 'string'],
         ];
     }
 }

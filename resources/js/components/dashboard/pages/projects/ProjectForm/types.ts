@@ -2,9 +2,6 @@ export interface Organization {
     id: number;
     name: string;
     slug: string;
-    type_config?: {
-        categories: Record<string, string>;
-    };
 }
 
 export interface ProjectStage {
@@ -30,7 +27,7 @@ export interface Project {
     slug: string;
     short_description?: string;
     description?: string;
-    category: string;
+    category?: string | null;
     target_amount: number;
     collected_amount?: number;
     status: 'draft' | 'active' | 'completed' | 'cancelled' | 'suspended';
@@ -63,7 +60,6 @@ export interface ProjectFormData {
     slug: string;
     short_description: string;
     description: string;
-    category: string;
     category_ids: number[];
     target_amount: number | null;
     start_date: string | null;

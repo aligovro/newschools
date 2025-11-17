@@ -20,7 +20,7 @@ interface Project {
     slug: string;
     short_description?: string;
     description?: string;
-    category: string;
+    category?: string | null;
     target_amount: number;
     collected_amount?: number;
     status: 'draft' | 'active' | 'completed' | 'cancelled' | 'suspended';

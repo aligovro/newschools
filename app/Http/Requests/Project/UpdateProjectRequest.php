@@ -21,16 +21,15 @@ class UpdateProjectRequest extends FormRequest
   {
     $organization = $this->route('organization');
     $project = $this->route('project');
-    $categories = array_keys($organization->type_config['categories'] ?? []);
 
     return [
       'title' => 'required|string|max:255',
       'slug' => 'nullable|string|max:255|unique:projects,slug,' . $project->id . ',id,organization_id,' . $organization->id,
       'short_description' => 'nullable|string|max:500',
       'description' => 'nullable|string',
-      'category' => 'required|string|in:' . implode(',', $categories),
-      'category_ids' => 'nullable|array',
-      'category_ids.*' => 'exists:project_categories,id',
+      'category' => ['nullable', 'string'],
+      'category_ids' => ['required', 'array', 'min:1'],
+      'category_ids.*' => ['exists:project_categories,id'],
       'target_amount' => 'nullable|numeric|min:0',
       'start_date' => 'nullable|date',
       'end_date' => 'nullable|date|after:start_date',
@@ -58,8 +57,8 @@ class UpdateProjectRequest extends FormRequest
     return [
       'title.required' => 'Название проекта обязательно для заполнения',
       'slug.unique' => 'Этот slug уже используется',
-      'category.required' => 'Выберите категорию проекта',
-      'category.in' => 'Выбранная категория недоступна',
+      'category_ids.required' => 'Выберите хотя бы одну категорию',
+      'category_ids.min' => 'Выберите хотя бы одну категорию',
       'end_date.after' => 'Дата окончания должна быть позже даты начала',
       'image.mimes' => 'Изображение должно быть в формате: jpeg, png, jpg, webp',
       'image.max' => 'Размер изображения не должен превышать 2MB',

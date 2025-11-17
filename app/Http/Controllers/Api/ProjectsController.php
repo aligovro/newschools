@@ -17,12 +17,16 @@ class ProjectsController extends Controller
     {
         $organizationId = $request->integer('organization_id');
         $limit = max(1, min((int) $request->get('limit', 6), 30));
+        $excludeSlug = $request->string('exclude_slug')->toString();
 
         $projects = Project::query()
             ->with('organization')
             ->where('status', 'active')
             ->when($organizationId, function ($query) use ($organizationId) {
                 $query->where('organization_id', $organizationId);
+            })
+            ->when($excludeSlug, function ($query) use ($excludeSlug) {
+                $query->where('slug', '!=', $excludeSlug);
             })
             ->orderByDesc('created_at')
             ->limit($limit)

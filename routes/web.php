@@ -23,6 +23,8 @@ Route::get('/organizations', [MainSiteController::class, 'organizations'])->name
 Route::get('/organization/{slug}', [MainSiteController::class, 'organization'])->name('main-site.organization');
 Route::get('/projects', [App\Http\Controllers\PublicProjectController::class, 'index'])->name('main-site.projects');
 Route::get('/project/{slug}', [App\Http\Controllers\PublicProjectController::class, 'show'])->name('main-site.project');
+Route::get('/news', [MainSiteController::class, 'news'])->name('main-site.news');
+Route::get('/news/{slug}', [MainSiteController::class, 'showNews'])->name('main-site.news.show');
 Route::get('/project/{project:slug}/sponsors', [App\Http\Controllers\PublicSponsorController::class, 'projectSponsors'])->name('main-site.project.sponsors');
 
 // Legacy public organization routes (deprecated)

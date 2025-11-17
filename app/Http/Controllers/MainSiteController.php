@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HasSiteWidgets;
-use App\Models\Organization;
-use App\Http\Resources\OrganizationStaffResource;
 use App\Enums\DonationStatus;
+use App\Enums\NewsStatus;
+use App\Enums\NewsVisibility;
+use App\Http\Resources\NewsResource;
+use App\Http\Resources\OrganizationStaffResource;
+use App\Models\News;
+use App\Models\Organization;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -45,12 +49,13 @@ class MainSiteController extends Controller
                         ->whereNotNull('paid_at')
                         ->selectRaw('sum(amount)');
                 },
-                'donations as sponsors_count' => function ($q) {
+                'donations as donation_sponsors_count' => function ($q) {
                     $q->where('status', 'completed')
                         ->whereNotNull('paid_at')
                         ->whereNotNull('donor_id')
                         ->selectRaw('COUNT(DISTINCT donor_id)');
-                }
+                },
+                'sponsorMemberships as sponsor_members_count',
             ]);
 
         if ($request->filled('search')) {
@@ -104,6 +109,12 @@ class MainSiteController extends Controller
                     $org->director_name = $adminUser->name ?? null;
                 }
             }
+            $sponsorMembersCount = (int) ($org->sponsor_members_count ?? 0);
+            $donationSponsorsCount = (int) ($org->donation_sponsors_count ?? 0);
+            $org->sponsors_count = max($sponsorMembersCount, $donationSponsorsCount);
+
+            unset($org->sponsor_members_count, $org->donation_sponsors_count);
+
             return $org;
         });
 
@@ -127,6 +138,92 @@ class MainSiteController extends Controller
         ]));
     }
 
+    public function news(Request $request)
+    {
+        $query = News::query()
+            ->with(['organization:id,name,slug'])
+            ->whereNull('organization_id')
+            ->where('status', NewsStatus::Published)
+            ->where('visibility', NewsVisibility::Public)
+            ->where(function ($q) {
+                $q->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            });
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('subtitle', 'like', "%{$search}%")
+                    ->orWhere('excerpt', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
+        }
+
+        if ($request->boolean('featured')) {
+            $query->where('is_featured', true);
+        }
+
+        $perPage = (int) $request->input('per_page', 6);
+        $perPage = max(3, min($perPage, 12));
+
+        $news = $query
+            ->orderByDesc('published_at')
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+
+        $news->appends($request->except('page'));
+
+        $transformed = $news->through(
+            fn($item) => (new NewsResource($item))->toArray($request),
+        );
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'data' => $transformed->items(),
+                'meta' => [
+                    'current_page' => $transformed->currentPage(),
+                    'last_page' => $transformed->lastPage(),
+                    'per_page' => $transformed->perPage(),
+                    'total' => $transformed->total(),
+                ],
+            ]);
+        }
+
+        $data = $this->getSiteWidgetsAndPositions();
+
+        return Inertia::render('main-site/News', array_merge($data, [
+            'news' => $transformed,
+            'filters' => $request->only(['search', 'type']),
+        ]));
+    }
+
+    public function showNews(Request $request, string $slug)
+    {
+        $news = News::query()
+            ->with(['organization:id,name,slug'])
+            ->where('slug', $slug)
+            ->whereNull('organization_id')
+            ->where('status', NewsStatus::Published)
+            ->where('visibility', NewsVisibility::Public)
+            ->where(function ($q) {
+                $q->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            })
+            ->firstOrFail();
+
+        $newsData = (new NewsResource($news))->toArray($request);
+
+        $data = $this->getSiteWidgetsAndPositions();
+
+        return Inertia::render('main-site/NewsShow', array_merge($data, [
+            'news' => $newsData,
+        ]));
+    }
+
     public function organization($slug)
     {
         $organization = Organization::where('slug', $slug)
@@ -141,12 +238,13 @@ class MainSiteController extends Controller
                 'director',
             ])
             ->withCount([
-                'donations as sponsors_count' => function ($q) {
+                'donations as donation_sponsors_count' => function ($q) {
                     $q->where('status', DonationStatus::Completed)
                         ->whereNotNull('paid_at')
                         ->whereNotNull('donor_id')
                         ->selectRaw('COUNT(DISTINCT donor_id)');
                 },
+                'sponsorMemberships as sponsor_members_count',
             ])
             ->firstOrFail();
 
@@ -163,10 +261,15 @@ class MainSiteController extends Controller
             ->where('status', DonationStatus::Completed)
             ->whereNotNull('paid_at');
 
-        $sponsorsCount = $organization->sponsors_count ?? (clone $completedDonationsQuery)
+        $sponsorMembersCount = $organization->sponsor_members_count ?? $organization->sponsorMemberships()->count();
+        $donationSponsorsCount = $organization->donation_sponsors_count ?? (clone $completedDonationsQuery)
             ->whereNotNull('donor_id')
             ->distinct('donor_id')
             ->count('donor_id');
+
+        $sponsorsCount = max((int) $sponsorMembersCount, (int) $donationSponsorsCount);
+
+        unset($organization->sponsor_members_count, $organization->donation_sponsors_count);
 
         $autoPaymentsCount = (clone $completedDonationsQuery)
             ->where(function ($query) {

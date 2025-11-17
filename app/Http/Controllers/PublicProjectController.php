@@ -104,7 +104,7 @@ class PublicProjectController extends Controller
     {
         $project = Project::where('slug', $slug)
             ->where('status', 'active')
-            ->with(['organization', 'organization.region', 'stages' => function ($query) {
+            ->with(['organization', 'organization.region', 'organization.city', 'stages' => function ($query) {
                 $query->orderBy('order', 'asc');
             }])
             ->firstOrFail();
@@ -173,6 +173,11 @@ class PublicProjectController extends Controller
                 'id' => $project->organization->id,
                 'name' => $project->organization->name,
                 'slug' => $project->organization->slug,
+                'address' => $project->organization->address,
+                'city' => $project->organization->city ? [
+                    'id' => $project->organization->city->id,
+                    'name' => $project->organization->city->name,
+                ] : null,
             ] : null,
         ];
 

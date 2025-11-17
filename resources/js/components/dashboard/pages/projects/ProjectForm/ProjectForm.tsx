@@ -146,7 +146,6 @@ export default function ProjectForm({
             slug: project?.slug || '',
             short_description: project?.short_description || '',
             description: project?.description || '',
-            category: project?.category || '',
             category_ids: project?.categories?.map((cat) => cat.id) || [],
             target_amount: project ? project.target_amount / 100 : null,
             start_date: project?.start_date || null,
@@ -177,35 +176,6 @@ export default function ProjectForm({
         isValid: true,
     });
     const debouncedSlug = useDebounce(data.slug, 500);
-
-    useEffect(() => {
-        const selectedIds = Array.isArray((data as any).category_ids)
-            ? ((data as any).category_ids as number[])
-            : [];
-
-        if (!selectedIds.length || !projectCategories?.length) {
-            return;
-        }
-
-        const primaryStillSelected = projectCategories.some(
-            (category) =>
-                category.slug === data.category &&
-                selectedIds.includes(category.id),
-        );
-
-        if (primaryStillSelected) {
-            return;
-        }
-
-        const fallback = projectCategories.find((category) =>
-            selectedIds.includes(category.id),
-        );
-        const fallbackSlug = fallback?.slug ?? '';
-
-        if (fallbackSlug !== data.category) {
-            (setData as any)('category', fallbackSlug);
-        }
-    }, [data.category, data.category_ids, projectCategories, setData]);
 
     const basePaymentSettings = useMemo(
         () =>

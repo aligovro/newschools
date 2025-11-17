@@ -27,6 +27,8 @@ interface SubscribeSponsorModalProps {
     onOpenChange: (open: boolean) => void;
     organization: { id: number; name: string } | null;
     onCompleted?: (user: User) => void;
+    projectId?: number | null;
+    reloadOnSuccess?: boolean;
 }
 
 type Step = 'phone' | 'code' | 'profile' | 'success';
@@ -35,6 +37,7 @@ interface VerificationResponse {
     user: User;
     is_new_user: boolean;
     requires_profile_completion: boolean;
+    requires_password: boolean;
 }
 
 interface RequestCodeResponse {
@@ -71,6 +74,8 @@ const initialProfileState = {
     name: '',
     email: '',
     photo: '',
+    password: '',
+    password_confirmation: '',
 };
 
 export const SubscribeSponsorModal = ({
@@ -78,6 +83,8 @@ export const SubscribeSponsorModal = ({
     onOpenChange,
     organization,
     onCompleted,
+    projectId = null,
+    reloadOnSuccess = true,
 }: SubscribeSponsorModalProps) => {
     const [step, setStep] = useState<Step>('phone');
     const [phone, setPhone] = useState<string>('');
@@ -91,6 +98,7 @@ export const SubscribeSponsorModal = ({
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [isPersonalDataAccepted, setIsPersonalDataAccepted] =
         useState(false);
+    const [requiresPassword, setRequiresPassword] = useState(false);
 
     useEffect(() => {
         if (!open) {
@@ -104,6 +112,7 @@ export const SubscribeSponsorModal = ({
             setProfile(initialProfileState);
             setPhotoPreview(null);
             setIsPersonalDataAccepted(false);
+            setRequiresPassword(false);
         }
     }, [open]);
 
@@ -113,6 +122,8 @@ export const SubscribeSponsorModal = ({
                 name: user.name || '',
                 email: user.email || '',
                 photo: user.photo || '',
+                password: '',
+                password_confirmation: '',
             });
             setPhotoPreview(user.photo || null);
         }
@@ -121,6 +132,22 @@ export const SubscribeSponsorModal = ({
     const organizationName = useMemo(
         () => organization?.name ?? 'организацию',
         [organization],
+    );
+
+    const handleSuccess = useCallback(
+        (nextUser: User, message?: string) => {
+            setUser(nextUser);
+            setStep('success');
+            onCompleted?.(nextUser);
+            toast.success(message ?? 'Вы успешно подписались как спонсор!');
+
+            if (reloadOnSuccess) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 150);
+            }
+        },
+        [onCompleted, reloadOnSuccess],
     );
 
     const handlePhoneChange = useCallback((value: string) => {
@@ -172,6 +199,7 @@ export const SubscribeSponsorModal = ({
                 {
                     phone,
                     organization_id: organization.id,
+                    project_id: projectId ?? undefined,
                 },
                 {
                     withCredentials: true,
@@ -216,6 +244,7 @@ export const SubscribeSponsorModal = ({
                     token: verificationToken,
                     code,
                     organization_id: organization.id,
+                    project_id: projectId ?? undefined,
                     remember: true,
                 },
                 {
@@ -224,16 +253,21 @@ export const SubscribeSponsorModal = ({
             );
 
             setUser(response.data.user);
+            const needsProfileStep =
+                response.data.requires_profile_completion ||
+                response.data.requires_password;
 
-            if (response.data.requires_profile_completion) {
+            setRequiresPassword(response.data.requires_password);
+
+            if (needsProfileStep) {
                 setStep('profile');
                 toast.success(
-                    'Телефон подтверждён. Заполните профиль, чтобы завершить подписку.',
+                    response.data.requires_password
+                        ? 'Телефон подтверждён. Заполните профиль и придумайте пароль.'
+                        : 'Телефон подтверждён. Заполните профиль, чтобы завершить подписку.',
                 );
             } else {
-                setStep('success');
-                onCompleted?.(response.data.user);
-                toast.success('Вы успешно подписались как спонсор!');
+                handleSuccess(response.data.user);
             }
         } catch (error: unknown) {
             setErrors({
@@ -305,6 +339,25 @@ export const SubscribeSponsorModal = ({
             return;
         }
 
+        if (requiresPassword && profile.password.trim().length < 6) {
+            setErrors((prev) => ({
+                ...prev,
+                password: 'Минимальная длина пароля — 6 символов',
+            }));
+            return;
+        }
+
+        if (
+            requiresPassword &&
+            profile.password !== profile.password_confirmation
+        ) {
+            setErrors((prev) => ({
+                ...prev,
+                password: 'Пароль и подтверждение должны совпадать',
+            }));
+            return;
+        }
+
         setLoading(true);
         setErrors({});
 
@@ -317,16 +370,19 @@ export const SubscribeSponsorModal = ({
                     name: profile.name,
                     email: profile.email || null,
                     photo: profile.photo || null,
+                    password: profile.password || null,
+                    password_confirmation:
+                        profile.password_confirmation || null,
                 },
                 {
                     withCredentials: true,
                 },
             );
 
-            setUser(response.data.user);
-            setStep('success');
-            toast.success('Профиль обновлён и подписка оформлена!');
-            onCompleted?.(response.data.user);
+            handleSuccess(
+                response.data.user,
+                'Профиль обновлён и подписка оформлена!',
+            );
         } catch (error: unknown) {
             const emailMessage = extractErrorMessage(error, 'email', '');
             const profileMessage = extractErrorMessage(
@@ -342,6 +398,8 @@ export const SubscribeSponsorModal = ({
             setErrors({
                 email: emailMessage || null,
                 profile: profileMessage,
+                password:
+                    extractErrorMessage(error, 'password', '') || null,
             });
         } finally {
             setLoading(false);
@@ -482,6 +540,58 @@ export const SubscribeSponsorModal = ({
                 )}
             </div>
 
+            {requiresPassword && (
+                <>
+                    <div className="space-y-2">
+                        <Label htmlFor="profile-password">Пароль</Label>
+                        <Input
+                            id="profile-password"
+                            type="password"
+                            value={profile.password}
+                            onChange={(e) => {
+                                setProfile((prev) => ({
+                                    ...prev,
+                                    password: e.target.value,
+                                }));
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    password: null,
+                                }));
+                            }}
+                            placeholder="Придумайте пароль"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="profile-password-confirmation">
+                            Повторите пароль
+                        </Label>
+                        <Input
+                            id="profile-password-confirmation"
+                            type="password"
+                            value={profile.password_confirmation}
+                            onChange={(e) => {
+                                setProfile((prev) => ({
+                                    ...prev,
+                                    password_confirmation: e.target.value,
+                                }));
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    password: null,
+                                }));
+                            }}
+                            placeholder="Ещё раз пароль"
+                        />
+                    </div>
+
+                    {errors.password && (
+                        <p className="text-sm text-destructive">
+                            {errors.password}
+                        </p>
+                    )}
+                </>
+            )}
+
             <div className="space-y-2">
                 <Label htmlFor="profile-photo">Фото (необязательно)</Label>
                 <Input
@@ -561,13 +671,19 @@ export const SubscribeSponsorModal = ({
         success: 'Подписка оформлена! Мы свяжемся с вами при необходимости.',
     };
 
+    const profileStepDescription = requiresPassword
+        ? 'Заполните данные профиля и придумайте пароль для входа.'
+        : descriptionMap.profile;
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader className="space-y-2">
                     <DialogTitle>{titleMap[step]}</DialogTitle>
                     <DialogDescription>
-                        {descriptionMap[step]}
+                        {step === 'profile'
+                            ? profileStepDescription
+                            : descriptionMap[step]}
                     </DialogDescription>
                 </DialogHeader>
                 <div>{renderContent()}</div>
@@ -575,3 +691,5 @@ export const SubscribeSponsorModal = ({
         </Dialog>
     );
 };
+
+export default SubscribeSponsorModal;

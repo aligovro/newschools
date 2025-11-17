@@ -18,6 +18,7 @@ class PhoneVerification extends Model
         'last_sent_at',
         'user_id',
         'organization_id',
+        'project_id',
         'meta',
         'verified_at',
     ];

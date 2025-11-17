@@ -7,6 +7,7 @@ use App\Enums\NewsVisibility;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\Site;
+use App\Models\SiteWidget;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -85,8 +86,20 @@ class StoreNewsRequest extends FormRequest
             $data['organization_id'] = null;
         }
 
+        if (!empty($data['image'])) {
+            $data['image'] = SiteWidget::extractImagePathFromUrl($data['image']);
+        }
+
         if (!empty($data['gallery'])) {
-            $data['gallery'] = array_values(array_filter($data['gallery'], fn ($item) => filled($item)));
+            $data['gallery'] = array_values(
+                array_filter(
+                    array_map(
+                        static fn($item) => SiteWidget::extractImagePathFromUrl((string) $item),
+                        $data['gallery']
+                    ),
+                    fn($item) => filled($item)
+                )
+            );
         }
 
         return $data;
@@ -165,4 +178,3 @@ class StoreNewsRequest extends FormRequest
         });
     }
 }
-
