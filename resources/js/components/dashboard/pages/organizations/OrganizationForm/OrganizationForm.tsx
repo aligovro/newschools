@@ -286,14 +286,7 @@ export default function OrganizationForm({
                 'payment_settings',
                 JSON.stringify(formState.paymentSettings),
             );
-            formData.append(
-                'needs_target_amount',
-                formState.needsTargetAmount ?? '',
-            );
-            formData.append(
-                'needs_collected_amount',
-                formState.needsCollectedAmount ?? '',
-            );
+            formData.append('needs_target_amount', formState.needsTargetAmount ?? '');
 
             if (formState.logoValue instanceof File)
                 formData.append('logo', formState.logoValue);
@@ -393,7 +386,6 @@ export default function OrganizationForm({
                         targetAmount={formState.needsTargetAmount}
                         collectedAmount={formState.needsCollectedAmount}
                         onTargetChange={formState.setNeedsTargetAmount}
-                        onCollectedChange={formState.setNeedsCollectedAmount}
                     />
 
                     <LocationSection
