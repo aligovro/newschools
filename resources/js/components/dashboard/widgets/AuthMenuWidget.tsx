@@ -8,6 +8,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSelector } from '@/store';
+import { Plus } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AuthLoginDialog } from './auth/AuthLoginDialog';
@@ -314,8 +315,10 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                             type="button"
                             className="btn-outline-primary auth-btn login-btn"
                             onClick={() => handleLoginOpenChange(true)}
+                            aria-label={loginButtonText}
                         >
-                            {loginButtonText}
+                            <span className="login-btn__text">{loginButtonText}</span>
+                            <Plus className="login-btn__icon" />
                         </button>
                     )}
                     {showRegister && (

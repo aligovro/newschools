@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { isInternalLink } from '@/lib/linkUtils';
 import { MenuItem } from './types';
 
@@ -36,6 +36,28 @@ export const MobileBottomMenu: React.FC<MobileBottomMenuProps> = ({
     style,
 }) => {
     const page = usePage();
+
+    // Сортируем элементы меню для стабильного порядка при сборке
+    const sortedItems = useMemo(() => {
+        return [...items].sort((a, b) => {
+            // Приоритет 1: сортировка по полю order или sort_order (если есть)
+            const aOrder = (a as any).order ?? (a as any).sort_order;
+            const bOrder = (b as any).order ?? (b as any).sort_order;
+            if (aOrder !== undefined && bOrder !== undefined) {
+                return Number(aOrder) - Number(bOrder);
+            }
+            if (aOrder !== undefined) return -1;
+            if (bOrder !== undefined) return 1;
+
+            // Приоритет 2: сортировка по id (если это числа)
+            if (typeof a.id === 'number' && typeof b.id === 'number') {
+                return a.id - b.id;
+            }
+
+            // Приоритет 3: сортировка по id как строкам
+            return String(a.id).localeCompare(String(b.id));
+        });
+    }, [items]);
 
     // Определение активного пункта меню
     const isActiveMenuItem = useCallback(
@@ -116,7 +138,7 @@ export const MobileBottomMenu: React.FC<MobileBottomMenuProps> = ({
             style={style}
         >
             <ul className="mobile-bottom-menu__list">
-                {items.map((item) => renderMobileBottomMenuItem(item))}
+                {sortedItems.map((item) => renderMobileBottomMenuItem(item))}
             </ul>
         </nav>
     );

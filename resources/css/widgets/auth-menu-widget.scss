@@ -204,6 +204,19 @@
     .btn-accent {
         @include button-accent;
     }
+
+    // На десктопе (больше 768px) показываем текст, скрываем иконку
+    @media (min-width: 769px) {
+        .login-btn {
+            .login-btn__text {
+                display: inline;
+            }
+
+            .login-btn__icon {
+                display: none;
+            }
+        }
+    }
 }
 
 // Стили для кнопок в модальных окнах (DialogContent может рендериться через портал)
