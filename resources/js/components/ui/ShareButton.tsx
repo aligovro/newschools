@@ -2,10 +2,31 @@ import '@css/components/ui/share-button.scss';
 import { useState } from 'react';
 
 interface ShareButtonProps {
+    /**
+     * Относительный путь ("/news/slug") или полный URL.
+     * При копировании всегда превращается в абсолютный URL.
+     */
     url: string;
     className?: string;
     successMessage?: string;
 }
+
+const buildAbsoluteUrl = (rawUrl: string): string => {
+    // Если уже полный URL – возвращаем как есть
+    if (/^https?:\/\//i.test(rawUrl)) {
+        return rawUrl;
+    }
+
+    if (typeof window === 'undefined') {
+        return rawUrl;
+    }
+
+    try {
+        return new URL(rawUrl, window.location.origin).toString();
+    } catch {
+        return rawUrl;
+    }
+};
 
 export default function ShareButton({
     url,
@@ -17,7 +38,8 @@ export default function ShareButton({
 
     const handleShareClick = async () => {
         try {
-            await navigator.clipboard.writeText(url);
+            const finalUrl = buildAbsoluteUrl(url);
+            await navigator.clipboard.writeText(finalUrl);
             setCopied(true);
             setError(null);
             setTimeout(() => setCopied(false), 3000);
@@ -35,13 +57,21 @@ export default function ShareButton({
 
     return (
         <div className={containerClass}>
-            <button className="share-button" type="button" onClick={handleShareClick}>
+            <button
+                className="share-button"
+                type="button"
+                onClick={handleShareClick}
+            >
                 <span className="share-button-text">Поделиться</span>
                 <img src="/icons/share.svg" alt="" className="share-button-icon" />
             </button>
             <div className="share-button-status" aria-live="polite">
-                {copied && <span className="share-button-success">{successMessage}</span>}
-                {error && !copied && <span className="share-button-error">{error}</span>}
+                {copied && (
+                    <span className="share-button-success">{successMessage}</span>
+                )}
+                {error && !copied && (
+                    <span className="share-button-error">{error}</span>
+                )}
             </div>
         </div>
     );

@@ -83,6 +83,11 @@ export default function OrganizationShow({
     const formatNumber = (value?: number) =>
         new Intl.NumberFormat('ru-RU').format(value ?? 0);
 
+    const hasSponsors =
+        !!sponsors &&
+        Array.isArray(sponsors.data) &&
+        (sponsors.pagination?.total ?? sponsors.data.length) > 0;
+
     const handleImageClick = (index: number) => {
         setGalleryInitialIndex(index);
         setGalleryModalOpen(true);
@@ -226,14 +231,17 @@ export default function OrganizationShow({
                     </p>
                 )}
 
-                <SponsorsSection
-                    title="Спонсоры школы"
-                    fetchEndpoint={`/organization/${organization.slug}/sponsors`}
-                    initialData={sponsors?.data ?? []}
-                    initialPagination={sponsors?.pagination ?? createEmptyPagination()}
-                    initialSort={sponsors?.sort ?? 'top'}
-                    emptyStateMessage="Спонсоры школы ещё не отображаются. Станьте первым, кто поддержит школу."
-                />
+                {hasSponsors && (
+                    <SponsorsSection
+                        title="Спонсоры школы"
+                        fetchEndpoint={`/organization/${organization.slug}/sponsors`}
+                        initialData={sponsors.data}
+                        initialPagination={
+                            sponsors.pagination ?? createEmptyPagination()
+                        }
+                        initialSort={sponsors.sort ?? 'top'}
+                    />
+                )}
 
                 <OrganizationAlumniSection
                     fetchEndpoint={`/organization/${organization.slug}/alumni`}

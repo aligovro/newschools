@@ -16,6 +16,7 @@ use Inertia\Inertia;
 use App\Services\ImageProcessingService;
 use App\Services\Organizations\OrganizationSettingsService;
 use App\Models\SitePage;
+use App\Support\Money;
 
 class OrganizationController extends Controller
 {
@@ -484,6 +485,12 @@ class OrganizationController extends Controller
         }
     }
 
+    /**
+     * Нормализация денежных полей формы в единый формат хранения.
+     *
+     * На входе: сумма в рублях (как вводит пользователь, может быть строкой с пробелами/запятыми).
+     * В базе: всегда храним в "минорных" единицах (копейки), как и остальные денежные поля.
+     */
     private function normalizeMonetaryInput(mixed $value): ?int
     {
         if ($value === null || $value === '' || $value === 'null') {
@@ -507,7 +514,8 @@ class OrganizationController extends Controller
             $numeric = 0;
         }
 
-        return (int) round($numeric);
+        // Храним в копейках, чтобы быть совместимыми с App\Support\Money
+        return Money::fromRubles($numeric);
     }
 
     public function destroy(Organization $organization)

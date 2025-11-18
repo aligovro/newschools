@@ -22,6 +22,16 @@ export default function ProjectSponsorsSection({
     initialPagination,
     initialSort = 'top',
 }: ProjectSponsorsSectionProps) {
+    // Если у проекта нет ни одного спонсора, не показываем секцию вовсе
+    const hasSponsors =
+        Array.isArray(initialData) &&
+        initialData.length > 0 &&
+        (initialPagination?.total ?? initialData.length) > 0;
+
+    if (!hasSponsors) {
+        return null;
+    }
+
     return (
         <SponsorsSection
             title={SECTION_TITLE}

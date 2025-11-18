@@ -5,20 +5,21 @@ import { useMemo } from 'react';
 
 interface NeedsSectionProps {
     targetAmount: string;
-    collectedAmount: string;
+    /**
+     * Текущее значение собранной суммы (для отображения), редактировать его нельзя.
+     */
+    collectedAmount?: string;
     onTargetChange: (value: string) => void;
-    onCollectedChange: (value: string) => void;
 }
 
 export function NeedsSection({
     targetAmount,
     collectedAmount,
     onTargetChange,
-    onCollectedChange,
 }: NeedsSectionProps) {
     const { target, collected, progress, formattedTarget, formattedCollected } =
         useMemo(() => {
-            const normalize = (value: string): number => {
+            const normalize = (value?: string): number => {
                 if (!value) return 0;
                 const cleaned = value.replace(/\s+/g, '').replace(',', '.');
                 const parsed = Number.parseFloat(cleaned);
@@ -86,19 +87,11 @@ export function NeedsSection({
 
                 <div>
                     <Label htmlFor="needs-collected">Собрано средств</Label>
-                    <Input
-                        id="needs-collected"
-                        type="number"
-                        min={0}
-                        step="1"
-                        value={collectedAmount}
-                        onChange={(event) =>
-                            onCollectedChange(event.target.value.trim())
-                        }
-                        placeholder="Например, 125000"
-                    />
+                    <div className="mt-2 rounded-md bg-gray-50 p-2 text-sm text-gray-700">
+                        {formattedCollected}
+                    </div>
                     <p className="mt-1 text-xs text-gray-500">
-                        Отображается на сайте как {formattedCollected}.
+                        Считается автоматически по данным проектов и пожертвований.
                     </p>
                 </div>
             </div>
