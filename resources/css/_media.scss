@@ -87,6 +87,32 @@
         .footer-container {
             padding: 20px;
         }
+        // Organization Search
+        .organization-search {
+            padding-top: 50px;
+            padding-bottom: 10px;
+
+            &__input {
+                height: 44px;
+                font-size: 16px; // Предотвращает зум на iOS
+                padding-left: 2.5rem;
+                padding-right: 2.5rem;
+            }
+
+            form {
+                .flex.flex-col {
+                    gap: 12px;
+                }
+
+                .city-selector {
+                    width: 100%;
+
+                    &__button {
+                        width: 100%;
+                    }
+                }
+            }
+        }
     }
     .page-type--inner .site-main {
         margin-top: 20px;
@@ -128,7 +154,7 @@
     }
     .text-output h2,
     .hero-texts .text-output h2 {
-        font-size: 1.8rem;
+        font-size: 1.4rem;
         line-height: 1.3;
         margin-bottom: 1rem;
     }
@@ -154,23 +180,72 @@
 // 768px и меньше (Планшеты)
 // ========================================
 @media (max-width: 768px) {
-    .site-preview {
+    // Предотвращаем горизонтальный скролл на мобильных
+    html,
+    body {
         overflow-x: hidden;
+        max-width: 100vw;
+        width: 100%;
     }
 
-    .site-preview .add-organization-block {
-        padding: 16px;
-        margin-top: 30px;
-        h2,
-        h3 {
+    .site-preview {
+        overflow-x: hidden;
+        max-width: 100vw;
+        width: 100%;
+
+        .page__title {
+            font-size: 24px;
+        }
+
+        .subscribe-block__title {
             font-size: 1.4rem;
             line-height: 1.3;
-            margin-bottom: 10px;
         }
-        p {
-            font-size: 1rem;
-            line-height: 1.3;
-            margin-bottom: 10px;
+        // Ограничиваем ширину основных контейнеров
+        .container,
+        .site-header__container,
+        .site-content-bottom__container {
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .add-organization-block {
+            padding: 16px;
+            margin-top: 30px;
+            h2,
+            h3 {
+                font-size: 1.4rem;
+                line-height: 1.3;
+                margin-bottom: 10px;
+            }
+            p {
+                font-size: 1rem;
+                line-height: 1.3;
+                margin-bottom: 10px;
+            }
+        }
+
+        .mt-60 {
+            margin-top: 30px !important;
+        }
+        .mb-60 {
+            margin-bottom: 30px !important;
+        }
+        .swiper-button-next,
+        .swiper-button-prev {
+            display: none;
+        }
+        .subscribe-block__form-row {
+            flex-direction: column;
+        }
+        .subscribe-block,
+        .add-organization-block,
+        .footer-container {
+            border-radius: 0;
+        }
+
+        .alumni-stats-container {
+            margin-top: 16px;
         }
     }
 
@@ -179,42 +254,62 @@
         .auth-menu-widget,
         .auth-menu-output {
             .login-btn {
-                // Делаем круглую кнопку 36x36 с нашим градиентом
-                width: 36px;
-                height: 36px;
-                min-width: 36px;
-                min-height: 36px;
-                padding: 0;
-                border-radius: 999px;
-                background: $accent-gradient;
-                border: none;
-                color: #fff;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
+                // Делаем круглую кнопку 36x36 с нашим градиентом (как в subscribe-block)
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                min-height: 36px !important;
+                padding: 0 !important;
+                border-radius: 50% !important;
+                background: $accent-gradient !important;
+                border: none !important;
+                color: #fff !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
                 position: relative;
-                overflow: hidden;
-                // Скрываем текст, будем рисовать "+"
-                position: relative;
-                font-size: 0 !important;
-            }
+                overflow: visible;
+                transition:
+                    opacity 0.2s ease,
+                    filter 0.2s ease;
 
-            .login-btn::after {
-                content: '+';
-                font-size: 16px;
-                font-weight: 600;
-                line-height: 1;
+                // Скрываем текст в мобильной версии
+                .login-btn__text {
+                    display: none !important;
+                }
+
+                // Показываем иконку плюсика
+                .login-btn__icon {
+                    display: block !important;
+                    width: 20px !important;
+                    height: 20px !important;
+                    color: white !important;
+                    stroke-width: 2;
+                    flex-shrink: 0;
+                }
+
+                &:hover {
+                    opacity: 0.9;
+                    filter: brightness(1.1);
+                }
+
+                &:active {
+                    filter: brightness(0.95);
+                }
+
+                &:focus {
+                    outline: none;
+                }
+
+                &:focus-visible {
+                    outline: 2px solid rgba(150, 189, 255, 0.5);
+                    outline-offset: 2px;
+                }
             }
         }
     }
     .page__title {
         font-size: 20px;
-    }
-    .site-preview .mt-60 {
-        margin-top: 30px !important;
-    }
-    .site-preview .mb-60 {
-        margin-bottom: 30px !important;
     }
 
     .footer-container.p-8 {
@@ -232,11 +327,6 @@
         max-width: 100%;
     }
 
-    // На мобильных стрелки свайпера убираем, чтобы не создавать горизонтальный скролл
-    .site-preview .swiper-button-next,
-    .site-preview .swiper-button-prev {
-        display: none;
-    }
     // Custom Components
     .custom-button {
         padding: $spacing-sm;
@@ -314,37 +404,10 @@
         min-height: 400px;
     }
 
-    // Organization Search
-    .organization-search {
-        padding-top: 20px;
-        padding-bottom: 20px;
-
-        &__input {
-            height: 44px;
-            font-size: 16px; // Предотвращает зум на iOS
-            padding-left: 2.5rem;
-            padding-right: 2.5rem;
-        }
-
-        form {
-            .flex.flex-col {
-                gap: 12px;
-            }
-
-            .city-selector {
-                width: 100%;
-
-                &__button {
-                    width: 100%;
-                }
-            }
-        }
-    }
-
     // Text Output (Hero Texts)
 
     .hero-texts .text-output {
-        padding: 1.5rem 1rem;
+        padding: 1rem;
 
         h2 {
             font-size: 1.5rem;
@@ -385,16 +448,6 @@
 
     // Alumni Stats Widget
     .alumni-stats-output {
-        section {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-
-            .container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-        }
-
         .container .grid.md\:grid-cols-3,
         section .container .grid.md\:grid-cols-3 {
             gap: 1rem;
@@ -420,14 +473,33 @@
         }
     }
 
+    .swiper-slide {
+        padding: 1px 0;
+    }
+
     // Site Header - адаптация для мобильных
     .site-header {
         padding-bottom: 0;
+        background: #ffffff;
+        border-bottom: 1px solid #e8ecf3;
+        min-height: 68px;
+        display: flex;
+        align-items: center;
+        margin-top: 0;
+        padding-top: 0 !important;
 
         // Контейнер шапки
         .site-header__container {
             padding-left: 1rem;
             padding-right: 1rem;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        .widget-container {
+            margin-bottom: 0 !important;
         }
 
         // Набор колонок в шапке: используем flex вместо grid
@@ -439,6 +511,10 @@
             gap: 0.75rem;
             flex-wrap: nowrap;
             position: relative;
+            height: 100%;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         // Каждая колонка — отдельный flex‑элемент
@@ -452,6 +528,8 @@
         .site-header__column:has(.main-menu) {
             position: absolute;
             left: 0;
+            max-width: calc(100% - 2rem);
+            overflow: hidden;
         }
 
         // Логотип по центру
@@ -467,6 +545,8 @@
         .site-header__column:has(.auth-menu-output) {
             position: absolute;
             right: 0;
+            max-width: calc(100% - 2rem);
+            overflow: hidden;
         }
 
         // Скрываем колонку 3 если она пустая
@@ -1065,9 +1145,6 @@
 
     // Organization Search - компактнее на маленьких экранах
     .organization-search {
-        padding-top: 16px;
-        padding-bottom: 16px;
-
         &__input {
             height: 40px;
             font-size: 16px;
@@ -1096,45 +1173,6 @@
                 line-height: 1.5;
                 margin-bottom: 0.5rem;
             }
-        }
-    }
-
-    // Alumni Stats Widget - компактнее
-    .alumni-stats-output {
-        section {
-            padding-top: 1.5rem;
-            padding-bottom: 1.5rem;
-
-            .container {
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
-            }
-        }
-
-        > div,
-        .grid > div {
-            padding: 1rem 0.75rem;
-            align-items: flex-start;
-            gap: 0.75rem;
-        }
-
-        &__value {
-            font-size: 20px;
-            margin-bottom: 0.25rem;
-        }
-
-        &__subtitle {
-            font-size: 14px;
-            line-height: 1.3;
-        }
-
-        .container > .grid > div img,
-        section .grid > div img {
-            width: 48px;
-            height: 48px;
-            margin-left: 0;
-            margin-top: 0.5rem;
-            align-self: flex-end;
         }
     }
 }
@@ -1280,7 +1318,6 @@
 
     // Organization Search - минимальные размеры
     .organization-search {
-        padding-top: 12px;
         padding-bottom: 12px;
 
         &__input {
@@ -1311,40 +1348,6 @@
                 line-height: 1.5;
                 margin-bottom: 0.5rem;
             }
-        }
-    }
-
-    // Alumni Stats Widget - минимальные размеры
-    .alumni-stats-output {
-        section {
-            padding-top: 1.25rem;
-            padding-bottom: 1.25rem;
-
-            .container {
-                padding-left: 0.625rem;
-                padding-right: 0.625rem;
-            }
-        }
-
-        > div,
-        .grid > div {
-            padding: 0.875rem 0.625rem;
-        }
-
-        &__value {
-            font-size: 18px;
-            margin-bottom: 0.25rem;
-        }
-
-        &__subtitle {
-            font-size: 13px;
-            line-height: 1.3;
-        }
-
-        .container > .grid > div img,
-        section .grid > div img {
-            width: 40px;
-            height: 40px;
         }
     }
 

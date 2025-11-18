@@ -52,6 +52,7 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
+    width: 100%;
 }
 
 .site-header__columns {
@@ -60,6 +61,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 24px;
+    width: 100%;
 }
 
 .site-header__column {
