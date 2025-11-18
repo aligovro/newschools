@@ -63,8 +63,7 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     const navigationNextRef = useRef<HTMLButtonElement>(null);
 
     const page = usePage<{ project?: { slug?: string } }>();
-    const currentProjectSlug =
-        (page?.props as any)?.project?.slug ?? undefined;
+    const currentProjectSlug = (page?.props as any)?.project?.slug ?? undefined;
     const effectiveTitle = currentProjectSlug ? 'Другие проекты' : title;
 
     const shouldShowArrows = useMemo(
@@ -198,14 +197,12 @@ export const ProjectsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     }, [shouldShowArrows, items.length]);
 
     return (
-        <section className="py-8">
+        <section className="wrapper__block">
             <div className="container mx-auto">
                 {(effectiveTitle && show_title) || showHeaderActions ? (
-                    <div className="mb-6 flex items-center justify-between">
+                    <div className="block__header">
                         {effectiveTitle && show_title && (
-                            <h2 className="text-2xl font-bold text-gray-900">
-                                {effectiveTitle}
-                            </h2>
+                            <h2 className="block__title">{effectiveTitle}</h2>
                         )}
                         {showHeaderActions && (
                             <Link

@@ -60,7 +60,7 @@ export default function SiteShowPage({ site }: SiteShowPageProps) {
                             </Link>
                         </Button>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <h1 className="block__title dark:text-white">
                                 {site.domain}
                             </h1>
                             <p className="text-gray-600 dark:text-gray-400">

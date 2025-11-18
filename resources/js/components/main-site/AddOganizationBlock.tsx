@@ -134,7 +134,7 @@ export default function AddoOganizationBlock({
 
     return (
         <>
-            <section className="add-organization-block w-full rounded-[20px] bg-white p-8 shadow-[0_4px_84px_0_rgba(26,26,26,0.08)]">
+            <section className="add-organization-block">
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                     {/* Левая часть - текст */}
                     <div className="flex flex-col">

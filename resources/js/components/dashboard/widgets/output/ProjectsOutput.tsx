@@ -279,11 +279,9 @@ export const ProjectsOutput: React.FC<WidgetOutputProps> = ({
     return (
         <div className={`projects-output ${className || ''}`} style={style}>
             {((title && show_title) || (config as any).showHeaderActions) && (
-                <div className="mb-6 flex items-center justify-between">
+                <div className="block__header">
                     {title && show_title && (
-                    <h2 className="text-2xl font-bold text-gray-900">
-                            {title}
-                    </h2>
+                        <h2 className="block__title">{title}</h2>
                     )}
                     {showHeaderActions && (
                         <Link

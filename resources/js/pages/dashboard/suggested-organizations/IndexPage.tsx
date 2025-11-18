@@ -298,7 +298,7 @@ export default function SuggestedOrganizationsPage({
             <Head title="Предложенные школы" />
             <div className="flex flex-1 flex-col gap-6 p-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="block__title dark:text-white">
                         Предложенные школы
                     </h1>
                     <p className="mt-1 text-gray-600 dark:text-gray-400">

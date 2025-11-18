@@ -12,8 +12,8 @@ interface FundingSummary {
 interface Project {
     id: number;
     title: string;
-    slug?: string;
-    description?: string;
+    slug?: string | null;
+    description?: string | null;
     funding?: FundingSummary;
     target_amount_rubles?: number;
     target_amount?: number;
@@ -22,11 +22,11 @@ interface Project {
     progress_percentage: number;
     organization?: {
         name: string;
-        slug?: string;
-    };
-    organization_name?: string;
-    organization_address?: string;
-    image?: string;
+        slug?: string | null;
+    } | null;
+    organization_name?: string | null;
+    organization_address?: string | null;
+    image?: string | null;
 }
 
 interface ProjectCardProps {

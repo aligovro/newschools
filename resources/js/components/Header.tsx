@@ -27,7 +27,7 @@ export default function Header({ auth, terminology }: HeaderProps) {
 
     return (
         <header className="header sticky top-0 z-50 bg-white shadow-sm">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 <div className="flex h-16 items-center justify-between">
                     {/* Logo */}
                     <Link href="/" className="flex items-center space-x-3">

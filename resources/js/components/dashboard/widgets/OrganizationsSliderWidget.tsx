@@ -108,14 +108,12 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     }, [shouldShowArrows, items.length]);
 
     return (
-        <section className="py-8">
+        <section className="wrapper__block">
             <div className="container mx-auto">
                 {(title && show_title) || showHeaderActions ? (
-                    <div className="mb-6 flex items-center justify-between">
+                    <div className="block__header">
                         {title && show_title && (
-                            <h2 className="text-2xl font-bold text-gray-900">
-                                {title}
-                            </h2>
+                            <h2 className="block__title">{title}</h2>
                         )}
                         {showHeaderActions && (
                             <Link

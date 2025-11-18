@@ -149,7 +149,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                 key={position.id}
                 className={`site-position site-position--${position.slug}`}
             >
-                <div className="container mx-auto px-4">
+                <div className="container mx-auto">
                     {positionWidgets.length > 0 && (
                         <div className="space-y-4">
                             {positionWidgets.map((widget) => (
@@ -259,7 +259,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                         return (
                             <div className="space-y-6">
                                 {headerCols.length > 0 && (
-                                    <div className="container mx-auto px-4">
+                                    <div className="container mx-auto">
                                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                                             {headerCols.map((p) => (
                                                 <div key={p.id}>
@@ -298,7 +298,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
 
                 {/* Main Content */}
                 <main className="site-main">
-                    <div className="container mx-auto px-4 py-8">
+                    <div className="p-lr-60 container mx-auto">
                         {(() => {
                             // Проверяем есть ли видимые виджеты в видимых позициях сайдбара
                             const sidebarPositions = positions.filter(
@@ -394,6 +394,18 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                     </div>
                 </main>
 
+                {/* content-bottom: независимый блок ПОД основным контентом, ПЕРЕД футером */}
+                {positions
+                    .filter((p) => p.slug === 'content-bottom')
+                    .map((p) => (
+                        <section
+                            key={p.id}
+                            className="site-content-bottom-preview container mx-auto"
+                        >
+                            {renderPosition(p)}
+                        </section>
+                    ))}
+
                 {/* Footer: четыре колонки (footer-col-1..4) и далее остальные позиции футера */}
                 <footer className="site-footer">
                     {(() => {
@@ -403,21 +415,20 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                             'footer-col-3',
                             'footer-col-4',
                         ];
-                        const footerCols = positions.filter(
-                            (p) =>
-                                p.area === 'footer' &&
-                                footerColSlugs.includes(p.slug),
+                        const footerAll = positions.filter(
+                            (p) => p.area === 'footer',
                         );
-                        const otherFooter = positions.filter(
-                            (p) =>
-                                p.area === 'footer' &&
-                                !footerColSlugs.includes(p.slug),
+                        const footerCols = footerAll.filter((p) =>
+                            footerColSlugs.includes(p.slug),
+                        );
+                        const otherFooter = footerAll.filter(
+                            (p) => !footerColSlugs.includes(p.slug),
                         );
 
                         return (
                             <div className="space-y-6">
                                 {footerCols.length > 0 && (
-                                    <div className="container mx-auto px-4">
+                                    <div className="container mx-auto">
                                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                                             {footerCols.map((p) => (
                                                 <div key={p.id}>

@@ -67,7 +67,7 @@ export default function SubscribeSection({
 
     return (
         <section className="bg-white py-16">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
                     {/* Content */}
                     <div>

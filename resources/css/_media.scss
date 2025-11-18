@@ -51,21 +51,50 @@
             grid-template-columns: 1fr;
         }
     }
-}
 
-// ========================================
-// 1023px и меньше (для alumni-stats)
-// ========================================
-@media (max-width: 1023px) {
-    // Alumni Stats Widget
-    .alumni-stats-output {
-        &__subtitle {
-            max-width: none;
+    .site-preview {
+        .city-supporters-container,
+        .organizations-slider-widget,
+        .projects-slider-widget,
+        .site-header__container,
+        .hero-wrapper,
+        .block__header {
+            padding: 0 20px;
+        }
+        .page-type--inner {
+            .p-lr-60 {
+                padding: 0 20px;
+            }
+        }
+        .subscribe-block {
+            padding: 20px;
         }
 
-        .grid > div:first-child .alumni-stats-output__subtitle {
-            max-width: none;
+        .subscribe-block {
+            margin-top: 60px;
         }
+        .projects-slider-container {
+            margin-top: 40px;
+        }
+        .city-supporters-container {
+            margin-top: 40px;
+        }
+
+        .alumni-stats-container {
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+        .footer-container {
+            padding: 20px;
+        }
+    }
+    .page-type--inner .site-main {
+        margin-top: 20px;
+        padding: 20px;
+    }
+    // Donation Widget Sticky
+    .alumni-stats-output__subtitle {
+        max-width: 160px;
     }
 }
 
@@ -383,12 +412,6 @@
             margin-bottom: 0.5rem;
         }
 
-        &__subtitle {
-            font-size: 16px;
-            line-height: 1.4;
-            max-width: none;
-        }
-
         .container > .grid > div img,
         section .grid > div img {
             width: 64px;
@@ -401,38 +424,38 @@
     .site-header {
         padding-bottom: 0;
 
-        .container {
+        // Контейнер шапки
+        .site-header__container {
             padding-left: 1rem;
             padding-right: 1rem;
         }
 
-        // Изменяем grid на flex для мобильных
-        .container .grid.gap-6 {
+        // Набор колонок в шапке: используем flex вместо grid
+        .site-header__columns {
             display: flex;
             flex-direction: row;
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
             flex-wrap: nowrap;
-            grid-template-columns: none;
             position: relative;
         }
 
-        // Элементы внутри grid должны быть flex-элементами
-        .container .grid.gap-6 > div {
+        // Каждая колонка — отдельный flex‑элемент
+        .site-header__column {
             flex: 0 0 auto;
             width: auto;
         }
 
-        // Бургер слева
-        .container .grid.gap-6 > div:has(.menu-output),
-        .container .grid.gap-6 > div:has(.main-menu) {
+        // Бургер / главное меню слева
+        .site-header__column:has(.menu-output),
+        .site-header__column:has(.main-menu) {
             position: absolute;
             left: 0;
         }
 
         // Логотип по центру
-        .container .grid.gap-6 > div:has(.logo-widget) {
+        .site-header__column:has(.logo-widget) {
             flex: 1 1 auto;
             display: flex;
             justify-content: center;
@@ -440,8 +463,8 @@
         }
 
         // Кнопки авторизации справа
-        .container .grid.gap-6 > div:has(.auth-menu-widget),
-        .container .grid.gap-6 > div:has(.auth-menu-output) {
+        .site-header__column:has(.auth-menu-widget),
+        .site-header__column:has(.auth-menu-output) {
             position: absolute;
             right: 0;
         }
@@ -1233,13 +1256,6 @@
         &__amount-input {
             font-size: 1.25rem;
         }
-    }
-
-    // Donation Widget Sticky
-    .donation-widget-sticky[style] {
-        left: 10px;
-        right: 10px;
-        max-width: none;
     }
 
     // Hero Slide - минимальная высота для маленьких экранов

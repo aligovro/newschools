@@ -16,6 +16,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
+import type { LucideIcon } from 'lucide-react';
 import {
     ArrowLeft,
     BarChart3,
@@ -30,7 +31,7 @@ import {
     Target,
     Users,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { useState } from 'react';
 
 type StatsCardAction = {
     label: string;
@@ -44,7 +45,6 @@ type StatsCard = {
     helperText: string;
     action?: StatsCardAction;
 };
-import { useState } from 'react';
 
 interface Props {
     organization: OrganizationShow;
@@ -282,7 +282,7 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                         </Link>
                         <div className="flex flex-col gap-2">
                             <div className="flex flex-wrap items-center gap-3">
-                                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                <h1 className="block__title dark:text-white">
                                     {organization.name}
                                 </h1>
                                 <StatusBadge status={organization.status} />
@@ -369,7 +369,9 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                                                     className="w-full justify-center"
                                                     asChild
                                                 >
-                                                    <Link href={card.action.href}>
+                                                    <Link
+                                                        href={card.action.href}
+                                                    >
                                                         {card.action.label}
                                                     </Link>
                                                 </Button>

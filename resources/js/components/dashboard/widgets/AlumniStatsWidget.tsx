@@ -43,7 +43,9 @@ export const AlumniStatsWidget: React.FC<AlumniStatsWidgetProps> = ({
 
     const resolvedOrganizationId = configOrganizationId ?? pageOrganizationId;
 
-    const { stats, loading, error } = useAlumniStatsData(resolvedOrganizationId);
+    const { stats, loading, error } = useAlumniStatsData(
+        resolvedOrganizationId,
+    );
 
     const formatNumber = (num: number): string => {
         return num.toLocaleString('ru-RU');
@@ -188,8 +190,14 @@ export const AlumniStatsWidget: React.FC<AlumniStatsWidgetProps> = ({
           ];
 
     return (
-        <section className={cn('py-12', styling?.className)} style={styling}>
-            <div className="container mx-auto px-4">
+        <section
+            className={cn(
+                'wrapper__block',
+                styling?.className as string | undefined,
+            )}
+            style={styling}
+        >
+            <div className="container mx-auto">
                 {title && (
                     <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
                         {title}

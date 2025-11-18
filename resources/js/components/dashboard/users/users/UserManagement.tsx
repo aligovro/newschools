@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { User, UserFilters } from '@/types/user';
+import { router } from '@inertiajs/react';
 import { Plus, Settings, Shield, Users } from 'lucide-react';
 import React, { useState } from 'react';
-import { router } from '@inertiajs/react';
 import UserFiltersComponent from './UserFilters';
 import UserForm from './UserForm';
 import UserTable from './UserTable';
@@ -93,7 +93,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
             {/* Заголовок */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="block__title dark:text-white">
                         Управление пользователями
                     </h1>
                     <p className="mt-1 text-gray-600 dark:text-gray-400">
@@ -119,7 +119,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                                 Всего пользователей
                             </p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <p className="block__title dark:text-white">
                                 {pagination.total || 0}
                             </p>
                         </div>
@@ -133,7 +133,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                                 Ролей
                             </p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <p className="block__title dark:text-white">
                                 {roles.length || 0}
                             </p>
                         </div>
@@ -147,7 +147,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                                 Разрешений
                             </p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <p className="block__title dark:text-white">
                                 {permissions.length || 0}
                             </p>
                         </div>
@@ -165,7 +165,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                                 Страница
                             </p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <p className="block__title dark:text-white">
                                 из {pagination.last_page}
                             </p>
                         </div>

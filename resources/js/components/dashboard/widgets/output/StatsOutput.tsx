@@ -151,9 +151,7 @@ export const StatsOutput: React.FC<WidgetOutputProps> = ({
     return (
         <div className={`stats-output ${className || ''}`} style={style}>
             {title && show_title && (
-                <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
-                    {title}
-                </h2>
+                <h2 className="block__title mb-6 text-center">{title}</h2>
             )}
             <div className={getLayoutClasses(layout)}>
                 {stats.map((stat, index) => renderStatItem(stat, index))}

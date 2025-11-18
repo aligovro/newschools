@@ -75,9 +75,7 @@ export default function SitePage({
                                 />
                             )}
                         </div>
-                        <h1 className="mb-4 text-2xl font-bold text-gray-900">
-                            {site.name}
-                        </h1>
+                        <h1 className="block__title mb-4">{site.name}</h1>
                         <p className="text-gray-600">
                             {site.maintenance_message ||
                                 'Сайт временно недоступен. Ведутся технические работы.'}

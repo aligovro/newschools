@@ -170,7 +170,7 @@ export const FormOutput: React.FC<WidgetOutputProps> = ({
                             onChange={(e) =>
                                 handleInputChange(field.id, e.target.checked)
                             }
-                            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black checked:bg-black checked:border-black"
+                            className="h-4 w-4 rounded border-gray-300 text-black checked:border-black checked:bg-black focus:ring-black"
                         />
                         <label
                             htmlFor={field.id}
@@ -284,9 +284,7 @@ export const FormOutput: React.FC<WidgetOutputProps> = ({
     return (
         <div className={`form-output ${className || ''}`} style={style}>
             {title && show_title && (
-                <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                    {title}
-                </h2>
+                <h2 className="block__title mb-4">{title}</h2>
             )}
 
             {description && <p className="mb-6 text-gray-600">{description}</p>}

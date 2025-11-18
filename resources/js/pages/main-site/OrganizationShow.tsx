@@ -246,16 +246,16 @@ export default function OrganizationShow({
                 <OrganizationAlumniSection
                     fetchEndpoint={`/organization/${organization.slug}/alumni`}
                     initialData={alumni?.data ?? []}
-                    initialPagination={alumni?.pagination ?? createEmptyPagination()}
+                    initialPagination={
+                        alumni?.pagination ?? createEmptyPagination()
+                    }
                     emptyStateMessage="Выпускники школы ещё не отображаются. Станьте первым, кто расскажет свою историю."
                 />
 
                 {/* Проекты */}
                 {organization.projects && organization.projects.length > 0 && (
                     <div className="mt-8">
-                        <h2 className="mb-6 text-2xl font-bold text-gray-900">
-                            Проекты
-                        </h2>
+                        <h2 className="block__title">Проекты</h2>
                         <div className="space-y-6">
                             {organization.projects.map((project) => (
                                 <ProjectWideCard

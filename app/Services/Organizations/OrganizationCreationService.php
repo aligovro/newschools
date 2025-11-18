@@ -474,7 +474,7 @@ class OrganizationCreationService
    */
   private function getDefaultHomepageContent(Organization $organization): string
   {
-    return '<div class="container mx-auto px-4 py-8">
+    return '<div class="container mx-auto py-8">
             <h1 class="text-4xl font-bold text-center mb-8">Добро пожаловать в ' . $organization->name . '</h1>
             <p class="text-lg text-center text-gray-600 mb-8">
                 ' . ($organization->description ?? 'Мы рады приветствовать вас на нашем сайте. Здесь вы можете узнать о нашей работе, поддержать наши проекты и стать частью нашего сообщества.') . '
@@ -619,7 +619,7 @@ class OrganizationCreationService
    */
   private function getThanksPageContent(): string
   {
-    return '<div class="container mx-auto px-4 py-16 text-center">
+    return '<div class="container mx-auto py-16 text-center">
             <div class="max-w-2xl mx-auto">
                 <div class="bg-green-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
                     <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -645,7 +645,7 @@ class OrganizationCreationService
    */
   private function getContactsPageContent(Organization $organization): string
   {
-    return '<div class="container mx-auto px-4 py-8">
+    return '<div class="container mx-auto py-8">
             <h1 class="text-3xl font-bold text-center mb-8">Контакты</h1>
             <div class="grid md:grid-cols-2 gap-8">
                 <div>
@@ -701,7 +701,7 @@ class OrganizationCreationService
    */
   private function getAboutPageContent(Organization $organization): string
   {
-    return '<div class="container mx-auto px-4 py-8">
+    return '<div class="container mx-auto py-8">
             <h1 class="text-3xl font-bold text-center mb-8">О нас</h1>
             <div class="max-w-4xl mx-auto">
                 <div class="prose prose-lg mx-auto">
@@ -726,7 +726,7 @@ class OrganizationCreationService
    */
   private function getProjectsPageContent(): string
   {
-    return '<div class="container mx-auto px-4 py-8">
+    return '<div class="container mx-auto py-8">
             <h1 class="text-3xl font-bold text-center mb-8">Наши проекты</h1>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div class="bg-white rounded-lg shadow-md p-6">

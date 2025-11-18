@@ -46,7 +46,7 @@ export default function HeroSection({ terminology }: HeroSectionProps) {
 
     return (
         <section className="hero relative bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 <div className="mx-auto max-w-4xl text-center">
                     {/* Hero Background Image */}
                     <div className="absolute inset-0 opacity-10">
