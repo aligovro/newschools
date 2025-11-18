@@ -39,6 +39,7 @@ interface NewsDetails {
 
 interface NewsShowProps extends LayoutProps {
     news: NewsDetails;
+    seo?: any;
 }
 
 const formatDate = (value?: string | null): string | null => {
@@ -59,6 +60,7 @@ export default function NewsShow({
     positions,
     position_settings = [],
     news,
+    seo,
 }: NewsShowProps) {
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
     const [initialSlide, setInitialSlide] = useState(0);
@@ -78,26 +80,12 @@ export default function NewsShow({
         setGalleryModalOpen(true);
     };
 
-    // SEO overrides для новости: используем seo_settings (если есть) + первую картинку как og:image
-    const seoOverrides: Record<string, unknown> = {
-        ...(news.seo_settings || {}),
-    };
-
-    if (!('og_image' in seoOverrides) || !seoOverrides['og_image']) {
-        const ogImage =
-            galleryImages && galleryImages.length > 0
-                ? galleryImages[0]
-                : undefined;
-        if (ogImage) {
-            seoOverrides['og_image'] = ogImage;
-        }
-    }
-
     return (
         <MainLayout
             site={site}
             positions={positions}
             position_settings={position_settings}
+            seo={seo}
             pageTitle={news.title}
             pageDescription={news.excerpt}
             breadcrumbs={[
@@ -105,7 +93,6 @@ export default function NewsShow({
                 { title: 'Новости', href: '/news' },
                 { title: news.title, href: '' },
             ]}
-            seoOverrides={seoOverrides}
         >
             <div className="space-y-8">
                 <Link

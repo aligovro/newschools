@@ -71,6 +71,20 @@ interface PageShowProps {
         layout_overrides?: Record<string, unknown>;
     }>;
     pageSeo?: PageSeo;
+    seo?: {
+        title?: string;
+        description?: string;
+        keywords?: string;
+        canonical_url?: string;
+        og_title?: string;
+        og_description?: string;
+        og_type?: string;
+        og_image?: string;
+        twitter_card?: string;
+        twitter_title?: string;
+        twitter_description?: string;
+        twitter_image?: string;
+    };
 }
 
 const SitePageShow: React.FC<PageShowProps> = ({
@@ -79,6 +93,7 @@ const SitePageShow: React.FC<PageShowProps> = ({
     positions = [],
     position_settings = [],
     pageSeo = {},
+    seo,
 }) => {
     // Мемоизируем рендер контента
     const renderedContent = useMemo(() => {
@@ -182,8 +197,11 @@ const SitePageShow: React.FC<PageShowProps> = ({
         return items;
     }, [page.parent, page.title]);
 
-    // Формируем SEO заголовок
+    // Формируем SEO заголовок/описание:
+    // 1) Если сервер уже посчитал seo.title/description — берем их.
+    // 2) Иначе fallback на локальные правила.
     const seoTitle = useMemo(() => {
+        if (seo?.title) return seo.title;
         if (page.is_homepage) {
             const siteName =
                 (site.seo_config?.site_name as string) || site.name;
@@ -191,6 +209,7 @@ const SitePageShow: React.FC<PageShowProps> = ({
         }
         return pageSeo.title || `${page.title} - ${site.name}`;
     }, [
+        seo?.title,
         page.is_homepage,
         page.title,
         pageSeo.title,
@@ -198,8 +217,8 @@ const SitePageShow: React.FC<PageShowProps> = ({
         site.seo_config,
     ]);
 
-    // Формируем SEO описание
     const seoDescription = useMemo(() => {
+        if (seo?.description) return seo.description;
         const seoDesc = (site.seo_config?.seo_description as string) || '';
         return (
             pageSeo.description ||
@@ -208,13 +227,20 @@ const SitePageShow: React.FC<PageShowProps> = ({
             site.description ||
             ''
         );
-    }, [pageSeo.description, page.excerpt, site.seo_config, site.description]);
+    }, [
+        seo?.description,
+        pageSeo.description,
+        page.excerpt,
+        site.seo_config,
+        site.description,
+    ]);
 
     return (
         <MainLayout
             site={site}
             positions={positions}
             position_settings={position_settings}
+            seo={seo}
             pageTitle={seoTitle}
             pageDescription={seoDescription}
             breadcrumbs={breadcrumbs}

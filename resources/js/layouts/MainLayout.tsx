@@ -41,6 +41,24 @@ interface MainLayoutProps {
      * (например, данные проекта, новости, организации).
      */
     seoOverrides?: Record<string, unknown>;
+    /**
+     * Предвычисленные сервером SEO-данные.
+     * Если переданы, фронт не пересчитывает SEO, а просто рендерит эти значения.
+     */
+    seo?: {
+        title?: string;
+        description?: string;
+        keywords?: string;
+        canonical_url?: string;
+        og_title?: string;
+        og_description?: string;
+        og_type?: string;
+        og_image?: string;
+        twitter_card?: string;
+        twitter_title?: string;
+        twitter_description?: string;
+        twitter_image?: string;
+    };
 }
 
 type PositionVisibilityRules = {
@@ -58,6 +76,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     pageDescription,
     breadcrumbs = [],
     seoOverrides,
+    seo,
 }) => {
     useSmoothAnchorNavigation();
 
@@ -254,21 +273,65 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         );
     };
 
-    // SEO / Open Graph (общая логика вынесена в lib/seo)
+    // SEO / Open Graph
     const currentUrl =
         typeof window !== 'undefined' ? window.location.href : undefined;
-    const mergedSeoConfig = {
-        ...(site.seo_config || {}),
-        ...(seoOverrides || {}),
-    } as Record<string, unknown>;
-    const seoData = buildSiteSeo({
-        siteName: site.name,
-        siteDescription: site.description,
-        rawSeo: mergedSeoConfig,
-        pageTitleOverride: pageTitle,
-        pageDescriptionOverride: pageDescription,
+
+    // Если сервер уже посчитал SEO (props.seo) — используем его.
+    const seoFromServer = React.useMemo(() => {
+        if (!seo) return null;
+        const canonicalUrl = seo.canonical_url || currentUrl || undefined;
+
+        return {
+            title: seo.title || site.name,
+            description: seo.description || site.description || '',
+            keywords: seo.keywords,
+            canonicalUrl,
+            ogTitle: seo.og_title || seo.title || site.name,
+            ogDescription:
+                seo.og_description || seo.description || site.description || '',
+            ogType: seo.og_type || 'website',
+            ogImage: seo.og_image,
+            twitterCard: seo.twitter_card || 'summary_large_image',
+            twitterTitle:
+                seo.twitter_title || seo.og_title || seo.title || site.name,
+            twitterDescription:
+                seo.twitter_description ||
+                seo.og_description ||
+                seo.description ||
+                site.description ||
+                '',
+            twitterImage: seo.twitter_image || seo.og_image,
+        };
+    }, [seo, currentUrl, site.name, site.description]);
+
+    // Если seo с сервера нет (например, в админке), используем фронтовый билд.
+    const seoData = React.useMemo(() => {
+        if (seoFromServer) return seoFromServer;
+
+        const mergedSeoConfig = {
+            ...(site.seo_config || {}),
+            ...(seoOverrides || {}),
+        } as Record<string, unknown>;
+
+        return buildSiteSeo({
+            siteName: site.name,
+            siteDescription: site.description,
+            rawSeo: mergedSeoConfig,
+            pageTitleOverride: pageTitle,
+            pageDescriptionOverride: pageDescription,
+            currentUrl,
+        });
+    }, [
+        seoFromServer,
+        site.seo_config,
+        seoOverrides,
+        site.name,
+        site.description,
+        pageTitle,
+        pageDescription,
         currentUrl,
-    });
+    ]);
 
     return (
         <>
