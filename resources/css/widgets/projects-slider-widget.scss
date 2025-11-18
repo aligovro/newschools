@@ -28,11 +28,11 @@
         }
 
         &--prev {
-            left: -50px;
+            left: 0px;
         }
 
         &--next {
-            right: -50px;
+            right: 0px;
         }
 
         svg {
@@ -57,4 +57,3 @@ section:has(.projects-slider-widget),
 .container:has(.projects-slider-widget) {
     overflow: visible;
 }
-

@@ -106,7 +106,7 @@ export default function StatsSection({
 
     return (
         <section className="bg-white py-16">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                     {statsItems.map((item, index) => (
                         <div key={index} className="text-center">

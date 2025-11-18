@@ -31,7 +31,7 @@ export default function ProjectsSection({
 }: ProjectsSectionProps) {
     return (
         <section className="bg-gray-50 py-16">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 {/* Section Header */}
                 <div className="mb-12 flex flex-col md:flex-row md:items-center md:justify-between">
                     <div>

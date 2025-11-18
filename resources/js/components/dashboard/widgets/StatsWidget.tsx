@@ -139,7 +139,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
     if (!hasStats) {
         return (
             <section className={cn('py-8', className)} style={containerStyle}>
-                <div className="container mx-auto px-4">
+                <div className="container mx-auto">
                     {configTitle && (
                         <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
                             {configTitle}
@@ -158,7 +158,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
     if (configLayout === 'list') {
         return (
             <section className={cn('py-8', className)} style={containerStyle}>
-                <div className="container mx-auto px-4">
+                <div className="container mx-auto">
                     {configTitle && (
                         <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
                             {configTitle}
@@ -194,7 +194,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-2xl font-bold text-gray-900">
+                                    <p className="block__title">
                                         {formatValue(stat.value)}
                                     </p>
                                 </div>
@@ -208,7 +208,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
 
     return (
         <section className={cn('py-8', className)} style={containerStyle}>
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto">
                 {configTitle && (
                     <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
                         {configTitle}

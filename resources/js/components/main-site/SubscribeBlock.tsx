@@ -180,50 +180,48 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
         [sessionUser],
     );
 
-    // Определяем классы для grid в зависимости от количества колонок
-    const gridColsClass = useMemo(() => {
+    // Класс-модификатор для количества колонок (стилизуется через SCSS)
+    const gridColsModifierClass = useMemo(() => {
         switch (columns) {
             case 1:
-                return 'grid-cols-1';
+                return 'subscribe-block__schools-grid--cols-1';
             case 2:
-                return 'grid-cols-1 md:grid-cols-2';
+                return 'subscribe-block__schools-grid--cols-2';
             case 3:
-                return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+                return 'subscribe-block__schools-grid--cols-3';
             case 4:
-                return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
+                return 'subscribe-block__schools-grid--cols-4';
             default:
-                return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+                return 'subscribe-block__schools-grid--cols-3';
         }
     }, [columns]);
 
     return (
         <section
-            className="subscribe-block relative overflow-hidden rounded-[20px]"
-            style={{
-                background: backgroundGradient,
-            }}
+            className="subscribe-block"
+            style={{ background: backgroundGradient }}
         >
             {/* Фоновая картинка справа сверху */}
-            <div className="absolute right-0 top-0 h-full w-full overflow-hidden">
+            <div className="subscribe-block__bg">
                 <img
                     src={backgroundImage || '/images/subscribe-block-bg.png'}
                     alt=""
-                    className="absolute right-0 top-0 h-auto max-h-full w-auto max-w-[50%] object-contain object-right-top"
+                    className="subscribe-block__bg-image"
                 />
             </div>
 
             {/* Контент */}
-            <div className="relative z-10 flex h-full flex-col">
+            <div className="subscribe-block__content">
                 {/* Заголовки */}
                 {(mainTitle && show_title) || subtitle ? (
-                    <div className="mb-8 p-8 pb-0 md:p-12">
+                    <div className="subscribe-block__header">
                         {mainTitle && show_title && (
-                            <h2 className="subscribe-block__title mb-4 text-3xl font-bold text-white md:text-4xl">
+                            <h2 className="subscribe-block__title">
                                 {mainTitle}
                             </h2>
                         )}
                         {subtitle && (
-                            <p className="text-lg text-white/90 md:text-xl">
+                            <p className="subscribe-block__subtitle">
                                 {subtitle}
                             </p>
                         )}
@@ -233,11 +231,11 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                 {/* Форма поиска */}
                 <form
                     onSubmit={handleSearchSubmit}
-                    className="mb-8 pl-8 pr-8 md:pl-12 md:pr-12"
+                    className="subscribe-block__form"
                 >
-                    <div className="flex flex-col gap-4 md:flex-row">
+                    <div className="subscribe-block__form-row">
                         {/* Селектор города */}
-                        <div className="w-full md:w-auto">
+                        <div className="subscribe-block__city-selector">
                             <CitySelector
                                 value={selectedCity}
                                 onChange={setSelectedCity}
@@ -247,40 +245,42 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                         </div>
 
                         {/* Поле поиска */}
-                        <div className="relative flex-1">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">
-                                <Search className="h-5 w-5 text-white/70" />
+                        <div className="subscribe-block__search">
+                            <div className="subscribe-block__search-icon">
+                                <Search className="subscribe-block__search-icon-svg" />
                             </div>
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={`Поиск по названию, адресу ${orgSingular}...`}
-                                className="subscribe-block__search-input w-full border border-white/20 bg-white/10 text-white backdrop-blur-sm placeholder:text-white/70 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+                                className="subscribe-block__search-input"
                             />
                         </div>
                     </div>
                 </form>
 
                 {/* Популярные школы */}
-                <div className="flex-1 overflow-auto pl-8 pr-8 md:pl-12 md:pr-12">
-                    <h3 className="mb-4 text-xl font-semibold text-white">
+                <div className="subscribe-block__schools">
+                    <h3 className="subscribe-block__schools-title">
                         Популярные {orgPlural}:
                     </h3>
 
                     {isLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                            <div className="subscribe-block__loader h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white"></div>
+                        <div className="subscribe-block__loader-wrapper">
+                            <div className="subscribe-block__loader" />
                         </div>
                     ) : popularSchools.length > 0 ? (
-                        <div className={`grid gap-4 ${gridColsClass}`}>
+                        <div
+                            className={`subscribe-block__schools-grid ${gridColsModifierClass}`}
+                        >
                             {popularSchools.map((school) => (
                                 <div
                                     key={school.id}
-                                    className="subscribe-block__school-card flex items-center gap-3 p-3"
+                                    className="subscribe-block__school-card"
                                 >
                                     {/* Лого */}
-                                    <div className="subscribe-block__school-logo flex shrink-0 items-center justify-center overflow-hidden rounded-full">
+                                    <div className="subscribe-block__school-logo">
                                         {school.logo ? (
                                             <img
                                                 src={school.logo}
@@ -294,7 +294,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                                                 className="h-full w-full object-cover"
                                             />
                                         ) : (
-                                            <span className="text-lg font-semibold text-gray-400">
+                                            <span className="subscribe-block__school-logo-initial">
                                                 {school.name
                                                     .charAt(0)
                                                     .toUpperCase()}
@@ -303,7 +303,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                                     </div>
 
                                     {/* Текст */}
-                                    <div className="min-w-0 flex-1">
+                                    <div className="subscribe-block__school-text">
                                         <div className="subscribe-block__school-address truncate">
                                             {[school.city?.name, school.address]
                                                 .filter(Boolean)
@@ -317,16 +317,16 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                                     {/* Кнопка подписки */}
                                     <button
                                         onClick={() => handleSubscribe(school)}
-                                        className="subscribe-block__subscribe-button flex shrink-0 items-center justify-center"
+                                        className="subscribe-block__subscribe-button"
                                         aria-label="Подписаться"
                                     >
-                                        <Plus className="h-5 w-5" />
+                                        <Plus className="subscribe-block__subscribe-button-icon" />
                                     </button>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="subscribe-block__empty-state rounded-lg bg-white/10 p-6 text-center text-white/80 backdrop-blur-sm">
+                        <div className="subscribe-block__empty-state">
                             {searchQuery || selectedCity
                                 ? 'Школы не найдены'
                                 : 'Загрузка...'}

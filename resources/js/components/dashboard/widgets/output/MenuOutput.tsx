@@ -74,7 +74,7 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
                 return 'flex-col space-y-2';
             case 'row':
             default:
-                return 'flex-row space-x-8';
+                return 'flex-row';
         }
     };
 

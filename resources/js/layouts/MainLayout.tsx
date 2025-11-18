@@ -204,6 +204,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             'footer-col-3',
             'footer-col-4',
         ];
+
+        const footerAll = positions.filter((p) => p.area === 'footer');
+        const footerCols = footerAll.filter((p) =>
+            footerColSlugs.includes(p.slug),
+        );
+        const contentBottom = positions.filter(
+            (p) => p.slug === 'content-bottom',
+        );
+        const footerOther = footerAll.filter(
+            (p) =>
+                !footerColSlugs.includes(p.slug) && p.slug !== 'content-bottom',
+        );
+
         return {
             headerCols: positions.filter(
                 (p) => p.area === 'header' && headerColSlugs.includes(p.slug),
@@ -218,12 +231,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             ),
             sidebar: positions.filter((p) => p.area === 'sidebar'),
             content: positions.filter((p) => p.area === 'content'),
-            footerCols: positions.filter(
-                (p) => p.area === 'footer' && footerColSlugs.includes(p.slug),
-            ),
-            footerOther: positions.filter(
-                (p) => p.area === 'footer' && !footerColSlugs.includes(p.slug),
-            ),
+            contentBottom,
+            footerCols,
+            footerOther,
         };
     }, [positions]);
 
@@ -234,9 +244,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         if (!shouldShowPosition(position)) return null;
         const positionWidgets = widgetsByPosition[position.slug] || [];
 
+        // Фильтруем только реально видимые виджеты (по правилам видимости)
+        const visibleWidgets = positionWidgets.filter((widget) =>
+            shouldShowWidget(widget),
+        );
+
+        // Если в позиции нет ни одного видимого виджета, не рендерим блок вообще
+        if (visibleWidgets.length === 0) {
+            return null;
+        }
+
         const layout = getLayoutFor(position);
         const containerClass =
-            layout.width === 'boxed' ? 'container mx-auto px-4' : '';
+            layout.width === 'boxed' ? 'container mx-auto' : '';
         const alignClass =
             layout.alignment === 'left'
                 ? 'mx-0 ml-0'
@@ -250,22 +270,20 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 className={`site-position site-position--${position.slug}`}
             >
                 <div className={`${containerClass} ${alignClass}`}>
-                    {positionWidgets.length > 0 && (
-                        <div className={`space-y-4 ${position.slug}-wrapper`}>
-                            {positionWidgets
-                                .filter((widget) => shouldShowWidget(widget))
-                                .map((widget) => (
-                                    <div
-                                        key={widget.id}
-                                        className={`widget-container${widget.wrapper_class ? ` ${widget.wrapper_class}` : ''}`}
-                                    >
-                                        <MemoWidgetDisplay
-                                            widget={widget}
-                                            isEditable={false}
-                                            useOutputRenderer={true}
-                                        />
-                                    </div>
-                                ))}
+                    {visibleWidgets.length > 0 && (
+                        <div className={`${position.slug}-wrapper`}>
+                            {visibleWidgets.map((widget) => (
+                                <div
+                                    key={widget.id}
+                                    className={`widget-container${widget.wrapper_class ? ` ${widget.wrapper_class}` : ''}`}
+                                >
+                                    <MemoWidgetDisplay
+                                        widget={widget}
+                                        isEditable={false}
+                                        useOutputRenderer={true}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -380,13 +398,29 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                         const { headerCols, headerFull, headerAll } =
                             positionsByArea;
 
+                        // Оставляем только те header-col-* позиции, где есть видимые виджеты
+                        const headerColsWithContent = headerCols.filter(
+                            (position) => {
+                                const positionWidgets =
+                                    widgetsByPosition[position.slug] || [];
+                                const visibleWidgets = positionWidgets.filter(
+                                    (widget) => shouldShowWidget(widget),
+                                );
+                                return visibleWidgets.length > 0;
+                            },
+                        );
+
                         return (
-                            <div className="space-y-6">
-                                {headerCols.length > 0 && (
-                                    <div className="container mx-auto px-4">
-                                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                                            {headerCols.map((p) => (
-                                                <div key={p.id}>
+                            <div className="site-header__blocks">
+                                {/* Если есть хотя бы одна колонка с контентом — показываем только их */}
+                                {headerColsWithContent.length > 0 && (
+                                    <div className="site-header__container container">
+                                        <div className="site-header__columns">
+                                            {headerColsWithContent.map((p) => (
+                                                <div
+                                                    key={p.id}
+                                                    className="site-header__column"
+                                                >
                                                     {renderPosition(
                                                         p,
                                                         site.widgets_config,
@@ -396,26 +430,26 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                         </div>
                                     </div>
                                 )}
-                                {headerFull && (
-                                    <div>
-                                        {renderPosition(
-                                            headerFull,
-                                            site.widgets_config,
-                                        )}
-                                    </div>
-                                )}
-                                {!headerFull && headerCols.length === 0 && (
-                                    <div>
-                                        {headerAll.map((p) => (
-                                            <div key={p.id}>
-                                                {renderPosition(
-                                                    p,
-                                                    site.widgets_config,
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                {/* Полноширинный header, если он есть */}
+                                {headerFull &&
+                                    renderPosition(
+                                        headerFull,
+                                        site.widgets_config,
+                                    )}
+                                {/* Если нет ни колонок с контентом, ни header, рендерим все header-позиции (режим без конфигурации) */}
+                                {!headerFull &&
+                                    headerColsWithContent.length === 0 && (
+                                        <div>
+                                            {headerAll.map((p) => (
+                                                <div key={p.id}>
+                                                    {renderPosition(
+                                                        p,
+                                                        site.widgets_config,
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                             </div>
                         );
                     })()}
@@ -429,7 +463,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
                 {/* Main Content */}
                 <main className="site-main">
-                    <div className="container mx-auto px-4">
+                    <div className="p-lr-60 container mx-auto">
                         {breadcrumbs.length > 0 && (
                             <div className="mb-8">
                                 <Breadcrumbs breadcrumbs={breadcrumbs} />
@@ -537,14 +571,27 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                     </div>
                 </main>
 
-                {/* Footer: четыре колонки (footer-col-1..4) */}
+                {/* content-bottom: независимый блок ПОД основным контентом, ПЕРЕД футером */}
+                {positionsByArea.contentBottom.length > 0 && (
+                    <section className="site-content-bottom">
+                        <div className="site-content-bottom__container container">
+                            {positionsByArea.contentBottom.map((p) => (
+                                <div key={p.id}>
+                                    {renderPosition(p, site.widgets_config)}
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Footer: четыре колонки (footer-col-1..4) + остальные футер-позиции */}
                 <footer className="site-footer mb-60 mt-60">
                     <div className="site-footer--wrapper container">
                         {(() => {
                             const { footerCols, footerOther } = positionsByArea;
 
                             return (
-                                <div className="footer-container p-8">
+                                <div className="footer-container">
                                     {footerCols.length > 0 && (
                                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                                             {footerCols.map((p, index) => (

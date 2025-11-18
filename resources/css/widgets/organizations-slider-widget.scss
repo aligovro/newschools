@@ -36,11 +36,11 @@ section:has(.organizations-slider-widget),
         }
 
         &--prev {
-            left: -50px;
+            left: 0px;
         }
 
         &--next {
-            right: -50px;
+            right: 0px;
         }
 
         svg {
@@ -51,13 +51,12 @@ section:has(.organizations-slider-widget),
 
         @media (max-width: 640px) {
             &--prev {
-                left: -50px;
+                left: -60px;
             }
 
             &--next {
-                right: -50px;
+                right: -60px;
             }
         }
     }
 }
-

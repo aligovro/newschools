@@ -236,7 +236,7 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
 
     return (
         <div className={`alumni-stats-output ${className || ''}`} style={style}>
-            <section className="py-12">
+            <section className="wrapper__block">
                 <div className="container mx-auto">
                     {title && show_title && (
                         <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
@@ -248,7 +248,7 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
                         {statsItems.map((item, index) => (
                             <div
                                 key={index}
-                                className="flex items-end rounded-lg bg-white py-6"
+                                className="flex items-end rounded-lg bg-white"
                             >
                                 <div>
                                     <div className="alumni-stats-output__value mb-2">

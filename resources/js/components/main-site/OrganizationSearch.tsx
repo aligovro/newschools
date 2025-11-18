@@ -199,7 +199,7 @@ export default function OrganizationSearch({
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={handleInputFocus}
                             placeholder={placeholder}
-                            className="organization-search__input w-full border border-white/20 bg-white/10 text-white backdrop-blur-sm placeholder:text-white/70 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+                            className="organization-search__input w-full border border-white/20 bg-white/10 text-white placeholder:text-white/70 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
                         />
                         {searchQuery && (
                             <button

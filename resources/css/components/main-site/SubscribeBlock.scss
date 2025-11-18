@@ -2,15 +2,70 @@
 @import '../../variables';
 
 .subscribe-block {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
     padding-bottom: 60px;
+    padding: 52px 60px;
+}
+
+.subscribe-block__bg {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.subscribe-block__bg-image {
+    position: absolute;
+    right: 0;
+    top: 0;
+    max-width: 50%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    object-position: right top;
+}
+
+.subscribe-block__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .subscribe-block__loader {
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    border-width: 4px;
     border-color: rgba(255, 255, 255, 0.2);
     border-top-color: white;
+    animation: subscribe-block-spin 0.8s linear infinite;
+}
+
+@keyframes subscribe-block-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.subscribe-block__loader-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 0;
 }
 
 .subscribe-block__school-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
     background: #fff;
     border-radius: 10px;
     min-height: 68px;
@@ -29,6 +84,23 @@
     width: 36px;
     height: 36px;
     background: rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.subscribe-block__school-logo-initial {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #9ca3af;
+}
+
+.subscribe-block__school-text {
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .subscribe-block__school-address {
@@ -45,9 +117,9 @@
 }
 
 .subscribe-block__search-input {
+    width: 100%;
     border-color: rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(4px);
     border-radius: 10px;
     height: 40px;
     font-family: var(--font-family, 'Montserrat', sans-serif);
@@ -63,6 +135,7 @@
     }
 
     &:focus {
+        outline: none;
         border-color: rgba(255, 255, 255, 0.4);
         box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
     }
@@ -74,6 +147,9 @@
     background: $accent-gradient;
     border-radius: 50%;
     color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition:
         transform 0.2s ease,
         opacity 0.2s ease;
@@ -97,9 +173,18 @@
     }
 }
 
+.subscribe-block__subscribe-button-icon {
+    width: 20px;
+    height: 20px;
+}
+
 .subscribe-block__empty-state {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(4px);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .phone-input {
@@ -145,14 +230,101 @@
 .subscribe-block__title {
     font-family: var(--font-family, 'Montserrat', sans-serif);
     letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: #fff;
+    font-size: 2.25rem;
+    line-height: 1.2;
+}
 
-    @media (max-width: 1199px) {
-        font-size: 1.6rem;
-        line-height: 1.3;
+.subscribe-block__subtitle {
+    font-size: 1.125rem;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.subscribe-block__form {
+    margin: 40px 0;
+}
+
+.subscribe-block__form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.subscribe-block__search {
+    position: relative;
+    flex: 1 1 auto;
+}
+
+.subscribe-block__search-icon {
+    pointer-events: none;
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+}
+
+.subscribe-block__search-icon-svg {
+    width: 20px;
+    height: 20px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.subscribe-block__schools {
+    flex: 1 1 auto;
+    overflow: auto;
+}
+
+.subscribe-block__schools-title {
+    margin-bottom: 16px;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 120%; /* 26.4px */
+    letter-spacing: -0.44px;
+}
+
+.subscribe-block__schools-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.subscribe-block__schools-grid--cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.subscribe-block__schools-grid--cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+
+    @media (min-width: 768px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.subscribe-block__schools-grid--cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+
+    @media (min-width: 768px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    @media (max-width: 768px) {
-        font-size: 1.4rem;
-        line-height: 1.3;
+    @media (min-width: 1024px) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.subscribe-block__schools-grid--cols-4 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+
+    @media (min-width: 768px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (min-width: 1024px) {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }

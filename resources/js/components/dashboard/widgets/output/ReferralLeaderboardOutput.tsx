@@ -153,9 +153,7 @@ export const ReferralLeaderboardOutput: React.FC<WidgetOutputProps> = ({
 
                 {/* Referrals count */}
                 <div className="flex-shrink-0 text-right">
-                    <div className="text-2xl font-bold text-gray-900">
-                        {leader.referrals}
-                    </div>
+                    <div className="block__title">{leader.referrals}</div>
                     <div className="text-xs text-gray-500">приглашений</div>
                 </div>
             </div>
@@ -168,9 +166,7 @@ export const ReferralLeaderboardOutput: React.FC<WidgetOutputProps> = ({
             style={style}
         >
             {title && show_title && (
-                <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                    {title}
-                </h2>
+                <h2 className="block__title mb-4">{title}</h2>
             )}
 
             {subtitle && <p className="mb-6 text-gray-600">{subtitle}</p>}

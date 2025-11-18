@@ -20,14 +20,20 @@
     margin-bottom: 1rem;
 }
 
-.widget-container:last-child {
-    margin-bottom: 0;
-}
-
 /* .site-type--main {
     .site-header {
     }
 } */
+
+.container {
+    max-width: 1362px;
+}
+
+/* Контейнер для content-bottom: центрируем как остальные блоки с контейнером */
+.site-content-bottom__container {
+    margin-left: auto;
+    margin-right: auto;
+}
 
 .site-preview {
     .mt-60 {
@@ -36,6 +42,30 @@
     .mb-60 {
         margin-bottom: 60px;
     }
+}
+
+// Header layout
+.site-header__container {
+    max-width: 1362px;
+    margin: 0 auto;
+}
+
+.site-header__blocks {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.site-header__columns {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.site-header__column {
+    flex-shrink: 0;
 }
 
 .hero-texts {
@@ -105,10 +135,19 @@
     }
 }
 
-.page-type--inner {
-    .subscribe-block {
-        margin-top: 60px;
-    }
+.subscribe-block {
+    margin-top: 120px;
+}
+.projects-slider-container {
+    margin-top: 90px;
+}
+.city-supporters-container {
+    margin-top: 90px;
+}
+
+.alumni-stats-container {
+    margin-top: 90px;
+    margin-bottom: 90px;
 }
 
 /* footer */
@@ -154,8 +193,6 @@
 }
 
 .site-footer--wrapper {
-    padding-left: 1rem;
-    padding-right: 1rem;
     margin-left: auto;
     margin-right: auto;
 }
@@ -163,6 +200,8 @@
 .footer-container {
     border: 1px solid #e8ecf3;
     border-radius: 20px;
+    padding: 52px 60px 30px 60px;
+    margin-top: 60px;
 }
 
 .footer-menu {
@@ -229,6 +268,20 @@
     letter-spacing: 0.4px;
 }
 
+.block__title {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 120%;
+    letter-spacing: 0.28px;
+}
+
+.block__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
 @media (min-width: 768px) and (max-width: 1280px) {
     .container {
         max-width: 100%;
@@ -252,7 +305,20 @@
         max-width: 80%;
     }
     .footer-phone-img {
-        margin-top: -50px;
+        margin-top: -72px;
+    }
+    .city-supporters-container,
+    .organizations-slider-widget,
+    .projects-slider-widget,
+    .site-header__container,
+    .hero-wrapper,
+    .block__header {
+        padding: 0 60px;
+    }
+    .page-type--inner {
+        .p-lr-60 {
+            padding: 0 60px;
+        }
     }
 }
 

@@ -33,6 +33,31 @@
     gap: 8px;
 }
 
+/* Фиксированные пропорции колонок на десктопе
+   Общая ширина: 1242px
+   1) Город: 360px  (~29%)
+   2) Метрика 1: 204px (~16.5%)
+   3) Метрика 2: 204px (~16.5%)
+   4) Метрика 3: 204px (~16.5%)
+   5) Сумма: 230px (~18.5%)
+*/
+@media (min-width: 769px) {
+    .city-supporters-output__column--city {
+        flex: 0 0 29%;
+        max-width: 29%;
+    }
+
+    .city-supporters-output__column--metric {
+        flex: 0 0 16.5%;
+        max-width: 16.5%;
+    }
+
+    .city-supporters-output__column--amount {
+        flex: 0 0 18.5%;
+        max-width: 18.5%;
+    }
+}
+
 .city-supporters-output__column-icon {
     width: 20px;
     height: 20px;

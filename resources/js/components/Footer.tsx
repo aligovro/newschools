@@ -14,7 +14,7 @@ interface FooterProps {
 export default function Footer({ terminology }: FooterProps) {
     return (
         <footer className="bg-gray-900 text-white">
-            <div className="container mx-auto px-4 py-12">
+            <div className="container mx-auto py-12">
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
                     {/* Logo and Description */}
                     <div className="md:col-span-1">

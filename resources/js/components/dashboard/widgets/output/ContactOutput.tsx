@@ -65,11 +65,7 @@ export const ContactOutput: React.FC<WidgetOutputProps> = ({
 
     return (
         <div className={`contact-output ${className || ''}`} style={style}>
-            {title && show_title && (
-                <h2 className="mb-6 text-2xl font-bold text-gray-900">
-                    {title}
-                </h2>
-            )}
+            {title && show_title && <h2 className="block__title">{title}</h2>}
 
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Contact Information */}

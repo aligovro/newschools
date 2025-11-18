@@ -89,7 +89,16 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
                     (p) => p.area === 'header' && p.slug === 'header',
                 );
 
-                if (headerCols.length === 0 && !headerFull) {
+                // Показываем только те колонки, где реально есть виджеты
+                const headerColsWithWidgets = headerCols.filter((position) =>
+                    widgets.some(
+                        (widget) => widget.position_slug === position.slug,
+                    ),
+                );
+
+                // Если нет ни одной колонки с виджетами и нет полного header,
+                // показываем все header-позиции (режим конструктора, чтобы было куда добавить виджеты)
+                if (headerColsWithWidgets.length === 0 && !headerFull) {
                     return positions
                         .filter((p) => p.area === 'header')
                         .map(renderZone);
@@ -97,9 +106,13 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
 
                 return (
                     <div className="space-y-6">
-                        {headerCols.length > 0 && (
-                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                                {headerCols.map(renderZone)}
+                        {headerColsWithWidgets.length > 0 && (
+                            <div className="flex flex-wrap gap-4">
+                                {headerColsWithWidgets.map((position) => (
+                                    <div key={position.id} className="shrink-0">
+                                        {renderZone(position)}
+                                    </div>
+                                ))}
                             </div>
                         )}
                         {headerFull && <div>{renderZone(headerFull)}</div>}
@@ -139,6 +152,11 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
                     )}
             </div>
 
+            {/* Content bottom (full-width zone before footer columns) */}
+            {positions
+                .filter((p) => p.slug === 'content-bottom')
+                .map(renderZone)}
+
             {/* Footer grouped: four equal columns */}
             {(() => {
                 const footerColSlugs = [
@@ -151,9 +169,12 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
                     (p) =>
                         p.area === 'footer' && footerColSlugs.includes(p.slug),
                 );
+                // Все прочие позиции футера, кроме content-bottom (она уже отрендерена выше)
                 const otherFooter = positions.filter(
                     (p) =>
-                        p.area === 'footer' && !footerColSlugs.includes(p.slug),
+                        p.area === 'footer' &&
+                        !footerColSlugs.includes(p.slug) &&
+                        p.slug !== 'content-bottom',
                 );
 
                 return (
