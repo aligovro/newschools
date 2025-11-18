@@ -12,12 +12,13 @@ use App\Http\Resources\RegionStatResource;
 use App\Support\InertiaResource;
 use App\Services\GlobalSettingsService;
 use App\Models\Site;
+use App\Services\Seo\SeoPresenter;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class HomeController extends Controller
 {
-    public function index(GlobalSettingsService $globalSettings)
+    public function index(GlobalSettingsService $globalSettings, SeoPresenter $seoPresenter, Request $request)
     {
         // Получаем статистику для главной страницы
         $stats = [
@@ -62,29 +63,48 @@ class HomeController extends Controller
         ];
 
         // Получаем глобальные настройки для терминологии
-        $globalSettings = $globalSettings->getSettings();
+        $global = $globalSettings->getSettings();
 
-        // SEO мета-данные с использованием новых настроек
-        $seoData = [
-            'title' => $mainSiteSettings['meta_title'] ?: $mainSiteSettings['site_name'] . ' - Поддерживай ' . mb_strtolower($globalSettings->org_plural_nominative),
-            'description' => $mainSiteSettings['meta_description'] ?: 'Поддерживай ' . mb_strtolower($globalSettings->org_plural_nominative) . ' города — укрепляй будущее. Подписывайся на организации, поддерживай их финансирование, отслеживай прогресс сборов.',
+        // SEO мета-данные с использованием новых настроек (как и раньше),
+        // но теперь через единый SeoPresenter.
+        $seoOverrides = [
+            'title' => $mainSiteSettings['meta_title']
+                ?: $mainSiteSettings['site_name'] . ' - Поддерживай ' . mb_strtolower($global->org_plural_nominative),
+            'description' => $mainSiteSettings['meta_description']
+                ?: 'Поддерживай ' . mb_strtolower($global->org_plural_nominative) . ' города — укрепляй будущее. Подписывайся на организации, поддерживай их финансирование, отслеживай прогресс сборов.',
             'keywords' => $mainSiteSettings['meta_keywords'] ?: implode(', ', [
-                mb_strtolower($globalSettings->org_plural_nominative),
-                mb_strtolower($globalSettings->org_plural_genitive),
+                mb_strtolower($global->org_plural_nominative),
+                mb_strtolower($global->org_plural_genitive),
                 'поддержка',
                 'пожертвования',
                 'проекты',
-                'организации'
+                'организации',
             ]),
-            'og_title' => $mainSiteSettings['og_title'] ?: $mainSiteSettings['site_name'] . ' - Поддерживай ' . mb_strtolower($globalSettings->org_plural_nominative),
-            'og_description' => $mainSiteSettings['og_description'] ?: 'Поддерживай ' . mb_strtolower($globalSettings->org_plural_nominative) . ' города — укрепляй будущее',
+            'og_title' => $mainSiteSettings['og_title']
+                ?: $mainSiteSettings['site_name'] . ' - Поддерживай ' . mb_strtolower($global->org_plural_nominative),
+            'og_description' => $mainSiteSettings['og_description']
+                ?: 'Поддерживай ' . mb_strtolower($global->org_plural_nominative) . ' города — укрепляй будущее',
             'og_type' => $mainSiteSettings['og_type'],
             'og_image' => $mainSiteSettings['og_image'] ?: asset('images/og-image.jpg'),
             'twitter_card' => $mainSiteSettings['twitter_card'],
-            'twitter_title' => $mainSiteSettings['twitter_title'] ?: $mainSiteSettings['site_name'] . ' - Поддерживай ' . mb_strtolower($globalSettings->org_plural_nominative),
-            'twitter_description' => $mainSiteSettings['twitter_description'] ?: 'Поддерживай ' . mb_strtolower($globalSettings->org_plural_nominative) . ' города — укрепляй будущее',
+            'twitter_title' => $mainSiteSettings['twitter_title']
+                ?: $mainSiteSettings['site_name'] . ' - Поддерживай ' . mb_strtolower($global->org_plural_nominative),
+            'twitter_description' => $mainSiteSettings['twitter_description']
+                ?: 'Поддерживай ' . mb_strtolower($global->org_plural_nominative) . ' города — укрепляй будущее',
             'twitter_image' => $mainSiteSettings['twitter_image'] ?: asset('images/twitter-image.jpg'),
         ];
+
+        $seoData = null;
+        if ($mainSite) {
+            $seoData = $seoPresenter->forMainSite(
+                $mainSite,
+                $seoOverrides,
+                $request->fullUrl()
+            );
+        } else {
+            // Фоллбек, если main site не найден
+            $seoData = $seoOverrides;
+        }
 
         // Получаем популярные организации
         $popularOrganizations = Organization::with(['domains', 'projects'])
@@ -119,13 +139,13 @@ class HomeController extends Controller
             'activeProjects' => InertiaResource::list($activeProjects, OrganizationProjectResource::class),
             'seo' => $seoData,
             'mainSiteSettings' => $mainSiteSettings,
-            'globalSettings' => $globalSettings,
+            'globalSettings' => $global,
             'terminology' => [
                 'site_name' => $mainSiteSettings['site_name'],
                 'site_description' => $mainSiteSettings['site_description'],
-                'org_plural' => $globalSettings->org_plural_nominative,
-                'org_genitive' => $globalSettings->org_plural_genitive,
-                'support_action' => $globalSettings->action_support,
+                'org_plural' => $global->org_plural_nominative,
+                'org_genitive' => $global->org_plural_genitive,
+                'support_action' => $global->action_support,
             ],
             'heroSliders' => $heroSliders,
             'contentSliders' => $contentSliders,

@@ -35,6 +35,7 @@ interface NewsPageProps extends LayoutProps {
         search?: string | null;
         type?: string | null;
     };
+    seo?: any;
 }
 
 const resolveMeta = (payload: NewsPaginator): PaginatorMeta => {
@@ -56,6 +57,7 @@ export default function NewsPage({
     position_settings = [],
     news,
     filters,
+    seo,
 }: NewsPageProps) {
     const meta = useMemo(() => resolveMeta(news), [news]);
 
@@ -160,6 +162,7 @@ export default function NewsPage({
             site={site}
             positions={positions}
             position_settings={position_settings}
+            seo={seo}
             pageTitle="Новости"
             pageDescription="Новости и события главного сайта"
             breadcrumbs={[

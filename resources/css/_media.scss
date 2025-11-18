@@ -399,7 +399,6 @@
 
     // Site Header - адаптация для мобильных
     .site-header {
-        padding-top: 20px;
         padding-bottom: 0;
 
         .container {
@@ -1154,8 +1153,6 @@
 
     // Site Header - еще более компактный на маленьких экранах
     .site-header {
-        padding-top: 16px;
-
         .grid.gap-6 {
             gap: 0.5rem;
         }

@@ -6,6 +6,7 @@ use App\Models\Site;
 use App\Models\SitePage;
 use App\Http\Resources\SitePageResource;
 use App\Services\WidgetDataService;
+use App\Services\Seo\SeoPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -13,6 +14,11 @@ use Inertia\Response;
 
 class PublicSitePageController extends Controller
 {
+    public function __construct(
+        private readonly SeoPresenter $seoPresenter,
+    ) {
+    }
+
     /**
      * Получить главный сайт (с кешированием)
      */
@@ -78,12 +84,12 @@ class PublicSitePageController extends Controller
         // Получаем данные сайта для виджетов (уже кешируется внутри)
         $siteData = $this->getSiteWidgetsAndPositions($site);
 
-        // Формируем SEO данные для страницы
-        $pageSeo = $this->getPageSeoData($page, $site);
+        // Формируем SEO данные для страницы (единый формат seo)
+        $seo = $this->seoPresenter->forSitePage($site, $page, request()->fullUrl());
 
         return Inertia::render('site/PageShow', array_merge($siteData, [
             'page' => (new SitePageResource($page))->toArray(request()),
-            'pageSeo' => $pageSeo,
+            'seo' => $seo,
         ]));
     }
 
@@ -135,6 +141,7 @@ class PublicSitePageController extends Controller
 
         return Inertia::render('site/PageShow', array_merge($siteData, [
             'page' => (new SitePageResource($page))->toArray(request()),
+            'seo' => $this->seoPresenter->forSitePage($site, $page, request()->fullUrl()),
         ]));
     }
 

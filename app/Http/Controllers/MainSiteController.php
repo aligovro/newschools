@@ -12,8 +12,10 @@ use App\Http\Resources\OrganizationStaffResource;
 use App\Http\Resources\Sponsors\SponsorResource;
 use App\Models\News;
 use App\Models\Organization;
+use App\Models\Site;
 use App\Services\Organizations\OrganizationAlumniService;
 use App\Services\Sponsors\OrganizationSponsorService;
+use App\Services\Seo\SeoPresenter;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -24,6 +26,7 @@ class MainSiteController extends Controller
     public function __construct(
         private readonly OrganizationSponsorService $organizationSponsorService,
         private readonly OrganizationAlumniService $organizationAlumniService,
+        private readonly SeoPresenter $seoPresenter,
     ) {
     }
 
@@ -31,7 +34,21 @@ class MainSiteController extends Controller
     {
         $data = $this->getSiteWidgetsAndPositions();
 
-        return Inertia::render('main-site/Index', $data);
+        /** @var Site|null $siteModel */
+        $siteModel = Site::where('site_type', 'main')->published()->first();
+
+        $seo = null;
+        if ($siteModel) {
+            $seo = $this->seoPresenter->forMainSite(
+                $siteModel,
+                [],
+                $request->fullUrl()
+            );
+        }
+
+        return Inertia::render('main-site/Index', array_merge($data, [
+            'seo' => $seo,
+        ]));
     }
 
     public function organizations(Request $request)
@@ -205,9 +222,25 @@ class MainSiteController extends Controller
 
         $data = $this->getSiteWidgetsAndPositions();
 
+        /** @var Site|null $siteModel */
+        $siteModel = Site::where('site_type', 'main')->published()->first();
+        $seo = null;
+        if ($siteModel) {
+            $seo = $this->seoPresenter->forSite(
+                $siteModel,
+                [
+                    'pageTitle' => 'Новости',
+                    'pageDescription' => 'Новости и события главного сайта',
+                    'seo_overrides' => [],
+                ],
+                $request->fullUrl()
+            );
+        }
+
         return Inertia::render('main-site/News', array_merge($data, [
             'news' => $transformed,
             'filters' => $request->only(['search', 'type']),
+            'seo' => $seo,
         ]));
     }
 
@@ -229,8 +262,20 @@ class MainSiteController extends Controller
 
         $data = $this->getSiteWidgetsAndPositions();
 
+        /** @var Site|null $siteModel */
+        $siteModel = Site::where('site_type', 'main')->published()->first();
+        $seo = null;
+        if ($siteModel) {
+            $seo = $this->seoPresenter->forNews(
+                $siteModel,
+                $news,
+                $request->fullUrl()
+            );
+        }
+
         return Inertia::render('main-site/NewsShow', array_merge($data, [
             'news' => $newsData,
+            'seo' => $seo,
         ]));
     }
 
@@ -388,11 +433,23 @@ class MainSiteController extends Controller
 
         $data = $this->getSiteWidgetsAndPositions();
 
+        /** @var Site|null $siteModel */
+        $siteModel = Site::where('site_type', 'main')->published()->first();
+        $seo = null;
+        if ($siteModel) {
+            $seo = $this->seoPresenter->forOrganization(
+                $siteModel,
+                $organization,
+                request()->fullUrl()
+            );
+        }
+
         return Inertia::render('main-site/OrganizationShow', array_merge($data, [
             'organization' => $organizationData,
             'organizationId' => $organization->id, // Передаем organizationId для виджетов
             'sponsors' => $sponsorsPayload,
             'alumni' => $alumniPayload,
+            'seo' => $seo,
         ]));
     }
 }

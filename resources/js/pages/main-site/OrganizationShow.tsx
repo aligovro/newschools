@@ -65,6 +65,7 @@ interface OrganizationShowProps {
     organization: Organization;
     sponsors: SponsorsPayload | null;
     alumni: AlumniPayload | null;
+    seo?: any;
 }
 
 export default function OrganizationShow({
@@ -74,6 +75,7 @@ export default function OrganizationShow({
     organization,
     sponsors,
     alumni,
+    seo,
 }: OrganizationShowProps) {
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
     const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
@@ -95,28 +97,14 @@ export default function OrganizationShow({
         .filter(Boolean)
         .join(', ');
 
-    // SEO overrides для организации: используем логотип или первую картинку галереи как og:image
-    const organizationOgImage =
-        organization.logo ||
-        (organization.gallery && organization.gallery.length > 0
-            ? organization.gallery[0]
-            : undefined);
-    const seoOverrides: Record<string, unknown> = {
-        seo_title: organization.name,
-        seo_description: organization.description,
-        og_title: organization.name,
-        og_description: organization.description,
-        ...(organizationOgImage ? { og_image: organizationOgImage } : {}),
-    };
-
     return (
         <MainLayout
             site={site}
             positions={positions}
             position_settings={position_settings}
+            seo={seo}
             pageTitle={organization.name}
             pageDescription={organization.description}
-            seoOverrides={seoOverrides}
             breadcrumbs={[
                 { title: 'Главная', href: '/' },
                 { title: 'Школы', href: '/organizations' },
