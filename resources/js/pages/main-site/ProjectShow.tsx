@@ -75,6 +75,7 @@ interface Project {
     beneficiaries?: unknown[];
     progress_updates?: unknown[];
     organization?: Organization;
+    seo_settings?: Record<string, unknown>;
 }
 
 type LayoutProps = ComponentProps<typeof MainLayout>;
@@ -158,6 +159,42 @@ export default function ProjectShow({
         setIsSponsorModalOpen(true);
     };
 
+    // SEO overrides для проекта: используем seo_settings (если есть) + fallback на данные проекта
+    const seoOverrides: Record<string, unknown> = {
+        ...(project.seo_settings || {}),
+    };
+
+    if (!('seo_title' in seoOverrides) || !seoOverrides['seo_title']) {
+        seoOverrides['seo_title'] = project.title;
+    }
+    if (
+        !('seo_description' in seoOverrides) ||
+        !seoOverrides['seo_description']
+    ) {
+        seoOverrides['seo_description'] =
+            project.short_description || project.description || '';
+    }
+    if (!('og_title' in seoOverrides) || !seoOverrides['og_title']) {
+        seoOverrides['og_title'] = project.title;
+    }
+    if (
+        !('og_description' in seoOverrides) ||
+        !seoOverrides['og_description']
+    ) {
+        seoOverrides['og_description'] =
+            project.short_description || project.description || '';
+    }
+    if (!('og_image' in seoOverrides) || !seoOverrides['og_image']) {
+        const ogImage =
+            project.image ||
+            (project.gallery && project.gallery.length > 0
+                ? project.gallery[0]
+                : undefined);
+        if (ogImage) {
+            seoOverrides['og_image'] = ogImage;
+        }
+    }
+
     return (
         <MainLayout
             site={site}
@@ -165,6 +202,7 @@ export default function ProjectShow({
             position_settings={position_settings}
             pageTitle={project.title}
             pageDescription={project.short_description}
+            seoOverrides={seoOverrides}
             breadcrumbs={[
                 { title: 'Главная', href: '/' },
                 { title: 'Проекты', href: '/projects' },

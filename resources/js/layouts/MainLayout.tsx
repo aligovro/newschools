@@ -5,6 +5,7 @@ import type {
     WidgetPosition,
 } from '@/components/dashboard/site-builder/types';
 import { useSmoothAnchorNavigation } from '@/hooks';
+import { buildSiteSeo } from '@/lib/seo';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import React, { ReactNode } from 'react';
@@ -35,6 +36,11 @@ interface MainLayoutProps {
     pageTitle?: string;
     pageDescription?: string;
     breadcrumbs?: BreadcrumbItem[];
+    /**
+     * Дополнительные SEO/OG-override для конкретной страницы
+     * (например, данные проекта, новости, организации).
+     */
+    seoOverrides?: Record<string, unknown>;
 }
 
 type PositionVisibilityRules = {
@@ -51,6 +57,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     pageTitle,
     pageDescription,
     breadcrumbs = [],
+    seoOverrides,
 }) => {
     useSmoothAnchorNavigation();
 
@@ -247,82 +254,59 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         );
     };
 
-    // SEO
-    const seo = (site.seo_config || {}) as Record<string, unknown>;
-    const getString = (value: unknown): string | undefined =>
-        typeof value === 'string' && value.trim() !== '' ? value : undefined;
-
-    // Поддержка разных вариантов ключей для обратной совместимости
-    const seoTitle =
-        getString(seo['seo_title']) ||
-        getString(seo['meta_title']) ||
-        getString(seo['title']);
-    const seoDescription =
-        getString(seo['seo_description']) ||
-        getString(seo['meta_description']) ||
-        getString(seo['description']);
-    const seoKeywords =
-        getString(seo['seo_keywords']) ||
-        getString(seo['meta_keywords']) ||
-        getString(seo['keywords']);
-
-    // Title: приоритет pageTitle > seo_title из настроек > site.name
-    const metaTitle = pageTitle || seoTitle || site.name;
-
-    // Description: приоритет pageDescription > seo_description из настроек > site.description
-    const metaDescription =
-        pageDescription || seoDescription || site.description || '';
-
-    // Canonical URL
-    const canonicalUrl: string | undefined =
-        getString(seo['canonical_url']) ||
-        getString(seo['slug_url']) ||
-        (typeof window !== 'undefined' ? window.location.href : undefined);
-
-    // Open Graph данные
-    const ogTitle = getString(seo['og_title']) || seoTitle || metaTitle;
-    const ogDescription =
-        getString(seo['og_description']) || seoDescription || metaDescription;
-    const ogType = getString(seo['og_type']) || 'website';
-    const ogImage =
-        getString(seo['og_image']) || getString(seo['image']) || undefined;
-
-    // Twitter данные
-    const twitterCard = getString(seo['twitter_card']) || 'summary_large_image';
-    const twitterTitle =
-        getString(seo['twitter_title']) || ogTitle || metaTitle;
-    const twitterDescription =
-        getString(seo['twitter_description']) ||
-        ogDescription ||
-        metaDescription;
-    const twitterImage =
-        getString(seo['twitter_image']) || ogImage || undefined;
+    // SEO / Open Graph (общая логика вынесена в lib/seo)
+    const currentUrl =
+        typeof window !== 'undefined' ? window.location.href : undefined;
+    const mergedSeoConfig = {
+        ...(site.seo_config || {}),
+        ...(seoOverrides || {}),
+    } as Record<string, unknown>;
+    const seoData = buildSiteSeo({
+        siteName: site.name,
+        siteDescription: site.description,
+        rawSeo: mergedSeoConfig,
+        pageTitleOverride: pageTitle,
+        pageDescriptionOverride: pageDescription,
+        currentUrl,
+    });
 
     return (
         <>
-            <Head title={metaTitle}>
+            <Head title={seoData.title}>
                 {site.favicon ? <link rel="icon" href={site.favicon} /> : null}
-                <meta name="description" content={metaDescription} />
+                <meta name="description" content={seoData.description} />
                 <meta
                     name="viewport"
                     content="width=device-width, initial-scale=1"
                 />
-                {seoKeywords && <meta name="keywords" content={seoKeywords} />}
-                {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
-                {/* Open Graph */}
-                <meta property="og:type" content={ogType} />
-                <meta property="og:title" content={ogTitle} />
-                <meta property="og:description" content={ogDescription} />
-                {canonicalUrl && (
-                    <meta property="og:url" content={canonicalUrl} />
+                {seoData.keywords && (
+                    <meta name="keywords" content={seoData.keywords} />
                 )}
-                {ogImage && <meta property="og:image" content={ogImage} />}
+                {seoData.canonicalUrl && (
+                    <link rel="canonical" href={seoData.canonicalUrl} />
+                )}
+                {/* Open Graph */}
+                <meta property="og:type" content={seoData.ogType} />
+                <meta property="og:title" content={seoData.ogTitle} />
+                <meta
+                    property="og:description"
+                    content={seoData.ogDescription}
+                />
+                {seoData.canonicalUrl && (
+                    <meta property="og:url" content={seoData.canonicalUrl} />
+                )}
+                {seoData.ogImage && (
+                    <meta property="og:image" content={seoData.ogImage} />
+                )}
                 {/* Twitter */}
-                <meta name="twitter:card" content={twitterCard} />
-                <meta name="twitter:title" content={twitterTitle} />
-                <meta name="twitter:description" content={twitterDescription} />
-                {twitterImage && (
-                    <meta name="twitter:image" content={twitterImage} />
+                <meta name="twitter:card" content={seoData.twitterCard} />
+                <meta name="twitter:title" content={seoData.twitterTitle} />
+                <meta
+                    name="twitter:description"
+                    content={seoData.twitterDescription}
+                />
+                {seoData.twitterImage && (
+                    <meta name="twitter:image" content={seoData.twitterImage} />
                 )}
             </Head>
 

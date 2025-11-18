@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Concerns\HasSiteWidgets;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
@@ -14,15 +15,18 @@ use Laravel\Fortify\Features;
 
 class AuthenticatedSessionController extends Controller
 {
+    use HasSiteWidgets;
     /**
      * Show the login page.
      */
     public function create(Request $request): Response
     {
-        return Inertia::render('auth/login', [
+        $data = $this->getSiteWidgetsAndPositions();
+
+        return Inertia::render('auth/login', array_merge($data, [
             'canResetPassword' => Route::has('password.request'),
             'status' => $request->session()->get('status'),
-        ]);
+        ]));
     }
 
     /**

@@ -67,23 +67,15 @@
     }
 
     img {
-        max-width: 100%;
-        height: auto;
         object-fit: contain;
-
+        min-height: 27px;
+        width: auto;
+        max-width: unset;
         // Добавьте здесь стили для логотипа
     }
 
     a {
         display: inline-block;
-        transition:
-            transform 0.2s ease,
-            opacity 0.2s ease;
-
-        &:hover {
-            transform: scale(1.05);
-            opacity: 0.9;
-        }
     }
 }
 

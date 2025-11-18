@@ -95,6 +95,20 @@ export default function OrganizationShow({
         .filter(Boolean)
         .join(', ');
 
+    // SEO overrides для организации: используем логотип или первую картинку галереи как og:image
+    const organizationOgImage =
+        organization.logo ||
+        (organization.gallery && organization.gallery.length > 0
+            ? organization.gallery[0]
+            : undefined);
+    const seoOverrides: Record<string, unknown> = {
+        seo_title: organization.name,
+        seo_description: organization.description,
+        og_title: organization.name,
+        og_description: organization.description,
+        ...(organizationOgImage ? { og_image: organizationOgImage } : {}),
+    };
+
     return (
         <MainLayout
             site={site}
@@ -102,6 +116,7 @@ export default function OrganizationShow({
             position_settings={position_settings}
             pageTitle={organization.name}
             pageDescription={organization.description}
+            seoOverrides={seoOverrides}
             breadcrumbs={[
                 { title: 'Главная', href: '/' },
                 { title: 'Школы', href: '/organizations' },
