@@ -27,8 +27,7 @@ class MainSiteController extends Controller
         private readonly OrganizationSponsorService $organizationSponsorService,
         private readonly OrganizationAlumniService $organizationAlumniService,
         private readonly SeoPresenter $seoPresenter,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request)
     {
@@ -109,40 +108,53 @@ class MainSiteController extends Controller
         $organizations->appends($request->except('page'));
 
         // Форматируем данные организаций для отображения
+        // Используем OrganizationResource, чтобы не дублировать логику нормализации путей/связей
         $organizations->getCollection()->transform(function ($org) {
-            $org->logo = $org->logo ? '/storage/' . ltrim($org->logo, '/') : null;
-            // Приоритет: logo, затем первая из галереи
-            if (!empty($org->logo)) {
-                $org->image = $org->logo;
-            } elseif (!empty($org->images) && is_array($org->images) && count($org->images) > 0) {
-                $org->image = '/storage/' . ltrim($org->images[0], '/');
-            } else {
-                $org->image = null;
-            }
-            // Убеждаемся что координаты доступны
-            $org->latitude = $org->latitude;
-            $org->longitude = $org->longitude;
-            // Форматируем суммы из копеек в рубли
-            $org->donations_total = $org->donations_total ? $org->donations_total / 100 : 0;
-            $org->donations_collected = $org->donations_collected ? $org->donations_collected / 100 : 0;
-            // Директор теперь берется из organization_staff через связь director
-            if ($org->director) {
-                // Преобразуем директора в нужный формат через Resource
-                $org->director = (new OrganizationStaffResource($org->director))->toArray(request());
-            } else {
-                // Оставляем director_name для обратной совместимости, если директор не найден в staff
-                $adminUser = $org->users->first();
-                if ($adminUser) {
-                    $org->director_name = $adminUser->name ?? null;
+            /** @var \App\Models\Organization $org */
+            $resourceData = (new \App\Http\Resources\OrganizationResource($org))->toArray(request());
+
+            // Приоритет: logo, затем первая картинка из images — аналогично тому, как мы делали вручную
+            $image = $resourceData['logo'] ?? null;
+            if (!$image && !empty($resourceData['images']) && is_array($resourceData['images'])) {
+                $firstImage = $resourceData['images'][0] ?? null;
+                if (is_string($firstImage) && $firstImage !== '') {
+                    $image = $firstImage;
                 }
             }
+            $resourceData['image'] = $image;
+
+            // Форматируем суммы из копеек в рубли (donations_* приходят как агрегаты с withCount/withSum)
+            $resourceData['donations_total'] = $org->donations_total
+                ? $org->donations_total / 100
+                : 0;
+            $resourceData['donations_collected'] = $org->donations_collected
+                ? $org->donations_collected / 100
+                : 0;
+
+            // Количества проектов/участников/спонсоров
+            $resourceData['projects_count'] = (int) ($org->projects_count ?? 0);
+            $resourceData['members_count'] = (int) ($org->members_count ?? 0);
+
             $sponsorMembersCount = (int) ($org->sponsor_members_count ?? 0);
             $donationSponsorsCount = (int) ($org->donation_sponsors_count ?? 0);
-            $org->sponsors_count = max($sponsorMembersCount, $donationSponsorsCount);
+            $resourceData['sponsors_count'] = max($sponsorMembersCount, $donationSponsorsCount);
 
-            unset($org->sponsor_members_count, $org->donation_sponsors_count);
+            // Директор: берем из OrganizationResource (через OrganizationStaffResource)
+            $director = $resourceData['director'] ?? null;
+            if (is_array($director) && !empty($director)) {
+                // Для карточки используем full_name + нормализованный photo из Resource
+                $resourceData['director_name'] = $director['full_name'] ?? null;
+            } else {
+                // Если отдельного директора нет — берем администратора организации
+                $adminUser = $org->users->first();
+                $resourceData['director_name'] = $adminUser->name ?? null;
+            }
 
-            return $org;
+            // Координаты — просто пробрасываем как есть
+            $resourceData['latitude'] = $org->latitude;
+            $resourceData['longitude'] = $org->longitude;
+
+            return $resourceData;
         });
 
         if ($request->wantsJson()) {

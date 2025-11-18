@@ -94,8 +94,7 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
         const hasChildren = item.children && item.children.length > 0;
         const isExternal =
             item.target === '_blank' || !isInternalLink(item.url);
-        const linkClassName =
-            'menu-link block rounded-md px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-blue-600';
+        const linkClassName = 'menu-link block';
 
         return (
             <li key={item.id} className={`menu-item menu-item--level-${level}`}>

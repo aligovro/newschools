@@ -5,7 +5,7 @@ import { MapMarker } from '@/components/maps/YandexMap';
 import MainLayout from '@/layouts/MainLayout';
 import type { MoneyAmount } from '@/types/money';
 import { router } from '@inertiajs/react';
-import { List, MapPin, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ListTab from './ListTab';
 import MapTab from './MapTab';
@@ -338,30 +338,38 @@ export default function Organizations({
                     </div>
 
                     {/* Табы */}
-                    <div className="flex items-center space-x-4">
+                    <div className="organizations-tabs">
                         <button
                             type="button"
                             onClick={() => setActiveTab('list')}
-                            className={`flex items-center space-x-2 border-b-2 px-1 py-2 text-sm font-medium transition-colors ${
+                            className={`organizations-tabs__button organizations-tabs__button--list${
                                 activeTab === 'list'
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                    ? ' organizations-tabs__button--active'
+                                    : ''
                             }`}
                         >
-                            <List className="h-4 w-4" />
                             <span>Список</span>
+                            <img
+                                src="/icons/row-vertical.svg"
+                                alt=""
+                                className="organizations-tabs__icon"
+                            />
                         </button>
                         <button
                             type="button"
                             onClick={() => setActiveTab('map')}
-                            className={`flex items-center space-x-2 border-b-2 px-1 py-2 text-sm font-medium transition-colors ${
+                            className={`organizations-tabs__button organizations-tabs__button--map${
                                 activeTab === 'map'
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                    ? ' organizations-tabs__button--active'
+                                    : ''
                             }`}
                         >
-                            <MapPin className="h-4 w-4" />
                             <span>На карте</span>
+                            <img
+                                src="/icons/map.svg"
+                                alt=""
+                                className="organizations-tabs__icon"
+                            />
                         </button>
                     </div>
                 </div>

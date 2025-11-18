@@ -465,7 +465,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 <main className="site-main">
                     <div className="p-lr-60 container mx-auto">
                         {breadcrumbs.length > 0 && (
-                            <div className="mb-8">
+                            <div className="breadcrumbs__wrapper">
                                 <Breadcrumbs breadcrumbs={breadcrumbs} />
                             </div>
                         )}

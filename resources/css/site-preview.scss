@@ -25,10 +25,6 @@
     }
 } */
 
-.container {
-    max-width: 1362px;
-}
-
 /* Контейнер для content-bottom: центрируем как остальные блоки с контейнером */
 .site-content-bottom__container {
     margin-left: auto;
@@ -42,12 +38,14 @@
     .mb-60 {
         margin-bottom: 60px;
     }
-}
-
-// Header layout
-.site-header__container {
-    max-width: 1362px;
-    margin: 0 auto;
+    .container {
+        max-width: 1362px;
+    }
+    // Header layout
+    .site-header__container {
+        max-width: 1362px;
+        margin: 0 auto;
+    }
 }
 
 .site-header__blocks {
@@ -104,13 +102,6 @@
     }
 }
 
-.main-menu ul li a {
-    font-weight: 500;
-    font-size: 16px;
-    line-height: 120%;
-    color: $dark-color;
-}
-
 .btn-outline-primary {
     @include button-base;
     @include button-outline;
@@ -120,12 +111,25 @@
     }
 }
 
+.main-menu ul li a {
+    color: $dark-color;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 120%;
+    letter-spacing: -0.32px;
+    padding: 13px;
+}
+.main-menu ul li a:hover {
+    text-decoration: underline;
+}
+
 .page-type--home {
     .main-menu ul li a {
         color: #fff;
     }
     .main-menu ul li a:hover {
-        color: $dark-color;
+        color: #fff;
     }
     .site-header .btn-outline-primary {
         color: #fff;
@@ -250,6 +254,68 @@
         font-size: 10px;
         line-height: 120%;
         color: #b5b9c3;
+    }
+}
+
+// Breadcrumbs (хлебные крошки)
+.breadcrumbs__wrapper {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #b5b9c3; // var(--unnamed, #B5B9C3)
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 120%; // 12px
+    letter-spacing: -0.2px;
+}
+
+.breadcrumbs__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.breadcrumbs__link {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.breadcrumbs__current {
+    color: inherit;
+}
+
+.breadcrumbs__separator {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    color: inherit;
+}
+
+// Organization card director block (дублируем ключевые стили из organization-card.scss
+// чтобы на публичных страницах директор выглядел так же, как в слайдере организаций)
+.organization-card {
+    .organization-director-label {
+        font-weight: 600;
+        font-size: 10px;
+        line-height: 120%;
+        color: #b5b9c3;
+        margin-bottom: 3px;
+    }
+
+    .organization-director-name {
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 120%;
+        color: #1a1a1a;
     }
 }
 
