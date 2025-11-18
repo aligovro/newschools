@@ -208,7 +208,9 @@ export default function GlobalSettingsPage({
                     if (byIncludes) {
                         setSelectedDefaultCity(byIncludes as any);
                     }
-                } catch {}
+                } catch (error) {
+                    console.error('Error setting default city:', error);
+                }
             }
         };
         init();

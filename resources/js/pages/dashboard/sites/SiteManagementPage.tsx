@@ -40,6 +40,7 @@ interface Site {
     status: 'draft' | 'published' | 'archived';
     is_public: boolean;
     is_maintenance_mode: boolean;
+    is_main_site: boolean;
     created_at: string;
     updated_at: string;
     pages_count: number;
@@ -354,6 +355,11 @@ export default function SiteManagementPage({
                                                 <h3 className="text-lg font-semibold">
                                                     {site.name}
                                                 </h3>
+                                                {site.is_main_site && (
+                                                    <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">
+                                                        Главный сайт
+                                                    </Badge>
+                                                )}
                                                 {getStatusBadge(site.status)}
                                                 {getTemplateBadge(
                                                     site.template,
@@ -473,15 +479,17 @@ export default function SiteManagementPage({
                                                 </Button>
                                             )}
 
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() =>
-                                                    handleDelete(site.id)
-                                                }
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                            {!site.is_main_site && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleDelete(site.id)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

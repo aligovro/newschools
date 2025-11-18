@@ -170,9 +170,7 @@ export default function NewsPage({
             <div className="space-y-8">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <h1 className="text-4xl font-bold text-gray-900">
-                            Новости
-                        </h1>
+                        <h1 className="page__title">Новости</h1>
                         <p className="mt-2 text-base text-gray-600">
                             Мы рассказываем о важных событиях, инициативах и
                             проектах выпускников.

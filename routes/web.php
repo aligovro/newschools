@@ -26,6 +26,8 @@ Route::get('/project/{slug}', [App\Http\Controllers\PublicProjectController::cla
 Route::get('/news', [MainSiteController::class, 'news'])->name('main-site.news');
 Route::get('/news/{slug}', [MainSiteController::class, 'showNews'])->name('main-site.news.show');
 Route::get('/project/{project:slug}/sponsors', [App\Http\Controllers\PublicSponsorController::class, 'projectSponsors'])->name('main-site.project.sponsors');
+Route::get('/organization/{organization:slug}/sponsors', [App\Http\Controllers\PublicSponsorController::class, 'organizationSponsors'])->name('main-site.organization.sponsors');
+Route::get('/organization/{organization:slug}/alumni', [App\Http\Controllers\PublicAlumniController::class, 'organizationAlumni'])->name('main-site.organization.alumni');
 
 // Legacy public organization routes (deprecated)
 Route::prefix('old-api')->group(function () {
@@ -43,6 +45,12 @@ Route::get('/tailwind-test', function () {
 
 // Публичный маршрут для превью сайта
 Route::get('/sites/{slug}/preview', [App\Http\Controllers\SitePreviewController::class, 'preview'])->name('sites.preview');
+
+// Profile routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [App\Http\Controllers\Settings\ProfileController::class, 'show'])->name('profile.show');
+    Route::match(['put', 'post'], '/profile', [App\Http\Controllers\Settings\ProfileController::class, 'update'])->name('profile.update.public');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard

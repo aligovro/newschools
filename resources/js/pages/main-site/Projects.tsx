@@ -1,10 +1,13 @@
 import CategoryFilter from '@/components/main-site/CategoryFilter';
-import CitySelector from '@/components/main-site/CitySelector';
+import CitySelector, {
+    type City as SelectorCity,
+} from '@/components/main-site/CitySelector';
 import LoadMoreButton from '@/components/main-site/LoadMoreButton';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { useDefaultCity } from '@/hooks/useDefaultCity';
 import MainLayout from '@/layouts/MainLayout';
 import { fetchCityById } from '@/lib/api/public';
+import '@css/pages/main-site/projects-page.scss';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -35,14 +38,6 @@ interface Project {
     collected_amount_rubles: number;
     progress_percentage: number;
     organization?: Organization;
-}
-
-interface City {
-    id: number;
-    name: string;
-    region?: {
-        name: string;
-    };
 }
 
 interface Category {
@@ -91,7 +86,7 @@ export default function Projects({
         name: defaultCityName,
     } = useDefaultCity();
 
-    const [selectedCity, setSelectedCity] = useState<City | null>(null);
+    const [selectedCity, setSelectedCity] = useState<SelectorCity | null>(null);
     const [isCityManuallySelected, setIsCityManuallySelected] = useState(
         !!initialFilters.city_id,
     );
@@ -220,7 +215,7 @@ export default function Projects({
 
     // Обработчик изменения города
     const handleCityChange = useCallback(
-        (city: City | null) => {
+        (city: SelectorCity | null) => {
             setSelectedCity(city);
 
             if (city) {
@@ -296,17 +291,7 @@ export default function Projects({
         >
             <div className="space-y-8">
                 {/* Заголовок */}
-                <h1
-                    style={{
-                        fontFamily: 'var(--font-family)',
-                        fontWeight: 700,
-                        fontSize: '40px',
-                        lineHeight: '120%',
-                        color: '#1a1a1a',
-                    }}
-                >
-                    Проекты
-                </h1>
+                <h1 className="page__title">Проекты</h1>
 
                 {/* Фильтры */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

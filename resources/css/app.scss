@@ -97,6 +97,8 @@
 
 /* Menu components */
 @import 'components/menu.scss';
+@import 'components/mobile-bottom-menu.scss';
+@import 'components/mobile-menu-modal.scss';
 
 /* Sites pages */
 @import 'pages/sites/create-site.scss';
@@ -107,3 +109,7 @@
 @import 'components/main-site/SubscribeBlock.scss';
 @import 'components/main-site/OrganizationSearch.scss';
 @import 'components/main-site/CitySelector.scss';
+
+/* Main site pages */
+@import 'pages/main-site/profile-page.scss';
+@import 'pages/main-site/projects-page.scss';

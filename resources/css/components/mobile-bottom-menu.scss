@@ -1,0 +1,139 @@
+// Мобильное нижнее меню (как в мобильных приложениях)
+@import '../variables';
+
+.mobile-bottom-menu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 60; // Выше, чем z-index модальных окон (Dialog z-50), чтобы меню всегда было поверх
+    background: #ffffff;
+    border-top: 1px solid #e8ecf3;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    display: none; // По умолчанию скрыто, показывается только на мобильных
+
+    @media (max-width: 768px) {
+        display: block;
+    }
+
+    &__list {
+        display: flex;
+        align-items: stretch;
+        justify-content: space-around;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .mobile-menu-item {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+
+        &__link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 100%;
+            padding: 8px 4px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            position: relative;
+        }
+
+        &__icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            position: relative;
+        }
+
+        &__icon {
+            width: 26px;
+            height: 26px;
+            object-fit: contain;
+            transition: all 0.2s ease;
+
+            // По умолчанию для неактивного состояния применяем цвет #B5B9C3 через filter
+            filter: brightness(0) saturate(100%) invert(68%) sepia(6%) saturate(459%) hue-rotate(179deg) brightness(93%) contrast(87%);
+
+            &--active {
+                // Для активного состояния применяем цвет градиента (#3259FF - темный синий)
+                // Используем filter для получения цвета из градиента
+                filter: brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(3500%) hue-rotate(220deg) brightness(100%) contrast(100%);
+                opacity: 1;
+            }
+        }
+
+        &__icon-placeholder {
+            width: 26px;
+            height: 26px;
+            background: #b5b9c3;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+
+            &--active {
+                background: $accent-gradient;
+            }
+        }
+
+        &__label {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 9px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: 120%; /* 10.8px */
+            letter-spacing: -0.18px;
+            color: #b5b9c3;
+            text-align: center;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            display: block;
+
+            &--active {
+                color: $dark-color;
+                background: $accent-gradient;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                color: transparent; // Fallback для браузеров без поддержки background-clip: text
+            }
+        }
+    }
+}
+
+// Скрываем мобильное меню на десктопе
+@media (min-width: 769px) {
+    .mobile-bottom-menu {
+        display: none !important;
+    }
+}
+
+// Скрываем обычное меню с классом mobile-menu, если это нижнее мобильное меню
+.widget-container.mobile-menu {
+    // На десктопе скрываем полностью
+    @media (min-width: 769px) {
+        display: none;
+    }
+
+    // На мобильных скрываем стандартное меню, показываем только нижнее
+    .menu-output:not(.mobile-bottom-menu) {
+        display: none;
+    }
+}
+

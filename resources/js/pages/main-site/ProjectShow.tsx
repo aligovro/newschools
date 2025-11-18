@@ -1,7 +1,9 @@
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
 import SubscribeSponsorModal from '@/components/main-site/SubscribeSponsorModal';
-import ProjectSponsorsSection from '@/components/projects/ProjectSponsorsSection';
+import ProjectSponsorsSection, {
+    type SponsorsPayload,
+} from '@/components/projects/ProjectSponsorsSection';
 import ProjectStageCard from '@/components/projects/ProjectStageCard';
 import MainLayout from '@/layouts/MainLayout';
 import type { MoneyAmount } from '@/types/money';
@@ -73,27 +75,6 @@ interface Project {
     beneficiaries?: unknown[];
     progress_updates?: unknown[];
     organization?: Organization;
-}
-
-interface Sponsor {
-    id: string;
-    name: string;
-    avatar?: string | null;
-    total_amount: number;
-    total_amount_formatted: string;
-    latest_donation_at?: string | null;
-    donations_count: number;
-}
-
-interface SponsorsPayload {
-    sort: 'top' | 'recent';
-    data: Sponsor[];
-    pagination: {
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-    };
 }
 
 type LayoutProps = ComponentProps<typeof MainLayout>;
@@ -208,7 +189,9 @@ export default function ProjectShow({
                 )}
 
                 {/* Заголовок с названием проекта */}
-                <h1 className="project-show__title">{project.title}</h1>
+                <h1 className="page__title project-show__title">
+                    {project.title}
+                </h1>
 
                 {project.organization && (
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

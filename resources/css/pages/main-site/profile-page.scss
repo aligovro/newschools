@@ -1,0 +1,184 @@
+// Стили для страницы профиля
+@import '../../variables';
+
+.profile-page {
+    padding: 60px 0;
+}
+
+.profile-section {
+    min-height: 344px;
+}
+
+.profile-section__title {
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 120%;
+    background: $accent-gradient;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0;
+}
+
+.profile-section__subtitle {
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 120%;
+    color: $dark-color;
+    margin-bottom: 60px;
+}
+
+.profile-section__description {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 140%;
+    color: $dark-color;
+}
+
+.profile-section__label {
+    font-weight: 500;
+    font-size: 12px;
+    color: $dark-color;
+    user-select: none;
+}
+
+.profile-section__input {
+    height: 60px;
+}
+
+.profile-section__error,
+.profile-section__field-error {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #ef4444;
+}
+
+.profile-section__photo-group {
+    margin-bottom: 1.5rem;
+}
+
+.profile-section__avatar {
+    flex-shrink: 0;
+}
+
+.profile-section__avatar-fallback {
+    background: $accent-gradient;
+    color: white;
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+.profile-section__photo-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #3259ff;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: #2563eb;
+    }
+}
+
+.profile-section__photo-hint {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.profile-section__photo-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #ef4444;
+    cursor: pointer;
+    border-radius: 4px;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+
+    &:hover {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+
+    &:active {
+        background-color: #fecaca;
+    }
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+.profile-section__password-group {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e8ecf3;
+}
+
+.profile-section__password-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: $dark-color;
+    margin-bottom: 1rem;
+}
+
+.profile-section__password-hint {
+    margin-top: 0.5rem;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.profile-section__submit-button {
+    height: 60px;
+    margin-top: 2rem;
+}
+
+// Адаптивные стили
+@media (max-width: 1024px) {
+    .profile-section {
+        padding: 1.5rem;
+    }
+
+    .profile-section__title {
+        font-size: 32px;
+    }
+
+    .profile-section__subtitle {
+        font-size: 32px;
+        margin-bottom: 40px;
+    }
+
+    .profile-section__description {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-page {
+        padding: 40px 0;
+    }
+
+    .profile-section {
+        padding: 1.25rem;
+    }
+
+    .profile-section__title {
+        font-size: 28px;
+    }
+
+    .profile-section__subtitle {
+        font-size: 28px;
+        margin-bottom: 32px;
+    }
+
+    .profile-section__description {
+        font-size: 15px;
+    }
+}
+

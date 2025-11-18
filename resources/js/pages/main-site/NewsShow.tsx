@@ -149,9 +149,7 @@ export default function NewsShow({
                 </div>
 
                 <header className="space-y-4">
-                    <h1 className="text-4xl font-bold text-gray-900">
-                        {news.title}
-                    </h1>
+                    <h1 className="page__title">{news.title}</h1>
                     {news.subtitle && (
                         <p className="text-lg font-medium uppercase tracking-wide text-gray-500">
                             {news.subtitle}

@@ -310,9 +310,7 @@ export default function Organizations({
         >
             <div className="space-y-6">
                 {/* Заголовок */}
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                    {pageTitle}
-                </h1>
+                <h1 className="page__title">{pageTitle}</h1>
 
                 {/* Фильтры: Город | Поиск | Табы */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
