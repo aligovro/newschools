@@ -4,6 +4,7 @@ import type {
     WidgetData,
 } from '@/components/dashboard/site-builder/types';
 import { widgetsSystemApi } from '@/lib/api/index';
+import { buildSiteSeo } from '@/lib/seo';
 import { Head } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
 import '../../css/site-preview.scss';
@@ -170,93 +171,56 @@ const SitePreview: React.FC<SitePreviewProps> = ({
         );
     };
 
-    // SEO
-    const seo = (site.seo_config || {}) as Record<string, unknown>;
-    const getString = (value: unknown): string | undefined =>
-        typeof value === 'string' && value.trim() !== '' ? value : undefined;
-    const getBoolean = (value: unknown): boolean | undefined => {
-        if (typeof value === 'boolean') return value;
-        if (typeof value === 'string') {
-            const v = value.toLowerCase();
-            if (v === 'true') return true;
-            if (v === 'false') return false;
-        }
-        return undefined;
-    };
-
-    // Поддержка разных вариантов ключей для обратной совместимости
-    const seoTitle =
-        getString(seo['seo_title']) ||
-        getString(seo['meta_title']) ||
-        getString(seo['title']);
-    const seoDescription =
-        getString(seo['seo_description']) ||
-        getString(seo['meta_description']) ||
-        getString(seo['description']);
-    const seoKeywords =
-        getString(seo['seo_keywords']) ||
-        getString(seo['meta_keywords']) ||
-        getString(seo['keywords']);
-
-    // Title: приоритет seo_title из настроек > site.name
-    const pageTitle = seoTitle || site.name;
-
-    // Description: приоритет seo_description из настроек > site.description
-    const metaDescription = seoDescription || site.description || '';
-
-    // Canonical URL
-    const canonicalUrl: string | undefined =
-        getString(seo['canonical_url']) ||
-        getString(seo['slug_url']) ||
-        (typeof window !== 'undefined' ? window.location.href : undefined);
-
-    // Open Graph данные
-    const ogTitle = getString(seo['og_title']) || seoTitle || pageTitle;
-    const ogDescription =
-        getString(seo['og_description']) || seoDescription || metaDescription;
-    const ogType = getString(seo['og_type']) || 'website';
-    const ogImage =
-        getString(seo['og_image']) || getString(seo['image']) || undefined;
-
-    // Twitter данные
-    const twitterCard = getString(seo['twitter_card']) || 'summary_large_image';
-    const twitterTitle =
-        getString(seo['twitter_title']) || ogTitle || pageTitle;
-    const twitterDescription =
-        getString(seo['twitter_description']) ||
-        ogDescription ||
-        metaDescription;
-    const twitterImage =
-        getString(seo['twitter_image']) || ogImage || undefined;
-
-    const noindex = Boolean(getBoolean(seo['noindex']));
+    // SEO / Open Graph (общая логика из lib/seo)
+    const currentUrl =
+        typeof window !== 'undefined' ? window.location.href : undefined;
+    const seoData = buildSiteSeo({
+        siteName: site.name,
+        siteDescription: site.description,
+        rawSeo: (site.seo_config || {}) as Record<string, unknown>,
+        currentUrl,
+    });
 
     return (
         <>
-            <Head title={pageTitle}>
+            <Head title={seoData.title}>
                 {site.favicon ? <link rel="icon" href={site.favicon} /> : null}
-                <meta name="description" content={metaDescription} />
+                <meta name="description" content={seoData.description} />
                 <meta
                     name="viewport"
                     content="width=device-width, initial-scale=1"
                 />
-                {seoKeywords && <meta name="keywords" content={seoKeywords} />}
-                {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
-                {noindex && <meta name="robots" content="noindex,nofollow" />}
-                {/* Open Graph */}
-                <meta property="og:type" content={ogType} />
-                <meta property="og:title" content={ogTitle} />
-                <meta property="og:description" content={ogDescription} />
-                {canonicalUrl && (
-                    <meta property="og:url" content={canonicalUrl} />
+                {seoData.keywords && (
+                    <meta name="keywords" content={seoData.keywords} />
                 )}
-                {ogImage && <meta property="og:image" content={ogImage} />}
+                {seoData.canonicalUrl && (
+                    <link rel="canonical" href={seoData.canonicalUrl} />
+                )}
+                {seoData.noindex && (
+                    <meta name="robots" content="noindex,nofollow" />
+                )}
+                {/* Open Graph */}
+                <meta property="og:type" content={seoData.ogType} />
+                <meta property="og:title" content={seoData.ogTitle} />
+                <meta
+                    property="og:description"
+                    content={seoData.ogDescription}
+                />
+                {seoData.canonicalUrl && (
+                    <meta property="og:url" content={seoData.canonicalUrl} />
+                )}
+                {seoData.ogImage && (
+                    <meta property="og:image" content={seoData.ogImage} />
+                )}
                 {/* Twitter */}
-                <meta name="twitter:card" content={twitterCard} />
-                <meta name="twitter:title" content={twitterTitle} />
-                <meta name="twitter:description" content={twitterDescription} />
-                {twitterImage && (
-                    <meta name="twitter:image" content={twitterImage} />
+                <meta name="twitter:card" content={seoData.twitterCard} />
+                <meta name="twitter:title" content={seoData.twitterTitle} />
+                <meta
+                    name="twitter:description"
+                    content={seoData.twitterDescription}
+                />
+                {seoData.twitterImage && (
+                    <meta name="twitter:image" content={seoData.twitterImage} />
                 )}
                 {/* JSON-LD */}
                 <script
@@ -265,9 +229,9 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                         __html: JSON.stringify({
                             '@context': 'https://schema.org',
                             '@type': 'WebSite',
-                            name: pageTitle,
-                            description: metaDescription,
-                            url: canonicalUrl,
+                            name: seoData.title,
+                            description: seoData.description,
+                            url: seoData.canonicalUrl,
                         }),
                     }}
                 />

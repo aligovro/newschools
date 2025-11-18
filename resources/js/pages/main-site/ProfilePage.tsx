@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import RussianPhoneInput from '@/components/ui/RussianPhoneInput';
 import MainLayout from '@/layouts/MainLayout';
 import { nameToInitials } from '@/utils/nameToInitials';
 import '@css/pages/main-site/profile-page.scss';
@@ -390,15 +391,14 @@ export default function ProfilePage({
 
                                 {/* Телефон */}
                                 <div className="relative">
-                                    <input
+                                    <RussianPhoneInput
                                         id="phone"
                                         name="phone"
-                                        type="tel"
                                         value={data.phone || ''}
-                                        onChange={(e) => {
-                                            setData('phone', e.target.value);
-                                        }}
-                                        placeholder="+7 (999) 123-45-67"
+                                        onValueChange={(value) =>
+                                            setData('phone', value)
+                                        }
+                                        autoComplete="tel"
                                         className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                                     />
                                     <label

@@ -179,6 +179,7 @@ class PublicProjectController extends Controller
                     'name' => $project->organization->city->name,
                 ] : null,
             ] : null,
+            'seo_settings' => $project->seo_settings ?? [],
         ];
 
         $sponsorsPaginator = $this->projectSponsorService->paginate(

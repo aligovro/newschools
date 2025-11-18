@@ -161,12 +161,6 @@
     .city-supporters-output__column--city {
         flex: 0 0 100%;
         border-bottom: 1px solid rgba(224, 224, 224, 0.7);
-        justify-content: center;
-        text-align: center;
-    }
-
-    .city-supporters-output__column--city .city-supporters-output__column-text {
-        text-align: center;
     }
 
     /* Метрики (школы / выпускники / подписчики) — в две колонки */

@@ -34,6 +34,7 @@ interface NewsDetails {
         name?: string | null;
         address?: string | null;
     } | null;
+    seo_settings?: Record<string, unknown>;
 }
 
 interface NewsShowProps extends LayoutProps {
@@ -77,6 +78,21 @@ export default function NewsShow({
         setGalleryModalOpen(true);
     };
 
+    // SEO overrides для новости: используем seo_settings (если есть) + первую картинку как og:image
+    const seoOverrides: Record<string, unknown> = {
+        ...(news.seo_settings || {}),
+    };
+
+    if (!('og_image' in seoOverrides) || !seoOverrides['og_image']) {
+        const ogImage =
+            galleryImages && galleryImages.length > 0
+                ? galleryImages[0]
+                : undefined;
+        if (ogImage) {
+            seoOverrides['og_image'] = ogImage;
+        }
+    }
+
     return (
         <MainLayout
             site={site}
@@ -89,6 +105,7 @@ export default function NewsShow({
                 { title: 'Новости', href: '/news' },
                 { title: news.title, href: '' },
             ]}
+            seoOverrides={seoOverrides}
         >
             <div className="space-y-8">
                 <Link

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Concerns\HasSiteWidgets;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Rules\RussianPhoneNumber;
@@ -18,12 +19,15 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
+    use HasSiteWidgets;
     /**
      * Show the registration page.
      */
     public function create(): Response
     {
-        return Inertia::render('auth/register');
+        $data = $this->getSiteWidgetsAndPositions();
+
+        return Inertia::render('auth/register', $data);
     }
 
     /**

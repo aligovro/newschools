@@ -5,131 +5,207 @@ import { LoaderCircle } from 'lucide-react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import RussianPhoneInput from '@/components/ui/RussianPhoneInput';
-import AuthLayout from '@/layouts/auth-layout';
+import MainLayout from '@/layouts/MainLayout';
 
-export default function Register() {
+interface RegisterProps {
+    site: any;
+    positions: any[];
+    position_settings?: any[];
+}
+
+export default function Register({
+    site,
+    positions,
+    position_settings = [],
+}: RegisterProps) {
     return (
-        <AuthLayout
-            title="Create an account"
-            description="Enter your details below to create your account"
+        <MainLayout
+            site={site}
+            positions={positions}
+            position_settings={position_settings}
+            pageTitle="Регистрация"
+            pageDescription="Создайте аккаунт, чтобы поддерживать школы и проекты"
+            breadcrumbs={[
+                { title: 'Главная', href: '/' },
+                { title: 'Регистрация', href: '' },
+            ]}
         >
-            <Head title="Register" />
-            <Form
-                {...RegisteredUserController.store.form()}
-                resetOnSuccess={['password', 'password_confirmation']}
-                disableWhileProcessing
-                className="flex flex-col gap-6"
-            >
-                {({ processing, errors }) => (
-                    <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    type="text"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="name"
-                                    name="name"
-                                    placeholder="Full name"
-                                />
-                                <InputError
-                                    message={errors.name}
-                                    className="mt-2"
-                                />
-                            </div>
+            <Head title="Регистрация" />
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email (необязательно)</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    tabIndex={2}
-                                    autoComplete="email"
-                                    name="email"
-                                    placeholder="email@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
+            <div className="profile-page">
+                <section className="profile-section w-full rounded-[20px] bg-white p-8 shadow-[0_4px_84px_0_rgba(26,26,26,0.08)]">
+                    <div className="mx-auto max-w-md">
+                        <h2 className="profile-section__title mb-2">
+                            Регистрация
+                        </h2>
+                        <p className="profile-section__description mb-8">
+                            Создайте аккаунт, чтобы поддерживать школы и
+                            проекты.
+                        </p>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="phone">
-                                    Телефон (необязательно)
-                                </Label>
-                                <RussianPhoneInput
-                                    id="phone"
-                                    name="phone"
-                                    tabIndex={3}
-                                    autoComplete="tel"
-                                    placeholder="+7 999 123-45-67"
-                                    className="w-full"
-                                />
-                                <span className="text-xs text-muted-foreground">
-                                    Укажите email или телефон — достаточно одного
-                                </span>
-                                <InputError message={errors.phone} />
-                            </div>
+                        <Form
+                            {...RegisteredUserController.store.form()}
+                            resetOnSuccess={[
+                                'password',
+                                'password_confirmation',
+                            ]}
+                            disableWhileProcessing
+                            className="space-y-6"
+                        >
+                            {({ processing, errors }) => (
+                                <>
+                                    <div className="space-y-4">
+                                        {/* Имя */}
+                                        <div className="relative">
+                                            <input
+                                                id="name"
+                                                type="text"
+                                                required
+                                                autoFocus
+                                                tabIndex={1}
+                                                autoComplete="name"
+                                                name="name"
+                                                placeholder="Имя и фамилия"
+                                                className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                            />
+                                            <label
+                                                htmlFor="name"
+                                                className="profile-section__label pointer-events-none absolute left-4 top-[9px]"
+                                            >
+                                                Имя
+                                            </label>
+                                            <InputError
+                                                message={errors.name}
+                                                className="profile-section__field-error"
+                                            />
+                                        </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    required
-                                    tabIndex={4}
-                                    autoComplete="new-password"
-                                    name="password"
-                                    placeholder="Password"
-                                />
-                                <InputError message={errors.password} />
-                            </div>
+                                        {/* Email */}
+                                        <div className="relative">
+                                            <input
+                                                id="email"
+                                                type="email"
+                                                tabIndex={2}
+                                                autoComplete="email"
+                                                name="email"
+                                                placeholder="email@example.com"
+                                                className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                            />
+                                            <label
+                                                htmlFor="email"
+                                                className="profile-section__label pointer-events-none absolute left-4 top-[9px]"
+                                            >
+                                                Email (необязательно)
+                                            </label>
+                                            <InputError
+                                                message={errors.email}
+                                                className="profile-section__field-error"
+                                            />
+                                        </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
-                                <Input
-                                    id="password_confirmation"
-                                    type="password"
-                                    required
-                                    tabIndex={5}
-                                    autoComplete="new-password"
-                                    name="password_confirmation"
-                                    placeholder="Confirm password"
-                                />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
-                            </div>
+                                        {/* Телефон */}
+                                        <div className="relative">
+                                            <RussianPhoneInput
+                                                id="phone"
+                                                name="phone"
+                                                tabIndex={3}
+                                                autoComplete="tel"
+                                                className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                            />
+                                            <label
+                                                htmlFor="phone"
+                                                className="profile-section__label pointer-events-none absolute left-4 top-[9px]"
+                                            >
+                                                Телефон (необязательно)
+                                            </label>
+                                            <span className="mt-1 block text-xs text-muted-foreground">
+                                                Укажите email или телефон —
+                                                достаточно одного
+                                            </span>
+                                            <InputError
+                                                message={errors.phone}
+                                                className="profile-section__field-error"
+                                            />
+                                        </div>
 
-                            <Button
-                                type="submit"
-                                className="mt-2 w-full"
-                                tabIndex={6}
-                                data-test="register-user-button"
-                            >
-                                {processing && (
-                                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                                )}
-                                Create account
-                            </Button>
-                        </div>
+                                        {/* Пароль */}
+                                        <div className="relative">
+                                            <input
+                                                id="password"
+                                                type="password"
+                                                required
+                                                tabIndex={4}
+                                                autoComplete="new-password"
+                                                name="password"
+                                                placeholder="Пароль"
+                                                className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                            />
+                                            <label
+                                                htmlFor="password"
+                                                className="profile-section__label pointer-events-none absolute left-4 top-[9px]"
+                                            >
+                                                Пароль
+                                            </label>
+                                            <InputError
+                                                message={errors.password}
+                                                className="profile-section__field-error"
+                                            />
+                                        </div>
 
-                        <div className="text-center text-sm text-muted-foreground">
-                            Already have an account?{' '}
+                                        {/* Подтверждение пароля */}
+                                        <div className="relative">
+                                            <input
+                                                id="password_confirmation"
+                                                type="password"
+                                                required
+                                                tabIndex={5}
+                                                autoComplete="new-password"
+                                                name="password_confirmation"
+                                                placeholder="Повторите пароль"
+                                                className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                            />
+                                            <label
+                                                htmlFor="password_confirmation"
+                                                className="profile-section__label pointer-events-none absolute left-4 top-[9px]"
+                                            >
+                                                Подтверждение пароля
+                                            </label>
+                                            <InputError
+                                                message={
+                                                    errors.password_confirmation
+                                                }
+                                                className="profile-section__field-error"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Кнопка */}
+                                    <button
+                                        type="submit"
+                                        className="profile-section__submit-button flex w-full items-center justify-center gap-2 rounded-[10px] bg-gradient-to-r from-[#96bdff] to-[#3259ff] px-4 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                                        tabIndex={6}
+                                        data-test="register-user-button"
+                                        disabled={processing}
+                                    >
+                                        {processing && (
+                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        )}
+                                        Создать аккаунт
+                                    </button>
+                                </>
+                            )}
+                        </Form>
+
+                        <div className="mt-6 text-center text-sm text-muted-foreground">
+                            Уже есть аккаунт?{' '}
                             <TextLink href={login()} tabIndex={7}>
-                                Log in
+                                Войти
                             </TextLink>
                         </div>
-                    </>
-                )}
-            </Form>
-        </AuthLayout>
+                    </div>
+                </section>
+            </div>
+        </MainLayout>
     );
 }

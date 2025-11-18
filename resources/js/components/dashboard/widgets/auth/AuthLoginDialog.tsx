@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import {
     type LoginField,
@@ -78,68 +77,78 @@ export const AuthLoginDialog = memo(
                         <DialogTitle>Вход</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Способ входа</Label>
-                            <Tabs
-                                value={state.mode}
-                                onValueChange={handleModeChange}
-                            >
-                                <TabsList className="grid grid-cols-2">
-                                    <TabsTrigger value="email">
-                                        Email
-                                    </TabsTrigger>
-                                    <TabsTrigger value="phone">
-                                        Телефон
-                                    </TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="email" forceMount>
-                                    <div className="space-y-1">
-                                        <Label
-                                            htmlFor="auth-login-email"
-                                            className="text-xs text-muted-foreground"
-                                        >
-                                            Электронная почта
-                                        </Label>
-                                        <Input
-                                            id="auth-login-email"
-                                            type="email"
-                                            inputMode="email"
-                                            autoComplete={EMAIL_AUTOCOMPLETE}
-                                            value={emailValue}
-                                            onChange={(event) =>
-                                                onFieldChange(
-                                                    'identifier',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            placeholder={
-                                                'user@example.com'
-                                            }
-                                        />
-                                    </div>
-                                </TabsContent>
-                                <TabsContent value="phone" forceMount>
-                                    <div className="space-y-1">
-                                        <Label
-                                            htmlFor="auth-login-phone"
-                                            className="text-xs text-muted-foreground"
-                                        >
-                                            Номер телефона
-                                        </Label>
-                                        <RussianPhoneInput
-                                            id="auth-login-phone"
-                                            value={phoneValue}
-                                            onValueChange={(value) =>
-                                                onFieldChange(
-                                                    'identifier',
-                                                    value,
-                                                )
-                                            }
-                                            autoComplete={PHONE_AUTOCOMPLETE}
-                                        />
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3 text-xs">
+                                <Label className="text-[11px] text-muted-foreground">
+                                    Способ входа
+                                </Label>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        className={`rounded-full px-3 py-1 ${
+                                            state.mode === 'email'
+                                                ? 'bg-blue-50 text-blue-700'
+                                                : 'bg-slate-50 text-slate-600'
+                                        }`}
+                                        onClick={() => handleModeChange('email')}
+                                    >
+                                        По email
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`rounded-full px-3 py-1 ${
+                                            state.mode === 'phone'
+                                                ? 'bg-blue-50 text-blue-700'
+                                                : 'bg-slate-50 text-slate-600'
+                                        }`}
+                                        onClick={() => handleModeChange('phone')}
+                                    >
+                                        По телефону
+                                    </button>
+                                </div>
+                            </div>
+
+                            {state.mode === 'email' ? (
+                                <div className="space-y-1">
+                                    <Label
+                                        htmlFor="auth-login-email"
+                                        className="text-xs text-muted-foreground"
+                                    >
+                                        Электронная почта
+                                    </Label>
+                                    <Input
+                                        id="auth-login-email"
+                                        type="email"
+                                        inputMode="email"
+                                        autoComplete={EMAIL_AUTOCOMPLETE}
+                                        value={emailValue}
+                                        onChange={(event) =>
+                                            onFieldChange(
+                                                'identifier',
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder="user@example.com"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="space-y-1">
+                                    <Label
+                                        htmlFor="auth-login-phone"
+                                        className="text-xs text-muted-foreground"
+                                    >
+                                        Номер телефона
+                                    </Label>
+                                    <RussianPhoneInput
+                                        id="auth-login-phone"
+                                        value={phoneValue}
+                                        onValueChange={(value) =>
+                                            onFieldChange('identifier', value)
+                                        }
+                                        autoComplete={PHONE_AUTOCOMPLETE}
+                                    />
+                                </div>
+                            )}
                             {identifierError && (
                                 <p className="text-sm text-destructive">
                                     {identifierError}

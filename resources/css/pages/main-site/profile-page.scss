@@ -46,6 +46,15 @@
     height: 60px;
 }
 
+// Адаптация для телефонного инпута с маской на страницах, где используется стиль профиля
+.phone-input.profile-section__input {
+    align-items: flex-end;
+}
+
+.phone-input.profile-section__input .phone-input__prefix {
+    padding-top: 23px;
+}
+
 .profile-section__error,
 .profile-section__field-error {
     margin-top: 0.5rem;
@@ -181,4 +190,3 @@
         font-size: 15px;
     }
 }
-
