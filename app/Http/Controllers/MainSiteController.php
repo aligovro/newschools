@@ -6,16 +6,26 @@ use App\Http\Controllers\Concerns\HasSiteWidgets;
 use App\Enums\DonationStatus;
 use App\Enums\NewsStatus;
 use App\Enums\NewsVisibility;
+use App\Http\Resources\Alumni\AlumniResource;
 use App\Http\Resources\NewsResource;
 use App\Http\Resources\OrganizationStaffResource;
+use App\Http\Resources\Sponsors\SponsorResource;
 use App\Models\News;
 use App\Models\Organization;
+use App\Services\Organizations\OrganizationAlumniService;
+use App\Services\Sponsors\OrganizationSponsorService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class MainSiteController extends Controller
 {
     use HasSiteWidgets;
+
+    public function __construct(
+        private readonly OrganizationSponsorService $organizationSponsorService,
+        private readonly OrganizationAlumniService $organizationAlumniService,
+    ) {
+    }
 
     public function index(Request $request)
     {
@@ -342,11 +352,47 @@ class MainSiteController extends Controller
             'director' => $directorData,
         ];
 
+        $sponsorsPaginator = $this->organizationSponsorService->paginate(
+            $organization,
+            'top',
+            OrganizationSponsorService::DEFAULT_PER_PAGE,
+            1,
+        );
+
+        $sponsorsPayload = [
+            'sort' => 'top',
+            'data' => SponsorResource::collection(collect($sponsorsPaginator->items()))->resolve(),
+            'pagination' => [
+                'current_page' => $sponsorsPaginator->currentPage(),
+                'last_page' => $sponsorsPaginator->lastPage(),
+                'per_page' => $sponsorsPaginator->perPage(),
+                'total' => $sponsorsPaginator->total(),
+            ],
+        ];
+
+        $alumniPaginator = $this->organizationAlumniService->paginate(
+            $organization,
+            OrganizationAlumniService::DEFAULT_PER_PAGE,
+            1,
+        );
+
+        $alumniPayload = [
+            'data' => AlumniResource::collection(collect($alumniPaginator->items()))->resolve(),
+            'pagination' => [
+                'current_page' => $alumniPaginator->currentPage(),
+                'last_page' => $alumniPaginator->lastPage(),
+                'per_page' => $alumniPaginator->perPage(),
+                'total' => $alumniPaginator->total(),
+            ],
+        ];
+
         $data = $this->getSiteWidgetsAndPositions();
 
         return Inertia::render('main-site/OrganizationShow', array_merge($data, [
             'organization' => $organizationData,
             'organizationId' => $organization->id, // Передаем organizationId для виджетов
+            'sponsors' => $sponsorsPayload,
+            'alumni' => $alumniPayload,
         ]));
     }
 }

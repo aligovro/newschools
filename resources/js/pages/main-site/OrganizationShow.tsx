@@ -1,6 +1,13 @@
+import OrganizationAlumniSection, {
+    type AlumniPayload,
+} from '@/components/alumni/OrganizationAlumniSection';
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
 import ProjectWideCard from '@/components/projects/ProjectWideCard';
+import SponsorsSection, {
+    createEmptyPagination,
+    type SponsorsPayload,
+} from '@/components/sponsors/SponsorsSection';
 import MainLayout from '@/layouts/MainLayout';
 import type { MoneyAmount } from '@/types/money';
 import '@css/pages/organizations/organization-show.scss';
@@ -56,6 +63,8 @@ interface OrganizationShowProps {
     positions: any[];
     position_settings?: any[];
     organization: Organization;
+    sponsors: SponsorsPayload | null;
+    alumni: AlumniPayload | null;
 }
 
 export default function OrganizationShow({
@@ -63,6 +72,8 @@ export default function OrganizationShow({
     positions,
     position_settings = [],
     organization,
+    sponsors,
+    alumni,
 }: OrganizationShowProps) {
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
     const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
@@ -115,7 +126,7 @@ export default function OrganizationShow({
                 )}
 
                 {/* Заголовок с названием организации */}
-                <h1 className="organization-show__title">
+                <h1 className="page__title organization-show__title">
                     {organization.name}
                 </h1>
 
@@ -211,6 +222,22 @@ export default function OrganizationShow({
                         {organization.description}
                     </p>
                 )}
+
+                <SponsorsSection
+                    title="Спонсоры школы"
+                    fetchEndpoint={`/organization/${organization.slug}/sponsors`}
+                    initialData={sponsors?.data ?? []}
+                    initialPagination={sponsors?.pagination ?? createEmptyPagination()}
+                    initialSort={sponsors?.sort ?? 'top'}
+                    emptyStateMessage="Спонсоры школы ещё не отображаются. Станьте первым, кто поддержит школу."
+                />
+
+                <OrganizationAlumniSection
+                    fetchEndpoint={`/organization/${organization.slug}/alumni`}
+                    initialData={alumni?.data ?? []}
+                    initialPagination={alumni?.pagination ?? createEmptyPagination()}
+                    emptyStateMessage="Выпускники школы ещё не отображаются. Станьте первым, кто расскажет свою историю."
+                />
 
                 {/* Проекты */}
                 {organization.projects && organization.projects.length > 0 && (

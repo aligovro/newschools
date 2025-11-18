@@ -33,6 +33,9 @@ class ProfileUpdateRequest extends FormRequest
                 new RussianPhoneNumber(required: false),
                 Rule::unique(User::class, 'phone')->ignore($this->user()->id),
             ],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'delete_photo' => ['nullable', 'boolean'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ];
     }
 
@@ -44,6 +47,18 @@ class ProfileUpdateRequest extends FormRequest
                 $this->merge(['phone' => $normalized]);
             }
         }
+    }
+
+    /**
+     * Get custom validation messages.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'password.confirmed' => 'Пароли не совпадают',
+        ];
     }
 
     public function withValidator($validator)

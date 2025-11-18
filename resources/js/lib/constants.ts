@@ -128,7 +128,7 @@ export const LIMITS = {
 // Регулярные выражения
 export const REGEX_PATTERNS = {
     EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    PHONE: /^[\+]?[1-9][\d]{0,15}$/,
+    PHONE: /^[+]?[1-9][\d]{0,15}$/,
     CARD_NUMBER: /^\d{4}\s?\d{4}\s?\d{4}\s?\d{4}$/,
     CVV: /^\d{3,4}$/,
     EXPIRY_DATE: /^(0[1-9]|1[0-2])\/\d{2}$/,

@@ -5,7 +5,7 @@ namespace App\Http\Requests\Public;
 use App\Services\Sponsors\ProjectSponsorService;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProjectSponsorsRequest extends FormRequest
+class SponsorsRequest extends FormRequest
 {
     public function authorize(): bool
     {

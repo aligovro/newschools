@@ -68,6 +68,26 @@ export const ReportPreviewPanel = memo(function ReportPreviewPanel({
     onExport,
     isExporting = false,
 }: ReportPreviewPanelProps) {
+    // Все хуки должны быть вызваны до любых условных возвратов
+    const reportType = String(payload?.type ?? '');
+    const meta = (payload?.meta as Record<string, unknown>) ?? {};
+    const filters = (payload?.filters as Record<string, unknown>) ?? {};
+
+    const summarySections = useMemo(
+        () => (payload ? buildSummarySections(reportType, payload.summary) : []),
+        [reportType, payload],
+    );
+
+    const parameterRows = useMemo(
+        () => buildParameterRows(meta, filters),
+        [meta, filters],
+    );
+
+    const dataContent = useMemo(
+        () => (payload ? renderDataContent(reportType, payload.data, meta) : null),
+        [reportType, payload, meta],
+    );
+
     if (!payload) {
         return (
             <Card className="h-full">
@@ -85,10 +105,6 @@ export const ReportPreviewPanel = memo(function ReportPreviewPanel({
         );
     }
 
-    const reportType = String(payload.type ?? '');
-    const meta = (payload.meta as Record<string, unknown>) ?? {};
-    const filters = (payload.filters as Record<string, unknown>) ?? {};
-
     const cardTitle =
         (payload.title as string) ?? REPORT_TYPE_LABELS[reportType] ?? 'Отчет';
 
@@ -96,21 +112,6 @@ export const ReportPreviewPanel = memo(function ReportPreviewPanel({
         filters.period as string | undefined,
         filters.date_from as string | undefined,
         filters.date_to as string | undefined,
-    );
-
-    const summarySections = useMemo(
-        () => buildSummarySections(reportType, payload.summary),
-        [reportType, payload.summary],
-    );
-
-    const parameterRows = useMemo(
-        () => buildParameterRows(meta, filters),
-        [meta, filters],
-    );
-
-    const dataContent = useMemo(
-        () => renderDataContent(reportType, payload.data, meta),
-        [reportType, payload.data, meta],
     );
 
     return (

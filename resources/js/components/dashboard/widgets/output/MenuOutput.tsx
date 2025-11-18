@@ -1,6 +1,8 @@
-import { Link } from '@inertiajs/react';
-import React, { useState } from 'react';
 import { isInternalLink } from '@/lib/linkUtils';
+import { Link } from '@inertiajs/react';
+import React, { useMemo, useState } from 'react';
+import { MobileBottomMenu } from './MobileBottomMenu';
+import { MobileMenuModal } from './MobileMenuModal';
 import { MenuItem, MenuOutputConfig, WidgetOutputProps } from './types';
 
 export const MenuOutput: React.FC<WidgetOutputProps> = ({
@@ -19,6 +21,39 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
     } = config;
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const isVertical = orientation === 'column';
+
+    // Проверяем, является ли это мобильным нижним меню
+    const isMobileBottomMenu = useMemo(() => {
+        const wrapperClass =
+            (widget as Record<string, unknown>)?.wrapper_class || '';
+        return (
+            wrapperClass === 'mobile-menu' || className?.includes('mobile-menu')
+        );
+    }, [widget, className]);
+
+    // Если это мобильное нижнее меню и есть элементы, рендерим специальную версию
+    if (isMobileBottomMenu) {
+        if (!items || items.length === 0) {
+            return (
+                <div
+                    className={`menu-output menu-output--empty ${className || ''}`}
+                    style={style}
+                >
+                    <div className="flex h-16 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
+                        <span className="text-gray-500">Меню не настроено</span>
+                    </div>
+                </div>
+            );
+        }
+        return (
+            <MobileBottomMenu
+                items={items}
+                className={className}
+                style={style}
+            />
+        );
+    }
 
     if (!items || items.length === 0) {
         return (
@@ -57,7 +92,8 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
 
     const renderMenuItem = (item: MenuItem, level = 0) => {
         const hasChildren = item.children && item.children.length > 0;
-        const isExternal = item.target === '_blank' || !isInternalLink(item.url);
+        const isExternal =
+            item.target === '_blank' || !isInternalLink(item.url);
         const linkClassName =
             'menu-link block rounded-md px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-blue-600';
 
@@ -86,10 +122,7 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
                         </svg>
                     </a>
                 ) : (
-                    <Link
-                        href={item.url}
-                        className={linkClassName}
-                    >
+                    <Link href={item.url} className={linkClassName}>
                         {item.title}
                     </Link>
                 )}
@@ -115,55 +148,47 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
                 </h2>
             )}
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-                <button
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                    aria-label="Toggle menu"
-                >
-                    <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        {isMobileMenuOpen ? (
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        ) : (
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 6h16M4 12h16M4 18h16"
-                            />
-                        )}
-                    </svg>
-                </button>
-            </div>
+            {/* Mobile menu button - только для горизонтального меню */}
+            {!isVertical && (
+                <>
+                    <div className="md:hidden">
+                        <button
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="menu-mobile-toggle-button"
+                            aria-label="Toggle menu"
+                        >
+                            <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 6h16M4 12h16M4 18h16"
+                                />
+                            </svg>
+                        </button>
+                    </div>
 
-            {/* Desktop menu */}
+                    {/* Модальное мобильное меню */}
+                    <MobileMenuModal
+                        items={items}
+                        isOpen={isMobileMenuOpen}
+                        onOpenChange={setIsMobileMenuOpen}
+                        title={title && show_title ? title : undefined}
+                    />
+                </>
+            )}
+
+            {/* Desktop menu - скрывается на мобильных только для горизонтального меню */}
             <ul
-                className={`hidden md:flex ${getOrientationClasses(orientation)}`}
+                className={`${isVertical ? 'flex' : 'hidden md:flex'} ${getOrientationClasses(orientation)}`}
             >
                 {items.map((item) => renderMenuItem(item))}
             </ul>
-
-            {/* Mobile menu */}
-            {isMobileMenuOpen && (
-                <div className="md:hidden">
-                    <ul
-                        className={`mt-2 space-y-1 rounded-md border border-gray-200 bg-white p-2 ${getOrientationClasses('column')}`}
-                    >
-                        {items.map((item) => renderMenuItem(item))}
-                    </ul>
-                </div>
-            )}
         </nav>
     );
 };

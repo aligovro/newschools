@@ -200,7 +200,6 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
         <section
             className="subscribe-block relative overflow-hidden rounded-[20px]"
             style={{
-                height: '572px',
                 background: backgroundGradient,
             }}
         >
@@ -219,7 +218,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                 {(mainTitle && show_title) || subtitle ? (
                     <div className="mb-8 p-8 pb-0 md:p-12">
                         {mainTitle && show_title && (
-                            <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
+                            <h2 className="subscribe-block__title mb-4 text-3xl font-bold text-white md:text-4xl">
                                 {mainTitle}
                             </h2>
                         )}

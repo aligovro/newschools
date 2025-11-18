@@ -62,9 +62,13 @@ class SiteController extends Controller
         // Разрешенные поля для сортировки
         $allowedSortFields = ['name', 'created_at', 'updated_at', 'status', 'template'];
         if (in_array($sortBy, $allowedSortFields)) {
-            $query->orderBy($sortBy, $sortDirection);
+            // Главный сайт всегда первый, затем сортировка по выбранному полю
+            $query->orderByRaw('CASE WHEN id = 1 AND site_type = \'main\' THEN 0 ELSE 1 END')
+                ->orderBy($sortBy, $sortDirection);
         } else {
-            $query->orderBy('created_at', 'desc');
+            // Главный сайт всегда первый, затем по дате создания (убывание)
+            $query->orderByRaw('CASE WHEN id = 1 AND site_type = \'main\' THEN 0 ELSE 1 END')
+                ->orderByDesc('created_at');
         }
 
         // Пагинация
@@ -227,6 +231,10 @@ class SiteController extends Controller
 
     public function destroy(Site $site)
     {
+        if ($site->isMainSite()) {
+            return redirect()->back()->with('error', 'Нельзя удалить главный сайт системы.');
+        }
+
         $site->delete();
         return redirect()->back()->with('success', 'Сайт успешно удален');
     }

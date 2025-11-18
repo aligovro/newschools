@@ -23,6 +23,7 @@ class OrganizationSiteResource extends JsonResource
       'status' => $this->status->value,
       'is_public' => (bool) ($this->is_public ?? false),
       'is_maintenance_mode' => (bool) ($this->is_maintenance_mode ?? false),
+      'is_main_site' => $this->isMainSite(),
       'created_at' => optional($this->created_at)->toISOString(),
       'updated_at' => optional($this->updated_at)->toISOString(),
       'pages_count' => $this->when(isset($this->pages_count), $this->pages_count),

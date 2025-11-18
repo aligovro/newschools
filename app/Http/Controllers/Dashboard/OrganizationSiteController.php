@@ -164,6 +164,12 @@ class OrganizationSiteController extends Controller
      */
     public function destroy(Organization $organization, Site $site)
     {
+        if ($site->isMainSite()) {
+            return redirect()
+                ->route('organizations.sites.index', ['organization' => $organization])
+                ->with('error', 'Нельзя удалить главный сайт системы.');
+        }
+
         $site->delete();
 
         return redirect()
