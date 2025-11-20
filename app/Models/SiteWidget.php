@@ -355,8 +355,11 @@ class SiteWidget extends Model
 
             case 'menu':
                 $config['items'] = $this->menuItems
-                    ->where('is_active', true)
+                    ->filter(function ($item) {
+                        return $item->is_active;
+                    })
                     ->sortBy('sort_order')
+                    ->values() // Сбрасываем ключи после sortBy
                     ->map(function ($item) {
                         return [
                             'id' => $item->item_id,
@@ -367,7 +370,6 @@ class SiteWidget extends Model
                             'order' => $item->sort_order,
                         ];
                     })
-                    ->values() // Сбрасываем ключи после sortBy
                     ->toArray();
                 break;
 
