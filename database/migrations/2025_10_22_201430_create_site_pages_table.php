@@ -23,7 +23,8 @@ return new class extends Migration
       $table->json('layout_config')->nullable();
       $table->json('content_blocks')->nullable();
       $table->json('seo_config')->nullable();
-      $table->string('featured_image')->nullable();
+      $table->string('image')->nullable();
+      $table->json('images')->nullable();
       $table->string('status')->default('draft');
       $table->boolean('is_homepage')->default(false);
       $table->boolean('is_public')->default(false);

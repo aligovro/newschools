@@ -14,25 +14,39 @@ return new class extends Migration
         Schema::create('organizations', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('slug');
+            $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->string('address')->nullable();
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
             $table->string('website')->nullable();
+
+            // Локация
             $table->foreignId('region_id')->nullable()->constrained('regions')->onDelete('set null');
             $table->foreignId('locality_id')->nullable()->constrained('localities')->onDelete('set null');
-            $table->foreignId('settlement_id')->nullable()->constrained('settlements')->onDelete('set null');
             $table->string('city_name')->nullable();
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
+
+            // Медиа
             $table->string('logo')->nullable();
             $table->json('images')->nullable();
             $table->json('contacts')->nullable();
+
+            // Основные поля
             $table->enum('type', ['school', 'gymnasium', 'lyceum', 'college', 'shelter', 'hospital', 'church', 'charity', 'foundation', 'ngo'])->default('school');
             $table->enum('status', ['active', 'inactive', 'pending'])->default('pending');
             $table->boolean('is_public')->default(true);
             $table->json('features')->nullable();
+
+            // Финансовые нужды
+            $table->unsignedBigInteger('needs_target_amount')->nullable();
+            $table->unsignedBigInteger('needs_collected_amount')->nullable();
+
+            // Платежи
+            $table->foreignId('yookassa_partner_merchant_id')->nullable()->constrained('yookassa_partner_merchants')->onDelete('set null');
+
+            // Даты
             $table->timestamp('founded_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
@@ -40,11 +54,9 @@ return new class extends Migration
             // Индексы
             $table->index(['region_id', 'status']);
             $table->index(['locality_id', 'status']);
-            $table->index(['settlement_id', 'status']);
             $table->index('status');
             $table->index('is_public');
             $table->index('type');
-            $table->unique('slug');
         });
     }
 

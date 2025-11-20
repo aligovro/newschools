@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('organization_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('project_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('project_stage_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('site_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('created_by')->nullable()->references('id')->on('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->references('id')->on('users')->nullOnDelete();
             $table->string('title');
@@ -35,6 +36,7 @@ return new class extends Migration
             $table->unique(['organization_id', 'slug']);
             $table->index(['organization_id', 'report_type', 'status']);
             $table->index(['project_id', 'project_stage_id']);
+            $table->index(['site_id', 'report_type']);
         });
     }
 
