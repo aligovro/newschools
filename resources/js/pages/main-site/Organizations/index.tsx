@@ -1,5 +1,5 @@
 import CitySelector, {
-    type City as PublicCity,
+    type Locality as PublicCity,
 } from '@/components/main-site/CitySelector';
 import { MapMarker } from '@/components/maps/YandexMap';
 import MainLayout from '@/layouts/MainLayout';
@@ -21,7 +21,7 @@ interface OrganizationData {
     region?: {
         name: string;
     };
-    city?: {
+    locality?: {
         id: number;
         name: string;
     };
@@ -70,7 +70,7 @@ interface OrganizationsPageProps {
     filters?: {
         search?: string;
         region_id?: number;
-        city_id?: number;
+        locality_id?: number;
     };
 }
 
@@ -102,18 +102,18 @@ export default function Organizations({
 
     // Инициализация города из фильтров
     useEffect(() => {
-        if (filters?.city_id && organizations.data.length > 0) {
+        if (filters?.locality_id && organizations.data.length > 0) {
             const org = organizations.data.find(
-                (o) => o.city?.id === filters.city_id,
+                (o) => o.locality?.id === filters.locality_id,
             );
-            if (org?.city) {
+            if (org?.locality) {
                 setSelectedCity({
-                    id: org.city.id,
-                    name: org.city.name,
+                    id: org.locality.id,
+                    name: org.locality.name,
                 });
             }
         }
-    }, [filters?.city_id, organizations.data]);
+    }, [filters?.locality_id, organizations.data]);
 
     // Загрузка координат выбранного города
     useEffect(() => {
@@ -128,7 +128,7 @@ export default function Organizations({
                 if (selectedCity.id) {
                     try {
                         const res = await fetch(
-                            `/dashboard/api/cities/${selectedCity.id}`,
+                            `/dashboard/api/localities/${selectedCity.id}`,
                         );
                         if (res.ok) {
                             const data = await res.json();
@@ -147,17 +147,17 @@ export default function Organizations({
 
                 // Fallback: используем публичный API по имени
                 const url = new URL(
-                    '/api/public/cities/resolve',
+                    '/api/public/localities/resolve',
                     window.location.origin,
                 );
                 url.searchParams.set('name', selectedCity.name);
                 const res = await fetch(url.toString());
                 if (res.ok) {
                     const data = await res.json();
-                    if (data?.city?.latitude && data?.city?.longitude) {
+                    if (data?.locality?.latitude && data?.locality?.longitude) {
                         setCityCoordinates({
-                            latitude: Number(data.city.latitude),
-                            longitude: Number(data.city.longitude),
+                            latitude: Number(data.locality.latitude),
+                            longitude: Number(data.locality.longitude),
                         });
                     }
                 }
@@ -171,13 +171,17 @@ export default function Organizations({
 
     // Обновление URL при изменении фильтров
     const updateFilters = useCallback(
-        (newFilters: { search?: string; city_id?: number; page?: number }) => {
+        (newFilters: {
+            search?: string;
+            locality_id?: number;
+            page?: number;
+        }) => {
             const params = new URLSearchParams();
             if (newFilters.search) {
                 params.set('search', newFilters.search);
             }
-            if (newFilters.city_id) {
-                params.set('city_id', String(newFilters.city_id));
+            if (newFilters.locality_id) {
+                params.set('locality_id', String(newFilters.locality_id));
             }
             if (newFilters.page) {
                 params.set('page', String(newFilters.page));
@@ -200,7 +204,7 @@ export default function Organizations({
             searchTimeoutRef.current = setTimeout(() => {
                 updateFilters({
                     search: value || undefined,
-                    city_id: selectedCity?.id,
+                    locality_id: selectedCity?.id,
                     page: 1,
                 });
             }, 500);
@@ -210,11 +214,11 @@ export default function Organizations({
 
     // Обработчик изменения города
     const handleCityChange = useCallback(
-        (city: PublicCity | null) => {
-            setSelectedCity(city);
+        (locality: PublicCity | null) => {
+            setSelectedCity(locality);
             updateFilters({
                 search: searchQuery || undefined,
-                city_id: city?.id,
+                locality_id: locality?.id,
                 page: 1,
             });
         },
@@ -226,8 +230,8 @@ export default function Organizations({
         return organizations.data
             .filter((org) => {
                 // Фильтруем только организации выбранного города
-                if (selectedCity?.id && org.city?.id) {
-                    return org.city.id === selectedCity.id;
+                if (selectedCity?.id && org.locality?.id) {
+                    return org.locality.id === selectedCity.id;
                 }
                 // Если город не выбран, показываем все
                 return true;
@@ -288,8 +292,8 @@ export default function Organizations({
         if (filters?.search) {
             params.set('search', filters.search);
         }
-        if (filters?.city_id) {
-            params.set('city_id', String(filters.city_id));
+        if (filters?.locality_id) {
+            params.set('locality_id', String(filters.locality_id));
         }
         params.set('page', String(page));
         params.set('per_page', String(PAGE_SIZE));
@@ -344,7 +348,7 @@ export default function Organizations({
                             onClick={() => setActiveTab('list')}
                             className={`organizations-tabs__button organizations-tabs__button--list${
                                 activeTab === 'list'
-                                    ? ' organizations-tabs__button--active'
+                                    ? 'organizations-tabs__button--active'
                                     : ''
                             }`}
                         >
@@ -360,7 +364,7 @@ export default function Organizations({
                             onClick={() => setActiveTab('map')}
                             className={`organizations-tabs__button organizations-tabs__button--map${
                                 activeTab === 'map'
-                                    ? ' organizations-tabs__button--active'
+                                    ? 'organizations-tabs__button--active'
                                     : ''
                             }`}
                         >

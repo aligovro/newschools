@@ -7,16 +7,10 @@ export interface Region {
     code?: string;
 }
 
-export interface City {
+export interface Locality {
     id: number;
     name: string;
     region_id: number;
-}
-
-export interface Settlement {
-    id: number;
-    name: string;
-    city_id: number;
 }
 
 export interface User {
@@ -68,35 +62,16 @@ export const organizationsApi = {
     getCitiesByRegion: (
         regionId: number | null,
         params: { page?: number; per_page?: number } = {},
-    ): Promise<City[]> => {
+    ): Promise<Locality[]> => {
         if (!regionId) {
             return Promise.resolve([]);
         }
         return apiClient
-            .getPaginated<PaginatedResponse<City>>(
-                '/dashboard/api/cities-by-region',
+            .getPaginated<PaginatedResponse<Locality>>(
+                '/dashboard/api/localities-by-region',
                 {
                     ...params,
                     region_id: regionId,
-                },
-            )
-            .then((response) => response.data.data);
-    },
-
-    // Получение населенных пунктов по городу
-    getSettlementsByCity: (
-        cityId: number | null,
-        params: { page?: number; per_page?: number } = {},
-    ): Promise<Settlement[]> => {
-        if (!cityId) {
-            return Promise.resolve([]);
-        }
-        return apiClient
-            .getPaginated<PaginatedResponse<Settlement>>(
-                '/dashboard/api/settlements-by-city',
-                {
-                    ...params,
-                    city_id: cityId,
                 },
             )
             .then((response) => response.data.data);

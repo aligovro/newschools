@@ -42,14 +42,9 @@ class Region extends Model
         return $this->belongsTo(FederalDistrict::class);
     }
 
-    public function cities(): HasMany
+    public function localities(): HasMany
     {
-        return $this->hasMany(City::class);
-    }
-
-    public function settlements(): HasMany
-    {
-        return $this->hasMany(Settlement::class);
+        return $this->hasMany(Locality::class);
     }
 
     public function organizations(): HasMany

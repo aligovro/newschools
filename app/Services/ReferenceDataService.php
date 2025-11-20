@@ -3,8 +3,7 @@
 namespace App\Services;
 
 use App\Models\Region;
-use App\Models\City;
-use App\Models\Settlement;
+use App\Models\Locality;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Cache;
 
@@ -43,27 +42,13 @@ class ReferenceDataService
     }
 
     /**
-     * Получить города по региону
+     * Получить населённые пункты (localities) по региону
      */
     public function getCitiesByRegion(int $regionId): array
     {
         return Cache::remember("cities_region_{$regionId}", self::CACHE_TTL, function () use ($regionId) {
-            return City::where('region_id', $regionId)
+            return Locality::where('region_id', $regionId)
                 ->select('id', 'name', 'region_id', 'latitude', 'longitude')
-                ->orderBy('name')
-                ->get()
-                ->toArray();
-        });
-    }
-
-    /**
-     * Получить населенные пункты по городу
-     */
-    public function getSettlementsByCity(int $cityId): array
-    {
-        return Cache::remember("settlements_city_{$cityId}", self::CACHE_TTL, function () use ($cityId) {
-            return Settlement::where('city_id', $cityId)
-                ->select('id', 'name', 'city_id')
                 ->orderBy('name')
                 ->get()
                 ->toArray();
@@ -78,11 +63,8 @@ class ReferenceDataService
         return [
             'organizationTypes' => $this->getOrganizationTypes(),
             'regions' => $this->getInitialRegions(),
-            'cities' => $organization && $organization->region_id
+            'localities' => $organization && $organization->region_id
                 ? $this->getCitiesByRegion($organization->region_id)
-                : [],
-            'settlements' => $organization && $organization->city_id
-                ? $this->getSettlementsByCity($organization->city_id)
                 : [],
         ];
     }
@@ -98,10 +80,5 @@ class ReferenceDataService
         if ($regionId) {
             Cache::forget("cities_region_{$regionId}");
         }
-
-        if ($cityId) {
-            Cache::forget("settlements_city_{$cityId}");
-        }
     }
 }
-

@@ -385,7 +385,7 @@ class GlobalSettingsController extends Controller
         }
 
         // Создаем временный сервис с новыми настройками для предварительного просмотра
-        $tempSettings = new \App\Models\GlobalSettings($request->all());
+        $tempSettings = new GlobalSettings($request->all());
 
         $preview = [
             'organization_forms' => [

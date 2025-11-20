@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Organization;
+use App\Models\Region;
+use App\Models\Locality;
 use App\Models\User;
 use App\Services\Organizations\OrganizationCreationService;
 use App\Services\Organizations\OrganizationSettingsService;
@@ -38,7 +39,7 @@ class OrganizationCreationController extends Controller
         $referenceData = [
             'organizationTypes' => $this->settingsService->getOrganizationTypes(),
             // Загружаем только первые 20 регионов для начального отображения
-            'regions' => \App\Models\Region::select('id', 'name', 'code')
+            'regions' => Region::select('id', 'name', 'code')
                 ->orderBy('name')
                 ->limit(20)
                 ->get(),
@@ -82,8 +83,8 @@ class OrganizationCreationController extends Controller
 
             // Локация
             'region_id' => 'nullable|exists:regions,id',
-            'city_id' => 'nullable|exists:cities,id',
-            'settlement_id' => 'nullable|exists:settlements,id',
+            // locality_id трактуем как locality_id
+            'locality_id' => 'nullable|exists:localities,id',
             'city_name' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -326,7 +327,7 @@ class OrganizationCreationController extends Controller
         $search = $request->get('search', '');
         $perPage = $request->get('per_page', 20);
 
-        $query = \App\Models\Region::select('id', 'name', 'code')
+        $query = Region::select('id', 'name', 'code')
             ->orderBy('name');
 
         if ($search) {
@@ -365,46 +366,17 @@ class OrganizationCreationController extends Controller
             return response()->json([]);
         }
 
-        $cities = Cache::remember("cities_region_{$request->region_id}", 3600, function () use ($request) {
-            return \App\Models\City::where('region_id', $request->region_id)
-                ->select('id', 'name')
+        $localities = Cache::remember("cities_region_{$request->region_id}", 3600, function () use ($request) {
+            return Locality::where('region_id', $request->region_id)
+                ->select('id', 'name', 'region_id', 'latitude', 'longitude')
                 ->orderBy('name')
                 ->get();
         });
 
-        return response()->json($cities);
+        return response()->json($localities);
     }
 
-    /**
-     * Получить населенные пункты по городу
-     */
-    public function getSettlementsByCity(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'city_id' => 'nullable|exists:cities,id',
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        // Если city_id не передан, возвращаем пустой массив
-        if (!$request->city_id) {
-            return response()->json([]);
-        }
-
-        $settlements = Cache::remember("settlements_city_{$request->city_id}", 3600, function () use ($request) {
-            return \App\Models\Settlement::where('city_id', $request->city_id)
-                ->select('id', 'name')
-                ->orderBy('name')
-                ->get();
-        });
-
-        return response()->json($settlements);
-    }
 
     /**
      * Загрузить логотип

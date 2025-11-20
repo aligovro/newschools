@@ -1,3 +1,6 @@
+import PaymentGatewaysSettings, {
+    type PaymentGatewaysSettingsValue,
+} from '@/components/dashboard/payments/PaymentGatewaysSettings';
 import CitySelector from '@/components/main-site/CitySelector';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,13 +19,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { fetchPublicCities } from '@/lib/api/public';
+import { normalizePaymentSettings } from '@/lib/payments/normalizePaymentSettings';
 import { Head, useForm } from '@inertiajs/react';
 import { Download, Eye, RefreshCw, Save, Settings } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import PaymentGatewaysSettings, {
-    type PaymentGatewaysSettingsValue,
-} from '@/components/dashboard/payments/PaymentGatewaysSettings';
-import { normalizePaymentSettings } from '@/lib/payments/normalizePaymentSettings';
 
 interface GlobalSettingsPageProps {
     settings: {
@@ -111,8 +111,9 @@ export default function GlobalSettingsPage({
         region?: { name: string };
     } | null>(null);
 
-    const [paymentSettings, setPaymentSettings] =
-        useState(normalizePaymentSettings(globalPaymentSettings));
+    const [paymentSettings, setPaymentSettings] = useState(
+        normalizePaymentSettings(globalPaymentSettings),
+    );
 
     const paymentsForm = useForm({
         payment_settings: paymentSettings,
@@ -209,7 +210,7 @@ export default function GlobalSettingsPage({
                         setSelectedDefaultCity(byIncludes as any);
                     }
                 } catch (error) {
-                    console.error('Error setting default city:', error);
+                    console.error('Error setting default locality:', error);
                 }
             }
         };
@@ -218,13 +219,17 @@ export default function GlobalSettingsPage({
     }, []);
 
     const handleDefaultCityChange = (
-        city: { id: number; name: string; region?: { name: string } } | null,
+        locality: {
+            id: number;
+            name: string;
+            region?: { name: string };
+        } | null,
     ) => {
-        setSelectedDefaultCity(city);
+        setSelectedDefaultCity(locality);
         systemConfigForm.setData('system_settings', {
             ...systemConfigForm.data.system_settings,
-            default_city_id: city?.id ?? '',
-            default_city_fallback: city?.name ?? '',
+            default_city_id: locality?.id ?? '',
+            default_city_fallback: locality?.name ?? '',
         });
     };
 
@@ -1446,9 +1451,12 @@ export default function GlobalSettingsPage({
                     <TabsContent value="payments" className="space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Глобальные платежные настройки</CardTitle>
+                                <CardTitle>
+                                    Глобальные платежные настройки
+                                </CardTitle>
                                 <CardDescription>
-                                    Значения по умолчанию для всех организаций, проектов и сайтов
+                                    Значения по умолчанию для всех организаций,
+                                    проектов и сайтов
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -1472,7 +1480,10 @@ export default function GlobalSettingsPage({
                                     </div>
                                     {paymentsForm.errors.payment_settings && (
                                         <p className="text-sm text-red-600">
-                                            {paymentsForm.errors.payment_settings}
+                                            {
+                                                paymentsForm.errors
+                                                    .payment_settings
+                                            }
                                         </p>
                                     )}
                                 </form>

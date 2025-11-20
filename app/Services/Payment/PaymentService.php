@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\Fundraiser;
 use App\Models\Project;
 use App\Models\ProjectStage;
+use App\Models\Payments\YooKassaPartnerMerchant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -433,7 +434,7 @@ class PaymentService
         }
 
         $merchant = $organization->yookassaPartnerMerchant;
-        if ($merchant && $merchant->status === \App\Models\Payments\YooKassaPartnerMerchant::STATUS_ACTIVE) {
+        if ($merchant && $merchant->status === YooKassaPartnerMerchant::STATUS_ACTIVE) {
             return 'yookassa';
         }
 

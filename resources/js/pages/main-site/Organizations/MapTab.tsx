@@ -13,7 +13,7 @@ interface OrganizationData {
     logo?: string;
     image?: string;
     region?: { name: string };
-    city?: { id: number; name: string };
+    locality?: { id: number; name: string };
     type: string;
     projects_count: number;
     members_count?: number;
@@ -98,7 +98,9 @@ export default function MapTab({ mapMarkers, mapCenter }: MapTabProps) {
                             <X className="h-4 w-4 text-gray-600" />
                         </button>
                         <div onClick={(e) => e.stopPropagation()}>
-                            <OrganizationCard organization={selectedOrganization} />
+                            <OrganizationCard
+                                organization={selectedOrganization}
+                            />
                         </div>
                     </div>
                 </div>
@@ -112,5 +114,3 @@ export default function MapTab({ mapMarkers, mapCenter }: MapTabProps) {
         </div>
     );
 }
-
-

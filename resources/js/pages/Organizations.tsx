@@ -53,7 +53,7 @@ export default function Organizations({
     >([]);
 
     React.useEffect(() => {
-        // Load default city from config and try geolocation
+        // Load default locality from config and try geolocation
         (async () => {
             try {
                 const cfg = await fetchMapsConfig();

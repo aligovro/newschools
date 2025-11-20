@@ -7,11 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class City extends Model
+/**
+ * Универсальный справочник населённых пунктов (города, посёлки, сёла и т.д.).
+ *
+ * Таблица: localities
+ */
+class Locality extends Model
 {
     use HasFactory;
 
-    protected $table = 'cities';
+    protected $table = 'localities';
 
     protected $fillable = [
         'region_id',
@@ -40,11 +45,6 @@ class City extends Model
         return $this->belongsTo(Region::class);
     }
 
-    public function settlements(): HasMany
-    {
-        return $this->hasMany(Settlement::class);
-    }
-
     public function organizations(): HasMany
     {
         return $this->hasMany(Organization::class);
@@ -55,12 +55,12 @@ class City extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeByType($query, $type)
+    public function scopeByType($query, string $type)
     {
         return $query->where('type', $type);
     }
 
-    public function scopeByStatus($query, $status)
+    public function scopeByStatus($query, string $status)
     {
         return $query->where('status', $status);
     }

@@ -33,10 +33,13 @@ export function getMapsConfigCached(): Promise<MapsConfig> {
 }
 
 export async function resolveCityByName(name: string) {
-    const url = new URL('/api/public/cities/resolve', window.location.origin);
+    const url = new URL(
+        '/api/public/localities/resolve',
+        window.location.origin,
+    );
     url.searchParams.set('name', name);
     const res = await fetch(url.toString());
-    if (!res.ok) throw new Error('Failed to resolve city');
+    if (!res.ok) throw new Error('Failed to resolve locality');
     return res.json();
 }
 
@@ -101,7 +104,7 @@ export async function fetchPublicCities(params?: {
     limit?: number;
     ids?: number[];
 }): Promise<PublicCity[]> {
-    const url = new URL('/api/public/cities', window.location.origin);
+    const url = new URL('/api/public/localities', window.location.origin);
     if (params?.search) {
         url.searchParams.set('search', params.search);
     }
@@ -112,7 +115,7 @@ export async function fetchPublicCities(params?: {
         url.searchParams.set('ids', params.ids.join(','));
     }
     const res = await fetch(url.toString());
-    if (!res.ok) throw new Error('Failed to load cities');
+    if (!res.ok) throw new Error('Failed to load localities');
     return res.json();
 }
 
@@ -133,7 +136,7 @@ export async function detectCityByGeolocation(): Promise<{
             async (position) => {
                 try {
                     const url = new URL(
-                        '/api/public/cities/detect',
+                        '/api/public/localities/detect',
                         window.location.origin,
                     );
                     url.searchParams.set(
@@ -146,8 +149,8 @@ export async function detectCityByGeolocation(): Promise<{
                     );
                     const res = await fetch(url.toString());
                     if (res.ok) {
-                        const city = await res.json();
-                        resolve(city);
+                        const locality = await res.json();
+                        resolve(locality);
                     } else {
                         resolve(null);
                     }
@@ -171,7 +174,7 @@ export async function fetchRegionById(id: number) {
 }
 
 export async function fetchCityById(id: number) {
-    const res = await fetch(`/dashboard/api/cities/${id}`);
-    if (!res.ok) throw new Error('Failed to load city');
+    const res = await fetch(`/dashboard/api/localities/${id}`);
+    if (!res.ok) throw new Error('Failed to load locality');
     return await res.json();
 }

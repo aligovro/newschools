@@ -4,6 +4,7 @@ namespace App\Services\Organizations;
 
 use App\Models\Organization;
 use App\Models\OrganizationSetting;
+use App\Models\OrganizationType;
 use App\Services\GlobalSettingsService;
 use App\Services\Payment\PaymentSettingsNormalizer;
 use Illuminate\Support\Facades\Auth;
@@ -73,7 +74,7 @@ class OrganizationSettingsService
     {
         return Cache::remember('organization_types', 3600, function () {
             // Получаем типы из базы данных
-            $dbTypes = \App\Models\OrganizationType::active()->get();
+            $dbTypes = OrganizationType::active()->get();
 
             if ($dbTypes->isNotEmpty()) {
                 $types = [];

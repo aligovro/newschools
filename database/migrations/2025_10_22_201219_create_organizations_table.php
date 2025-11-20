@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('website')->nullable();
             $table->foreignId('region_id')->nullable()->constrained('regions')->onDelete('set null');
-            $table->foreignId('city_id')->nullable()->constrained('cities')->onDelete('set null');
+            $table->foreignId('locality_id')->nullable()->constrained('localities')->onDelete('set null');
             $table->foreignId('settlement_id')->nullable()->constrained('settlements')->onDelete('set null');
             $table->string('city_name')->nullable();
             $table->decimal('latitude', 10, 8)->nullable();
@@ -39,7 +39,7 @@ return new class extends Migration
 
             // Индексы
             $table->index(['region_id', 'status']);
-            $table->index(['city_id', 'status']);
+            $table->index(['locality_id', 'status']);
             $table->index(['settlement_id', 'status']);
             $table->index('status');
             $table->index('is_public');

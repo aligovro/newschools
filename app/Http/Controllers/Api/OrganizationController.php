@@ -20,7 +20,7 @@ class OrganizationController extends Controller
     {
         $this->authorize('organizations.view');
 
-        $query = Organization::with(['region', 'city', 'settlement', 'primaryDomain']);
+        $query = Organization::with(['region', 'locality', 'primaryDomain']);
 
         // Фильтрация по типу
         if ($request->filled('type')) {
@@ -32,9 +32,9 @@ class OrganizationController extends Controller
             $query->byRegion($request->region_id);
         }
 
-        // Фильтрация по городу
-        if ($request->filled('city_id')) {
-            $query->byCity($request->city_id);
+        // Фильтрация по населенному пункту (locality_id параметр = locality_id)
+        if ($request->filled('locality_id')) {
+            $query->where('locality_id', $request->locality_id);
         }
 
         // Фильтрация по статусу
@@ -84,8 +84,7 @@ class OrganizationController extends Controller
             'email' => 'nullable|email|max:255',
             'website' => 'nullable|url|max:255',
             'region_id' => 'nullable|exists:regions,id',
-            'city_id' => 'nullable|exists:cities,id',
-            'settlement_id' => 'nullable|exists:settlements,id',
+            'locality_id' => 'nullable|exists:localities,id', // используем locality_id, но параметр называется locality_id
             'city_name' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -106,8 +105,14 @@ class OrganizationController extends Controller
             ], 422);
         }
 
-        $organization = Organization::create($request->all());
-        $organization->load(['region', 'city', 'settlement', 'primaryDomain']);
+        $data = $request->all();
+        if (isset($data['locality_id'])) {
+            $data['locality_id'] = $data['locality_id'];
+            unset($data['locality_id']);
+        }
+
+        $organization = Organization::create($data);
+        $organization->load(['region', 'locality', 'primaryDomain']);
 
         return response()->json($organization, 201);
     }
@@ -119,7 +124,7 @@ class OrganizationController extends Controller
     {
         $this->authorize('organizations.view');
 
-        $organization->load(['region', 'city', 'settlement', 'primaryDomain', 'settings', 'seo']);
+        $organization->load(['region', 'locality', 'primaryDomain', 'settings', 'seo']);
 
         return response()->json($organization);
     }
@@ -146,8 +151,7 @@ class OrganizationController extends Controller
             'email' => 'nullable|email|max:255',
             'website' => 'nullable|url|max:255',
             'region_id' => 'nullable|exists:regions,id',
-            'city_id' => 'nullable|exists:cities,id',
-            'settlement_id' => 'nullable|exists:settlements,id',
+            'locality_id' => 'nullable|exists:localities,id',
             'city_name' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -168,8 +172,14 @@ class OrganizationController extends Controller
             ], 422);
         }
 
-        $organization->update($request->all());
-        $organization->load(['region', 'city', 'settlement', 'primaryDomain']);
+        $data = $request->all();
+        if (isset($data['locality_id'])) {
+            $data['locality_id'] = $data['locality_id'];
+            unset($data['locality_id']);
+        }
+
+        $organization->update($data);
+        $organization->load(['region', 'locality', 'primaryDomain']);
 
         return response()->json($organization);
     }

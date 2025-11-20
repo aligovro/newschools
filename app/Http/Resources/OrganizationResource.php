@@ -47,18 +47,14 @@ class OrganizationResource extends JsonResource
                     'longitude' => $this->region->longitude,
                 ];
             }),
-            'city' => $this->whenLoaded('city', function () {
+            // Для обратной совместимости оставляем ключи locality в JSON,
+            // но фактически заполняем их из locality.
+            'locality' => $this->whenLoaded('locality', function () {
                 return [
-                    'id' => $this->city->id,
-                    'name' => $this->city->name,
-                    'latitude' => $this->city->latitude,
-                    'longitude' => $this->city->longitude,
-                ];
-            }),
-            'settlement' => $this->whenLoaded('settlement', function () {
-                return [
-                    'id' => $this->settlement->id,
-                    'name' => $this->settlement->name,
+                    'id' => $this->locality->id,
+                    'name' => $this->locality->name,
+                    'latitude' => $this->locality->latitude,
+                    'longitude' => $this->locality->longitude,
                 ];
             }),
 

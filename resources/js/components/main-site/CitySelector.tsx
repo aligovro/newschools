@@ -8,11 +8,11 @@ import '@css/components/main-site/CitySelector.scss';
 import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export type City = PublicCity;
+export type Locality = PublicCity;
 
 interface CitySelectorProps {
-    value: City | null;
-    onChange: (city: City | null) => void;
+    value: Locality | null;
+    onChange: (locality: Locality | null) => void;
     defaultCityName?: string;
     detectOnMount?: boolean;
     variant?: 'light' | 'dark';
@@ -28,10 +28,10 @@ export default function CitySelector({
 }: CitySelectorProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [cities, setCities] = useState<City[]>([]);
+    const [localities, setCities] = useState<Locality[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isDetecting, setIsDetecting] = useState(false);
-    const defaultCityDetailsRef = useRef<City | null>(null);
+    const defaultCityDetailsRef = useRef<Locality | null>(null);
 
     const {
         id: defaultId,
@@ -61,7 +61,7 @@ export default function CitySelector({
                     : undefined,
                 latitude: undefined,
                 longitude: undefined,
-            } satisfies City;
+            } satisfies Locality;
         };
 
         const loadDefaultCity = async () => {
@@ -73,11 +73,11 @@ export default function CitySelector({
                     ids: [defaultId],
                 });
                 if (cityById) {
-                    defaultCityDetailsRef.current = cityById as City;
+                    defaultCityDetailsRef.current = cityById as Locality;
                     return defaultCityDetailsRef.current;
                 }
             } catch (error) {
-                console.debug('Failed to load default city details', error);
+                console.debug('Failed to load default locality details', error);
             }
             if (defaultName) {
                 try {
@@ -86,12 +86,12 @@ export default function CitySelector({
                         limit: 1,
                     });
                     if (cityByName) {
-                        defaultCityDetailsRef.current = cityByName as City;
+                        defaultCityDetailsRef.current = cityByName as Locality;
                         return defaultCityDetailsRef.current;
                     }
                 } catch (error) {
                     console.debug(
-                        'Failed to resolve default city by name',
+                        'Failed to resolve default locality by name',
                         error,
                     );
                 }
@@ -118,7 +118,7 @@ export default function CitySelector({
                         detectedCity.name
                     ) {
                         if (!cancelled) {
-                            onChange(detectedCity as City);
+                            onChange(detectedCity as Locality);
                         }
                     } else {
                         await applyDefaultCity();
@@ -152,7 +152,7 @@ export default function CitySelector({
 
     // Загрузка списка городов при открытии выпадашки
     useEffect(() => {
-        if (!isOpen || cities.length > 0) return;
+        if (!isOpen || localities.length > 0) return;
 
         setIsLoading(true);
         fetchPublicCities({ limit: 100 })
@@ -173,13 +173,13 @@ export default function CitySelector({
         setSearchQuery(query);
         setIsLoading(true);
         try {
-            let results: City[] = [];
+            let results: Locality[] = [];
             if (query.length >= 2) {
                 results = await fetchPublicCities({ search: query });
             } else {
                 results = await fetchPublicCities({ limit: 20 });
             }
-            setCities((results as City[]).slice(0, 20));
+            setCities((results as Locality[]).slice(0, 20));
         } catch (error) {
             console.error('Ошибка поиска городов:', error);
             setCities([]);
@@ -188,8 +188,8 @@ export default function CitySelector({
         }
     }, []);
 
-    const handleSelectCity = (city: City) => {
-        onChange(city);
+    const handleSelectCity = (locality: Locality) => {
+        onChange(locality);
         setIsOpen(false);
         setSearchQuery('');
         setCities([]);
@@ -203,12 +203,14 @@ export default function CitySelector({
     };
 
     // Формируем дефолтный город для отображения в списке
-    const getDefaultCityForList = (): City | null => {
+    const getDefaultCityForList = (): Locality | null => {
         if (!defaultId || !defaultName) return null;
 
         // Проверяем, есть ли дефолтный город в загруженном списке с регионом
-        const cityFromList = cities.find((c) => c.id === defaultId && c.region);
-        if (cityFromList) return cityFromList as City;
+        const cityFromList = localities.find(
+            (c) => c.id === defaultId && c.region,
+        );
+        if (cityFromList) return cityFromList as Locality;
 
         if (value && value.id === defaultId) {
             defaultCityDetailsRef.current = value;
@@ -230,7 +232,7 @@ export default function CitySelector({
     };
 
     const defaultCityForList = getDefaultCityForList();
-    const filteredCities = cities.filter(
+    const filteredCities = localities.filter(
         (c) => !defaultCityForList || c.id !== defaultCityForList.id,
     );
     const sortedCities = [...filteredCities].sort((a, b) =>
@@ -259,7 +261,7 @@ export default function CitySelector({
                             </span>
                         </span>
                     ) : (
-                        value?.name ?? 'Все города'
+                        (value?.name ?? 'Все города')
                     )}
                 </span>
                 <img
@@ -306,23 +308,23 @@ export default function CitySelector({
                                             Все города
                                         </button>
                                     </li>
-                                    {finalCities.map((city) => (
-                                        <li key={city.id}>
+                                    {finalCities.map((locality) => (
+                                        <li key={locality.id}>
                                             <button
                                                 type="button"
                                                 onClick={() =>
-                                                    handleSelectCity(city)
+                                                    handleSelectCity(locality)
                                                 }
                                                 className={`city-selector__city-item w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${
-                                                    value?.id === city.id
+                                                    value?.id === locality.id
                                                         ? 'city-selector__city-item--selected bg-blue-50 text-blue-600'
                                                         : 'text-gray-900'
                                                 }`}
                                             >
-                                                {city.name}
-                                                {city.region && (
+                                                {locality.name}
+                                                {locality.region && (
                                                     <span className="ml-2 text-xs text-gray-500">
-                                                        ({city.region.name})
+                                                        ({locality.region.name})
                                                     </span>
                                                 )}
                                             </button>

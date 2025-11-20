@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Organization;
 use App\Models\Site;
-use App\Models\City;
+use App\Models\Locality;
 use App\Http\Resources\OrganizationResource;
 use App\Http\Resources\OrganizationStaffResource;
 use App\Support\InertiaResource;
@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Region;
+
 
 class PublicOrganizationController extends Controller
 {
@@ -22,7 +24,7 @@ class PublicOrganizationController extends Controller
     {
         $query = Organization::with([
             'region',
-            'city',
+            'locality',
             'sites',
             'director' => function ($query) {
                 $query->whereNull('deleted_at');
@@ -50,9 +52,9 @@ class PublicOrganizationController extends Controller
             $query->where('region_id', $request->region);
         }
 
-        // Фильтрация по городу
-        if ($request->filled('city_id')) {
-            $query->where('city_id', $request->city_id);
+        // Фильтрация по городу / населенному пункту
+        if ($request->filled('locality_id')) {
+            $query->where('locality_id', $request->locality_id);
         }
 
         // Фильтрация по координатам (для карты)
@@ -74,7 +76,7 @@ class PublicOrganizationController extends Controller
 
         return Inertia::render('Organizations', [
             'organizations' => InertiaResource::paginate($organizations, OrganizationResource::class),
-            'filters' => $request->only(['search', 'type', 'region', 'city_id', 'bbox', 'sort_by', 'sort_direction']),
+            'filters' => $request->only(['search', 'type', 'region', 'locality_id', 'bbox', 'sort_by', 'sort_direction']),
         ]);
     }
 
@@ -86,7 +88,7 @@ class PublicOrganizationController extends Controller
         $query = Organization::query()
             ->with([
                 'region:id,name',
-                'city:id,name',
+                'locality:id,name',
                 'director' => function ($query) {
                     $query->whereNull('deleted_at');
                 }
@@ -116,8 +118,8 @@ class PublicOrganizationController extends Controller
             $query->where('region_id', (int) $request->get('region_id'));
         }
 
-        if ($request->filled('city_id')) {
-            $query->where('city_id', (int) $request->get('city_id'));
+        if ($request->filled('locality_id')) {
+            $query->where('locality_id', (int) $request->get('locality_id'));
         }
 
         if ($request->filled('organization_id')) {
@@ -163,7 +165,7 @@ class PublicOrganizationController extends Controller
             'images',
             'address',
             'region_id',
-            'city_id',
+            'locality_id',
             'created_at',
             'needs_target_amount',
             'needs_collected_amount',
@@ -189,7 +191,7 @@ class PublicOrganizationController extends Controller
                 'type' => $org->type,
                 'status' => $org->status,
                 'is_public' => (bool) $org->is_public,
-                'city' => $org->city ? ['name' => $org->city->name] : null,
+                'locality' => $org->locality ? ['name' => $org->locality->name] : null,
                 'region' => $org->region ? ['name' => $org->region->name] : null,
                 'members_count' => (int) ($org->members_count ?? 0),
                 'projects_count' => (int) ($org->projects_count ?? 0),
@@ -215,8 +217,7 @@ class PublicOrganizationController extends Controller
 
         $organization->load([
             'region',
-            'city',
-            'settlement',
+            'locality',
             'director' => function ($query) {
                 $query->whereNull('deleted_at');
             },
@@ -259,7 +260,7 @@ class PublicOrganizationController extends Controller
 
         $organization->load([
             'region',
-            'city',
+            'locality',
             'director' => function ($query) {
                 $query->whereNull('deleted_at');
             },
@@ -307,17 +308,17 @@ class PublicOrganizationController extends Controller
      */
     public function regions()
     {
-        $regions = \App\Models\Region::with('cities')
+        $regions = Region::with('localities')
             ->orderBy('name')
             ->get()
             ->map(function ($region) {
                 return [
                     'id' => $region->id,
                     'name' => $region->name,
-                    'cities' => $region->cities->map(function ($city) {
+                    'localities' => $region->localities->map(function ($locality) {
                         return [
-                            'id' => $city->id,
-                            'name' => $city->name,
+                            'id' => $locality->id,
+                            'name' => $locality->name,
                         ];
                     }),
                 ];
@@ -329,9 +330,10 @@ class PublicOrganizationController extends Controller
     /**
      * Получить список городов с поиском
      */
-    public function cities(Request $request): JsonResponse
+    public function localities(Request $request): JsonResponse
     {
-        $query = City::with('region')->where('is_active', true);
+        $query = Locality::with('region')
+            ->where('is_active', true);
 
         $ids = [];
         if ($request->filled('ids')) {
@@ -367,15 +369,15 @@ class PublicOrganizationController extends Controller
         $cities = $query->orderBy('name')->get();
 
         return response()->json(
-            $cities->map(function ($city) {
+            $cities->map(function ($locality) {
                 return [
-                    'id' => $city->id,
-                    'name' => $city->name,
-                    'region' => $city->region
-                        ? ['name' => $city->region->name]
+                    'id' => $locality->id,
+                    'name' => $locality->name,
+                    'region' => $locality->region
+                        ? ['name' => $locality->region->name]
                         : null,
-                    'latitude' => $city->latitude !== null ? (float) $city->latitude : null,
-                    'longitude' => $city->longitude !== null ? (float) $city->longitude : null,
+                    'latitude' => $locality->latitude !== null ? (float) $locality->latitude : null,
+                    'longitude' => $locality->longitude !== null ? (float) $locality->longitude : null,
                 ];
             })
         );
@@ -395,7 +397,7 @@ class PublicOrganizationController extends Controller
 
         try {
             // Пробуем найти ближайший город в радиусе 50км
-            $city = City::selectRaw(
+            $city = Locality::selectRaw(
                 '*, (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance',
                 [$latitude, $longitude, $latitude]
             )

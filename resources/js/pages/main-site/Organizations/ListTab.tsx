@@ -1,7 +1,7 @@
 import LoadMoreButton from '@/components/main-site/LoadMoreButton';
 import OrganizationCard from '@/components/organizations/OrganizationCard';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { MoneyAmount } from '@/types/money';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface OrganizationData {
     id: number;
@@ -12,7 +12,7 @@ interface OrganizationData {
     logo?: string;
     image?: string;
     region?: { name: string };
-    city?: { id: number; name: string };
+    locality?: { id: number; name: string };
     type: string;
     projects_count: number;
     members_count?: number;
@@ -46,7 +46,7 @@ interface ListTabProps {
     filters?: {
         search?: string;
         region_id?: number;
-        city_id?: number;
+        locality_id?: number;
     };
     getPaginationUrl: (page: number) => string;
 }
@@ -84,7 +84,7 @@ export default function ListTab({
         organizations.meta?.last_page,
         filters?.search,
         filters?.region_id,
-        filters?.city_id,
+        filters?.locality_id,
     ]);
 
     const hasMore = useMemo(

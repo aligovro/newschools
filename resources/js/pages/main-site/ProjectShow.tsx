@@ -21,7 +21,7 @@ interface Organization {
     region?: {
         name: string;
     };
-    city?: {
+    locality?: {
         name: string;
     };
 }
@@ -111,7 +111,7 @@ export default function ProjectShow({
     const organizationAddress = project.organization
         ? [
               project.organization.region?.name,
-              project.organization.city?.name,
+              project.organization.locality?.name,
               project.organization.address,
           ]
               .filter(Boolean)
@@ -246,15 +246,15 @@ export default function ProjectShow({
                                 >
                                     {project.organization.name}
                                 </Link>
-                                {project.organization.city?.name && (
+                                {project.organization.locality?.name && (
                                     <>
                                         {' · '}
-                                        {project.organization.city.name}
+                                        {project.organization.locality.name}
                                     </>
                                 )}
                                 {project.organization.address && (
                                     <>
-                                        {project.organization.city?.name
+                                        {project.organization.locality?.name
                                             ? ', '
                                             : ' · '}
                                         {project.organization.address}

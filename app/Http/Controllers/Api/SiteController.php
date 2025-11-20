@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SiteWidgetResource;
 use App\Models\Site;
+use App\Models\SitePositionSetting;
 use App\Models\SiteWidget;
+use App\Models\SiteWidgetSetting;
 use App\Models\Widget;
 use App\Models\WidgetPosition;
 use App\Services\WidgetService;
+use App\Services\WidgetDataService;
 use App\Services\SiteSeoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -164,10 +167,19 @@ class SiteController extends Controller
             Cache::forget("site_positions_{$site->template}");
             Cache::forget("site_position_settings_{$site->id}");
 
+            // Возвращаем отформатированные данные с правильными URL изображений
+            $formattedSeoConfig = $seoConfig;
+            if (isset($formattedSeoConfig['og_image']) && !empty($formattedSeoConfig['og_image'])) {
+                $formattedSeoConfig['og_image'] = SiteWidget::formatImageUrl($formattedSeoConfig['og_image']);
+            }
+            if (isset($formattedSeoConfig['twitter_image']) && !empty($formattedSeoConfig['twitter_image'])) {
+                $formattedSeoConfig['twitter_image'] = SiteWidget::formatImageUrl($formattedSeoConfig['twitter_image']);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'SEO настройки сохранены',
-                'data' => $seoConfig,
+                'data' => $formattedSeoConfig,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -338,11 +350,11 @@ class SiteController extends Controller
             );
 
             // Создаем новый виджет в нормализованных таблицах
-            $order = \App\Models\SiteWidget::where('site_id', $site->id)
+            $order = SiteWidget::where('site_id', $site->id)
                 ->where('position_slug', $position->slug)
                 ->count() + 1;
 
-            $siteWidget = \App\Models\SiteWidget::create([
+            $siteWidget = SiteWidget::create([
                 'site_id' => $site->id,
                 'widget_id' => $widget->id,
                 'position_id' => $position->id,
@@ -415,7 +427,7 @@ class SiteController extends Controller
             $site = $this->getSite($site);
 
             // Находим виджет в нормализованных таблицах
-            $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
+            $siteWidget = SiteWidget::where('site_id', $site->id)
                 ->where('id', $widgetId)
                 ->first();
 
@@ -518,7 +530,7 @@ class SiteController extends Controller
             $site = $this->getSite($site);
 
             // Находим виджет в нормализованных таблицах
-            $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
+            $siteWidget = SiteWidget::where('site_id', $site->id)
                 ->where('id', $widgetId)
                 ->first();
 
@@ -560,7 +572,7 @@ class SiteController extends Controller
             $site = $this->getSite($site);
 
             // Находим виджет
-            $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
+            $siteWidget = SiteWidget::where('site_id', $site->id)
                 ->where('id', $widgetId)
                 ->first();
 
@@ -589,14 +601,14 @@ class SiteController extends Controller
             ) {
                 // Закрываем "дыру" в старой позиции, если позиция меняется
                 if ($oldPositionSlug !== $newPositionSlug) {
-                    \App\Models\SiteWidget::where('site_id', $site->id)
+                    SiteWidget::where('site_id', $site->id)
                         ->where('position_slug', $oldPositionSlug)
                         ->where('order', '>', $oldOrder)
                         ->decrement('order');
                 }
 
                 // Подсчитываем количество виджетов в целевой позиции
-                $siblingsCount = \App\Models\SiteWidget::where('site_id', $site->id)
+                $siblingsCount = SiteWidget::where('site_id', $site->id)
                     ->where('position_slug', $newPositionSlug)
                     ->when($oldPositionSlug === $newPositionSlug, function ($q) use ($siteWidget) {
                         // При перемещении внутри той же позиции исключаем сам виджет из подсчета
@@ -608,7 +620,7 @@ class SiteController extends Controller
                 $newOrder = max(1, min($requestedOrder, $siblingsCount + 1));
 
                 // Сдвигаем соседей в целевой позиции, освобождая место под newOrder
-                \App\Models\SiteWidget::where('site_id', $site->id)
+                SiteWidget::where('site_id', $site->id)
                     ->where('position_slug', $newPositionSlug)
                     ->when($oldPositionSlug === $newPositionSlug, function ($q) use ($siteWidget) {
                         $q->where('id', '!=', $siteWidget->id);
@@ -682,9 +694,9 @@ class SiteController extends Controller
         try {
             $siteModel = $this->getSite($site);
 
-            $position = \App\Models\WidgetPosition::where('slug', $positionSlug)->first();
+            $position = WidgetPosition::where('slug', $positionSlug)->first();
 
-            $settings = \App\Models\SitePositionSetting::where('site_id', $siteModel->id)
+            $settings = SitePositionSetting::where('site_id', $siteModel->id)
                 ->where('position_slug', $positionSlug)
                 ->first();
 
@@ -716,9 +728,9 @@ class SiteController extends Controller
         try {
             $siteModel = $this->getSite($site);
 
-            $position = \App\Models\WidgetPosition::where('slug', $positionSlug)->first();
+            $position = WidgetPosition::where('slug', $positionSlug)->first();
 
-            $settings = \App\Models\SitePositionSetting::updateOrCreate(
+            $settings = SitePositionSetting::updateOrCreate(
                 [
                     'site_id' => $siteModel->id,
                     'position_slug' => $positionSlug,
@@ -788,11 +800,11 @@ class SiteController extends Controller
 
         try {
             $siteModel = $this->getSite($site);
-            $widget = \App\Models\SiteWidget::where('id', $widgetId)
+            $widget = SiteWidget::where('id', $widgetId)
                 ->where('site_id', $siteModel->id)
                 ->firstOrFail();
 
-            $settings = \App\Models\SiteWidgetSetting::updateOrCreate(
+            $settings = SiteWidgetSetting::updateOrCreate(
                 [
                     'site_id' => $siteModel->id,
                     'widget_id' => $widgetId,
@@ -826,11 +838,11 @@ class SiteController extends Controller
     {
         try {
             $siteModel = $this->getSite($site);
-            $widget = \App\Models\SiteWidget::where('id', $widgetId)
+            $widget = SiteWidget::where('id', $widgetId)
                 ->where('site_id', $siteModel->id)
                 ->firstOrFail();
 
-            $settings = \App\Models\SiteWidgetSetting::where('site_id', $siteModel->id)
+            $settings = SiteWidgetSetting::where('site_id', $siteModel->id)
                 ->where('widget_id', $widgetId)
                 ->first();
 
@@ -879,7 +891,7 @@ class SiteController extends Controller
             $site = $this->getSite($site);
 
             // Централизованный вывод через ресурс, чтобы включать специализированные данные
-            $widgets = \App\Models\SiteWidget::with([
+            $widgets = SiteWidget::with([
                 'configs',
                 'heroSlides',
                 'sliderSlides',
@@ -927,7 +939,7 @@ class SiteController extends Controller
                 if (empty($w['id'])) {
                     continue;
                 }
-                $siteWidget = \App\Models\SiteWidget::where('site_id', $site->id)
+                $siteWidget = SiteWidget::where('site_id', $site->id)
                     ->where('id', $w['id'])
                     ->first();
                 if (!$siteWidget) {
@@ -1018,14 +1030,14 @@ class SiteController extends Controller
         }
 
         // Создаем дефолтные виджеты в нормализованных таблицах
-        $widgetDataService = app(\App\Services\WidgetDataService::class);
+        $widgetDataService = app(WidgetDataService::class);
 
         foreach ($defaultWidgets as $widgetData) {
             // Создаем SiteWidget
-            $siteWidget = \App\Models\SiteWidget::create([
+            $siteWidget = SiteWidget::create([
                 'site_id' => $site->id,
                 'widget_id' => $widgetData['widget_id'],
-                'position_id' => \App\Models\WidgetPosition::where('slug', $widgetData['position_slug'])->first()->id,
+                'position_id' => WidgetPosition::where('slug', $widgetData['position_slug'])->first()->id,
                 'name' => $widgetData['name'],
                 'position_name' => $widgetData['position_name'],
                 'position_slug' => $widgetData['position_slug'],
@@ -1115,7 +1127,7 @@ class SiteController extends Controller
     }
 
     // Удаление всех связанных данных виджета
-    private function deleteWidgetRelatedData(\App\Models\SiteWidget $siteWidget): void
+    private function deleteWidgetRelatedData(SiteWidget $siteWidget): void
     {
         // Удаляем конфигурации виджета
         $siteWidget->configs()->delete();

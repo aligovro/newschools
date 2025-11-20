@@ -6,7 +6,7 @@ export interface SuggestedOrganization {
     id: number;
     name: string;
     city_name: string | null;
-    city?: {
+    locality?: {
         id: number | null;
         name: string | null;
     } | null;
@@ -33,7 +33,7 @@ export interface SuggestedOrganizationFilters {
     sort_direction: 'asc' | 'desc';
     per_page: number;
     page: number;
-    city_id?: number;
+    locality_id?: number;
 }
 
 export interface SuggestedOrganizationListResponse {
@@ -56,7 +56,7 @@ export interface SuggestedOrganizationListResponse {
 
 export interface UpdateSuggestedOrganizationPayload {
     name?: string;
-    city_id?: number | null;
+    locality_id?: number | null;
     city_name?: string | null;
     address?: string | null;
     latitude?: number | null;
@@ -95,8 +95,8 @@ export const suggestedOrganizationsApi = {
     },
 
     markAsViewed: async (id: number): Promise<void> => {
-        await apiClient.post(`/dashboard/suggested-organizations/${id}/mark-as-viewed`);
+        await apiClient.post(
+            `/dashboard/suggested-organizations/${id}/mark-as-viewed`,
+        );
     },
 };
-
-

@@ -36,7 +36,7 @@ interface Organization {
     region?: {
         name: string;
     };
-    city?: {
+    locality?: {
         name: string;
     };
     type: string;
@@ -96,7 +96,7 @@ export default function OrganizationShow({
     // Формируем полный адрес
     const fullAddress = [
         organization.region?.name,
-        organization.city?.name,
+        organization.locality?.name,
         organization.address,
     ]
         .filter(Boolean)

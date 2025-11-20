@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\Payment\PaymentService;
 use App\Models\PaymentTransaction;
+use App\Models\PaymentLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -137,7 +138,7 @@ class PaymentWebhookController extends Controller
                 'page' => 'nullable|integer|min:1',
             ]);
 
-            $query = \App\Models\PaymentLog::query();
+            $query = PaymentLog::query();
 
             if (isset($validated['transaction_id'])) {
                 $transaction = PaymentTransaction::where('transaction_id', $validated['transaction_id'])->first();

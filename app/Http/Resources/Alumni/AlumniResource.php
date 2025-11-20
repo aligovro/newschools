@@ -2,11 +2,12 @@
 
 namespace App\Http\Resources\Alumni;
 
+use App\Models\Member;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
 
 /**
- * @mixin \App\Models\Member
+ * @mixin Member
  */
 class AlumniResource extends JsonResource
 {

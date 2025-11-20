@@ -17,7 +17,7 @@ export interface CascadeSelectData {
         loadMore: () => void;
         refresh: () => void;
     };
-    cities: {
+    localities: {
         options: SelectOption[];
         loading: boolean;
         hasMore: boolean;
@@ -31,4 +31,3 @@ export interface CascadeSelectData {
     handleRegionChange: (id: number) => void;
     handleCityChange: (id: number) => void;
 }
-

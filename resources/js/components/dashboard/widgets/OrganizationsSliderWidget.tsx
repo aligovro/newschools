@@ -18,7 +18,7 @@ type Organization = React.ComponentProps<
 interface OrganizationsSliderConfig {
     title?: string;
     show_title?: boolean; // Показывать заголовок на сайте
-    city_id?: number;
+    locality_id?: number;
     limit?: number;
     slidesPerView?: number; // desktop
     showHeaderActions?: boolean;
@@ -32,7 +32,7 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     const {
         title = 'Школы города',
         show_title = true, // По умолчанию true для обратной совместимости
-        city_id,
+        locality_id,
         limit = 9,
         slidesPerView = 3,
         showHeaderActions = true,
@@ -59,7 +59,7 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                 setLoading(true);
                 setError(null);
                 const data = await fetchPublicOrganizations({
-                    city_id,
+                    locality_id,
                     limit,
                     order_by: 'donations_collected',
                     order_direction: 'desc',
@@ -85,7 +85,7 @@ export const OrganizationsSliderWidget: React.FC<Props> = ({ config = {} }) => {
         };
         run();
         return () => controller.abort();
-    }, [city_id, limit]);
+    }, [locality_id, limit]);
 
     useEffect(() => {
         const swiper = swiperRef.current;

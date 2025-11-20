@@ -16,6 +16,7 @@ use App\Models\Site;
 use App\Services\Organizations\OrganizationAlumniService;
 use App\Services\Sponsors\OrganizationSponsorService;
 use App\Services\Seo\SeoPresenter;
+use App\Http\Resources\OrganizationResource;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -54,7 +55,7 @@ class MainSiteController extends Controller
     {
         $query = Organization::with([
             'region',
-            'city',
+            'locality',
             'director' => function ($query) {
                 $query->whereNull('deleted_at');
             },
@@ -97,8 +98,8 @@ class MainSiteController extends Controller
             $query->where('region_id', $request->region_id);
         }
 
-        if ($request->filled('city_id')) {
-            $query->where('city_id', $request->city_id);
+        if ($request->filled('locality_id')) {
+            $query->where('locality_id', $request->locality_id);
         }
 
         $perPage = (int) $request->input('per_page', 6);
@@ -110,8 +111,8 @@ class MainSiteController extends Controller
         // Форматируем данные организаций для отображения
         // Используем OrganizationResource, чтобы не дублировать логику нормализации путей/связей
         $organizations->getCollection()->transform(function ($org) {
-            /** @var \App\Models\Organization $org */
-            $resourceData = (new \App\Http\Resources\OrganizationResource($org))->toArray(request());
+            /** @var Organization $org */
+            $resourceData = (new OrganizationResource($org))->toArray(request());
 
             // Приоритет: logo, затем первая картинка из images — аналогично тому, как мы делали вручную
             $image = $resourceData['logo'] ?? null;
@@ -173,7 +174,7 @@ class MainSiteController extends Controller
 
         return Inertia::render('main-site/Organizations', array_merge($data, [
             'organizations' => $organizations,
-            'filters' => $request->only(['search', 'region_id', 'city_id']),
+            'filters' => $request->only(['search', 'region_id', 'locality_id']),
         ]));
     }
 
@@ -298,7 +299,7 @@ class MainSiteController extends Controller
             ->where('is_public', true)
             ->with([
                 'region',
-                'city',
+                'locality',
                 'projects' => function ($q) {
                     $q->where('status', 'active')->limit(6);
                 },
@@ -383,9 +384,9 @@ class MainSiteController extends Controller
                 'id' => $organization->region->id,
                 'name' => $organization->region->name,
             ] : null,
-            'city' => $organization->city ? [
-                'id' => $organization->city->id,
-                'name' => $organization->city->name,
+            'locality' => $organization->locality ? [
+                'id' => $organization->locality->id,
+                'name' => $organization->locality->name,
             ] : null,
             'type' => $organization->type,
             'projects' => $organization->projects->map(function ($project) {

@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\FederalDistrict;
 use App\Models\Region;
-use App\Models\City;
+use App\Models\Locality;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -78,8 +78,8 @@ class NorthCaucasusSeeder extends Seeder
         ]
       );
 
-      // Создаем столицу региона в таблице cities
-      City::updateOrCreate(
+      // Создаем столицу региона в таблице localities
+      Locality::updateOrCreate(
         [
           'region_id' => $region->id,
           'name' => $regionData['capital']
@@ -95,7 +95,7 @@ class NorthCaucasusSeeder extends Seeder
       // Добавляем дополнительные города для некоторых регионов
       $additionalCities = $this->getAdditionalCities($regionData['code']);
       foreach ($additionalCities as $cityName) {
-        City::updateOrCreate(
+        Locality::updateOrCreate(
           [
             'region_id' => $region->id,
             'name' => $cityName
@@ -116,7 +116,7 @@ class NorthCaucasusSeeder extends Seeder
     $this->command->info("Импорт завершен!");
     $this->command->info("Добавлено регионов: {$importedCount}");
     $this->command->info("Всего регионов в Северо-Кавказском ФО: " . $northCaucasusFD->regions()->count());
-    $this->command->info("Всего городов в Северо-Кавказском ФО: " . City::whereHas('region.federalDistrict', function ($q) {
+    $this->command->info("Всего городов в Северо-Кавказском ФО: " . Locality::whereHas('region.federalDistrict', function ($q) {
       $q->where('code', 'NCFD');
     })->count());
   }
@@ -126,7 +126,7 @@ class NorthCaucasusSeeder extends Seeder
    */
   private function getAdditionalCities(string $regionCode): array
   {
-    $cities = [
+    $localities = [
       '05' => [ // Дагестан
         'Дербент',
         'Каспийск',
@@ -162,6 +162,6 @@ class NorthCaucasusSeeder extends Seeder
       ],
     ];
 
-    return $cities[$regionCode] ?? [];
+    return $localities[$regionCode] ?? [];
   }
 }

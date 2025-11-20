@@ -253,7 +253,7 @@ export interface DonationsListOutputConfig {
     organizationId?: number;
 }
 
-// City supporters widget types
+// Locality supporters widget types
 export interface CitySupportersOutputConfig {
     title?: string;
     show_title?: boolean; // Показывать заголовок на сайте

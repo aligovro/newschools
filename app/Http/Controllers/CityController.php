@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\City;
+use App\Models\Locality;
 use Illuminate\Http\Request;
 
 class CityController extends Controller
 {
     public function show($id)
     {
-        $city = City::findOrFail($id);
+        $locality = Locality::findOrFail($id);
         return response()->json([
-            'id' => $city->id,
-            'name' => $city->name,
-            'region_id' => $city->region_id,
-            'latitude' => $city->latitude,
-            'longitude' => $city->longitude,
+            'id' => $locality->id,
+            'name' => $locality->name,
+            'region_id' => $locality->region_id,
+            'latitude' => $locality->latitude,
+            'longitude' => $locality->longitude,
         ]);
     }
 }

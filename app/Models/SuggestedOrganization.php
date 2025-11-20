@@ -38,7 +38,7 @@ class SuggestedOrganization extends Model
     protected $fillable = [
         'name',
         'city_name',
-        'city_id',
+        'locality_id',
         'address',
         'latitude',
         'longitude',
@@ -55,11 +55,12 @@ class SuggestedOrganization extends Model
     ];
 
     /**
-     * Связь с городом
+     * Связь с населенным пунктом (locality).
+     * Используется как основной справочник локаций вместо localities.
      */
-    public function city(): BelongsTo
+    public function locality(): BelongsTo
     {
-        return $this->belongsTo(City::class);
+        return $this->belongsTo(Locality::class);
     }
 
     /**

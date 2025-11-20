@@ -8,7 +8,7 @@ interface School {
     name: string;
     slug?: string;
     address?: string;
-    city?: {
+    locality?: {
         name: string;
     };
     image?: string;
@@ -60,7 +60,7 @@ export default function OrganizationCard({
         : `/organization/${organization.id}`;
 
     // Формирование адреса: город + адрес
-    const fullAddress = [organization.city?.name, organization.address]
+    const fullAddress = [organization.locality?.name, organization.address]
         .filter(Boolean)
         .join(', ');
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\SiteWidget;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +19,24 @@ class SiteWidgetResource extends JsonResource
         $normalizedConfig = $this->getNormalizedConfig();
 
         // Build configs array from DB
+        // Для alumni_stats виджета нужно использовать отформатированные данные из normalizedConfig
+        if ($this->widget_slug === 'alumni_stats' && isset($normalizedConfig['columns'])) {
+            // Создаем configs array с отформатированными данными
+            $configsArray = $this->configs->map(function ($config) use ($normalizedConfig) {
+                $configData = [
+                    'config_key' => $config->config_key,
+                    'config_value' => $config->config_value,
+                    'config_type' => $config->config_type,
+                ];
+                
+                // Для columns используем отформатированные данные
+                if ($config->config_key === 'columns') {
+                    $configData['config_value'] = json_encode($normalizedConfig['columns']);
+                }
+                
+                return $configData;
+            })->toArray();
+        } else {
         $configsArray = $this->configs->map(function ($config) {
             return [
                 'config_key' => $config->config_key,
@@ -25,6 +44,7 @@ class SiteWidgetResource extends JsonResource
                 'config_type' => $config->config_type,
             ];
         })->toArray();
+        }
 
         // If menu items are available, inject them into config and configs for builder compatibility
         if ($this->relationLoaded('menuItems') && $this->menuItems->isNotEmpty()) {
@@ -58,7 +78,7 @@ class SiteWidgetResource extends JsonResource
                     'buttonLink' => $slide->button_link,
                     'buttonLinkType' => $slide->button_link_type,
                     'buttonOpenInNewTab' => (bool) $slide->button_open_in_new_tab,
-                    'backgroundImage' => \App\Models\SiteWidget::formatImageUrl($slide->background_image ?? ''),
+                    'backgroundImage' => SiteWidget::formatImageUrl($slide->background_image ?? ''),
                     'overlayColor' => $slide->overlay_color,
                     'overlayOpacity' => $slide->overlay_opacity,
                     'overlayGradient' => $slide->overlay_gradient,
@@ -87,7 +107,7 @@ class SiteWidgetResource extends JsonResource
                     'buttonLink' => $slide->button_link,
                     'buttonLinkType' => $slide->button_link_type,
                     'buttonOpenInNewTab' => (bool) $slide->button_open_in_new_tab,
-                    'backgroundImage' => \App\Models\SiteWidget::formatImageUrl($slide->background_image ?? ''),
+                    'backgroundImage' => SiteWidget::formatImageUrl($slide->background_image ?? ''),
                     'overlayColor' => $slide->overlay_color,
                     'overlayOpacity' => $slide->overlay_opacity,
                     'overlayGradient' => $slide->overlay_gradient,
@@ -135,7 +155,7 @@ class SiteWidgetResource extends JsonResource
             $images = $this->galleryImages->map(function ($image) {
                 return [
                     'id' => $image->id,
-                    'url' => \App\Models\SiteWidget::formatImageUrl($image->image_url ?? ''),
+                    'url' => SiteWidget::formatImageUrl($image->image_url ?? ''),
                     'alt' => $image->alt_text,
                     'caption' => $image->caption,
                     'order' => $image->sort_order,
@@ -153,7 +173,7 @@ class SiteWidgetResource extends JsonResource
         if ($this->relationLoaded('imageSettings') && $this->imageSettings) {
             $imageSettings = $this->imageSettings;
             $imageData = [
-                'image' => \App\Models\SiteWidget::formatImageUrl($imageSettings->image_url ?? ''),
+                'image' => SiteWidget::formatImageUrl($imageSettings->image_url ?? ''),
                 'altText' => $imageSettings->alt_text,
                 'caption' => $imageSettings->description,
                 'alignment' => $imageSettings->alignment,

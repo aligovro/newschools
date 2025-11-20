@@ -1,6 +1,6 @@
 import CategoryFilter from '@/components/main-site/CategoryFilter';
 import CitySelector, {
-    type City as SelectorCity,
+    type Locality as SelectorCity,
 } from '@/components/main-site/CitySelector';
 import LoadMoreButton from '@/components/main-site/LoadMoreButton';
 import ProjectCard from '@/components/projects/ProjectCard';
@@ -58,7 +58,7 @@ interface ProjectsPageProps {
     filters: {
         search?: string;
         category?: string;
-        city_id?: number;
+        locality_id?: number;
     };
     categories: Category[];
 }
@@ -88,7 +88,7 @@ export default function Projects({
 
     const [selectedCity, setSelectedCity] = useState<SelectorCity | null>(null);
     const [isCityManuallySelected, setIsCityManuallySelected] = useState(
-        !!initialFilters.city_id,
+        !!initialFilters.locality_id,
     );
 
     // Синхронизация с новыми данными при изменении фильтров
@@ -104,7 +104,7 @@ export default function Projects({
 
     // Синхронизация города из URL (если пользователь выбирал его ранее)
     useEffect(() => {
-        const cityId = initialFilters.city_id;
+        const cityId = initialFilters.locality_id;
 
         if (!cityId) {
             setSelectedCity(null);
@@ -149,7 +149,7 @@ export default function Projects({
             isMounted = false;
         };
     }, [
-        initialFilters.city_id,
+        initialFilters.locality_id,
         defaultCityLoaded,
         defaultCityId,
         defaultCityName,
@@ -159,7 +159,7 @@ export default function Projects({
     const updateFilters = useCallback(
         (newFilters: {
             category?: string;
-            city_id?: number | null;
+            locality_id?: number | null;
             page?: number;
         }) => {
             const params = new URLSearchParams();
@@ -171,11 +171,11 @@ export default function Projects({
                     : selectedCategory;
 
             // Для города: если явно передан null - убираем из URL
-            // Если передан city_id - используем его
+            // Если передан locality_id - используем его
             // Если не передан - используем текущий, но только если он был выбран вручную
             let cityId: number | undefined;
-            if (newFilters.city_id !== undefined) {
-                cityId = newFilters.city_id || undefined;
+            if (newFilters.locality_id !== undefined) {
+                cityId = newFilters.locality_id || undefined;
             } else if (isCityManuallySelected && selectedCity?.id) {
                 cityId = selectedCity.id;
             }
@@ -184,7 +184,7 @@ export default function Projects({
                 params.set('category', category);
             }
             if (cityId) {
-                params.set('city_id', String(cityId));
+                params.set('locality_id', String(cityId));
             }
             if (newFilters.page && newFilters.page > 1) {
                 params.set('page', String(newFilters.page));
@@ -215,15 +215,15 @@ export default function Projects({
 
     // Обработчик изменения города
     const handleCityChange = useCallback(
-        (city: SelectorCity | null) => {
-            setSelectedCity(city);
+        (locality: SelectorCity | null) => {
+            setSelectedCity(locality);
 
-            if (city) {
+            if (locality) {
                 setIsCityManuallySelected(true);
-                updateFilters({ city_id: city.id, page: 1 });
+                updateFilters({ locality_id: locality.id, page: 1 });
             } else {
                 setIsCityManuallySelected(false);
-                updateFilters({ city_id: null, page: 1 });
+                updateFilters({ locality_id: null, page: 1 });
             }
         },
         [updateFilters],
@@ -240,9 +240,9 @@ export default function Projects({
         if (selectedCategory) {
             params.set('category', selectedCategory);
         }
-        // Добавляем city_id только если он был выбран вручную
+        // Добавляем locality_id только если он был выбран вручную
         if (isCityManuallySelected && selectedCity?.id) {
-            params.set('city_id', String(selectedCity.id));
+            params.set('locality_id', String(selectedCity.id));
         }
         params.set('page', String(nextPage));
 

@@ -1,19 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { useOrganizationSlug } from '@/hooks/useOrganizationSlug';
 import { useCascadeSelectData } from '@/hooks/useGeoSelectData';
-import { useLocation } from './hooks/useLocation';
+import { useOrganizationSlug } from '@/hooks/useOrganizationSlug';
+import { router, usePage } from '@inertiajs/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { OrganizationFormProps, Status } from '../types';
 import { useAdminUser } from './hooks/useAdminUser';
+import { useLocation } from './hooks/useLocation';
 import { useOrganizationFormState } from './hooks/useOrganizationFormState';
 import { BasicInfoSection } from './sections/BasicInfoSection';
 import { ContactInfoSection } from './sections/ContactInfoSection';
 import { LocationSection } from './sections/LocationSection';
-import { PaymentSettingsSection } from './sections/PaymentSettingsSection';
 import { MediaSection } from './sections/MediaSection';
 import { NeedsSection } from './sections/NeedsSection';
+import { PaymentSettingsSection } from './sections/PaymentSettingsSection';
 import { SettingsSection } from './sections/SettingsSection';
-import type { OrganizationFormProps, Status } from '../types';
 
 export default function OrganizationForm({
     mode,
@@ -67,7 +67,7 @@ export default function OrganizationForm({
     const location = useLocation({
         organization,
         initialRegionId: organization?.region?.id ?? null,
-        initialCityId: organization?.city?.id ?? null,
+        initialCityId: organization?.locality?.id ?? null,
     });
 
     // Администратор
@@ -78,7 +78,9 @@ export default function OrganizationForm({
 
     // Валидация
     const [dirty, setDirty] = useState<Record<string, boolean>>({});
-    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>(
+        {},
+    );
 
     const validateField = useCallback(
         (key: string, value: unknown) => {
@@ -123,11 +125,11 @@ export default function OrganizationForm({
     useEffect(() => {
         if (location.regionId) {
             cascadeData.handleRegionChange(location.regionId);
-            if (cascadeData.cities?.setExtraParams) {
-                cascadeData.cities.setExtraParams({
+            if (cascadeData.localities?.setExtraParams) {
+                cascadeData.localities.setExtraParams({
                     region_id: location.regionId,
                 });
-                cascadeData.cities.refresh();
+                cascadeData.localities.refresh();
             }
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -172,11 +174,7 @@ export default function OrganizationForm({
         });
 
         return uniqueOpts;
-    }, [
-        cascadeData.regions.options,
-        location.regionId,
-        organization?.region,
-    ]);
+    }, [cascadeData.regions.options, location.regionId, organization?.region]);
 
     // Обработчики изменений
     const handleNameChange = useCallback(
@@ -277,7 +275,7 @@ export default function OrganizationForm({
             append('website', formState.website);
             append('is_public', formState.isPublic);
             append('region_id', location.regionId);
-            append('city_id', location.cityId);
+            append('locality_id', location.cityId);
             append('city_name', location.cityName);
             append('latitude', location.latitude);
             append('longitude', location.longitude);
@@ -286,7 +284,10 @@ export default function OrganizationForm({
                 'payment_settings',
                 JSON.stringify(formState.paymentSettings),
             );
-            formData.append('needs_target_amount', formState.needsTargetAmount ?? '');
+            formData.append(
+                'needs_target_amount',
+                formState.needsTargetAmount ?? '',
+            );
 
             if (formState.logoValue instanceof File)
                 formData.append('logo', formState.logoValue);
@@ -454,4 +455,3 @@ export default function OrganizationForm({
         </form>
     );
 }
-

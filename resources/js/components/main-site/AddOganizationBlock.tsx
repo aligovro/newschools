@@ -1,6 +1,6 @@
 import '@css/components/main-site/AddOrganizationBlock.scss';
 import { useCallback, useState } from 'react';
-import CitySelector, { type City } from './CitySelector';
+import CitySelector, { type Locality } from './CitySelector';
 import { MapSelectModal } from './MapSelectModal';
 
 interface AddOrganizationBlockProps {
@@ -22,7 +22,7 @@ export default function AddoOganizationBlock({
 }: AddOrganizationBlockProps) {
     const [formData, setFormData] = useState({
         organizationName: '',
-        city: null as City | null,
+        locality: null as Locality | null,
         cityName: '',
         address: '',
         mapCoordinates: null as { lat: number; lng: number } | null,
@@ -62,10 +62,12 @@ export default function AddoOganizationBlock({
                 },
                 body: JSON.stringify({
                     name: formData.organizationName,
-                    city_id: useSimpleCityInput ? undefined : formData.city?.id,
+                    locality_id: useSimpleCityInput
+                        ? undefined
+                        : formData.locality?.id,
                     city_name: useSimpleCityInput
                         ? formData.cityName
-                        : formData.city?.name,
+                        : formData.locality?.name,
                     address: formData.address,
                     latitude: formData.mapCoordinates?.lat,
                     longitude: formData.mapCoordinates?.lng,
@@ -80,7 +82,7 @@ export default function AddoOganizationBlock({
             // Сброс формы
             setFormData({
                 organizationName: '',
-                city: null,
+                locality: null,
                 cityName: '',
                 address: '',
                 mapCoordinates: null,
@@ -130,7 +132,7 @@ export default function AddoOganizationBlock({
 
     const modalCityName = useSimpleCityInput
         ? formData.cityName
-        : (formData.city?.name ?? '');
+        : (formData.locality?.name ?? '');
 
     return (
         <>
@@ -189,7 +191,7 @@ export default function AddoOganizationBlock({
                                         <>
                                             <input
                                                 type="text"
-                                                id="city"
+                                                id="locality"
                                                 value={formData.cityName}
                                                 onChange={(e) =>
                                                     setFormData({
@@ -203,7 +205,7 @@ export default function AddoOganizationBlock({
                                                 className="add-organization-block__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                                             />
                                             <label
-                                                htmlFor="city"
+                                                htmlFor="locality"
                                                 className="add-organization-block__label pointer-events-none absolute left-4 top-[9px]"
                                             >
                                                 Город
@@ -212,11 +214,11 @@ export default function AddoOganizationBlock({
                                     ) : (
                                         <div className="add-organization-block__city-selector-wrapper">
                                             <CitySelector
-                                                value={formData.city}
-                                                onChange={(city) =>
+                                                value={formData.locality}
+                                                onChange={(locality) =>
                                                     setFormData({
                                                         ...formData,
-                                                        city,
+                                                        locality,
                                                     })
                                                 }
                                                 detectOnMount={false}

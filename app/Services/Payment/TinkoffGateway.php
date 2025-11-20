@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use App\Models\PaymentMethod;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentLog;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class TinkoffGateway extends AbstractPaymentGateway
   private string $terminalKey;
   private string $password;
 
-  public function __construct(\App\Models\PaymentMethod $paymentMethod)
+  public function __construct(PaymentMethod $paymentMethod)
   {
     parent::__construct($paymentMethod);
 

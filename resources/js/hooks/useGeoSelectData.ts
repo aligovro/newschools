@@ -255,18 +255,7 @@ export const useCascadeSelectData = () => {
 
     // Данные городов
     const citiesData = useGeoSelectData({
-        endpoint: '/dashboard/api/cities-by-region',
-        initialLoad: false, // Не загружаем сразу
-        transformResponse: (data: unknown[]) =>
-            data.map((item: any) => ({
-                value: item.id,
-                label: item.name,
-            })),
-    });
-
-    // Данные населенных пунктов
-    const settlementsData = useGeoSelectData({
-        endpoint: '/dashboard/api/settlements-by-city',
+        endpoint: '/dashboard/api/localities-by-region',
         initialLoad: false, // Не загружаем сразу
         transformResponse: (data: unknown[]) =>
             data.map((item: any) => ({
@@ -283,9 +272,8 @@ export const useCascadeSelectData = () => {
             // немедленно подгружаем города под выбранный регион (без гонок)
             citiesData.setExtraParams({ region_id: regionId ?? undefined });
             citiesData.refresh();
-            //settlementsData.setExtraParams({ city_id: undefined });
         },
-        [citiesData, settlementsData],
+        [citiesData],
     );
 
     // Реакция на смену выбранного региона: грузим города для текущего selectedRegionId
@@ -293,36 +281,16 @@ export const useCascadeSelectData = () => {
         if (selectedRegionId) {
             citiesData.setExtraParams({ region_id: selectedRegionId });
             citiesData.refresh();
-            settlementsData.setExtraParams({ city_id: undefined });
         } else {
             citiesData.setExtraParams({ region_id: undefined });
             citiesData.refresh();
-            //settlementsData.setExtraParams({ city_id: undefined });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRegionId]);
 
-    const handleCityChange = useCallback(
-        (cityId: number | null) => {
-            setSelectedCityId(cityId);
-            // немедленно подгружаем НП под выбранный город
-            //settlementsData.setExtraParams({ city_id: cityId ?? undefined });
-            //settlementsData.refresh();
-        },
-        [settlementsData],
-    );
-
-    // Реакция на смену выбранного города: грузим НП для текущего selectedCityId
-    /* useEffect(() => {
-        if (selectedCityId) {
-            settlementsData.setExtraParams({ city_id: selectedCityId });
-            settlementsData.refresh();
-        } else {
-            settlementsData.setExtraParams({ city_id: undefined });
-            settlementsData.refresh();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedCityId]); */
+    const handleCityChange = useCallback((cityId: number | null) => {
+        setSelectedCityId(cityId);
+    }, []);
 
     return {
         regions: {
@@ -330,15 +298,11 @@ export const useCascadeSelectData = () => {
             value: selectedRegionId,
             onChange: handleRegionChange,
         },
-        cities: {
+        localities: {
             ...citiesData,
             value: selectedCityId,
             onChange: handleCityChange,
             disabled: !selectedRegionId,
-        },
-        settlements: {
-            ...settlementsData,
-            disabled: !selectedCityId,
         },
         handleRegionChange,
         handleCityChange,
