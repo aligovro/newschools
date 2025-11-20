@@ -22,6 +22,7 @@ return new class extends Migration
             $table->timestamp('last_sent_at')->nullable();
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('organization_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('project_id')->nullable()->constrained('projects')->cascadeOnDelete();
             $table->json('meta')->nullable();
             $table->timestamp('verified_at')->nullable();
             $table->timestamps();

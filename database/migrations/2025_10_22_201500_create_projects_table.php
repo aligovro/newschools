@@ -30,6 +30,8 @@ return new class extends Migration
             $table->json('beneficiaries')->nullable();
             $table->json('progress_updates')->nullable();
             $table->boolean('featured')->default(false);
+            $table->boolean('has_stages')->default(false);
+            $table->json('payment_settings')->nullable();
             $table->integer('views_count')->default(0);
             $table->integer('donations_count')->default(0);
             $table->json('seo_settings')->nullable();

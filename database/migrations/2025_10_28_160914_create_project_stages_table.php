@@ -21,6 +21,9 @@ return new class extends Migration
             $table->bigInteger('target_amount')->default(0); // в копейках
             $table->bigInteger('collected_amount')->default(0); // в копейках
             $table->integer('order')->default(0);
+            $table->enum('status', ['draft', 'active', 'completed', 'cancelled'])->default('draft');
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
             $table->timestamps();
         });
     }

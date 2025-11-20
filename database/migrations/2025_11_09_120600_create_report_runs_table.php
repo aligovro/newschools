@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('organization_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('project_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('project_stage_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('site_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('generated_by')->nullable()->references('id')->on('users')->nullOnDelete();
             $table->string('report_type');
             $table->string('status')->default('ready');
@@ -34,6 +35,7 @@ return new class extends Migration
             $table->index(['report_id', 'generated_at']);
             $table->index(['organization_id', 'report_type']);
             $table->index(['project_id', 'project_stage_id']);
+            $table->index(['site_id', 'report_type']);
         });
     }
 
