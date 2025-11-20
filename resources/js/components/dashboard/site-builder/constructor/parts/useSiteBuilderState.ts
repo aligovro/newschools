@@ -37,7 +37,6 @@ export const useSiteBuilderState = ({
     >({});
     const [loading, setLoading] = useState(true);
     const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
-    const [isPreviewMode] = useState(false);
     const [editingWidget, setEditingWidget] = useState<WidgetData | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isWidgetSelectModalOpen, setIsWidgetSelectModalOpen] =
@@ -304,7 +303,6 @@ export const useSiteBuilderState = ({
         loading,
         isRightPanelOpen,
         setIsRightPanelOpen,
-        isPreviewMode,
         editingWidget,
         isEditModalOpen,
         isWidgetSelectModalOpen,

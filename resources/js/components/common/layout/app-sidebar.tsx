@@ -24,12 +24,15 @@ import {
     Settings,
     Target,
     Users,
+    Lightbulb,
 } from 'lucide-react';
 
 export function AppSidebar() {
     const { props } = usePage();
     const rawTerminology = (props as any).terminology;
-    const authUser = (props as any)?.auth?.user;
+    const auth = (props as any)?.auth;
+    const authUser = auth?.user;
+    const unviewedSuggestedOrganizationsCount = auth?.unviewedSuggestedOrganizationsCount ?? 0;
     const roleNames = Array.isArray(authUser?.roles)
         ? (authUser.roles as Array<{ name?: string | null }>)
               .map((role) => role?.name)
@@ -80,6 +83,12 @@ export function AppSidebar() {
         },
         ...(isSuperAdmin
             ? [
+                  {
+                      title: 'Предложенные школы',
+                      href: '/dashboard/suggested-organizations',
+                      icon: Lightbulb,
+                      badge: unviewedSuggestedOrganizationsCount > 0 ? unviewedSuggestedOrganizationsCount : undefined,
+                  } satisfies NavItem,
                   {
                       title: 'Все отчеты',
                       href: '/dashboard/reports',

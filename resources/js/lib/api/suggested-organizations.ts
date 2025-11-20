@@ -93,6 +93,10 @@ export const suggestedOrganizationsApi = {
     delete: async (id: number): Promise<void> => {
         await apiClient.delete(`/dashboard/suggested-organizations/${id}`);
     },
+
+    markAsViewed: async (id: number): Promise<void> => {
+        await apiClient.post(`/dashboard/suggested-organizations/${id}/mark-as-viewed`);
+    },
 };
 
 

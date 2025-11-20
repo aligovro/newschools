@@ -179,6 +179,33 @@ export default function SuggestedOrganizationsPage({
         fetch(filters);
     }, [filters, fetch]);
 
+    // Отмечаем все предложения как просмотренные при загрузке страницы
+    useEffect(() => {
+        const markItemsAsViewed = async () => {
+            if (items.length > 0) {
+                // Отмечаем только pending предложения, которые еще не просмотрены
+                const pendingItems = items.filter((item) => item.status === 'pending');
+                
+                // Отмечаем просмотренные асинхронно, не блокируя UI
+                const markPromises = pendingItems.map((item) =>
+                    suggestedOrganizationsApi.markAsViewed(item.id).catch((error) => {
+                        // Тихая обработка ошибок, чтобы не мешать работе интерфейса
+                        console.debug('Failed to mark as viewed:', error);
+                    })
+                );
+                
+                await Promise.allSettled(markPromises);
+                
+                // Обновляем счетчик в меню через Inertia
+                // Это сделает HandleInertiaRequests при следующем запросе
+            }
+        };
+
+        if (!loading && items.length > 0) {
+            markItemsAsViewed();
+        }
+    }, [items, loading]);
+
     const handleFiltersChange = useCallback(
         (next: Partial<SuggestedOrganizationsFiltersState>) => {
             setFilters((prev) => {

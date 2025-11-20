@@ -351,17 +351,17 @@ export function MapSelectModal({
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6"
             onClick={handleOverlayClick}
         >
-            <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
                 <button
                     type="button"
-                    className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-500 transition hover:bg-white hover:text-gray-900"
+                    className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-500 transition hover:bg-white hover:text-gray-900"
                     onClick={onClose}
                     aria-label="Закрыть"
                 >
                     <X className="h-5 w-5" />
                 </button>
 
-                <div className="space-y-6 p-6">
+                <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-6">
                     <div className="space-y-2">
                         <h2 className="text-2xl font-semibold text-[#1a1a1a]">
                             Укажите школу на карте
@@ -420,7 +420,7 @@ export function MapSelectModal({
                         />
                     </div>
 
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-shrink-0 items-center justify-between gap-3">
                         <button
                             type="button"
                             className="flex-1 rounded-xl border border-[#e8ecf3] px-4 py-3 font-semibold text-gray-600 transition hover:border-gray-300 hover:text-gray-800"

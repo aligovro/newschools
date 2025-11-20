@@ -24,6 +24,11 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                 <>
                                     {item.icon && <item.icon />}
                                     <span>{item.title}</span>
+                                    {item.badge !== undefined && item.badge !== null && item.badge > 0 && (
+                                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-semibold text-white">
+                                            {item.badge > 99 ? '99+' : item.badge}
+                                        </span>
+                                    )}
                                 </>
                             );
 

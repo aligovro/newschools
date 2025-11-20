@@ -3,7 +3,8 @@ import { LucideIcon } from 'lucide-react';
 import type { AnchorHTMLAttributes } from 'react';
 
 export interface Auth {
-    user: User;
+    user: User | null;
+    unviewedSuggestedOrganizationsCount?: number;
 }
 
 export interface BreadcrumbItem {
@@ -23,6 +24,7 @@ export interface NavItem {
     isActive?: boolean;
     target?: AnchorHTMLAttributes<HTMLAnchorElement>['target'];
     rel?: AnchorHTMLAttributes<HTMLAnchorElement>['rel'];
+    badge?: number | null;
 }
 
 export interface SharedData {

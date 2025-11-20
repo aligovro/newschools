@@ -11,6 +11,7 @@ use App\Models\SuggestedOrganization;
 use App\Services\SuggestedOrganizations\SuggestedOrganizationQueryService;
 use App\Services\SuggestedOrganizations\SuggestedOrganizationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class SuggestedOrganizationController extends Controller
 {
@@ -63,6 +64,52 @@ class SuggestedOrganizationController extends Controller
         $service->delete($suggestedOrganization);
 
         return response()->noContent();
+    }
+
+    /**
+     * Получить количество непросмотренных предложенных организаций
+     */
+    public function unviewedCount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => true,
+                'data' => ['count' => 0],
+            ]);
+        }
+
+        $count = $user->getUnviewedSuggestedOrganizationsCount();
+
+        return response()->json([
+            'success' => true,
+            'data' => ['count' => $count],
+        ]);
+    }
+
+    /**
+     * Отметить предложенную организацию как просмотренную
+     */
+    public function markAsViewed(
+        Request $request,
+        SuggestedOrganization $suggestedOrganization
+    ): JsonResponse {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Пользователь не авторизован',
+            ], 401);
+        }
+
+        $user->markSuggestedOrganizationAsViewed($suggestedOrganization);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Предложение отмечено как просмотренное',
+        ]);
     }
 }
 

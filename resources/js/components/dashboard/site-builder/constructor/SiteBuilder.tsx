@@ -38,7 +38,6 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
         loading,
         isRightPanelOpen,
         setIsRightPanelOpen,
-        isPreviewMode,
         editingWidget,
         isEditModalOpen,
         isWidgetSelectModalOpen,
@@ -130,7 +129,6 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                                     positions={positions}
                                     widgets={widgets}
                                     positionSettings={positionSettings}
-                                    isPreviewMode={isPreviewMode}
                                     newlyAddedWidgetId={newlyAddedWidgetId}
                                     validationErrors={validationErrors}
                                     sidebarPosition={sidebarPosition}

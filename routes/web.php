@@ -43,7 +43,7 @@ Route::get('/tailwind-test', function () {
     return Inertia::render('TailwindTestPage');
 })->name('tailwind-test');
 
-// Публичный маршрут для превью сайта
+// Публичный маршрут для превью сайта (только опубликованные)
 Route::get('/sites/{slug}/preview', [App\Http\Controllers\SitePreviewController::class, 'preview'])->name('sites.preview');
 
 // Profile routes
@@ -290,6 +290,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Site builder
         Route::get('/sites/{site}/builder', [SiteController::class, 'builder'])->name('sites.builder');
+
+        // Админский просмотр сайта (включая неопубликованные)
+        // Должен быть после builder, но перед общим /sites/{site}
+        Route::get('/sites/{id}/view', [App\Http\Controllers\SitePreviewController::class, 'adminView'])->name('sites.admin-view');
 
         // Site widgets management
         Route::post('/sites/{site}/widgets', [App\Http\Controllers\Api\SiteController::class, 'addWidget'])->name('sites.add-widget');

@@ -96,17 +96,22 @@ export const PositionSettingsModal: React.FC<PositionSettingsModalProps> = ({ op
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50">
-            <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
-                <div className="flex items-center justify-between border-b px-6 py-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+            <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
+                <div className="flex flex-shrink-0 items-center justify-between border-b px-6 py-4">
                     <h3 className="text-lg font-semibold">Настройки позиции: {position.name}</h3>
                     <button onClick={onClose} className="rounded p-1 hover:bg-gray-100" aria-label="Закрыть">
                         ✕
                     </button>
                 </div>
 
-                <div className="space-y-6 p-6">
-                    <div>
+                <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-6">
+                    <div className={
+                        ['header-col-1', 'header-col-2', 'header-col-3', 'header-col-4', 
+                         'footer-col-1', 'footer-col-2', 'footer-col-3', 'footer-col-4'].includes(position.slug)
+                            ? 'hidden'
+                            : ''
+                    }>
                         <div className="mb-2 text-sm font-medium text-gray-700">Макет</div>
                         <div className="flex items-center gap-3">
                             <select className="rounded border px-3 py-2 text-sm" value={width} onChange={(e) => setWidth(e.target.value)}>
@@ -194,7 +199,7 @@ export const PositionSettingsModal: React.FC<PositionSettingsModalProps> = ({ op
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
+                <div className="flex flex-shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
                     <button className="rounded border px-4 py-2 text-sm" onClick={onClose} disabled={saving}>Отмена</button>
                     <button
                         className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"

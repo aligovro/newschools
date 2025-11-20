@@ -6,7 +6,6 @@ interface PositionsRendererProps {
     positions: WidgetPosition[];
     widgets: WidgetData[];
     positionSettings?: Record<string, Record<string, any>>;
-    isPreviewMode: boolean;
     newlyAddedWidgetId: string | null;
     validationErrors: string[];
     sidebarPosition: 'left' | 'right';
@@ -33,7 +32,6 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
     positions,
     widgets,
     positionSettings = {},
-    isPreviewMode,
     newlyAddedWidgetId,
     validationErrors,
     sidebarPosition,
@@ -59,7 +57,7 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
             onDeleteWidget={onDeleteWidget}
             onToggleWidgetVisibility={onToggleWidgetVisibility}
             onSaveWidget={onSaveWidgetConfig}
-            isPreviewMode={isPreviewMode}
+            isPreviewMode={false}
             newlyAddedWidgetId={newlyAddedWidgetId}
             validationErrors={validationErrors}
             onAddWidgetToPosition={onAddWidgetToPosition}
@@ -89,33 +87,30 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
                     (p) => p.area === 'header' && p.slug === 'header',
                 );
 
-                // Показываем только те колонки, где реально есть виджеты
-                const headerColsWithWidgets = headerCols.filter((position) =>
-                    widgets.some(
-                        (widget) => widget.position_slug === position.slug,
-                    ),
-                );
+                // В конструкторе всегда показываем все позиции
+                const headerColsToShow = headerCols;
 
-                // Если нет ни одной колонки с виджетами и нет полного header,
-                // показываем все header-позиции (режим конструктора, чтобы было куда добавить виджеты)
-                if (headerColsWithWidgets.length === 0 && !headerFull) {
-                    return positions
-                        .filter((p) => p.area === 'header')
-                        .map(renderZone);
-                }
+                // Если есть хотя бы одна позиция хедера, показываем группу
+                const hasHeaderPositions =
+                    headerColsToShow.length > 0 || headerFull;
+
+                if (!hasHeaderPositions) return null;
 
                 return (
-                    <div className="space-y-6">
-                        {headerColsWithWidgets.length > 0 && (
-                            <div className="flex flex-wrap gap-4">
-                                {headerColsWithWidgets.map((position) => (
-                                    <div key={position.id} className="shrink-0">
-                                        {renderZone(position)}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        {headerFull && <div>{renderZone(headerFull)}</div>}
+                    <div className="space-y-4 rounded-lg border-2 border-gray-200 bg-gray-50 p-4">
+                        <h2 className="text-center text-lg font-semibold text-gray-700">
+                            Хэдер
+                        </h2>
+                        <div className="space-y-4">
+                            {headerColsToShow.length > 0 && (
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                    {headerColsToShow.map((position) =>
+                                        renderZone(position),
+                                    )}
+                                </div>
+                            )}
+                            {headerFull && <div>{renderZone(headerFull)}</div>}
+                        </div>
                     </div>
                 );
             })()}
@@ -177,14 +172,25 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
                         p.slug !== 'content-bottom',
                 );
 
+                // Если есть хотя бы одна позиция футера, показываем группу
+                const hasFooterPositions =
+                    footerCols.length > 0 || otherFooter.length > 0;
+
+                if (!hasFooterPositions) return null;
+
                 return (
-                    <div className="space-y-6">
-                        {footerCols.length > 0 && (
-                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                                {footerCols.map(renderZone)}
-                            </div>
-                        )}
-                        {otherFooter.map(renderZone)}
+                    <div className="space-y-4 rounded-lg border-2 border-gray-200 bg-gray-50 p-4">
+                        <h2 className="text-center text-lg font-semibold text-gray-700">
+                            Футер
+                        </h2>
+                        <div className="space-y-4">
+                            {footerCols.length > 0 && (
+                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                    {footerCols.map(renderZone)}
+                                </div>
+                            )}
+                            {otherFooter.map(renderZone)}
+                        </div>
                     </div>
                 );
             })()}
