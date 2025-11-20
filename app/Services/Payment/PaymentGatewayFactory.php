@@ -3,6 +3,9 @@
 namespace App\Services\Payment;
 
 use App\Models\PaymentMethod;
+use App\Services\Payment\TinkoffGateway;
+use App\Services\Payment\SBPGateway;
+use App\Services\Payment\YooKassaGateway;
 use InvalidArgumentException;
 use Illuminate\Support\Facades\Log;
 
@@ -134,9 +137,9 @@ class PaymentGatewayFactory
     public static function guessProviderFromGatewayClass(?string $gatewayClass): string
     {
         return match ($gatewayClass) {
-            \App\Services\Payment\TinkoffGateway::class => 'tinkoff',
-            \App\Services\Payment\SBPGateway::class => 'sbp',
-            \App\Services\Payment\YooKassaGateway::class => 'yookassa',
+            TinkoffGateway::class => 'tinkoff',
+            SBPGateway::class => 'sbp',
+            YooKassaGateway::class => 'yookassa',
             default => 'yookassa',
         };
     }
@@ -149,10 +152,10 @@ class PaymentGatewayFactory
         $normalized = strtolower($provider);
 
         return match ($normalized) {
-            'yookassa', 'yoomoney' => \App\Services\Payment\YooKassaGateway::class,
-            'tinkoff' => \App\Services\Payment\TinkoffGateway::class,
-            'sbp' => \App\Services\Payment\SBPGateway::class,
-            default => $fallback->gateway ?? \App\Services\Payment\YooKassaGateway::class,
+            'yookassa', 'yoomoney' => YooKassaGateway::class,
+            'tinkoff' => TinkoffGateway::class,
+            'sbp' => SBPGateway::class,
+            default => $fallback->gateway ?? YooKassaGateway::class,
         };
     }
 }

@@ -78,7 +78,7 @@ class UpdateReportRequest extends FormRequest
             $projectId = $this->input('project_id');
             $stageId = $this->input('project_stage_id');
             $siteId = $this->input('site_id');
-            /** @var \App\Models\Organization|null $organization */
+            /** @var Organization|null $organization */
             $organization = $this->route('organization');
 
             if ($stageId) {

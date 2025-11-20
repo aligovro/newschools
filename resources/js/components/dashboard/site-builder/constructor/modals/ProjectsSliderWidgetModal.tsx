@@ -1,3 +1,4 @@
+import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -5,10 +6,9 @@ import { Switch } from '@/components/ui/switch';
 import UniversalSelect, {
     type SelectOption,
 } from '@/components/ui/universal-select/UniversalSelect';
-import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import { fetchPublicOrganizations } from '@/lib/api/public';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { WidgetConfig } from '@/utils/widgetConfigUtils';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { WidgetData } from '../../types';
 
 interface Props {
@@ -21,7 +21,7 @@ interface PublicOrganization {
     id: number;
     name: string;
     description?: string | null;
-    city?: { name?: string | null } | null;
+    locality?: { name?: string | null } | null;
     region?: { name?: string | null } | null;
 }
 
@@ -55,9 +55,9 @@ export const ProjectsSliderWidgetModal: React.FC<Props> = ({
     );
 
     const makeOption = useCallback((org: PublicOrganization): SelectOption => {
-        const city = org.city?.name;
+        const locality = org.locality?.name;
         const region = org.region?.name;
-        const descriptionParts = [city, region].filter(Boolean);
+        const descriptionParts = [locality, region].filter(Boolean);
 
         return {
             value: org.id,
@@ -65,7 +65,7 @@ export const ProjectsSliderWidgetModal: React.FC<Props> = ({
             description:
                 descriptionParts.length > 0
                     ? descriptionParts.join(', ')
-                    : org.description ?? undefined,
+                    : (org.description ?? undefined),
         };
     }, []);
 
@@ -80,12 +80,13 @@ export const ProjectsSliderWidgetModal: React.FC<Props> = ({
             try {
                 setOptionsLoading(true);
 
-                const baseParams: Record<string, string | number | undefined> = {
-                    limit: 20,
-                    search: query || undefined,
-                    order_by: 'created_at',
-                    order_direction: 'desc',
-                };
+                const baseParams: Record<string, string | number | undefined> =
+                    {
+                        limit: 20,
+                        search: query || undefined,
+                        order_by: 'created_at',
+                        order_direction: 'desc',
+                    };
 
                 const response = await fetchPublicOrganizations(baseParams, {
                     signal: controller.signal,
@@ -181,9 +182,7 @@ export const ProjectsSliderWidgetModal: React.FC<Props> = ({
         <div className="space-y-4">
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-sm">
-                        Настройки виджета
-                    </CardTitle>
+                    <CardTitle className="text-sm">Настройки виджета</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <TitleField
@@ -232,7 +231,10 @@ export const ProjectsSliderWidgetModal: React.FC<Props> = ({
                                             1,
                                             Math.min(
                                                 20,
-                                                parseInt(e.target.value || '6', 10),
+                                                parseInt(
+                                                    e.target.value || '6',
+                                                    10,
+                                                ),
                                             ),
                                         ),
                                     )
@@ -287,4 +289,3 @@ export const ProjectsSliderWidgetModal: React.FC<Props> = ({
 };
 
 export default ProjectsSliderWidgetModal;
-

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Organization;
 use App\Models\User;
 use App\Rules\RussianPhoneNumber;
 use App\Support\PhoneNumber;
@@ -126,7 +127,7 @@ class UserController extends Controller
       $hasOrganizationRole = !empty($intersectedRoles);
 
       if ($hasOrganizationRole) {
-        $organization = \App\Models\Organization::find($request->organization_id);
+        $organization = Organization::find($request->organization_id);
         if ($organization) {
           // Используем первую найденную роль организации из выбранных ролей
           $roleInOrganization = !empty($intersectedRoles) ? reset($intersectedRoles) : 'viewer';
@@ -252,7 +253,7 @@ class UserController extends Controller
             $hasOrganizationRole = !empty($intersectedRoles);
             
             if ($hasOrganizationRole) {
-                $organization = \App\Models\Organization::find($request->organization_id);
+                $organization = Organization::find($request->organization_id);
                 if ($organization) {
                     // Используем первую найденную роль организации из выбранных ролей
                     $roleInOrganization = !empty($intersectedRoles) ? reset($intersectedRoles) : 'viewer';
@@ -383,7 +384,7 @@ class UserController extends Controller
     // Если роль относится к организации и указана организация, добавляем в organization_users
     $organizationRoles = ['organization_admin', 'graduate', 'sponsor'];
     if (in_array($request->role, $organizationRoles) && $request->has('organization_id') && $request->filled('organization_id')) {
-      $organization = \App\Models\Organization::find($request->organization_id);
+      $organization = Organization::find($request->organization_id);
       if ($organization) {
         $organization->users()->syncWithoutDetaching([
           $user->id => [
@@ -426,7 +427,7 @@ class UserController extends Controller
     // Если роль относится к организации и указана организация, удаляем из organization_users
     $organizationRoles = ['organization_admin', 'graduate', 'sponsor'];
     if (in_array($roleToRemove, $organizationRoles) && $request->has('organization_id') && $request->filled('organization_id')) {
-      $organization = \App\Models\Organization::find($request->organization_id);
+      $organization = Organization::find($request->organization_id);
       if ($organization) {
         $organization->users()->detach($user->id);
       }

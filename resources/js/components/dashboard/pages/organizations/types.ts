@@ -1,6 +1,10 @@
 export type Status = 'active' | 'inactive' | 'pending';
 export type OrganizationStatus = 'active' | 'inactive' | 'pending';
-export type OrganizationType = 'school' | 'university' | 'kindergarten' | 'other';
+export type OrganizationType =
+    | 'school'
+    | 'university'
+    | 'kindergarten'
+    | 'other';
 
 export interface Region {
     id: number;
@@ -8,16 +12,10 @@ export interface Region {
     code: string;
 }
 
-export interface City {
+export interface Locality {
     id: number;
     name: string;
     region_id: number;
-}
-
-export interface Settlement {
-    id: number;
-    name: string;
-    city_id: number;
 }
 
 import type { MoneyAmount } from '@/types/money';
@@ -39,8 +37,7 @@ export interface OrganizationLite {
     latitude?: number | null;
     longitude?: number | null;
     region?: Region | null;
-    city?: City | null;
-    settlement?: Settlement | null;
+    locality?: Locality | null;
     needs?: {
         target: MoneyAmount;
         collected: MoneyAmount;
@@ -87,10 +84,7 @@ export interface OrganizationShow {
     region?: {
         name: string;
     };
-    city?: {
-        name: string;
-    };
-    settlement?: {
+    locality?: {
         name: string;
     };
     members_count?: number;
@@ -119,8 +113,7 @@ export interface ReferenceData {
         description: string;
     }>;
     regions?: Region[];
-    cities?: City[];
-    settlements?: Settlement[];
+    localities?: Locality[];
 }
 
 import type { PaymentGatewaysSettingsValue } from '@/components/dashboard/payments/PaymentGatewaysSettings';

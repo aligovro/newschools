@@ -3,16 +3,21 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-
+use App\Http\Resources\OrganizationResource;
+use App\Http\Resources\OrganizationSiteResource;
+use App\Http\Resources\SiteWidgetResource;
+use App\Models\Domain;
 use App\Models\Organization;
 use App\Models\Site;
+use App\Models\SiteTemplate;
+use App\Models\SiteWidget;
+use App\Models\Widget;
+use App\Models\WidgetPosition;
+use App\Services\WidgetDataService;
+use App\Support\InertiaResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use App\Http\Resources\SiteWidgetResource;
-use App\Http\Resources\OrganizationResource;
-use App\Http\Resources\OrganizationSiteResource;
-use App\Support\InertiaResource;
 
 class OrganizationSiteController extends Controller
 {
@@ -37,7 +42,7 @@ class OrganizationSiteController extends Controller
      */
     public function create(Organization $organization)
     {
-        $templates = \App\Models\SiteTemplate::where('is_active', true)
+        $templates = SiteTemplate::where('is_active', true)
             ->orderBy('sort_order')
             ->get();
 
@@ -74,7 +79,7 @@ class OrganizationSiteController extends Controller
             'template' => 'required|string|exists:site_templates,slug',
         ]);
 
-        $template = \App\Models\SiteTemplate::where('slug', $request->template)->first();
+        $template = SiteTemplate::where('slug', $request->template)->first();
 
         // Получаем или создаем домен по умолчанию для организации
         $domain = $this->getOrCreateDefaultDomain($organization);
@@ -118,7 +123,7 @@ class OrganizationSiteController extends Controller
      */
     public function edit(Organization $organization, Site $site)
     {
-        $templates = \App\Models\SiteTemplate::where('is_active', true)
+        $templates = SiteTemplate::where('is_active', true)
             ->orderBy('sort_order')
             ->get();
 
@@ -204,23 +209,6 @@ class OrganizationSiteController extends Controller
 
         // Преобразуем виджеты для фронтенда используя ресурс
         $widgets = SiteWidgetResource::collection($site->widgets)->toArray(request());
-
-        // Логируем данные виджетов для отладки
-        Log::info('OrganizationSiteController::editWithBuilder - Widgets data:', [
-            'site_id' => $site->id,
-            'widgets_count' => count($widgets),
-            'widgets_data' => array_map(function ($widget) {
-                return [
-                    'id' => $widget['id'],
-                    'widget_slug' => $widget['widget_slug'],
-                    'name' => $widget['name'],
-                    'has_hero_slides' => isset($widget['hero_slides']),
-                    'has_slider_slides' => isset($widget['slider_slides']),
-                    'hero_slides_count' => isset($widget['hero_slides']) ? count($widget['hero_slides']) : 0,
-                    'slider_slides_count' => isset($widget['slider_slides']) ? count($widget['slider_slides']) : 0,
-                ];
-            }, $widgets),
-        ]);
 
         // Исправляем hero_slides и slider_slides для правильного отображения картинок
         foreach ($widgets as &$widget) {
@@ -346,9 +334,9 @@ class OrganizationSiteController extends Controller
         ]);
 
         $site->pages()->create([
-            'title' => $request->title,
-            'slug' => $request->slug,
-            'content' => $request->content,
+            'title' => $request->input('title'),
+            'slug' => $request->input('slug'),
+            'content' => $request->input('content'),
             'is_published' => $request->boolean('is_published'),
         ]);
 
@@ -374,9 +362,9 @@ class OrganizationSiteController extends Controller
 
         $page = $site->pages()->findOrFail($pageId);
         $page->update([
-            'title' => $request->title,
-            'slug' => $request->slug,
-            'content' => $request->content,
+            'title' => $request->input('title'),
+            'slug' => $request->input('slug'),
+            'content' => $request->input('content'),
             'is_published' => $request->boolean('is_published'),
         ]);
 
@@ -478,12 +466,12 @@ class OrganizationSiteController extends Controller
      */
     private function createDefaultWidgets(Site $site)
     {
-        $template = \App\Models\SiteTemplate::where('slug', $site->template)->first();
+        $template = SiteTemplate::where('slug', $site->template)->first();
         if (!$template) {
             return;
         }
 
-        $positions = \App\Models\WidgetPosition::where('template_id', $template->id)->get();
+        $positions = WidgetPosition::where('template_id', $template->id)->get();
         $defaultWidgets = [];
 
         foreach ($positions as $position) {
@@ -515,19 +503,19 @@ class OrganizationSiteController extends Controller
      */
     private function createDefaultWidgetsInTables(Site $site, array $defaultWidgets): void
     {
-        $widgetDataService = app(\App\Services\WidgetDataService::class);
+        $widgetDataService = app(WidgetDataService::class);
 
         foreach ($defaultWidgets as $widgetData) {
             // Находим widget и position
-            $widget = \App\Models\Widget::where('widget_slug', $widgetData['widget_slug'])->first();
-            $position = \App\Models\WidgetPosition::where('slug', $widgetData['position_slug'])->first();
+            $widget = Widget::where('widget_slug', $widgetData['widget_slug'])->first();
+            $position = WidgetPosition::where('slug', $widgetData['position_slug'])->first();
 
             if (!$widget || !$position) {
                 continue;
             }
 
             // Создаем SiteWidget
-            $siteWidget = \App\Models\SiteWidget::create([
+            $siteWidget = SiteWidget::create([
                 'site_id' => $site->id,
                 'widget_id' => $widget->id,
                 'position_id' => $position->id,
@@ -551,7 +539,7 @@ class OrganizationSiteController extends Controller
     /**
      * Получить дефолтный виджет для позиции
      */
-    private function getDefaultWidgetForPosition(string $positionSlug): ?\App\Models\Widget
+    private function getDefaultWidgetForPosition(string $positionSlug): ?Widget
     {
         $defaultWidgets = [
             'header' => 'header-menu',
@@ -560,7 +548,7 @@ class OrganizationSiteController extends Controller
         ];
 
         $widgetSlug = $defaultWidgets[$positionSlug] ?? null;
-        return $widgetSlug ? \App\Models\Widget::where('widget_slug', $widgetSlug)->first() : null;
+        return $widgetSlug ? Widget::where('widget_slug', $widgetSlug)->first() : null;
     }
 
     /**
@@ -623,7 +611,7 @@ class OrganizationSiteController extends Controller
     /**
      * Получить или создать домен по умолчанию для организации
      */
-    private function getOrCreateDefaultDomain(Organization $organization): \App\Models\Domain
+    private function getOrCreateDefaultDomain(Organization $organization): Domain
     {
         // Ищем существующий основной домен
         $domain = $organization->domains()->where('is_primary', true)->first();

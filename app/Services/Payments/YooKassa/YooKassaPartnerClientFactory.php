@@ -3,6 +3,7 @@
 namespace App\Services\Payments\YooKassa;
 
 use App\Models\Organization;
+use App\Services\GlobalPaymentSettingsService;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Arr;
 
@@ -36,7 +37,7 @@ class YooKassaPartnerClientFactory
         }
 
         if (!$credentials) {
-            $globalSettings = app(\App\Services\GlobalPaymentSettingsService::class)->getNormalizedSettings();
+            $globalSettings = app(GlobalPaymentSettingsService::class)->getNormalizedSettings();
             $credentials = Arr::get($globalSettings, 'credentials.yookassa_partner');
         }
 

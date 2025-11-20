@@ -17,6 +17,9 @@ use App\Http\Controllers\Dashboard\NewsController as DashboardNewsController;
 use App\Http\Controllers\Dashboard\SuggestedOrganizationController;
 use App\Http\Controllers\Dashboard\ReportsOverviewController;
 use App\Http\Controllers\Dashboard\SitePageController;
+use App\Http\Controllers\Webhook\YooKassaPartnerWebhookController;
+use App\Http\Controllers\RegionController;
+use App\Http\Controllers\CityController;
 
 Route::get('/', [MainSiteController::class, 'index'])->name('home');
 Route::get('/organizations', [MainSiteController::class, 'organizations'])->name('main-site.organizations');
@@ -310,7 +313,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-Route::post('/webhook/yookassa/partner', \App\Http\Controllers\Webhook\YooKassaPartnerWebhookController::class)
+Route::post('/webhook/yookassa/partner', YooKassaPartnerWebhookController::class)
     ->name('webhook.yookassa.partner');
 
 require __DIR__ . '/settings.php';
@@ -364,8 +367,8 @@ Route::prefix('api/projects/{id}')->middleware('auth')->group(function () {
         ->name('projects.save-payment-settings');
 });
 
-Route::get('/dashboard/api/regions/{id}', [\App\Http\Controllers\RegionController::class, 'show']);
-Route::get('/dashboard/api/cities/{id}', [\App\Http\Controllers\CityController::class, 'show']);
+Route::get('/dashboard/api/regions/{id}', [RegionController::class, 'show']);
+Route::get('/dashboard/api/localities/{id}', [CityController::class, 'show']);
 
 // Публичные страницы сайтов (должен быть последним, чтобы не конфликтовать с другими роутами)
 // Страницы главного сайта: /{slug} (например, /kontakty)

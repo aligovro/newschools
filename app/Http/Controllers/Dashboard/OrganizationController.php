@@ -3,20 +3,23 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-
-use App\Models\Organization;
-use App\Models\User;
-use App\Http\Resources\OrganizationResource;
-use App\Support\InertiaResource;
-use Illuminate\Http\Request;
+use App\Helpers\TransliterationHelper;
 use App\Http\Requests\Organization\StoreOrganizationRequest;
 use App\Http\Requests\Organization\UpdateOrganizationRequest;
-use App\Helpers\TransliterationHelper;
-use Inertia\Inertia;
+use App\Http\Resources\OrganizationResource;
+use App\Models\Organization;
+use App\Models\OrganizationStaff;
+use App\Models\Region;
+use App\Models\Locality;
+use App\Models\SitePage;
+use App\Models\User;
+use App\Services\GlobalSettingsService;
 use App\Services\ImageProcessingService;
 use App\Services\Organizations\OrganizationSettingsService;
-use App\Models\SitePage;
+use App\Support\InertiaResource;
 use App\Support\Money;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class OrganizationController extends Controller
 {
@@ -25,8 +28,7 @@ class OrganizationController extends Controller
         $query = Organization::query()
             ->with([
                 'region:id,name',
-                'city:id,name',
-                'settlement:id,name',
+                'locality:id,name',
             ])
             ->withCount([
                 'members as members_count',
@@ -45,8 +47,7 @@ class OrganizationController extends Controller
                 'created_at',
                 'updated_at',
                 'region_id',
-                'city_id',
-                'settlement_id'
+                'locality_id',
             ]);
 
         // Поиск
@@ -91,8 +92,8 @@ class OrganizationController extends Controller
         $organizations = $query->paginate($perPage);
 
         // Получаем базовую терминологию
-        /** @var \App\Services\GlobalSettingsService $settings */
-        $settings = app(\App\Services\GlobalSettingsService::class);
+        /** @var GlobalSettingsService $settings */
+        $settings = app(GlobalSettingsService::class);
         $baseTerminology = $settings->getTerminology();
 
         // Добавляем специфичные для страницы поля
@@ -119,8 +120,7 @@ class OrganizationController extends Controller
             'members',
             'statistics',
             'region',
-            'city',
-            'settlement',
+            'locality',
             'primarySite',
             'sites' => function ($query) {
                 $query->select('id', 'organization_id')->limit(1);
@@ -129,7 +129,7 @@ class OrganizationController extends Controller
                 $query->whereNull('deleted_at');
             },
             'staff' => function ($query) {
-                $query->where('position', '!=', \App\Models\OrganizationStaff::POSITION_DIRECTOR)
+                $query->where('position', '!=', OrganizationStaff::POSITION_DIRECTOR)
                     ->whereNull('deleted_at')
                     ->orderBy('position')
                     ->orderBy('last_name');
@@ -186,8 +186,7 @@ class OrganizationController extends Controller
         // Загружаем связи
         $organization->load([
             'region',
-            'city',
-            'settlement',
+            'locality',
             'primarySite',
             'sites' => function ($query) {
                 $query->select('id', 'organization_id')->limit(1);
@@ -203,12 +202,9 @@ class OrganizationController extends Controller
                 ['value' => 'other', 'label' => 'Другое', 'description' => 'Иной тип организации'],
             ],
             // Загружаем только первые 20 регионов для начальной загрузки (с координатами)
-            'regions' => \App\Models\Region::select('id', 'name', 'code', 'latitude', 'longitude')->orderBy('name')->limit(20)->get(),
-            'cities' => $organization->region ?
-                \App\Models\City::where('region_id', $organization->region->id)->select('id', 'name', 'region_id', 'latitude', 'longitude')->orderBy('name')->get() :
-                [],
-            'settlements' => $organization->city ?
-                \App\Models\Settlement::where('city_id', $organization->city->id)->select('id', 'name', 'city_id')->orderBy('name')->get() :
+            'regions' => Region::select('id', 'name', 'code', 'latitude', 'longitude')->orderBy('name')->limit(20)->get(),
+            'localities' => $organization->region ?
+                Locality::where('region_id', $organization->region->id)->select('id', 'name', 'region_id', 'latitude', 'longitude')->orderBy('name')->get() :
                 [],
         ];
 
@@ -333,7 +329,8 @@ class OrganizationController extends Controller
             'email',
             'website',
             'region_id',
-            'city_id',
+            // locality_id на фронте трактуем как locality_id
+            'locality_id',
             'founded_at',
             'is_public',
             'latitude',

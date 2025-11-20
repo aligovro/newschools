@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Region;
-use App\Models\City;
+use App\Models\Locality;
 use App\Models\FederalDistrict;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
@@ -129,7 +129,7 @@ class ImportCitiesFromCSV extends Command
                     }
 
                     // Проверяем, существует ли уже город
-                    $existingCity = City::where('region_id', $region->id)
+                    $existingCity = Locality::where('region_id', $region->id)
                         ->where('name', $cityName)
                         ->first();
 
@@ -163,7 +163,7 @@ class ImportCitiesFromCSV extends Command
                         $updated++;
                     } else {
                         // Создаем новый город с полными данными
-                        City::create([
+                        Locality::create([
                             'region_id' => $region->id,
                             'name' => $cityName,
                             'slug' => $this->generateSlug($region, $cityName),
@@ -196,7 +196,7 @@ class ImportCitiesFromCSV extends Command
             $this->info("Обновлено существующих городов: {$updated}");
             $this->info("Пропущено строк: {$skipped}");
             $this->info("Ошибок: {$errors}");
-            $this->info("Всего городов в БД: " . City::count());
+            $this->info("Всего городов в БД: " . Locality::count());
 
             return 0;
         } catch (\Exception $e) {
@@ -436,7 +436,7 @@ class ImportCitiesFromCSV extends Command
         $counter = 1;
 
         // Проверяем уникальность slug
-        while (City::where('slug', $slug)->exists()) {
+        while (Locality::where('slug', $slug)->exists()) {
             $slug = $baseSlug . '-' . $counter;
             $counter++;
         }

@@ -1,8 +1,8 @@
-import { memo } from 'react';
 import YandexMap from '@/components/maps/YandexMap';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import UniversalSelect from '@/components/ui/universal-select/UniversalSelect';
+import { memo } from 'react';
 import type { CascadeSelectData } from './types';
 
 interface LocationSectionProps {
@@ -58,8 +58,8 @@ export const LocationSection = memo(function LocationSection({
         <div className="rounded-lg border bg-white p-4">
             <Label className="mb-2 block">Локация</Label>
             <div className="mb-4 text-sm text-gray-600">
-                Перетащите карту или выберите точку для организации.
-                Координаты сохраняются ниже.
+                Перетащите карту или выберите точку для организации. Координаты
+                сохраняются ниже.
             </div>
             <div className="mb-4">
                 <YandexMap
@@ -84,8 +84,8 @@ export const LocationSection = memo(function LocationSection({
                 />
             </div>
             <div className="mb-2 text-xs text-gray-500">
-                Кликните на карте, чтобы установить метку, или перетащите
-                метку для изменения координат
+                Кликните на карте, чтобы установить метку, или перетащите метку
+                для изменения координат
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
@@ -105,7 +105,7 @@ export const LocationSection = memo(function LocationSection({
                 </div>
                 <div>
                     <UniversalSelect
-                        {...cascadeData.cities}
+                        {...cascadeData.localities}
                         value={cityId}
                         onChange={(value) => onCityChange(value as number)}
                         error={undefined}
@@ -113,8 +113,8 @@ export const LocationSection = memo(function LocationSection({
                         placeholder="Выберите город"
                         searchable
                         clearable
-                        onSearch={cascadeData.cities.setSearch}
-                        searchValue={cascadeData.cities.search}
+                        onSearch={cascadeData.localities.setSearch}
+                        searchValue={cascadeData.localities.search}
                     />
                 </div>
                 <div>
@@ -165,4 +165,3 @@ export const LocationSection = memo(function LocationSection({
         </div>
     );
 });
-

@@ -49,7 +49,7 @@ interface Organization {
     region?: {
         name: string;
     };
-    city?: {
+    locality?: {
         name: string;
     };
     latitude?: number | null;
@@ -109,7 +109,7 @@ export default function OrganizationManagementPage({
                     <h3>${org.name}</h3>
                     ${org.description ? `<p>${org.description}</p>` : ''}
                     ${org.region ? `<p>Регион: ${org.region.name}</p>` : ''}
-                    ${org.city ? `<p>Город: ${org.city.name}</p>` : ''}
+                    ${org.locality ? `<p>Город: ${org.locality.name}</p>` : ''}
                     <a href="/dashboard/organizations/${org.id}/edit">Редактировать</a>
                 </div>`,
             }));
@@ -341,10 +341,13 @@ export default function OrganizationManagementPage({
                                                         }
                                                     </span>
                                                 )}
-                                                {organization.city && (
+                                                {organization.locality && (
                                                     <span>
                                                         •{' '}
-                                                        {organization.city.name}
+                                                        {
+                                                            organization
+                                                                .locality.name
+                                                        }
                                                     </span>
                                                 )}
                                             </div>

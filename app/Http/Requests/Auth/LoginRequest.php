@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use App\Support\PhoneNumber;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -102,7 +103,7 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        $normalizedPhone = \App\Support\PhoneNumber::normalize($identifier);
+        $normalizedPhone = PhoneNumber::normalize($identifier);
 
         if (! $normalizedPhone) {
             return null;

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\SiteWidget;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,7 +24,7 @@ class HeroSlideResource extends JsonResource
             'buttonLink' => $this->button_link,
             'buttonLinkType' => $this->button_link_type,
             'buttonOpenInNewTab' => $this->button_open_in_new_tab,
-            'backgroundImage' => \App\Models\SiteWidget::formatImageUrl($this->background_image ?? ''),
+            'backgroundImage' => SiteWidget::formatImageUrl($this->background_image ?? ''),
             'overlayColor' => $this->overlay_color,
             'overlayOpacity' => $this->overlay_opacity,
             'overlayGradient' => $this->overlay_gradient,

@@ -69,10 +69,10 @@ const normalizeFilters = (
         filters.status = payload.status as SuggestedOrganizationsStatus;
     }
 
-    if (payload.city_id !== undefined && payload.city_id !== null) {
-        const cityId = normalizeNumber(payload.city_id, NaN);
+    if (payload.locality_id !== undefined && payload.locality_id !== null) {
+        const cityId = normalizeNumber(payload.locality_id, NaN);
         if (!Number.isNaN(cityId)) {
-            filters.city_id = cityId;
+            filters.locality_id = cityId;
         }
     }
 
@@ -184,18 +184,22 @@ export default function SuggestedOrganizationsPage({
         const markItemsAsViewed = async () => {
             if (items.length > 0) {
                 // Отмечаем только pending предложения, которые еще не просмотрены
-                const pendingItems = items.filter((item) => item.status === 'pending');
-                
+                const pendingItems = items.filter(
+                    (item) => item.status === 'pending',
+                );
+
                 // Отмечаем просмотренные асинхронно, не блокируя UI
                 const markPromises = pendingItems.map((item) =>
-                    suggestedOrganizationsApi.markAsViewed(item.id).catch((error) => {
-                        // Тихая обработка ошибок, чтобы не мешать работе интерфейса
-                        console.debug('Failed to mark as viewed:', error);
-                    })
+                    suggestedOrganizationsApi
+                        .markAsViewed(item.id)
+                        .catch((error) => {
+                            // Тихая обработка ошибок, чтобы не мешать работе интерфейса
+                            console.debug('Failed to mark as viewed:', error);
+                        }),
                 );
-                
+
                 await Promise.allSettled(markPromises);
-                
+
                 // Обновляем счетчик в меню через Inertia
                 // Это сделает HandleInertiaRequests при следующем запросе
             }

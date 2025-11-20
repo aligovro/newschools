@@ -1,11 +1,11 @@
+import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
+import type { WidgetConfig } from '@/utils/widgetConfigUtils';
 import React from 'react';
 import type { WidgetData } from '../../types';
-import type { WidgetConfig } from '@/utils/widgetConfigUtils';
 
 interface Props {
     widget: WidgetData;
@@ -46,15 +46,17 @@ export const CityOrganizationsWidgetModal: React.FC<Props> = ({
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div>
-                            <Label htmlFor="city_id">ID города</Label>
+                            <Label htmlFor="locality_id">ID города</Label>
                             <Input
-                                id="city_id"
+                                id="locality_id"
                                 type="number"
-                                value={(config.city_id as number) || ''}
+                                value={(config.locality_id as number) || ''}
                                 onChange={(e) =>
                                     handleChange(
-                                        'city_id',
-                                        e.target.value ? parseInt(e.target.value) : undefined,
+                                        'locality_id',
+                                        e.target.value
+                                            ? parseInt(e.target.value)
+                                            : undefined,
                                     )
                                 }
                                 placeholder="Например: 1"
@@ -72,14 +74,22 @@ export const CityOrganizationsWidgetModal: React.FC<Props> = ({
                                 onChange={(e) =>
                                     handleChange(
                                         'limit',
-                                        Math.max(1, Math.min(50, parseInt(e.target.value) || 9)),
+                                        Math.max(
+                                            1,
+                                            Math.min(
+                                                50,
+                                                parseInt(e.target.value) || 9,
+                                            ),
+                                        ),
                                     )
                                 }
                             />
                         </div>
 
                         <div>
-                            <Label htmlFor="slidesPerView">Слайдов на экране (desktop)</Label>
+                            <Label htmlFor="slidesPerView">
+                                Слайдов на экране (desktop)
+                            </Label>
                             <Input
                                 id="slidesPerView"
                                 type="number"
@@ -89,7 +99,13 @@ export const CityOrganizationsWidgetModal: React.FC<Props> = ({
                                 onChange={(e) =>
                                     handleChange(
                                         'slidesPerView',
-                                        Math.max(1, Math.min(6, parseInt(e.target.value) || 3)),
+                                        Math.max(
+                                            1,
+                                            Math.min(
+                                                6,
+                                                parseInt(e.target.value) || 3,
+                                            ),
+                                        ),
                                     )
                                 }
                             />
@@ -112,5 +128,3 @@ export const CityOrganizationsWidgetModal: React.FC<Props> = ({
 };
 
 export default CityOrganizationsWidgetModal;
-
-

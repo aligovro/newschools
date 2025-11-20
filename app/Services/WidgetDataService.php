@@ -377,7 +377,7 @@ class WidgetDataService
         // Загружаем настройки видимости для всех виджетов одним запросом (с кешированием)
         $widgetIds = $widgets->pluck('id')->toArray();
         $allWidgetSettings = Cache::remember("site_widget_settings_{$siteId}", 300, function () use ($siteId) {
-            return \App\Models\SiteWidgetSetting::where('site_id', $siteId)
+            return SiteWidgetSetting::where('site_id', $siteId)
                 ->get()
                 ->keyBy('widget_id');
         });
@@ -593,6 +593,6 @@ class WidgetDataService
      */
     private function extractImagePathFromUrl(string $url): string
     {
-        return \App\Models\SiteWidget::extractImagePathFromUrl($url);
+        return SiteWidget::extractImagePathFromUrl($url);
     }
 }

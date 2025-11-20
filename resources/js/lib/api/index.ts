@@ -2,14 +2,14 @@
 export { apiClient } from '../api';
 export { adminApi } from './admin';
 export { formsApi } from './forms';
+export { newsApi } from './news';
 export { organizationsApi } from './organizations';
 export { projectsApi } from './projects';
 export { sitesApi } from './sites';
 export { widgetImagesApi } from './widget-images';
 export { widgetsApi } from './widgets';
-export { yookassaApi } from './yookassa';
 export { widgetsSystemApi } from './widgets-system';
-export { newsApi } from './news';
+export { yookassaApi } from './yookassa';
 
 // Экспорт типов
 export type {
@@ -18,10 +18,15 @@ export type {
     FormSubmissionsResponse,
 } from './forms';
 export type {
-    City,
+    NewsItem,
+    NewsPayload,
+    NewsTargetResponse,
+    PaginatedNewsResponse,
+} from './news';
+export type {
+    Locality,
     PaginatedResponse as OrganizationPaginatedResponse,
     Region,
-    Settlement,
     User,
 } from './organizations';
 export type {
@@ -31,12 +36,10 @@ export type {
     PaginatedResponse as WidgetPaginatedResponse,
 } from './widgets';
 export type {
-    DonationWidgetData,
     DonationPaymentData,
+    DonationWidgetData,
     PaymentMethod,
     Widget,
     WidgetPosition,
     WidgetPositionsResponse,
 } from './widgets-system';
-export type { NewsItem, NewsPayload, PaginatedNewsResponse } from './news';
-export type { NewsTargetResponse } from './news';

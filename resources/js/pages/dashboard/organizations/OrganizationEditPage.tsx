@@ -28,16 +28,10 @@ interface Region {
     code: string;
 }
 
-interface City {
+interface Locality {
     id: number;
     name: string;
     region_id: number;
-}
-
-interface Settlement {
-    id: number;
-    name: string;
-    city_id: number;
 }
 
 interface Organization {
@@ -55,8 +49,7 @@ interface Organization {
     logo?: string;
     founded_at?: string;
     region?: Region;
-    city?: City;
-    settlement?: Settlement;
+    locality?: Locality;
     primary_site?: {
         id: number;
     } | null;
@@ -74,8 +67,7 @@ interface Props {
             description: string;
         }>;
         regions: Region[];
-        cities: City[];
-        settlements: Settlement[];
+        localities: Locality[];
     };
     organizationSettings?: any;
     defaultPaymentSettings: PaymentGatewaysSettingsValue;

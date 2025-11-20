@@ -75,7 +75,7 @@ export const useCitiesApi = () => {
                     params,
                 );
             } catch (error) {
-                console.error('Error fetching cities:', error);
+                console.error('Error fetching localities:', error);
                 throw error;
             }
         },
@@ -83,29 +83,6 @@ export const useCitiesApi = () => {
     );
 
     return { getCitiesByRegion };
-};
-
-// Хук для работы с населенными пунктами
-export const useSettlementsApi = () => {
-    const getSettlementsByCity = useCallback(
-        async (
-            cityId: number | null,
-            params: { page?: number; per_page?: number } = {},
-        ) => {
-            try {
-                return await organizationsApi.getSettlementsByCity(
-                    cityId,
-                    params,
-                );
-            } catch (error) {
-                console.error('Error fetching settlements:', error);
-                throw error;
-            }
-        },
-        [],
-    );
-
-    return { getSettlementsByCity };
 };
 
 // Хук для работы с пользователями

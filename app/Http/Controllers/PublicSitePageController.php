@@ -4,20 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Site;
 use App\Models\SitePage;
+use App\Models\SitePositionSetting;
 use App\Http\Resources\SitePageResource;
 use App\Services\WidgetDataService;
 use App\Services\Seo\SeoPresenter;
+use App\Models\SiteTemplate;
+use App\Models\WidgetPosition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
+
+
 class PublicSitePageController extends Controller
 {
     public function __construct(
         private readonly SeoPresenter $seoPresenter,
-    ) {
-    }
+    ) {}
 
     /**
      * Получить главный сайт (с кешированием)
@@ -167,8 +171,8 @@ class PublicSitePageController extends Controller
             "site_positions_{$site->template}",
             600,
             function () use ($site) {
-                $template = \App\Models\SiteTemplate::where('slug', $site->template)->first();
-                $query = \App\Models\WidgetPosition::active()->ordered();
+                $template = SiteTemplate::where('slug', $site->template)->first();
+                $query = WidgetPosition::active()->ordered();
                 if ($template) {
                     $query->where(function ($q) use ($template) {
                         $q->where('template_id', $template->id)->orWhereNull('template_id');
@@ -199,7 +203,7 @@ class PublicSitePageController extends Controller
             "site_position_settings_{$site->id}",
             300,
             function () use ($site) {
-                return \App\Models\SitePositionSetting::where('site_id', $site->id)
+                return SitePositionSetting::where('site_id', $site->id)
                     ->get()
                     ->map(function ($setting) {
                         return [

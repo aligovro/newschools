@@ -3,14 +3,18 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Enums\SiteStatus;
+use App\Http\Resources\UserBriefResource;
+use App\Http\Resources\OrganizationResource;
 use App\Models\User;
 use App\Models\Organization;
 use App\Models\Domain;
 use App\Models\Site;
-use App\Http\Resources\UserBriefResource;
-use App\Http\Resources\OrganizationResource;
-use App\Support\InertiaResource;
+use App\Models\SiteTemplate;
+use App\Models\Widget;
+use App\Models\Donation;
 use App\Services\GlobalSettingsService;
+use App\Support\InertiaResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -23,10 +27,10 @@ class DashboardController extends Controller
         $stats = [
             'totalUsers' => User::count(),
             'totalOrganizations' => Organization::count(),
-            'totalSites' => \App\Models\Site::count(),
-            'totalTemplates' => \App\Models\SiteTemplate::count(),
-            'totalWidgets' => \App\Models\Widget::count(),
-            'totalDonations' => \App\Models\Donation::count(),
+            'totalSites' => Site::count(),
+            'totalTemplates' => SiteTemplate::count(),
+            'totalWidgets' => Widget::count(),
+            'totalDonations' => Donation::count(),
             'userGrowth' => 0, // Пока нет API для роста
             'donationGrowth' => 0,
             'siteGrowth' => 0,
@@ -63,8 +67,8 @@ class DashboardController extends Controller
         ]);
 
         // Получаем фавиконку главного сайта
-        $mainSite = \App\Models\Site::where('site_type', 'main')
-            ->where('status', \App\Enums\SiteStatus::Published)
+        $mainSite = Site::where('site_type', 'main')
+            ->where('status', SiteStatus::Published)
             ->where('is_public', true)
             ->first();
 

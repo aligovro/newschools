@@ -285,11 +285,11 @@ Route::prefix('public')->group(function () {
     Route::get('/alumni-stats', [AlumniStatsController::class, 'index']);
 
     // Резолвинг города по названию (после геокодинга)
-    Route::get('/cities/resolve', [PublicApiController::class, 'resolveCity']);
+    Route::get('/localities/resolve', [PublicApiController::class, 'resolveCity']);
 
     // Публичные API для работы с городами
-    Route::get('/cities', [PublicOrganizationController::class, 'cities']);
-    Route::get('/cities/detect', [PublicOrganizationController::class, 'detectCity']);
+    Route::get('/localities', [PublicOrganizationController::class, 'localities']);
+    Route::get('/localities/detect', [PublicOrganizationController::class, 'detectCity']);
 
     // Публичные методы оплаты (для виджета пожертвований на главном сайте)
     Route::get('/payment-methods', [App\Http\Controllers\DonationWidgetController::class, 'getPaymentMethodsPublic']);
@@ -367,8 +367,7 @@ Route::prefix('organizations/{organization}/referrals')->group(function () {
 Route::prefix('dashboard')->middleware(['web', 'auth', 'verified'])->group(function () {
     Route::post('/api/check-slug', [OrganizationCreationController::class, 'checkSlug']);
     Route::get('/api/regions', [OrganizationCreationController::class, 'getRegions']);
-    Route::get('/api/cities-by-region', [OrganizationCreationController::class, 'getCitiesByRegion']);
-    Route::get('/api/settlements-by-city', [OrganizationCreationController::class, 'getSettlementsByCity']);
+    Route::get('/api/localities-by-region', [OrganizationCreationController::class, 'getCitiesByRegion']);
     Route::get('/api/users', [OrganizationCreationController::class, 'getUsers']);
     Route::post('/api/upload-logo', [OrganizationCreationController::class, 'uploadLogo']);
     Route::post('/api/upload-images', [OrganizationCreationController::class, 'uploadImages']);

@@ -39,7 +39,7 @@ export function useLocation({
         initialRegionId ?? organization?.region?.id ?? null,
     );
     const [cityId, setCityId] = useState<number | null>(
-        initialCityId ?? organization?.city?.id ?? null,
+        initialCityId ?? organization?.locality?.id ?? null,
     );
     const [cityName, setCityName] = useState<string>('');
     const [address, setAddress] = useState<string>(organization?.address ?? '');
@@ -142,7 +142,7 @@ export function useLocation({
     const fetchCityCenter = useCallback(
         async (id: number, updateCoordinates: boolean = false) => {
             try {
-                const res = await fetch(`/dashboard/api/cities/${id}`);
+                const res = await fetch(`/dashboard/api/localities/${id}`);
                 if (!res.ok) return;
                 const data = await res.json();
                 if (data?.latitude && data?.longitude) {

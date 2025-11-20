@@ -16,7 +16,7 @@ interface Organization {
     address: string;
     logo: string | null;
     image: string | null;
-    city: { name: string } | null;
+    locality: { name: string } | null;
 }
 
 interface SubscribeBlockProps {
@@ -108,7 +108,7 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                 }
 
                 if (cityId) {
-                    params.city_id = cityId;
+                    params.locality_id = cityId;
                 }
 
                 const response = await fetchPublicOrganizations(params);
@@ -305,7 +305,10 @@ export default function SubscribeBlock({ config = {} }: SubscribeBlockProps) {
                                     {/* Текст */}
                                     <div className="subscribe-block__school-text">
                                         <div className="subscribe-block__school-address truncate">
-                                            {[school.city?.name, school.address]
+                                            {[
+                                                school.locality?.name,
+                                                school.address,
+                                            ]
                                                 .filter(Boolean)
                                                 .join(', ')}
                                         </div>

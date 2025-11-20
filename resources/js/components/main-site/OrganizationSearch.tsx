@@ -12,7 +12,7 @@ interface Organization {
     slug: string;
     logo: string | null;
     image: string | null;
-    city: { name: string } | null;
+    locality: { name: string } | null;
     region?: { name: string } | null;
 }
 
@@ -90,7 +90,7 @@ export default function OrganizationSearch({
                 }
 
                 if (cityId) {
-                    params.city_id = cityId;
+                    params.locality_id = cityId;
                 }
 
                 const response = await fetchPublicOrganizations(params);
@@ -264,8 +264,8 @@ export default function OrganizationSearch({
                                                 </div>
                                                 <div className="organization-search__address truncate text-sm text-gray-600">
                                                     {org.address ||
-                                                        (org.city?.name
-                                                            ? `${org.city.name}`
+                                                        (org.locality?.name
+                                                            ? `${org.locality.name}`
                                                             : '')}
                                                 </div>
                                             </div>

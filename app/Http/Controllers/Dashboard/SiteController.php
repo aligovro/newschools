@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-
+use App\Http\Controllers\Dashboard\OrganizationSiteController;
 use App\Models\Site;
 use App\Models\Organization;
+use App\Models\SiteTemplate;
 use App\Http\Resources\OrganizationSiteResource;
+use App\Http\Resources\SitePageResource;
 use App\Support\InertiaResource;
-use Illuminate\Http\Request;
 use App\Http\Requests\Site\StoreSiteRequest;
 use App\Http\Requests\Site\UpdateSiteRequest;
 use App\Services\GlobalSettingsService;
-use App\Http\Controllers\Dashboard\OrganizationSiteController;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SiteController extends Controller
@@ -81,7 +82,7 @@ class SiteController extends Controller
             ->get();
 
         // Получаем доступные шаблоны
-        $templates = \App\Models\SiteTemplate::select('slug', 'name')
+        $templates = SiteTemplate::select('slug', 'name')
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
@@ -181,14 +182,14 @@ class SiteController extends Controller
                 'pages_count' => $site->pages()->count(),
                 'widgets_count' => $widgets->count(),
             ],
-            'pages' => \App\Http\Resources\SitePageResource::collection($pages),
+            'pages' => SitePageResource::collection($pages),
             'pageFilters' => $request->only(['page_search', 'page_status', 'page_per_page']),
         ]);
     }
 
     public function store(StoreSiteRequest $request)
     {
-        $template = \App\Models\SiteTemplate::where('slug', $request->template)->first();
+        $template = SiteTemplate::where('slug', $request->template)->first();
 
         $site = Site::create([
             'organization_id' => $request->organization_id,

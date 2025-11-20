@@ -6,8 +6,10 @@ use App\Models\Organization;
 use App\Models\OrganizationSetting;
 use App\Models\OrganizationSeo;
 use App\Models\Site;
+use App\Models\Domain;
 use App\Models\User;
 use App\Events\OrganizationCreated;
+use App\Jobs\SetupOrganizationDefaults;
 use App\Services\GlobalSettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -47,7 +49,7 @@ class OrganizationCreationService
       // Пропускаем автосоздание главной страницы и меню (нет связанных отношений pages/menus)
 
       // Отправляем задачу в очередь для дополнительной настройки
-      Queue::push(new \App\Jobs\SetupOrganizationDefaults($organization));
+      Queue::push(new SetupOrganizationDefaults($organization));
 
       // Отправляем событие о создании организации
       Event::dispatch(new OrganizationCreated($organization));
@@ -514,7 +516,7 @@ class OrganizationCreationService
   /**
    * Получить или создать домен для организации
    */
-  private function getOrCreateDomain(Organization $organization, array $siteData): \App\Models\Domain
+  private function getOrCreateDomain(Organization $organization, array $siteData): Domain
   {
     $domainData = $siteData['domain'] ?? null;
 

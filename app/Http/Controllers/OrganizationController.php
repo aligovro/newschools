@@ -66,7 +66,7 @@ class OrganizationController extends Controller
     public function edit(Organization $organization)
     {
         // Загружаем связи
-        $organization->load(['region', 'city', 'settlement']);
+        $organization->load(['region', 'locality']);
 
         $referenceData = $this->referenceDataService->getReferenceDataForEdit($organization);
         $orgSettings = $this->settingsService->getSettings($organization);

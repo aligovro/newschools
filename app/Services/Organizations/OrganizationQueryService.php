@@ -22,8 +22,7 @@ class OrganizationQueryService
         return Organization::query()
             ->with([
                 'region:id,name',
-                'city:id,name',
-                'settlement:id,name',
+                'locality:id,name',
             ])
             ->withCount([
                 'members as members_count',
@@ -42,8 +41,7 @@ class OrganizationQueryService
                 'created_at',
                 'updated_at',
                 'region_id',
-                'city_id',
-                'settlement_id'
+                'locality_id'
             ]);
     }
 

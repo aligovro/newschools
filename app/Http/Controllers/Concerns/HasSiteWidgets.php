@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\Site;
+use App\Models\SitePositionSetting;
 use App\Models\SiteTemplate;
 use App\Models\WidgetPosition;
 use App\Services\WidgetDataService;
@@ -40,7 +41,7 @@ trait HasSiteWidgets
         });
 
         $positionSettings = Cache::remember("site_position_settings_{$site->id}", 300, function () use ($site) {
-            return \App\Models\SitePositionSetting::where('site_id', $site->id)->get();
+            return SitePositionSetting::where('site_id', $site->id)->get();
         });
 
         return [

@@ -71,26 +71,26 @@ class CitySupportersService
         string $sortBy,
         string $sortOrder
     ): array {
-        // Простой запрос: группируем донаты по city_id
+        // Простой запрос: группируем донаты по locality_id
         $query = DB::table('donations')
-            ->join('cities', 'cities.id', '=', 'donations.city_id')
-            ->leftJoin('regions', 'regions.id', '=', 'cities.region_id')
+            ->join('localities', 'localities.id', '=', 'donations.locality_id')
+            ->leftJoin('regions', 'regions.id', '=', 'localities.region_id')
             ->where('donations.organization_id', $organization->id)
             ->where('donations.status', 'completed')
-            ->whereNotNull('donations.city_id')
+            ->whereNotNull('donations.locality_id')
             ->select([
-                'cities.id as id',
-                'cities.name as name',
+                'localities.id as id',
+                'localities.name as name',
                 'regions.name as region_name',
                 DB::raw('COUNT(DISTINCT donations.donor_id) as supporters_count'),
                 DB::raw('COUNT(donations.id) as donation_count'),
                 DB::raw('COALESCE(SUM(donations.amount), 0) as total_amount'),
             ])
-            ->groupBy('cities.id', 'cities.name', 'regions.name');
+            ->groupBy('localities.id', 'localities.name', 'regions.name');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('cities.name', 'like', "%{$search}%")
+                $q->where('localities.name', 'like', "%{$search}%")
                     ->orWhere('regions.name', 'like', "%{$search}%");
             });
         }
@@ -101,7 +101,7 @@ class CitySupportersService
                 $query->orderBy('supporters_count', $sortOrder);
                 break;
             case 'name':
-                $query->orderBy('cities.name', $sortOrder);
+                $query->orderBy('localities.name', $sortOrder);
                 break;
             case 'amount':
             default:
@@ -109,7 +109,7 @@ class CitySupportersService
                 break;
         }
 
-        $query->orderBy('cities.name', 'asc');
+        $query->orderBy('localities.name', 'asc');
 
         $results = $query->paginate($perPage);
         $cityIds = $results->pluck('id')->toArray();
@@ -168,23 +168,23 @@ class CitySupportersService
         string $sortOrder
     ): array {
         $query = DB::table('donations')
-            ->join('cities', 'cities.id', '=', 'donations.city_id')
-            ->leftJoin('regions', 'regions.id', '=', 'cities.region_id')
+            ->join('localities', 'localities.id', '=', 'donations.locality_id')
+            ->leftJoin('regions', 'regions.id', '=', 'localities.region_id')
             ->where('donations.status', 'completed')
-            ->whereNotNull('donations.city_id')
+            ->whereNotNull('donations.locality_id')
             ->select([
-                'cities.id as id',
-                'cities.name as name',
+                'localities.id as id',
+                'localities.name as name',
                 'regions.name as region_name',
                 DB::raw('COUNT(DISTINCT donations.donor_id) as supporters_count'),
                 DB::raw('COUNT(donations.id) as donation_count'),
                 DB::raw('COALESCE(SUM(donations.amount), 0) as total_amount'),
             ])
-            ->groupBy('cities.id', 'cities.name', 'regions.name');
+            ->groupBy('localities.id', 'localities.name', 'regions.name');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('cities.name', 'like', "%{$search}%")
+                $q->where('localities.name', 'like', "%{$search}%")
                     ->orWhere('regions.name', 'like', "%{$search}%");
             });
         }
@@ -194,7 +194,7 @@ class CitySupportersService
                 $query->orderBy('supporters_count', $sortOrder);
                 break;
             case 'name':
-                $query->orderBy('cities.name', $sortOrder);
+                $query->orderBy('localities.name', $sortOrder);
                 break;
             case 'amount':
             default:
@@ -202,7 +202,7 @@ class CitySupportersService
                 break;
         }
 
-        $query->orderBy('cities.name', 'asc');
+        $query->orderBy('localities.name', 'asc');
 
         $results = $query->paginate($perPage);
         $cityIds = $results->pluck('id')->toArray();
@@ -266,36 +266,36 @@ class CitySupportersService
 
         // Организации доноров (через organization_users)
         $schoolsFromDonors = DB::select("
-            SELECT donor_orgs.city_id, COUNT(DISTINCT donor_orgs.id) as schools_count
+            SELECT donor_orgs.locality_id, COUNT(DISTINCT donor_orgs.id) as schools_count
             FROM donations
             JOIN organization_users ON organization_users.user_id = donations.donor_id
             JOIN organizations as donor_orgs ON donor_orgs.id = organization_users.organization_id
             WHERE donations.organization_id = ?
                 AND donations.status = 'completed'
-                AND donor_orgs.city_id IN ($placeholders)
-            GROUP BY donor_orgs.city_id
+                AND donor_orgs.locality_id IN ($placeholders)
+            GROUP BY donor_orgs.locality_id
         ", $params);
 
         // Объединяем результаты
         $result = [];
         foreach ($schoolsFromDonors as $stat) {
-            $result[$stat->city_id] = (int) $stat->schools_count;
+            $result[$stat->locality_id] = (int) $stat->schools_count;
         }
 
         // Добавляем саму организацию-получатель (если она в городе из списка)
         $organization = Organization::find($organizationId);
-        if ($organization && $organization->city_id && in_array($organization->city_id, $cityIds)) {
+        if ($organization && $organization->locality_id && in_array($organization->locality_id, $cityIds)) {
             $hasDonations = DB::table('donations')
                 ->where('organization_id', $organizationId)
                 ->where('status', 'completed')
-                ->where('city_id', $organization->city_id)
+                ->where('locality_id', $organization->locality_id)
                 ->exists();
 
             if ($hasDonations) {
-                if (!isset($result[$organization->city_id])) {
-                    $result[$organization->city_id] = 1;
+                if (!isset($result[$organization->locality_id])) {
+                    $result[$organization->locality_id] = 1;
                 } else {
-                    $result[$organization->city_id] = max($result[$organization->city_id], 1);
+                    $result[$organization->locality_id] = max($result[$organization->locality_id], 1);
                 }
             }
         }
@@ -320,30 +320,30 @@ class CitySupportersService
 
         // Считаем уникальные организации из обоих источников одним запросом
         $schoolsStats = DB::select("
-            SELECT city_id, COUNT(DISTINCT org_id) as schools_count
+            SELECT locality_id, COUNT(DISTINCT org_id) as schools_count
             FROM (
-                SELECT DISTINCT donor_orgs.city_id, donor_orgs.id as org_id
+                SELECT DISTINCT donor_orgs.locality_id, donor_orgs.id as org_id
                 FROM donations
                 JOIN organization_users ON organization_users.user_id = donations.donor_id
                 JOIN organizations as donor_orgs ON donor_orgs.id = organization_users.organization_id
                 WHERE donations.status = 'completed'
-                    AND donor_orgs.city_id IN ($placeholders)
+                    AND donor_orgs.locality_id IN ($placeholders)
 
                 UNION
 
-                SELECT DISTINCT organizations.city_id, organizations.id as org_id
+                SELECT DISTINCT organizations.locality_id, organizations.id as org_id
                 FROM donations
                 JOIN organizations ON organizations.id = donations.organization_id
                 WHERE donations.status = 'completed'
-                    AND donations.city_id IN ($placeholders)
-                    AND organizations.city_id IN ($placeholders)
+                    AND donations.locality_id IN ($placeholders)
+                    AND organizations.locality_id IN ($placeholders)
             ) as combined_orgs
-            GROUP BY city_id
+            GROUP BY locality_id
         ", $params);
 
         $result = [];
         foreach ($schoolsStats as $stat) {
-            $result[$stat->city_id] = (int) $stat->schools_count;
+            $result[$stat->locality_id] = (int) $stat->schools_count;
         }
 
         return $result;
@@ -364,15 +364,15 @@ class CitySupportersService
             ->where('donations.organization_id', $organizationId)
             ->where('donations.status', 'completed')
             ->whereNotNull('donations.donor_id')
-            ->whereIn('donor_orgs.city_id', $cityIds)
-            ->groupBy('donor_orgs.city_id')
-            ->select('donor_orgs.city_id', DB::raw('COUNT(DISTINCT donations.donor_id) as alumni_count'))
-            ->pluck('alumni_count', 'city_id')
+            ->whereIn('donor_orgs.locality_id', $cityIds)
+            ->groupBy('donor_orgs.locality_id')
+            ->select('donor_orgs.locality_id', DB::raw('COUNT(DISTINCT donations.donor_id) as alumni_count'))
+            ->pluck('alumni_count', 'locality_id')
             ->toArray();
 
         $result = [];
-        foreach ($alumniStats as $cityId => $count) {
-            $result[$cityId] = (int) $count;
+        foreach ($alumniStats as $localityId => $count) {
+            $result[$localityId] = (int) $count;
         }
 
         return $result;
@@ -392,15 +392,15 @@ class CitySupportersService
             ->join('organizations as donor_orgs', 'donor_orgs.id', '=', 'organization_users.organization_id')
             ->where('donations.status', 'completed')
             ->whereNotNull('donations.donor_id')
-            ->whereIn('donor_orgs.city_id', $cityIds)
-            ->groupBy('donor_orgs.city_id')
-            ->select('donor_orgs.city_id', DB::raw('COUNT(DISTINCT donations.donor_id) as alumni_count'))
-            ->pluck('alumni_count', 'city_id')
+            ->whereIn('donor_orgs.locality_id', $cityIds)
+            ->groupBy('donor_orgs.locality_id')
+            ->select('donor_orgs.locality_id', DB::raw('COUNT(DISTINCT donations.donor_id) as alumni_count'))
+            ->pluck('alumni_count', 'locality_id')
             ->toArray();
 
         $result = [];
-        foreach ($alumniStats as $cityId => $count) {
-            $result[$cityId] = (int) $count;
+        foreach ($alumniStats as $localityId => $count) {
+            $result[$localityId] = (int) $count;
         }
 
         return $result;
@@ -418,18 +418,18 @@ class CitySupportersService
         $placeholders = implode(',', array_fill(0, count($cityIds), '?'));
 
         $subscriptionsStats = DB::select("
-            SELECT organizations.city_id, COUNT(DISTINCT organization_users.user_id) as subscriptions_count
+            SELECT organizations.locality_id, COUNT(DISTINCT organization_users.user_id) as subscriptions_count
             FROM organization_users
             JOIN organizations ON organizations.id = organization_users.organization_id
             WHERE organization_users.role = 'sponsor'
                 AND organization_users.status = 'active'
-                AND organizations.city_id IN ($placeholders)
-            GROUP BY organizations.city_id
+                AND organizations.locality_id IN ($placeholders)
+            GROUP BY organizations.locality_id
         ", $cityIds);
 
         $result = [];
         foreach ($subscriptionsStats as $stat) {
-            $result[$stat->city_id] = (int) $stat->subscriptions_count;
+            $result[$stat->locality_id] = (int) $stat->subscriptions_count;
         }
 
         return $result;

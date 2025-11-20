@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Site;
+use App\Models\SitePositionSetting;
 use App\Models\SiteTemplate;
 use App\Models\WidgetPosition;
+use App\Services\WidgetDataService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
@@ -26,7 +28,7 @@ class SitePreviewController extends Controller
 
             // Получаем конфигурацию виджетов из нормализованных таблиц (с кешем)
             $widgetsConfig = Cache::remember("site_widgets_config_{$site->id}", 300, function () use ($site) {
-                $widgetDataService = app(\App\Services\WidgetDataService::class);
+                $widgetDataService = app(WidgetDataService::class);
                 return $widgetDataService->getSiteWidgetsWithData($site->id);
             });
 
@@ -43,7 +45,7 @@ class SitePreviewController extends Controller
             });
 
             $positionSettings = Cache::remember("site_position_settings_{$site->id}", 300, function () use ($site) {
-                return \App\Models\SitePositionSetting::where('site_id', $site->id)->get();
+                return SitePositionSetting::where('site_id', $site->id)->get();
             });
 
             Log::info('SitePreviewController::preview - widgets config:', [
@@ -100,7 +102,7 @@ class SitePreviewController extends Controller
         }
 
         // Получаем конфигурацию виджетов (без кеша для админа, чтобы видеть актуальные изменения)
-        $widgetDataService = app(\App\Services\WidgetDataService::class);
+        $widgetDataService = app(WidgetDataService::class);
         $widgetsConfig = $widgetDataService->getSiteWidgetsWithData($site->id);
 
         // Позиции для шаблона
@@ -115,7 +117,7 @@ class SitePreviewController extends Controller
             return $query->get();
         });
 
-        $positionSettings = \App\Models\SitePositionSetting::where('site_id', $site->id)->get();
+        $positionSettings = SitePositionSetting::where('site_id', $site->id)->get();
 
         return Inertia::render('SitePreview', [
             'site' => [

@@ -9,8 +9,9 @@ use App\Enums\DonationStatus;
 use App\Support\Money;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Region;
-use App\Models\City;
+use App\Models\Locality;
 use App\Models\Organization;
+use App\Http\Controllers\CitySupportersController;
 
 class Donation extends Model
 {
@@ -21,7 +22,7 @@ class Donation extends Model
     protected $fillable = [
         'organization_id',
         'region_id',
-        'city_id',
+        'locality_id',
         'fundraiser_id',
         'project_id',
         'project_stage_id',
@@ -74,9 +75,12 @@ class Donation extends Model
         return $this->belongsTo(Region::class);
     }
 
-    public function city(): BelongsTo
+    /**
+     * Связь с населенным пунктом (locality).
+     */
+    public function locality(): BelongsTo
     {
-        return $this->belongsTo(City::class);
+        return $this->belongsTo(Locality::class);
     }
 
     public function fundraiser(): BelongsTo
@@ -190,7 +194,7 @@ class Donation extends Model
     {
         parent::boot();
 
-        // Автозаполнение region_id и city_id из организации
+        // Автозаполнение region_id и locality_id из организации
         static::creating(function ($donation) {
             if ($donation->organization_id) {
                 $organization = Organization::find($donation->organization_id);
@@ -200,19 +204,19 @@ class Donation extends Model
                         $donation->region_id = $organization->region_id;
                     }
 
-                    // Заполняем city_id из организации, если не указан
-                    if (!$donation->city_id && $organization->city_id) {
-                        $donation->city_id = $organization->city_id;
-                    } elseif (!$donation->city_id && $donation->region_id) {
-                        // Fallback: ищем город по региону, если у организации нет city_id
-                        $donation->city_id = static::findCityByRegion($donation->region_id);
+                    // Заполняем locality_id из организации, если не указан
+                    if (!$donation->locality_id && $organization->locality_id) {
+                        $donation->locality_id = $organization->locality_id;
+                    } elseif (!$donation->locality_id && $donation->region_id) {
+                        // Fallback: находим населённый пункт по региону (столицу региона)
+                        $donation->locality_id = static::findLocalityByRegion($donation->region_id);
                     }
                 }
             }
         });
 
         static::updating(function ($donation) {
-            // Если изменилась организация, обновляем region_id и city_id
+            // Если изменилась организация, обновляем region_id и locality_id
             if ($donation->isDirty('organization_id')) {
                 $organization = Organization::find($donation->organization_id);
                 if ($organization) {
@@ -221,11 +225,11 @@ class Donation extends Model
                         $donation->region_id = $organization->region_id;
                     }
 
-                    // Обновляем city_id, если не указан
-                    if (!$donation->city_id && $organization->city_id) {
-                        $donation->city_id = $organization->city_id;
-                    } elseif (!$donation->city_id && $donation->region_id) {
-                        $donation->city_id = static::findCityByRegion($donation->region_id);
+                    // Обновляем locality_id, если не указан
+                    if (!$donation->locality_id && $organization->locality_id) {
+                        $donation->locality_id = $organization->locality_id;
+                    } elseif (!$donation->locality_id && $donation->region_id) {
+                        $donation->locality_id = static::findLocalityByRegion($donation->region_id);
                     }
                 }
             }
@@ -243,11 +247,11 @@ class Donation extends Model
                 Cache::forget("alumni_stats_org_{$organizationId}");
                 // Очищаем кеш city_supporters для организации
                 // Используем метод контроллера для очистки
-                \App\Http\Controllers\CitySupportersController::clearCacheForOrganization($organizationId);
+                CitySupportersController::clearCacheForOrganization($organizationId);
             }
 
             // Очищаем публичный кеш
-            \App\Http\Controllers\CitySupportersController::clearPublicCache();
+            CitySupportersController::clearPublicCache();
 
             $shouldRefreshAggregates = $donation->status === DonationStatus::Completed
                 && (
@@ -293,18 +297,18 @@ class Donation extends Model
             if ($donation->organization_id) {
                 Cache::forget("alumni_stats_org_{$donation->organization_id}");
                 // Очищаем кеш city_supporters для организации
-                \App\Http\Controllers\CitySupportersController::clearCacheForOrganization($donation->organization_id);
+                CitySupportersController::clearCacheForOrganization($donation->organization_id);
             }
 
             // Очищаем публичный кеш
-            \App\Http\Controllers\CitySupportersController::clearPublicCache();
+            CitySupportersController::clearPublicCache();
         });
     }
 
     /**
-     * Найти город по региону (столица региона)
+     * Найти населённый пункт по региону (столица региона)
      */
-    public static function findCityByRegion(?int $regionId): ?int
+    public static function findLocalityByRegion(?int $regionId): ?int
     {
         if (!$regionId) {
             return null;
@@ -315,8 +319,8 @@ class Donation extends Model
             return null;
         }
 
-        // Ищем город по столице региона
-        $city = City::where('region_id', $regionId)
+        // Ищем населённый пункт по столице региона
+        $locality = Locality::where('region_id', $regionId)
             ->where(function ($query) use ($region) {
                 $query->where('name', $region->capital)
                     ->orWhere('name', 'LIKE', $region->capital . '%')
@@ -324,6 +328,6 @@ class Donation extends Model
             })
             ->first();
 
-        return $city?->id;
+        return $locality?->id;
     }
 }
