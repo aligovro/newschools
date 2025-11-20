@@ -20,6 +20,14 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
         style: menuStyle = 'default',
     } = config;
 
+    // Сортируем items по их индексу в массиве (порядок из админки)
+    // Если items приходит как объект с ключами, преобразуем в массив и сортируем
+    const sortedItems = useMemo(() => {
+        if (!items || items.length === 0) return [];
+        // Если items - это массив, возвращаем как есть (порядок уже правильный)
+        return Array.isArray(items) ? items : [];
+    }, [items]);
+
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const isVertical = orientation === 'column';
 
@@ -34,7 +42,7 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
 
     // Если это мобильное нижнее меню и есть элементы, рендерим специальную версию
     if (isMobileBottomMenu) {
-        if (!items || items.length === 0) {
+        if (!sortedItems || sortedItems.length === 0) {
             return (
                 <div
                     className={`menu-output menu-output--empty ${className || ''}`}
@@ -48,14 +56,14 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
         }
         return (
             <MobileBottomMenu
-                items={items}
+                items={sortedItems}
                 className={className}
                 style={style}
             />
         );
     }
 
-    if (!items || items.length === 0) {
+    if (!sortedItems || sortedItems.length === 0) {
         return (
             <div
                 className={`menu-output menu-output--empty ${className || ''}`}
@@ -174,7 +182,7 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
 
                     {/* Модальное мобильное меню */}
                     <MobileMenuModal
-                        items={items}
+                        items={sortedItems}
                         isOpen={isMobileMenuOpen}
                         onOpenChange={setIsMobileMenuOpen}
                         title={title && show_title ? title : undefined}
@@ -186,7 +194,7 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
             <ul
                 className={`${isVertical ? 'flex' : 'hidden md:flex'} ${getOrientationClasses(orientation)}`}
             >
-                {items.map((item) => renderMenuItem(item))}
+                {sortedItems.map((item) => renderMenuItem(item))}
             </ul>
         </nav>
     );

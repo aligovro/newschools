@@ -354,16 +354,21 @@ class SiteWidget extends Model
                 break;
 
             case 'menu':
-                $config['items'] = $this->menuItems->where('is_active', true)->map(function ($item) {
-                    return [
-                        'id' => $item->item_id,
-                        'title' => $item->title,
-                        'url' => $item->url,
-                        'type' => $item->type,
-                        'newTab' => $item->open_in_new_tab,
-                        'order' => $item->sort_order,
-                    ];
-                })->toArray();
+                $config['items'] = $this->menuItems
+                    ->where('is_active', true)
+                    ->sortBy('sort_order')
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item->item_id,
+                            'title' => $item->title,
+                            'url' => $item->url,
+                            'type' => $item->type,
+                            'newTab' => $item->open_in_new_tab,
+                            'order' => $item->sort_order,
+                        ];
+                    })
+                    ->values() // Сбрасываем ключи после sortBy
+                    ->toArray();
                 break;
 
             case 'gallery':
@@ -916,15 +921,16 @@ class SiteWidget extends Model
                     // Удаляем старые пункты меню
                     $this->menuItems()->delete();
 
-                    // Создаем новые пункты меню
-                    foreach ($data['items'] as $itemData) {
+                    // Создаем новые пункты меню с сохранением порядка из массива
+                    foreach ($data['items'] as $index => $itemData) {
                         $this->menuItems()->create([
                             'item_id' => $itemData['id'] ?? uniqid(),
                             'title' => $itemData['title'] ?? '',
                             'url' => $itemData['url'] ?? '',
                             'type' => $itemData['type'] ?? 'internal',
                             'open_in_new_tab' => $itemData['newTab'] ?? false,
-                            'sort_order' => $itemData['order'] ?? 1,
+                            // Используем индекс массива для порядка, если order не указан
+                            'sort_order' => $itemData['order'] ?? ($index + 1),
                         ]);
                     }
                 }
