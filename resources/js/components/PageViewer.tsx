@@ -1,3 +1,4 @@
+import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Head, usePage } from '@inertiajs/react';
@@ -181,41 +182,11 @@ const PageViewer: React.FC<PageViewerProps> = ({
                                 {/* Breadcrumbs */}
                                 {page.breadcrumbs &&
                                     page.breadcrumbs.length > 1 && (
-                                        <nav className="mb-6 flex items-center space-x-2 text-sm text-muted-foreground">
-                                            {page.breadcrumbs.map(
-                                                (breadcrumb, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="flex items-center space-x-2"
-                                                    >
-                                                        {index > 0 && (
-                                                            <span>/</span>
-                                                        )}
-                                                        {index ===
-                                                        page.breadcrumbs
-                                                            .length -
-                                                            1 ? (
-                                                            <span className="font-medium text-foreground">
-                                                                {
-                                                                    breadcrumb.title
-                                                                }
-                                                            </span>
-                                                        ) : (
-                                                            <a
-                                                                href={
-                                                                    breadcrumb.url
-                                                                }
-                                                                className="hover:text-foreground"
-                                                            >
-                                                                {
-                                                                    breadcrumb.title
-                                                                }
-                                                            </a>
-                                                        )}
-                                                    </div>
-                                                ),
-                                            )}
-                                        </nav>
+                                        <Breadcrumbs
+                                            breadcrumbs={page.breadcrumbs}
+                                            variant="simple"
+                                            className="mb-6"
+                                        />
                                     )}
 
                                 {/* Image */}

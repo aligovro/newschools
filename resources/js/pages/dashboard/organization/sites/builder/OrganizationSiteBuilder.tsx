@@ -6,13 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { sitesApi } from '@/lib/api/index';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Eye, Globe, Save, Settings } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Globe, Save, Settings } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import * as yup from 'yup';
-import PreviewTab from './tabs/PreviewTab';
 import type { Organization, OrganizationSite, SiteWidget } from './types';
 
 interface Props {
@@ -28,12 +26,12 @@ const TabsHeader = memo(function TabsHeader({
     hasErrorsInTab,
 }: {
     tabs: Array<{
-        id: 'settings' | 'builder' | 'preview';
+        id: 'settings' | 'builder';
         label: string;
         icon: any;
     }>;
-    activeTab: 'settings' | 'builder' | 'preview';
-    onTabClick: (tab: 'settings' | 'builder' | 'preview') => void;
+    activeTab: 'settings' | 'builder';
+    onTabClick: (tab: 'settings' | 'builder') => void;
     hasErrorsInTab: (tab: string) => boolean;
 }) {
     return (
@@ -69,33 +67,30 @@ export default function OrganizationSiteBuilder({
 }: Props) {
     const isCreateMode = !site?.id || mode === 'create';
 
-    const getInitialTab = (): 'settings' | 'builder' | 'preview' => {
+    const getInitialTab = (): 'settings' | 'builder' => {
         if (typeof window === 'undefined') return 'settings';
         if (isCreateMode) return 'settings';
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab');
-        if (tab === 'settings' || tab === 'builder' || tab === 'preview') {
+        if (tab === 'settings' || tab === 'builder') {
             return tab;
         }
         return 'settings';
     };
 
-    const [activeTab, setActiveTab] = useState<
-        'builder' | 'preview' | 'settings'
-    >(getInitialTab());
-
-    const updateUrlTab = useCallback(
-        (tab: 'settings' | 'builder' | 'preview') => {
-            if (typeof window === 'undefined') return;
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', tab);
-            window.history.replaceState({}, '', url.toString());
-        },
-        [],
+    const [activeTab, setActiveTab] = useState<'builder' | 'settings'>(
+        getInitialTab(),
     );
 
+    const updateUrlTab = useCallback((tab: 'settings' | 'builder') => {
+        if (typeof window === 'undefined') return;
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url.toString());
+    }, []);
+
     const handleTabClick = useCallback(
-        (tab: 'settings' | 'builder' | 'preview') => {
+        (tab: 'settings' | 'builder') => {
             setActiveTab(tab);
             updateUrlTab(tab);
         },
@@ -106,7 +101,7 @@ export default function OrganizationSiteBuilder({
         const onPopState = () => {
             const params = new URLSearchParams(window.location.search);
             const tab = params.get('tab');
-            if (tab === 'settings' || tab === 'builder' || tab === 'preview') {
+            if (tab === 'settings' || tab === 'builder') {
                 setActiveTab(tab);
             }
         };
@@ -228,17 +223,6 @@ export default function OrganizationSiteBuilder({
 
     // const handleSave = useCallback(async () => { ... }, []) // удалено
 
-    const _handlePreview = useCallback(async () => {
-        try {
-            if (!site.id) return;
-            const result = await sitesApi.getPreviewUrl(site.id);
-            window.open(result.preview_url, '_blank');
-        } catch (error) {
-            console.error('Error getting preview:', error);
-            alert('Ошибка при получении предпросмотра');
-        }
-    }, [site.id]);
-
     const handleWidgetsChange = useCallback(
         (newWidgets: any[], isLoading: boolean) => {
             setWidgets(newWidgets as SiteWidget[]);
@@ -260,7 +244,6 @@ export default function OrganizationSiteBuilder({
                 : ([
                       { id: 'settings', label: 'Настройки', icon: Settings },
                       { id: 'builder', label: 'Конструктор', icon: Globe },
-                      { id: 'preview', label: 'Предпросмотр', icon: Eye },
                   ] as const),
         [isCreateMode],
     );
@@ -290,8 +273,45 @@ export default function OrganizationSiteBuilder({
         [organization.id, postCreate, isMainSite],
     );
 
+    // Подготавливаем headerActions с ссылкой "Просмотр" для всех сайтов
+    const headerActions = useMemo(() => {
+        if (!isCreateMode && site.id) {
+            if (isMainSite) {
+                // Для главного сайта - ссылка на главную
+                return (
+                    <Link href="/" target="_blank" rel="noopener noreferrer">
+                        <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Просмотр
+                        </Button>
+                    </Link>
+                );
+            } else {
+                // Для остальных сайтов - ссылка на админский просмотр
+                const viewUrl = `/dashboard/sites/${site.id}/view`;
+                return (
+                    <Link href={viewUrl} target="_blank" rel="noopener noreferrer">
+                        <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Просмотр
+                        </Button>
+                    </Link>
+                );
+            }
+        }
+        return null;
+    }, [isCreateMode, isMainSite, site.id]);
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={breadcrumbs} headerActions={headerActions}>
             <Head
                 title={
                     isCreateMode
@@ -476,9 +496,6 @@ export default function OrganizationSiteBuilder({
                                         validationErrors['builder'] || []
                                     }
                                 />
-                            )}
-                            {activeTab === 'preview' && site.id && (
-                                <PreviewTab site={site} />
                             )}
                             {activeTab === 'settings' && (
                                 <SettingsContent site={site as any} />

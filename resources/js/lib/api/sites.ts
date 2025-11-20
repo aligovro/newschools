@@ -85,7 +85,7 @@ export const sitesApi = {
             }>(`/dashboard/sites/${siteId}/widgets/${widgetId}/move`, updates)
             .then((response) => response.data),
 
-    // Получение URL для предпросмотра сайта
+    // Получение URL для предпросмотра сайта (устаревший метод, используйте getAdminViewUrl)
     getPreviewUrl: (siteId: number): Promise<{ preview_url: string }> =>
         apiClient
             .get<{
@@ -95,6 +95,11 @@ export const sitesApi = {
             .then((response) => ({
                 preview_url: response.data.data.preview_url,
             })),
+
+    // Получение URL для админского просмотра сайта (включая неопубликованные)
+    getAdminViewUrl: (siteId: number): string => {
+        return `/dashboard/sites/${siteId}/view`;
+    },
 
     // Получение конфигурации виджетов сайта
     getConfig: (siteId: number): Promise<{ widgets: unknown[] }> =>

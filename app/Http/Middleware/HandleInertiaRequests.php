@@ -54,8 +54,15 @@ class HandleInertiaRequests extends Middleware
 
     // Загружаем пользователя с ролями и организациями
     $user = $request->user();
+    $unviewedSuggestedOrganizationsCount = 0;
+    
     if ($user) {
       $user->load(['roles', 'permissions', 'organizations']);
+      
+      // Получаем количество непросмотренных предложенных организаций для супер-админа
+      if ($user->isSuperAdmin()) {
+        $unviewedSuggestedOrganizationsCount = $user->getUnviewedSuggestedOrganizationsCount();
+      }
     }
 
     return [
@@ -64,6 +71,7 @@ class HandleInertiaRequests extends Middleware
       'quote' => ['message' => trim($message), 'author' => trim($author)],
       'auth' => [
         'user' => $user,
+        'unviewedSuggestedOrganizationsCount' => $unviewedSuggestedOrganizationsCount,
       ],
       'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
       'terminology' => $terminology,

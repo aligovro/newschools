@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SuggestedOrganization extends Model
@@ -91,5 +92,27 @@ class SuggestedOrganization extends Model
     public function scopeRejected($query)
     {
         return $query->where('status', 'rejected');
+    }
+
+    /**
+     * Связь с просмотрами
+     */
+    public function views(): HasMany
+    {
+        return $this->hasMany(ViewedSuggestedOrganization::class);
+    }
+
+    /**
+     * Проверка, просмотрено ли предложение пользователем
+     */
+    public function isViewedBy(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return $this->views()
+            ->where('user_id', $user->id)
+            ->exists();
     }
 }

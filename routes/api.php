@@ -382,6 +382,8 @@ Route::prefix('dashboard/suggested-organizations')
     ->middleware(['web', 'auth', 'verified'])
     ->group(function () {
         Route::get('/', [DashboardSuggestedOrganizationController::class, 'index']);
+        Route::get('/unviewed-count', [DashboardSuggestedOrganizationController::class, 'unviewedCount']);
+        Route::post('/{suggestedOrganization}/mark-as-viewed', [DashboardSuggestedOrganizationController::class, 'markAsViewed']);
         Route::match(['put', 'patch'], '/{suggestedOrganization}', [DashboardSuggestedOrganizationController::class, 'update']);
         Route::delete('/{suggestedOrganization}', [DashboardSuggestedOrganizationController::class, 'destroy']);
     });

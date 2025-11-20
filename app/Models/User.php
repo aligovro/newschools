@@ -92,4 +92,37 @@ class User extends Authenticatable
             ->where('organizations.id', $organizationId)
             ->exists();
     }
+
+    /**
+     * Получить количество непросмотренных предложенных организаций
+     */
+    public function getUnviewedSuggestedOrganizationsCount(): int
+    {
+        if (!$this->isSuperAdmin()) {
+            return 0;
+        }
+
+        $viewedIds = ViewedSuggestedOrganization::where('user_id', $this->id)
+            ->pluck('suggested_organization_id');
+
+        return SuggestedOrganization::where('status', SuggestedOrganization::STATUS_PENDING)
+            ->whereNotIn('id', $viewedIds)
+            ->count();
+    }
+
+    /**
+     * Отметить предложенную организацию как просмотренную
+     */
+    public function markSuggestedOrganizationAsViewed(SuggestedOrganization $suggestedOrganization): void
+    {
+        ViewedSuggestedOrganization::firstOrCreate(
+            [
+                'user_id' => $this->id,
+                'suggested_organization_id' => $suggestedOrganization->id,
+            ],
+            [
+                'viewed_at' => now(),
+            ]
+        );
+    }
 }

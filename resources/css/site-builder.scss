@@ -210,6 +210,11 @@
     display: none;
 }
 
+.position-label-header,
+.position-label-footer {
+    opacity: 0;
+}
+
 .position-empty-state {
     padding: 8px;
 }
