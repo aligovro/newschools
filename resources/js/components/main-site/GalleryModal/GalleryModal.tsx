@@ -6,6 +6,7 @@ import 'swiper/css/navigation';
 import { Keyboard, Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { NavigationOptions } from 'swiper/types';
+import { usePreventBodyScroll } from '@/hooks/usePreventBodyScroll';
 import './GalleryModal.css';
 
 interface GalleryModalProps {
@@ -35,6 +36,9 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
     const navigationNextRef = useRef<HTMLButtonElement>(null);
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
+    // Предотвращаем скролл body при открытии модалки
+    usePreventBodyScroll(isOpen);
+
     useEffect(() => {
         if (isOpen && swiperRef.current && initialIndex >= 0) {
             swiperRef.current.slideTo(initialIndex);
@@ -51,12 +55,10 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
 
         if (isOpen) {
             document.addEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'hidden';
         }
 
         return () => {
             document.removeEventListener('keydown', handleEscape);
-            document.body.style.overflow = '';
         };
     }, [isOpen, onClose]);
 

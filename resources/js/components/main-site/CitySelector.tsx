@@ -1,4 +1,5 @@
 import { useDefaultCity } from '@/hooks/useDefaultCity';
+import { usePreventBodyScroll } from '@/hooks/usePreventBodyScroll';
 import {
     detectCityByGeolocation,
     fetchPublicCities,
@@ -39,6 +40,9 @@ export default function CitySelector({
         region: defaultRegion,
         loaded: globalDefaultLoaded,
     } = useDefaultCity();
+
+    // Предотвращаем скролл body при открытии дропдауна
+    usePreventBodyScroll(isOpen);
 
     // Инициализация дефолтного города при монтировании
     useEffect(() => {
@@ -277,7 +281,7 @@ export default function CitySelector({
                         className="city-selector__overlay fixed inset-0 z-10"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="city-selector__dropdown absolute left-0 top-full z-20 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-lg">
+                    <div className="city-selector__dropdown absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white shadow-lg">
                         <div className="p-3">
                             <input
                                 type="text"
@@ -288,7 +292,7 @@ export default function CitySelector({
                                 autoFocus
                             />
                         </div>
-                        <div className="max-h-64 overflow-y-auto">
+                        <div className="max-h-64 overflow-y-auto overflow-x-hidden">
                             {isLoading ? (
                                 <div className="flex items-center justify-center py-8">
                                     <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
