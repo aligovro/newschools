@@ -105,7 +105,8 @@
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600&family=montserrat:300,400,500,600,700" rel="stylesheet" />
 
     @viteReactRefresh
-    @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
+    {{-- Подключаем один общий бандл приложения (Inertia сам подгружает страницы через dynamic import) --}}
+    @vite(['resources/css/app.scss', 'resources/js/app.tsx'])
     @inertiaHead
 </head>
 
