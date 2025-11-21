@@ -1,3 +1,4 @@
+import { FormStatusBanner } from '@/components/common/forms/FormStatusBanner';
 import { Button } from '@/components/ui/button';
 import { useCascadeSelectData } from '@/hooks/useGeoSelectData';
 import { useOrganizationSlug } from '@/hooks/useOrganizationSlug';
@@ -34,8 +35,6 @@ export default function OrganizationForm({
         };
     }>();
 
-    const flashSuccess = page.props.flash?.success;
-    const flashError = page.props.flash?.error;
     const serverErrors: Record<string, string> = page.props.errors || {};
     const terminology = page.props.terminology || {};
 
@@ -338,17 +337,11 @@ export default function OrganizationForm({
 
     return (
         <form onSubmit={onSubmit} className="space-y-6">
-            {(flashSuccess || flashError) && (
-                <div
-                    className={
-                        flashSuccess
-                            ? 'rounded-md border border-green-200 bg-green-50 p-3 text-green-800'
-                            : 'rounded-md border border-red-200 bg-red-50 p-3 text-red-800'
-                    }
-                >
-                    {flashSuccess || flashError}
-                </div>
-            )}
+            <FormStatusBanner
+                flash={page.props.flash as any}
+                errors={serverErrors}
+                defaultErrorMessage="Исправьте ошибки в форме перед сохранением"
+            />
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <div className="space-y-6 lg:col-span-2">
                     <BasicInfoSection
@@ -364,6 +357,8 @@ export default function OrganizationForm({
                         errors={{
                             name: fieldError('name'),
                             slug: fieldError('slug'),
+                            type: fieldError('type'),
+                            status: fieldError('status'),
                         }}
                         onNameChange={handleNameChange}
                         onSlugChange={handleSlugChange}
@@ -381,6 +376,11 @@ export default function OrganizationForm({
                         onPhoneChange={formState.setPhone}
                         onEmailChange={formState.setEmail}
                         onWebsiteChange={formState.setWebsite}
+                        errors={{
+                            phone: fieldError('phone'),
+                            email: fieldError('email'),
+                            website: fieldError('website'),
+                        }}
                     />
 
                     <NeedsSection
@@ -401,6 +401,14 @@ export default function OrganizationForm({
                         cascadeData={cascadeData}
                         regionOptions={regionOptions}
                         terminology={terminology}
+                        errors={{
+                            region_id: fieldError('region_id'),
+                            locality_id: fieldError('locality_id'),
+                            address: fieldError('address'),
+                            latitude: fieldError('latitude'),
+                            longitude: fieldError('longitude'),
+                            city_name: fieldError('city_name'),
+                        }}
                         onRegionChange={handleRegionChange}
                         onCityChange={handleCityChange}
                         onAddressChange={location.setAddress}
@@ -441,6 +449,9 @@ export default function OrganizationForm({
                         onAdminUserIdChange={adminUser.setAdminUserId}
                         onUsersSearchChange={adminUser.setSearch}
                         onUsersLoadMore={adminUser.loadMore}
+                        errors={{
+                            admin_user_id: fieldError('admin_user_id'),
+                        }}
                     />
 
                     <div className="flex justify-end gap-3">

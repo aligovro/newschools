@@ -71,7 +71,8 @@ class OrganizationCreationController extends Controller
             // Основные данные
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:organizations,slug',
-            'description' => 'nullable|string|max:1000',
+            // Описание может быть произвольным HTML/текстом без жесткого лимита по длине
+            'description' => 'nullable|string',
             'type' => 'required|string|in:school',
             'status' => 'nullable|string|in:active,inactive,pending',
 

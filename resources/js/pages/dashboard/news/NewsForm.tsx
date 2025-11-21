@@ -18,10 +18,11 @@ import UniversalSelect, {
     type SelectOption,
 } from '@/components/ui/universal-select/UniversalSelect';
 import AppLayout from '@/layouts/app-layout';
+import { FormStatusBanner } from '@/components/common/forms/FormStatusBanner';
 import type { NewsItem } from '@/lib/api/news';
 import { newsApi } from '@/lib/api/news';
 import { uploadFile } from '@/utils/uploadFile';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface ContextPayload {
@@ -173,6 +174,9 @@ export default function NewsForm({
     permissions,
 }: NewsFormProps) {
     const mode: FormMode = news ? 'edit' : 'create';
+    const page = usePage<{
+        flash?: { success?: string; error?: string };
+    }>();
 
     const startingTargetType =
         extractTargetType(news?.target) ||
@@ -815,6 +819,11 @@ export default function NewsForm({
             />
 
             <form onSubmit={submit} className="space-y-6">
+                <FormStatusBanner
+                    flash={page.props.flash as any}
+                    errors={errors as any}
+                    defaultErrorMessage="Исправьте ошибки в форме"
+                />
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
                     <div className="space-y-6 lg:col-span-3">
                         <Card>

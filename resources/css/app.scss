@@ -88,9 +88,6 @@
 /* Custom styles */
 @import 'custom';
 
-/* Media queries - адаптивность */
-@import '_media';
-
 /* Sidebar styles */
 @import 'components/sidebar.scss';
 
@@ -121,3 +118,9 @@
 /* Main site pages */
 @import 'pages/main-site/profile-page.scss';
 @import 'pages/main-site/projects-page.scss';
+
+/* Site preview base styles (для страниц предпросмотра и публичного сайта) */
+@import 'site-preview.scss';
+
+/* Media queries - адаптивность (должны быть в самом конце, чтобы переопределять базовые стили) */
+@import '_media';

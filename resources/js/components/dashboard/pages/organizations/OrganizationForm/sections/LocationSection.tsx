@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import UniversalSelect from '@/components/ui/universal-select/UniversalSelect';
 import { memo } from 'react';
-import type { CascadeSelectData } from './types';
+import type { CascadeSelectData } from '../types';
 
 interface LocationSectionProps {
     name: string;
@@ -24,6 +24,14 @@ interface LocationSectionProps {
         organization?: {
             singular_genitive?: string;
         };
+    };
+    errors?: {
+        region_id?: string;
+        locality_id?: string;
+        address?: string;
+        latitude?: string;
+        longitude?: string;
+        city_name?: string;
     };
     onRegionChange: (id: number | null) => void;
     onCityChange: (id: number | null) => void;
@@ -46,6 +54,7 @@ export const LocationSection = memo(function LocationSection({
     cascadeData,
     regionOptions,
     terminology,
+    errors = {},
     onRegionChange,
     onCityChange,
     onAddressChange,
@@ -94,7 +103,7 @@ export const LocationSection = memo(function LocationSection({
                         value={regionId}
                         options={regionOptions}
                         onChange={(value) => onRegionChange(value as number)}
-                        error={undefined}
+                        error={errors.region_id}
                         label="Регион"
                         placeholder="Выберите регион"
                         searchable
@@ -108,7 +117,7 @@ export const LocationSection = memo(function LocationSection({
                         {...cascadeData.localities}
                         value={cityId}
                         onChange={(value) => onCityChange(value as number)}
-                        error={undefined}
+                        error={errors.locality_id}
                         label="Город"
                         placeholder="Выберите город"
                         searchable
@@ -130,8 +139,13 @@ export const LocationSection = memo(function LocationSection({
                             }
                         }}
                         placeholder={`Введите адрес ${terminology.organization?.singular_genitive || 'организации'}`}
-                        className="mt-1"
+                        className={`mt-1 ${errors.address ? 'border-red-500' : ''}`}
                     />
+                    {errors.address && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.address}
+                        </p>
+                    )}
                 </div>
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -146,7 +160,13 @@ export const LocationSection = memo(function LocationSection({
                             )
                         }
                         placeholder="Например: 55.751244"
+                        className={errors.latitude ? 'border-red-500' : ''}
                     />
+                    {errors.latitude && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.latitude}
+                        </p>
+                    )}
                 </div>
                 <div>
                     <Label htmlFor="longitude">Долгота</Label>
@@ -159,7 +179,13 @@ export const LocationSection = memo(function LocationSection({
                             )
                         }
                         placeholder="Например: 37.618423"
+                        className={errors.longitude ? 'border-red-500' : ''}
                     />
+                    {errors.longitude && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.longitude}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

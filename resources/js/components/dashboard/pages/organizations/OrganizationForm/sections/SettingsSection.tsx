@@ -1,8 +1,8 @@
-import { memo } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import UniversalSelect from '@/components/ui/universal-select/UniversalSelect';
 import type { SelectOption } from '@/components/ui/universal-select/UniversalSelect';
+import UniversalSelect from '@/components/ui/universal-select/UniversalSelect';
+import { memo } from 'react';
 
 interface SettingsSectionProps {
     isPublic: boolean;
@@ -16,6 +16,9 @@ interface SettingsSectionProps {
     onAdminUserIdChange: (id: number | null) => void;
     onUsersSearchChange: (query: string) => void;
     onUsersLoadMore: () => void;
+    errors?: {
+        admin_user_id?: string;
+    };
 }
 
 export const SettingsSection = memo(function SettingsSection({
@@ -30,6 +33,7 @@ export const SettingsSection = memo(function SettingsSection({
     onAdminUserIdChange,
     onUsersSearchChange,
     onUsersLoadMore,
+    errors = {},
 }: SettingsSectionProps) {
     return (
         <>
@@ -54,7 +58,7 @@ export const SettingsSection = memo(function SettingsSection({
                     onChange={(value) =>
                         onAdminUserIdChange(value as number | null)
                     }
-                    error={undefined}
+                    error={errors.admin_user_id}
                     label="Назначить администратора"
                     placeholder="Выберите пользователя"
                     searchable
@@ -73,4 +77,3 @@ export const SettingsSection = memo(function SettingsSection({
         </>
     );
 });
-

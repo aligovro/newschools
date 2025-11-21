@@ -7,8 +7,6 @@ import { widgetsSystemApi } from '@/lib/api/index';
 import { buildSiteSeo } from '@/lib/seo';
 import { Head } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
-import '../../css/site-preview.scss';
-
 interface Site {
     id: number;
     name: string;

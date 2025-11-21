@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
+import { FormStatusBanner } from '@/components/common/forms/FormStatusBanner';
 import AppLayout from '@/layouts/app-layout';
 import { index as projectIndex } from '@/routes/organizations/projects';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router, useForm } from '@inertiajs/react';
-import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft, Save } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import GeneralTab from '../tabs/GeneralTab';
 import StagesTab from '../tabs/StagesTab';
@@ -42,6 +43,12 @@ export default function ProjectForm({
     isEdit = false,
 }: ProjectFormProps) {
     const [activeTab, setActiveTab] = useState<'general' | 'stages'>('general');
+    const page = usePage<{
+        flash?: {
+            success?: string;
+            error?: string;
+        };
+    }>();
     const [projectImage, setProjectImage] = useState<string | File | null>(
         project?.image ? `/storage/${project.image}` : null,
     );
@@ -580,8 +587,6 @@ export default function ProjectForm({
         },
     ];
 
-    const hasErrors = Object.keys(errors).length > 0;
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={isEdit ? 'Редактировать проект' : 'Создать проект'} />
@@ -611,12 +616,12 @@ export default function ProjectForm({
                         </div>
                     </div>
 
-                    {hasErrors && (
-                        <div className="create-organization__error-banner">
-                            <AlertCircle className="h-5 w-5" />
-                            <span>Исправьте ошибки в форме</span>
-                        </div>
-                    )}
+                    <FormStatusBanner
+                        flash={page.props.flash as any}
+                        errors={errors as any}
+                        defaultErrorMessage="Исправьте ошибки в форме"
+                        className="mt-4"
+                    />
                 </div>
 
                 {/* Tabs */}
@@ -701,7 +706,6 @@ export default function ProjectForm({
                             type="submit"
                             disabled={
                                 processing ||
-                                !!hasErrors ||
                                 (activeTab === 'stages' && !isEdit)
                             }
                             className="create-organization__button create-organization__button--primary"
