@@ -25,6 +25,7 @@
 @import './components/ui/universal-select.scss';
 @import './components/ui/image-uploader/multi-image-uploader.scss';
 @import './components/ui/image-uploader/logo-uploader.scss';
+@import './components/modals.scss';
 
 // Import pages
 @import './pages/organizations/create-organization.scss';
@@ -33,6 +34,13 @@
 @layer base {
     * {
         @apply border-gray-200;
+    }
+
+    html,
+    body {
+        /* Предотвращаем горизонтальный скролл на всех устройствах */
+        max-width: 100vw;
+        overflow-x: hidden;
     }
 
     body {
@@ -54,7 +62,7 @@
     /* Убираем стрелки у number полей во всех браузерах */
     input[type='number'] {
         -moz-appearance: textfield; /* Firefox */
-        
+
         /* WebKit браузеры (Chrome, Safari, Edge) */
         &::-webkit-outer-spin-button,
         &::-webkit-inner-spin-button {
