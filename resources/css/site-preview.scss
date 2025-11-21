@@ -371,7 +371,11 @@
         position: relative;
         z-index: 1;
     }
-    .footer-qr,
+    .footer-qr {
+        .flex-col {
+            gap: 8px;
+        }
+    }
     .footer-contacts {
         max-width: 80%;
     }

@@ -348,7 +348,7 @@ export default function Organizations({
                             onClick={() => setActiveTab('list')}
                             className={`organizations-tabs__button organizations-tabs__button--list${
                                 activeTab === 'list'
-                                    ? 'organizations-tabs__button--active'
+                                    ? ' organizations-tabs__button--active'
                                     : ''
                             }`}
                         >
@@ -364,7 +364,7 @@ export default function Organizations({
                             onClick={() => setActiveTab('map')}
                             className={`organizations-tabs__button organizations-tabs__button--map${
                                 activeTab === 'map'
-                                    ? 'organizations-tabs__button--active'
+                                    ? ' organizations-tabs__button--active'
                                     : ''
                             }`}
                         >

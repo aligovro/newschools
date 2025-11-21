@@ -1,4 +1,3 @@
-import YandexMap, { MapMarker } from '@/components/maps/YandexMap';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -9,17 +8,8 @@ import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import type { MoneyAmount } from '@/types/money';
 import { Head, Link, router } from '@inertiajs/react';
-import {
-    Building2,
-    Edit,
-    Eye,
-    List,
-    MapPin,
-    Plus,
-    Search,
-    Trash2,
-} from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Building2, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -90,43 +80,13 @@ export default function OrganizationManagementPage({
     filters,
     terminology,
 }: Props) {
-    const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
+    // Ранее здесь было состояние вкладок "список / карта".
+    // Карту больше не отображаем, оставляем только список.
     const [search, setSearch] = useState(filters.search || '');
     const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
     const [sortDirection, setSortDirection] = useState(
         filters.sort_direction || 'desc',
     );
-
-    // Подготовка маркеров для карты
-    const mapMarkers: MapMarker[] = useMemo(() => {
-        return organizations.data
-            .filter((org) => org.latitude && org.longitude)
-            .map((org) => ({
-                id: org.id,
-                position: [org.latitude!, org.longitude!] as [number, number],
-                hint: org.name,
-                balloon: `<div>
-                    <h3>${org.name}</h3>
-                    ${org.description ? `<p>${org.description}</p>` : ''}
-                    ${org.region ? `<p>Регион: ${org.region.name}</p>` : ''}
-                    ${org.locality ? `<p>Город: ${org.locality.name}</p>` : ''}
-                    <a href="/dashboard/organizations/${org.id}/edit">Редактировать</a>
-                </div>`,
-            }));
-    }, [organizations.data]);
-
-    // Центр карты на основе всех организаций
-    const mapCenter: [number, number] = useMemo(() => {
-        if (mapMarkers.length === 0) return [55.751244, 37.618423]; // Москва по умолчанию
-
-        const latitudes = mapMarkers.map((m) => m.position[0]);
-        const longitudes = mapMarkers.map((m) => m.position[1]);
-        const avgLat = latitudes.reduce((a, b) => a + b, 0) / latitudes.length;
-        const avgLon =
-            longitudes.reduce((a, b) => a + b, 0) / longitudes.length;
-
-        return [avgLat, avgLon];
-    }, [mapMarkers]);
 
     const handleSearch = () => {
         router.get(
@@ -252,288 +212,225 @@ export default function OrganizationManagementPage({
                     </CardContent>
                 </Card>
 
-                {/* Tabs */}
-                <div className="border-b border-gray-200 dark:border-gray-700">
-                    <nav className="flex space-x-8">
-                        <button
-                            onClick={() => setActiveTab('list')}
-                            className={`border-b-2 px-1 py-4 text-sm font-medium ${
-                                activeTab === 'list'
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                            }`}
-                        >
-                            <List className="mr-2 inline-block h-4 w-4" />
-                            Список
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('map')}
-                            className={`border-b-2 px-1 py-4 text-sm font-medium ${
-                                activeTab === 'map'
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                            }`}
-                        >
-                            <MapPin className="mr-2 inline-block h-4 w-4" />
-                            Карта
-                        </button>
-                    </nav>
-                </div>
-
-                {/* Organizations List */}
-                {activeTab === 'list' && (
-                    <>
-                        {organizations.data.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {organizations.data.map((organization) => (
-                                    <Card
-                                        key={organization.id}
-                                        className="overflow-hidden"
-                                    >
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center space-x-3">
-                                                    {organization.logo ? (
-                                                        <img
-                                                            src={
-                                                                organization.logo
-                                                            }
-                                                            alt={
-                                                                organization.name
-                                                            }
-                                                            className="h-12 w-12 rounded-lg object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
-                                                            <Building2 className="h-6 w-6 text-gray-400" />
-                                                        </div>
-                                                    )}
-                                                    <div className="min-w-0 flex-1">
-                                                        <h3 className="truncate font-semibold text-gray-900 dark:text-white">
-                                                            {organization.name}
-                                                        </h3>
-                                                        <p className="text-sm text-gray-500">
-                                                            {getTypeLabel(
-                                                                organization.type,
-                                                            )}
-                                                        </p>
-                                                    </div>
+                {/* Organizations List (только список, без карты) */}
+                {organizations.data.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {organizations.data.map((organization) => (
+                            <Card
+                                key={organization.id}
+                                className="overflow-hidden"
+                            >
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            {organization.logo ? (
+                                                <img
+                                                    src={organization.logo}
+                                                    alt={organization.name}
+                                                    className="h-12 w-12 rounded-lg object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
+                                                    <Building2 className="h-6 w-6 text-gray-400" />
                                                 </div>
-                                                {getStatusBadge(
-                                                    organization.status,
-                                                )}
-                                            </div>
-                                        </CardHeader>
-
-                                        <CardContent className="pt-0">
-                                            {organization.description && (
-                                                <p className="mb-4 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
-                                                    {organization.description.replace(
-                                                        /<[^>]+>/g,
-                                                        '',
+                                            )}
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="truncate font-semibold text-gray-900 dark:text-white">
+                                                    {organization.name}
+                                                </h3>
+                                                <p className="text-sm text-gray-500">
+                                                    {getTypeLabel(
+                                                        organization.type,
                                                     )}
                                                 </p>
+                                            </div>
+                                        </div>
+                                        {getStatusBadge(organization.status)}
+                                    </div>
+                                </CardHeader>
+
+                                <CardContent className="pt-0">
+                                    {organization.description && (
+                                        <p className="mb-4 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
+                                            {organization.description.replace(
+                                                /<[^>]+>/g,
+                                                '',
                                             )}
+                                        </p>
+                                    )}
 
-                                            <div className="mb-4 flex items-center space-x-4 text-sm text-gray-500">
-                                                {organization.region && (
-                                                    <span>
-                                                        {
-                                                            organization.region
-                                                                .name
-                                                        }
-                                                    </span>
-                                                )}
-                                                {organization.locality && (
-                                                    <span>
-                                                        •{' '}
-                                                        {
-                                                            organization
-                                                                .locality.name
-                                                        }
-                                                    </span>
-                                                )}
+                                    <div className="mb-4 flex items-center space-x-4 text-sm text-gray-500">
+                                        {organization.region && (
+                                            <span>
+                                                {organization.region.name}
+                                            </span>
+                                        )}
+                                        {organization.locality && (
+                                            <span>
+                                                • {organization.locality.name}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="mb-4 grid grid-cols-3 gap-4 text-center">
+                                        <div>
+                                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                                {organization.members_count ||
+                                                    0}
                                             </div>
-
-                                            <div className="mb-4 grid grid-cols-3 gap-4 text-center">
-                                                <div>
-                                                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                                                        {organization.members_count ||
-                                                            0}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        Участники
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                                                        {organization.donations_count ||
-                                                            0}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        Донаты
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                                                        {organization.donations_total
-                                                            ? new Intl.NumberFormat(
-                                                                  'ru-RU',
-                                                              ).format(
-                                                                  organization.donations_total,
-                                                              ) + ' ₽'
-                                                            : '0 ₽'}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        Собрано
-                                                    </div>
-                                                </div>
+                                            <div className="text-xs text-gray-500">
+                                                Участники
                                             </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                                {organization.donations_count ||
+                                                    0}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                Донаты
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                                {organization.donations_total
+                                                    ? new Intl.NumberFormat(
+                                                          'ru-RU',
+                                                      ).format(
+                                                          organization.donations_total,
+                                                      ) + ' ₽'
+                                                    : '0 ₽'}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                Собрано
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex space-x-1">
-                                                    <Link
-                                                        href={`/dashboard/organizations/${organization.id}`}
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
-                                                    <Link
-                                                        href={`/dashboard/organizations/${organization.id}/edit`}
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
-                                                </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex space-x-1">
+                                            <Link
+                                                href={`/dashboard/organizations/${organization.id}`}
+                                            >
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={() =>
-                                                        handleDelete(
-                                                            organization,
-                                                        )
-                                                    }
-                                                    className="text-red-600 hover:text-red-700"
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <Eye className="h-4 w-4" />
                                                 </Button>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        ) : (
-                            <Card>
-                                <CardContent className="p-12">
-                                    <div className="text-center">
-                                        <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-                                        <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
-                                            {terminology.no_organizations}
-                                        </h3>
-                                        <p className="mt-2 text-gray-600 dark:text-gray-400">
-                                            Попробуйте изменить параметры поиска
-                                            или создайте новую организацию
-                                        </p>
-                                        <div className="mt-6">
-                                            <Link href="/dashboard/organizations/create">
-                                                <Button>
-                                                    <Plus className="mr-2 h-4 w-4" />
-                                                    {terminology.create_button}
+                                            </Link>
+                                            <Link
+                                                href={`/dashboard/organizations/${organization.id}/edit`}
+                                            >
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                >
+                                                    <Edit className="h-4 w-4" />
                                                 </Button>
                                             </Link>
                                         </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                                handleDelete(organization)
+                                            }
+                                            className="text-red-600 hover:text-red-700"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 </CardContent>
                             </Card>
-                        )}
-
-                        {/* Pagination */}
-                        {organizations.last_page > 1 && (
-                            <div className="flex items-center justify-between">
-                                <div className="text-sm text-gray-700 dark:text-gray-300">
-                                    Показано{' '}
-                                    {(organizations.current_page - 1) *
-                                        organizations.per_page +
-                                        1}{' '}
-                                    -{' '}
-                                    {Math.min(
-                                        organizations.current_page *
-                                            organizations.per_page,
-                                        organizations.total,
-                                    )}{' '}
-                                    из {organizations.total}{' '}
-                                    {terminology.total_count.toLowerCase()}
-                                </div>
-                                <div className="flex space-x-2">
-                                    {organizations.current_page > 1 && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                                router.get(
-                                                    '/dashboard/organizations',
-                                                    {
-                                                        ...filters,
-                                                        page:
-                                                            organizations.current_page -
-                                                            1,
-                                                    },
-                                                    { preserveState: true },
-                                                );
-                                            }}
-                                        >
-                                            Предыдущая
-                                        </Button>
-                                    )}
-                                    {organizations.current_page <
-                                        organizations.last_page && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                                router.get(
-                                                    '/dashboard/organizations',
-                                                    {
-                                                        ...filters,
-                                                        page:
-                                                            organizations.current_page +
-                                                            1,
-                                                    },
-                                                    { preserveState: true },
-                                                );
-                                            }}
-                                        >
-                                            Следующая
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {/* Organizations Map */}
-                {activeTab === 'map' && (
+                        ))}
+                    </div>
+                ) : (
                     <Card>
-                        <CardContent className="p-0">
-                            <div style={{ height: '600px', width: '100%' }}>
-                                <YandexMap
-                                    center={mapCenter}
-                                    zoom={mapMarkers.length > 0 ? 10 : 6}
-                                    markers={mapMarkers}
-                                    height="600px"
-                                />
+                        <CardContent className="p-12">
+                            <div className="text-center">
+                                <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+                                <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
+                                    {terminology.no_organizations}
+                                </h3>
+                                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                                    Попробуйте изменить параметры поиска или
+                                    создайте новую организацию
+                                </p>
+                                <div className="mt-6">
+                                    <Link href="/dashboard/organizations/create">
+                                        <Button>
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            {terminology.create_button}
+                                        </Button>
+                                    </Link>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
+                )}
+
+                {/* Pagination */}
+                {organizations.last_page > 1 && (
+                    <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                            Показано{' '}
+                            {(organizations.current_page - 1) *
+                                organizations.per_page +
+                                1}{' '}
+                            -{' '}
+                            {Math.min(
+                                organizations.current_page *
+                                    organizations.per_page,
+                                organizations.total,
+                            )}{' '}
+                            из {organizations.total}{' '}
+                            {terminology.total_count.toLowerCase()}
+                        </div>
+                        <div className="flex space-x-2">
+                            {organizations.current_page > 1 && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        router.get(
+                                            '/dashboard/organizations',
+                                            {
+                                                ...filters,
+                                                page:
+                                                    organizations.current_page -
+                                                    1,
+                                            },
+                                            { preserveState: true },
+                                        );
+                                    }}
+                                >
+                                    Предыдущая
+                                </Button>
+                            )}
+                            {organizations.current_page <
+                                organizations.last_page && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        router.get(
+                                            '/dashboard/organizations',
+                                            {
+                                                ...filters,
+                                                page:
+                                                    organizations.current_page +
+                                                    1,
+                                            },
+                                            { preserveState: true },
+                                        );
+                                    }}
+                                >
+                                    Следующая
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                 )}
             </div>
         </AppLayout>
