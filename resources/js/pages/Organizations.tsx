@@ -280,7 +280,12 @@ export default function Organizations({
                                                 </div>
 
                                                 <p className="mt-3 line-clamp-3 text-gray-600">
-                                                    {organization.description}
+                                                    {organization.description
+                                                        ? organization.description.replace(
+                                                              /<[^>]+>/g,
+                                                              '',
+                                                          )
+                                                        : ''}
                                                 </p>
 
                                                 <div className="mt-4 space-y-2">

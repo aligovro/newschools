@@ -249,6 +249,15 @@
         }
     }
 
+    .page-type--home {
+        .site-header .btn-outline-primary {
+            color: $dark-color;
+            &:hover {
+                color: #fff;
+            }
+        }
+    }
+
     // Мобильный вид кнопки "Войти" в хедере через виджет авторизации
     .site-header {
         .auth-menu-widget,

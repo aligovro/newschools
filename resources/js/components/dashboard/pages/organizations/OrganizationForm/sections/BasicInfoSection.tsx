@@ -9,8 +9,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/RichTextEditor';
 import type { ReferenceData, Status } from '../../types';
-import type { SlugValidation } from './types';
+import type { SlugValidation } from '../types';
 
 interface BasicInfoSectionProps {
     name: string;
@@ -25,6 +26,8 @@ interface BasicInfoSectionProps {
     errors: {
         name?: string;
         slug?: string;
+        type?: string;
+        status?: string;
     };
     onNameChange: (value: string) => void;
     onSlugChange: (value: string) => void;
@@ -165,13 +168,20 @@ export function BasicInfoSection({
                             <SelectValue placeholder="Выберите тип" />
                         </SelectTrigger>
                         <SelectContent>
-                            {referenceData.organizationTypes.map((t) => (
-                                <SelectItem key={t.value} value={t.value}>
-                                    {t.label}
-                                </SelectItem>
-                            ))}
+                            {referenceData.organizationTypes.map(
+                                (t: { value: string; label: string }) => (
+                                    <SelectItem key={t.value} value={t.value}>
+                                        {t.label}
+                                    </SelectItem>
+                                ),
+                            )}
                         </SelectContent>
                     </Select>
+                    {errors.type && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.type}
+                        </p>
+                    )}
                 </div>
                 <div>
                     <Label>Статус *</Label>
@@ -187,15 +197,25 @@ export function BasicInfoSection({
                             </SelectItem>
                         </SelectContent>
                     </Select>
+                    {errors.status && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.status}
+                        </p>
+                    )}
                 </div>
             </div>
             <div className="mt-4">
                 <Label htmlFor="org-desc">Описание</Label>
-                <Textarea
-                    id="org-desc"
-                    rows={3}
-                    value={description}
-                    onChange={(e) => onDescriptionChange(e.target.value)}
+                <RichTextEditor
+                    value={description || ''}
+                    onChange={onDescriptionChange}
+                    placeholder="Опишите организацию, её миссию, особенности, достижения..."
+                    height={260}
+                    level="simple"
+                    showHtmlToggle={true}
+                    showTemplates={false}
+                    showWordCount={true}
+                    showImageUpload={false}
                 />
             </div>
         </div>

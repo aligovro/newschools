@@ -9,8 +9,6 @@ import { buildSiteSeo } from '@/lib/seo';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import React, { ReactNode } from 'react';
-import '../../css/site-preview.scss';
-
 interface MainLayoutProps {
     site: {
         id: number;

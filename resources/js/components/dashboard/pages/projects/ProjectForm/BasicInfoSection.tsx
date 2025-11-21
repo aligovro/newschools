@@ -2,6 +2,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/RichTextEditor';
 import UniversalSelect from '@/components/ui/universal-select/UniversalSelect';
 import { Target } from 'lucide-react';
 import type { BasicInfoSectionProps, Project, StatusOption } from './types';
@@ -266,17 +267,18 @@ export function BasicInfoSection({
                 <div className="create-organization__field-group">
                     <div className="create-organization__field">
                         <Label htmlFor="description">Описание проекта</Label>
-                        <Textarea
-                            id="description"
-                            value={data.description}
-                            onChange={(e) =>
-                                onDataChange('description', e.target.value)
+                        <RichTextEditor
+                            value={data.description || ''}
+                            onChange={(html) =>
+                                onDataChange('description', html)
                             }
-                            placeholder="Подробное описание проекта"
-                            rows={8}
-                            className={
-                                errors.description ? 'border-red-500' : ''
-                            }
+                            placeholder="Подробное описание проекта (поддерживается форматирование, списки, ссылки...)"
+                            height={280}
+                            level="simple"
+                            showHtmlToggle={true}
+                            showTemplates={false}
+                            showWordCount={true}
+                            showImageUpload={false}
                         />
                         {errors.description && (
                             <p className="mt-1 text-sm text-red-600">

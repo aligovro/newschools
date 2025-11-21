@@ -328,7 +328,10 @@ export default function OrganizationManagementPage({
                                         <CardContent className="pt-0">
                                             {organization.description && (
                                                 <p className="mb-4 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
-                                                    {organization.description}
+                                                    {organization.description.replace(
+                                                        /<[^>]+>/g,
+                                                        '',
+                                                    )}
                                                 </p>
                                             )}
 

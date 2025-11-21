@@ -224,11 +224,14 @@ export default function OrganizationShow({
                     )}
                 </div>
 
-                {/* Описание организации */}
+                {/* Описание организации (поддерживает HTML) */}
                 {organization.description && (
-                    <p className="mt-4 text-gray-600">
-                        {organization.description}
-                    </p>
+                    <div
+                        className="mt-4 prose max-w-none text-gray-600"
+                        dangerouslySetInnerHTML={{
+                            __html: organization.description,
+                        }}
+                    />
                 )}
 
                 {hasSponsors && (

@@ -300,8 +300,8 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
     if (isCheckingSession) {
         return (
             <div className="auth-menu-widget flex items-center justify-end gap-2">
-                <Skeleton className="h-9 w-28" />
-                <Skeleton className="h-9 w-48" />
+                <Skeleton className="h-9 w-16 sm:w-24 md:w-28" />
+                <Skeleton className="h-9 w-24 sm:w-32 md:w-40" />
             </div>
         );
     }
