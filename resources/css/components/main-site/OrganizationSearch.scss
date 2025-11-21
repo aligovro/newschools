@@ -1,3 +1,5 @@
+@import '../../variables';
+
 .organization-search {
     padding-top: 30px;
     &__input {
@@ -105,8 +107,8 @@
     }
 
     &__button--active {
-        background: #1a1a1a; // var(--unnamed, #1A1A1A)
-        color: #ffffff;
+        background: $dark-color;
+        color: $white-color;
     }
 
     &__icon {
