@@ -62,6 +62,8 @@
 
 .city-selector__dropdown {
     z-index: 20;
+    /* Ограничиваем ширину дропдауна в пределах экрана на мобильных */
+    max-width: calc(100vw - 32px);
 }
 
 .city-selector__overlay {
@@ -72,6 +74,10 @@
     transition:
         background-color 0.15s ease,
         color 0.15s ease;
+
+    /* Длинные названия городов и регионов переносятся, не создавая горизонтальный скролл */
+    white-space: normal;
+    word-break: break-word;
 
     &--selected {
         background-color: #eff6ff;
