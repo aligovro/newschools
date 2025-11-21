@@ -277,7 +277,7 @@ export default function CitySelector({
                         className="city-selector__overlay fixed inset-0 z-10"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="city-selector__dropdown absolute left-0 top-full z-20 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-lg">
+                    <div className="city-selector__dropdown absolute left-0 top-full z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
                         <div className="p-3">
                             <input
                                 type="text"

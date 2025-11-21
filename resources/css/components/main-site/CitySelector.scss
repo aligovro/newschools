@@ -62,8 +62,6 @@
 
 .city-selector__dropdown {
     z-index: 20;
-    /* Ограничиваем ширину дропдауна в пределах экрана на мобильных */
-    max-width: calc(100vw - 32px);
 }
 
 .city-selector__overlay {
