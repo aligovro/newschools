@@ -66,6 +66,7 @@
 
 .city-selector__overlay {
     z-index: 10;
+    overflow: hidden;
 }
 
 .city-selector__city-item {

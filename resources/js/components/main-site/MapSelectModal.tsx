@@ -1,5 +1,6 @@
 import { YandexMap, type MapMarker } from '@/components/maps/YandexMap';
 import { useYandexMap } from '@/hooks/useYandexMap';
+import { usePreventBodyScroll } from '@/hooks/usePreventBodyScroll';
 import { X } from 'lucide-react';
 import {
     useCallback,
@@ -56,6 +57,9 @@ export function MapSelectModal({
     const pendingGeocodeRequestRef = useRef(0);
     const wasOpenRef = useRef(false);
     const userPlacedMarkerRef = useRef(false);
+
+    // Предотвращаем скролл body при открытии модалки
+    usePreventBodyScroll(isOpen);
 
     const computeInitialZoom = useCallback(
         (
