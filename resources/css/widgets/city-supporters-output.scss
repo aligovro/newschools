@@ -33,14 +33,7 @@
     gap: 8px;
 }
 
-/* Фиксированные пропорции колонок на десктопе
-   Общая ширина: 1242px
-   1) Город: 360px  (~29%)
-   2) Метрика 1: 204px (~16.5%)
-   3) Метрика 2: 204px (~16.5%)
-   4) Метрика 3: 204px (~16.5%)
-   5) Сумма: 230px (~18.5%)
-*/
+/* Фиксированные пропорции колонок на десктопе */
 @media (min-width: 769px) {
     .city-supporters-output__column--city {
         flex: 0 0 29%;
@@ -88,8 +81,7 @@
     gap: 6px;
 }
 
-.city-supporters-output__column--metric-icon
-    .city-supporters-output__column-icon {
+.city-supporters-output__column--metric-icon .city-supporters-output__column-icon {
     width: 16px;
     height: 16px;
 }
@@ -273,7 +265,7 @@
         color: #1a1a1a;
     }
 
-    .city-supporters-output__column--amount .city-supporters-output__number {
+    .city-supporters-output__column--amount {
         font-weight: 700;
         font-size: 18px;
         color: #1a1a1a;
@@ -287,3 +279,5 @@
         text-overflow: clip;
     }
 }
+
+

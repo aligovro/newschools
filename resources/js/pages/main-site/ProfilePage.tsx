@@ -399,7 +399,7 @@ export default function ProfilePage({
                                             setData('phone', value)
                                         }
                                         autoComplete="tel"
-                                        className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                        className="phone-input--with-label"
                                     />
                                     <label
                                         htmlFor="phone"

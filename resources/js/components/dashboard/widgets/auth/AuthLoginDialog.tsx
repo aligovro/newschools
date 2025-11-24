@@ -8,8 +8,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 import {
     type LoginField,
@@ -76,12 +74,12 @@ export const AuthLoginDialog = memo(
                     <DialogHeader>
                         <DialogTitle>Вход</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-3">
                             <div className="flex items-center justify-between gap-3 text-xs">
-                                <Label className="text-[11px] text-muted-foreground">
+                                <span className="text-[11px] text-muted-foreground">
                                     Способ входа
-                                </Label>
+                                </span>
                                 <div className="flex gap-2">
                                     <button
                                         type="button"
@@ -90,7 +88,9 @@ export const AuthLoginDialog = memo(
                                                 ? 'bg-blue-50 text-blue-700'
                                                 : 'bg-slate-50 text-slate-600'
                                         }`}
-                                        onClick={() => handleModeChange('email')}
+                                        onClick={() =>
+                                            handleModeChange('email')
+                                        }
                                     >
                                         По email
                                     </button>
@@ -101,7 +101,9 @@ export const AuthLoginDialog = memo(
                                                 ? 'bg-blue-50 text-blue-700'
                                                 : 'bg-slate-50 text-slate-600'
                                         }`}
-                                        onClick={() => handleModeChange('phone')}
+                                        onClick={() =>
+                                            handleModeChange('phone')
+                                        }
                                     >
                                         По телефону
                                     </button>
@@ -109,14 +111,8 @@ export const AuthLoginDialog = memo(
                             </div>
 
                             {state.mode === 'email' ? (
-                                <div className="space-y-1">
-                                    <Label
-                                        htmlFor="auth-login-email"
-                                        className="text-xs text-muted-foreground"
-                                    >
-                                        Электронная почта
-                                    </Label>
-                                    <Input
+                                <div className="relative">
+                                    <input
                                         id="auth-login-email"
                                         type="email"
                                         inputMode="email"
@@ -128,17 +124,18 @@ export const AuthLoginDialog = memo(
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="user@example.com"
+                                        placeholder="email@example.com"
+                                        className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                                     />
+                                    <label
+                                        htmlFor="auth-login-email"
+                                        className="profile-section__label pointer-events-none absolute left-4 top-[9px]"
+                                    >
+                                        Email
+                                    </label>
                                 </div>
                             ) : (
-                                <div className="space-y-1">
-                                    <Label
-                                        htmlFor="auth-login-phone"
-                                        className="text-xs text-muted-foreground"
-                                    >
-                                        Номер телефона
-                                    </Label>
+                                <div className="relative">
                                     <RussianPhoneInput
                                         id="auth-login-phone"
                                         value={phoneValue}
@@ -146,33 +143,48 @@ export const AuthLoginDialog = memo(
                                             onFieldChange('identifier', value)
                                         }
                                         autoComplete={PHONE_AUTOCOMPLETE}
+                                        className="phone-input--with-label"
                                     />
+                                    <label
+                                        htmlFor="auth-login-phone"
+                                        className="profile-section__label pointer-events-none absolute left-4 top-[9px]"
+                                    >
+                                        Телефон
+                                    </label>
                                 </div>
                             )}
                             {identifierError && (
-                                <p className="text-sm text-destructive">
+                                <p className="profile-section__field-error">
                                     {identifierError}
                                 </p>
                             )}
                         </div>
 
-                        <div className="space-y-1">
-                            <Label htmlFor="auth-login-password">Пароль</Label>
-                            <Input
-                                id="auth-login-password"
-                                type="password"
-                                autoComplete={PASSWORD_AUTOCOMPLETE}
-                                value={state.password}
-                                onChange={(event) =>
-                                    onFieldChange(
-                                        'password',
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder="Введите пароль"
-                            />
+                        <div className="space-y-2">
+                            <div className="relative">
+                                <input
+                                    id="auth-login-password"
+                                    type="password"
+                                    autoComplete={PASSWORD_AUTOCOMPLETE}
+                                    value={state.password}
+                                    onChange={(event) =>
+                                        onFieldChange(
+                                            'password',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="Пароль"
+                                    className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                />
+                                <label
+                                    htmlFor="auth-login-password"
+                                    className="profile-section__label pointer-events-none absolute left-4 top-[9px]"
+                                >
+                                    Пароль
+                                </label>
+                            </div>
                             {passwordError && (
-                                <p className="text-sm text-destructive">
+                                <p className="profile-section__field-error">
                                     {passwordError}
                                 </p>
                             )}
@@ -188,7 +200,7 @@ export const AuthLoginDialog = memo(
                         </label>
 
                         {generalError && (
-                            <div className="rounded-md bg-destructive/10 p-2 text-sm text-destructive">
+                            <div className="bg-destructive/10 rounded-md p-2 text-sm text-destructive">
                                 {generalError}
                             </div>
                         )}
@@ -196,14 +208,14 @@ export const AuthLoginDialog = memo(
                         <div className="flex justify-end gap-2">
                             <button
                                 type="button"
-                                className="btn-outline-primary auth-btn"
+                                className="rounded-[10px] border border-[#e8ecf3] px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
                                 onClick={() => onOpenChange(false)}
                             >
                                 Отмена
                             </button>
                             <button
                                 type="submit"
-                                className="btn-accent auth-btn"
+                                className="flex items-center justify-center gap-2 rounded-[10px] bg-gradient-to-r from-[#96bdff] to-[#3259ff] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={isLoading}
                             >
                                 {isLoading ? 'Вход...' : 'Войти'}
@@ -217,5 +229,3 @@ export const AuthLoginDialog = memo(
 );
 
 AuthLoginDialog.displayName = 'AuthLoginDialog';
-
-

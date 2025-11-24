@@ -1,0 +1,144 @@
+// Стили для компонента SubscribeSponsorModal
+@import '../../variables';
+
+.subscribe-sponsor-modal {
+    &__label {
+        font-weight: 500;
+        font-size: 12px;
+        color: $dark-color;
+        user-select: none;
+    }
+
+    &__input-wrapper {
+        position: relative;
+    }
+
+    &__input {
+        height: 60px;
+        border-radius: 10px;
+        border: 1px solid #e8ecf3;
+        padding: 33px 16px 12px;
+        width: 100%;
+        font-size: 16px;
+        color: $dark-color;
+        transition: all 0.2s ease;
+        background: #fff;
+
+        &:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        &::placeholder {
+            color: #9ca3af;
+        }
+
+        &--error {
+            border-color: #ef4444;
+
+            &:focus {
+                border-color: #ef4444;
+                box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+            }
+        }
+    }
+
+    &__label-text {
+        position: absolute;
+        left: 16px;
+        top: 9px;
+        font-weight: 500;
+        font-size: 12px;
+        color: $dark-color;
+        user-select: none;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    &__button {
+        height: 60px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 16px;
+        transition: opacity 0.2s ease;
+
+        &--primary {
+            background: $accent-gradient;
+            color: $white-color;
+            border: none;
+
+            &:hover:not(:disabled) {
+                opacity: 0.9;
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+
+        &--outline {
+            background: #f5f6f8;
+            color: $dark-color;
+            border: none;
+
+            &:hover:not(:disabled) {
+                background: #e8eaed;
+            }
+        }
+    }
+
+    &__error-message {
+        font-size: 12px;
+        color: #ef4444;
+        margin-top: 4px;
+    }
+
+    &__help-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+
+    &__photo-preview {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-top: 8px;
+        border: 2px solid #e8ecf3;
+    }
+
+    &__otp-container {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    // Стили для чекбокса согласия на обработку персональных данных
+    &__consent-wrapper {
+        label {
+            align-items: center !important;
+
+            // Убираем отступ сверху у чекбокса
+            [data-slot='checkbox'] {
+                margin-top: 0 !important;
+            }
+        }
+    }
+
+    // Базовые стили для phone-input теперь в components/ui/phone-input.scss
+    // Стили для ошибок phone-input
+    &__phone-input-wrapper--error {
+        .phone-input {
+            border-color: #ef4444;
+
+            &:focus-within {
+                border-color: #ef4444;
+                box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+            }
+        }
+    }
+}
+

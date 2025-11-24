@@ -75,7 +75,7 @@ export default function Login({
                                             >
                                                 По email
                                             </button>
-                                        <button
+                                            <button
                                                 type="button"
                                                 className={`rounded-full px-3 py-1 ${
                                                     mode === 'phone'
@@ -120,7 +120,7 @@ export default function Login({
                                                     name="login"
                                                     tabIndex={1}
                                                     autoComplete="tel"
-                                                    className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                                    className="phone-input--with-label"
                                                 />
                                                 <label
                                                     htmlFor="login"
@@ -154,7 +154,9 @@ export default function Login({
                                                 Пароль
                                             </label>
                                             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                                                <InputError message={errors.password} />
+                                                <InputError
+                                                    message={errors.password}
+                                                />
                                                 {canResetPassword && (
                                                     <TextLink
                                                         href={request()}
@@ -186,7 +188,7 @@ export default function Login({
                                     {/* Кнопка */}
                                     <button
                                         type="submit"
-                                        className="profile-section__submit-button w-full rounded-[10px] bg-gradient-to-r from-[#96bdff] to-[#3259ff] px-4 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="profile-section__submit-button flex w-full items-center justify-center gap-2 rounded-[10px] bg-gradient-to-r from-[#96bdff] to-[#3259ff] px-4 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                                         tabIndex={4}
                                         disabled={processing}
                                         data-test="login-button"

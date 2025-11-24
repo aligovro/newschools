@@ -46,14 +46,7 @@
     height: 60px;
 }
 
-// Адаптация для телефонного инпута с маской на страницах, где используется стиль профиля
-.phone-input.profile-section__input {
-    align-items: flex-end;
-}
-
-.phone-input.profile-section__input .phone-input__prefix {
-    padding-top: 23px;
-}
+// Базовые стили для phone-input теперь в components/ui/phone-input.scss
 
 .profile-section__error,
 .profile-section__field-error {

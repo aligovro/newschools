@@ -2,6 +2,7 @@
 import PasswordResetLinkController from '@/actions/App/Http/Controllers/Auth/PasswordResetLinkController';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
+import RussianPhoneInput from '@/components/ui/RussianPhoneInput';
 import MainLayout from '@/layouts/MainLayout';
 import { login } from '@/routes';
 import { Form, Head } from '@inertiajs/react';
@@ -76,7 +77,8 @@ export default function ForgotPassword({
                                                 className="profile-section__field-error"
                                             />
                                             <p className="mt-1 text-xs text-muted-foreground">
-                                                Можно указать email или номер телефона.
+                                                Можно указать email или номер
+                                                телефона.
                                             </p>
                                         </div>
 
@@ -85,7 +87,7 @@ export default function ForgotPassword({
                                                 id="phone"
                                                 name="phone"
                                                 autoComplete="tel"
-                                                className="profile-section__input w-full rounded-[10px] border border-[#e8ecf3] px-4 pb-3 pt-[33px] text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                                className="phone-input--with-label"
                                             />
                                             <label
                                                 htmlFor="phone"
@@ -101,7 +103,7 @@ export default function ForgotPassword({
                                     </div>
 
                                     <button
-                                        className="profile-section__submit-button mt-6 w-full rounded-[10px] bg-gradient-to-r from-[#96bdff] to-[#3259ff] px-4 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="profile-section__submit-button mt-6 flex w-full items-center justify-center gap-2 rounded-[10px] bg-gradient-to-r from-[#96bdff] to-[#3259ff] px-4 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                                         disabled={processing}
                                         data-test="email-password-reset-link-button"
                                         type="submit"

@@ -34,6 +34,22 @@ class LoginRequest extends FormRequest
     }
 
     /**
+     * Get custom validation messages for this request.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'login.required' => 'Пожалуйста, введите email или номер телефона.',
+            'login.string' => 'Поле логин должно быть текстом.',
+
+            'password.required' => 'Пожалуйста, введите пароль.',
+            'password.string' => 'Пароль должен быть текстом.',
+        ];
+    }
+
+    /**
      * Validate the request's credentials and return the user without logging them in.
      *
      * @throws \Illuminate\Validation\ValidationException

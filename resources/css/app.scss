@@ -20,11 +20,13 @@
 @import './widgets/alumni-stats-widget.scss';
 @import './widgets/organizations-slider-widget.scss';
 @import './widgets/donation-widget.scss';
+@import './widgets/city-supporters-output.scss';
 
 // Import UI components
 @import './components/ui/universal-select.scss';
 @import './components/ui/image-uploader/multi-image-uploader.scss';
 @import './components/ui/image-uploader/logo-uploader.scss';
+@import './components/ui/phone-input.scss';
 
 // Import pages
 @import './pages/organizations/create-organization.scss';
@@ -111,6 +113,7 @@
 /* Main site components */
 @import 'components/main-site/AddOrganizationBlock.scss';
 @import 'components/main-site/SubscribeBlock.scss';
+@import 'components/main-site/SubscribeSponsorModal.scss';
 @import 'components/main-site/OrganizationSearch.scss';
 @import 'components/main-site/CitySelector.scss';
 
