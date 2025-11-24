@@ -44,19 +44,36 @@ class RegisteredUserController extends Controller
             }
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => [
-                'nullable',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique(User::class, 'email'),
+        $validated = $request->validate(
+            [
+                'name' => 'required|string|max:255',
+                'email' => [
+                    'nullable',
+                    'string',
+                    'lowercase',
+                    'email',
+                    'max:255',
+                    Rule::unique(User::class, 'email'),
+                ],
+                'phone' => ['nullable', new RussianPhoneNumber(), Rule::unique(User::class, 'phone')],
+                'password' => ['required', 'confirmed', Rules\Password::defaults()],
             ],
-            'phone' => ['nullable', new RussianPhoneNumber(), Rule::unique(User::class, 'phone')],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+            [
+                'name.required' => 'Пожалуйста, введите имя.',
+                'name.string' => 'Имя должно быть строкой.',
+                'name.max' => 'Имя не должно быть длиннее :max символов.',
+
+                'email.string' => 'Email должен быть строкой.',
+                'email.email' => 'Пожалуйста, введите корректный email.',
+                'email.max' => 'Email не должен быть длиннее :max символов.',
+                'email.unique' => 'Пользователь с таким email уже зарегистрирован.',
+
+                'phone.unique' => 'Пользователь с таким номером телефона уже зарегистрирован.',
+
+                'password.required' => 'Пожалуйста, введите пароль.',
+                'password.confirmed' => 'Подтверждение пароля не совпадает.',
+            ]
+        );
 
         if (empty($validated['email']) && empty($validated['phone'])) {
             return back()->withErrors([

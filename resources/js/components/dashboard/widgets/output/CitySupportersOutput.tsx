@@ -3,7 +3,7 @@ import { getPluralForm } from '@/lib/helpers';
 import { getOrganizationId as getOrgIdFromConfig } from '@/utils/widgetHelpers';
 import { usePage } from '@inertiajs/react';
 import React, { useMemo } from 'react';
-import './city-supporters-output.css';
+import '@css/widgets/city-supporters-output.scss';
 import { CitySupportersOutputConfig, WidgetOutputProps } from './types';
 
 export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({

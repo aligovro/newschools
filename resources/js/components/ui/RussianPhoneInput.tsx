@@ -79,23 +79,19 @@ const RussianPhoneInput = forwardRef<HTMLInputElement, RussianPhoneInputProps>(
 
         const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             emitChange(sanitizeDigits(event.target.value));
-            inputProps.onChange?.(event);
         };
 
         const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
             event.preventDefault();
             const text = event.clipboardData.getData('text');
             emitChange(sanitizeDigits(text));
-            inputProps.onPaste?.(event);
         };
-
-        const { onChange, onPaste, ...restInputProps } = inputProps;
 
         return (
             <div className={cn('phone-input', className)}>
                 <span className="phone-input__prefix">+7</span>
                 <input
-                    {...restInputProps}
+                    {...inputProps}
                     ref={ref}
                     type={inputProps.type ?? 'tel'}
                     inputMode={inputProps.inputMode ?? 'tel'}
@@ -103,7 +99,7 @@ const RussianPhoneInput = forwardRef<HTMLInputElement, RussianPhoneInputProps>(
                     onChange={handleInputChange}
                     onPaste={handlePaste}
                     placeholder={inputProps.placeholder ?? '900 123-45-67'}
-                    className={cn('phone-input__field', inputProps.className)}
+                    className="phone-input__field"
                 />
             </div>
         );

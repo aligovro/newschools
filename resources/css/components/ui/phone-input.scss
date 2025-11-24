@@ -1,0 +1,60 @@
+// Базовые стили для компонента RussianPhoneInput
+@import '../../variables';
+
+.phone-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 60px;
+    border-radius: 10px;
+    border: 1px solid #e8ecf3;
+    background: #fff;
+    transition: all 0.2s ease;
+    padding: 0; // Убираем padding по умолчанию, он будет задан для --with-label
+
+    &:focus-within {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+}
+
+.phone-input__prefix {
+    padding-left: 16px;
+    padding-right: 4px; // Отступ между +7 и текстом (как было изначально)
+    font-weight: 500;
+    font-size: 16px;
+    color: $dark-color;
+    user-select: none;
+    line-height: 1.5;
+}
+
+.phone-input__field {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 0 16px 0 0; // padding-right: 16px как у обычных инпутов
+    height: auto;
+    font-size: 16px;
+    color: $dark-color;
+    background: transparent;
+    line-height: 1.5;
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+}
+
+// Стили для phone-input с лейблом сверху (как в AddOrganizationBlock)
+.phone-input--with-label {
+    align-items: flex-start;
+    padding-top: 30px;
+    padding-bottom: 12px;
+
+    .phone-input__prefix {
+        padding-top: 0;
+    }
+
+    .phone-input__field {
+        padding-top: 0;
+    }
+}

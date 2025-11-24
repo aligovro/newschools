@@ -1,3 +1,4 @@
+import '@css/components/main-site/SubscribeSponsorModal.scss';
 import axios from 'axios';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -11,14 +12,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import {
     InputOTP,
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import PersonalDataConsent from '@/components/ui/personal-data-consent/PersonalDataConsent';
-import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import type { User } from '@/types';
 import { Loader2 } from 'lucide-react';
 
@@ -96,8 +96,7 @@ export const SubscribeSponsorModal = ({
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState(initialProfileState);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-    const [isPersonalDataAccepted, setIsPersonalDataAccepted] =
-        useState(false);
+    const [isPersonalDataAccepted, setIsPersonalDataAccepted] = useState(false);
     const [requiresPassword, setRequiresPassword] = useState(false);
 
     useEffect(() => {
@@ -163,12 +162,11 @@ export const SubscribeSponsorModal = ({
         return digitsOnly.length;
     }, [phone]);
 
-    const handleRequestCode = async () => {
+    const handleRequestCode = useCallback(async () => {
         if (!organization?.id) {
             setErrors((prev) => ({
                 ...prev,
-                organization:
-                    'Невозможно подписаться: организация не найдена',
+                organization: 'Невозможно подписаться: организация не найдена',
             }));
             return;
         }
@@ -221,9 +219,15 @@ export const SubscribeSponsorModal = ({
         } finally {
             setLoading(false);
         }
-    };
+    }, [
+        organization?.id,
+        phoneDigitsLength,
+        isPersonalDataAccepted,
+        phone,
+        projectId,
+    ]);
 
-    const handleVerifyCode = async () => {
+    const handleVerifyCode = useCallback(async () => {
         if (!verificationToken || code.length !== 6 || !organization?.id) {
             setErrors({
                 code:
@@ -280,60 +284,61 @@ export const SubscribeSponsorModal = ({
         } finally {
             setLoading(false);
         }
-    };
+    }, [verificationToken, code, organization?.id, projectId, handleSuccess]);
 
-    const handleResendCode = async () => {
+    const handleResendCode = useCallback(async () => {
         await handleRequestCode();
         setCode('');
-    };
+    }, [handleRequestCode]);
 
-    const handleUploadPhoto = async (
-        event: React.ChangeEvent<HTMLInputElement>,
-    ) => {
-        if (!event.target.files?.length) {
-            return;
-        }
-
-        const file = event.target.files[0];
-        const formData = new FormData();
-        formData.append('photo', file);
-
-        setLoading(true);
-        setErrors({});
-
-        try {
-            const response = await axios.post<{
-                success: boolean;
-                url: string;
-            }>('/api/auth/phone/photo', formData, {
-                withCredentials: true,
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            if (response.data.success) {
-                setProfile((prev) => ({
-                    ...prev,
-                    photo: response.data.url,
-                }));
-                setPhotoPreview(response.data.url);
-                toast.success('Фото успешно загружено');
+    const handleUploadPhoto = useCallback(
+        async (event: React.ChangeEvent<HTMLInputElement>) => {
+            if (!event.target.files?.length) {
+                return;
             }
-        } catch (error: unknown) {
-            setErrors({
-                photo: extractErrorMessage(
-                    error,
-                    'photo',
-                    'Не удалось загрузить фотографию.',
-                ),
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
 
-    const handleCompleteProfile = async () => {
+            const file = event.target.files[0];
+            const formData = new FormData();
+            formData.append('photo', file);
+
+            setLoading(true);
+            setErrors({});
+
+            try {
+                const response = await axios.post<{
+                    success: boolean;
+                    url: string;
+                }>('/api/auth/phone/photo', formData, {
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+
+                if (response.data.success) {
+                    setProfile((prev) => ({
+                        ...prev,
+                        photo: response.data.url,
+                    }));
+                    setPhotoPreview(response.data.url);
+                    toast.success('Фото успешно загружено');
+                }
+            } catch (error: unknown) {
+                setErrors({
+                    photo: extractErrorMessage(
+                        error,
+                        'photo',
+                        'Не удалось загрузить фотографию.',
+                    ),
+                });
+            } finally {
+                setLoading(false);
+            }
+        },
+        [],
+    );
+
+    const handleCompleteProfile = useCallback(async () => {
         if (!profile.name.trim()) {
             setErrors({ profile: 'Введите имя' });
             return;
@@ -398,266 +403,414 @@ export const SubscribeSponsorModal = ({
             setErrors({
                 email: emailMessage || null,
                 profile: profileMessage,
-                password:
-                    extractErrorMessage(error, 'password', '') || null,
+                password: extractErrorMessage(error, 'password', '') || null,
             });
         } finally {
             setLoading(false);
         }
-    };
+    }, [profile, requiresPassword, handleSuccess]);
 
-    const renderPhoneStep = () => (
-        <div className="space-y-6">
-            <div className="space-y-2">
-                <Label>Введите номер телефона</Label>
-                <RussianPhoneInput
-                    value={phone}
-                    onValueChange={handlePhoneChange}
-                    name="phone"
-                    autoComplete="tel"
-                    inputMode="tel"
-                />
-                <p className="text-xs text-muted-foreground">
-                    Мы отправим SMS с кодом подтверждения. Номер должен быть
-                    российским.
-                </p>
-                {errors.phone && (
-                    <p className="text-sm text-destructive">{errors.phone}</p>
-                )}
-            </div>
-            <PersonalDataConsent
-                checked={isPersonalDataAccepted}
-                onChange={(checked) => {
-                    setIsPersonalDataAccepted(checked);
-                    if (checked) {
-                        setErrors((prev) => ({
-                            ...prev,
-                            personalData: null,
-                        }));
-                    }
-                }}
-                policyHref="/privacy-policy"
-            />
-            {errors.personalData && (
-                <p className="text-sm text-destructive">
-                    {errors.personalData}
-                </p>
-            )}
-            <Button
-                className="w-full"
-                onClick={handleRequestCode}
-                disabled={
-                    loading ||
-                    !organization?.id ||
-                    phoneDigitsLength !== 10 ||
-                    !isPersonalDataAccepted
-                }
-            >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Получить код
-            </Button>
-        </div>
-    );
+    const handlePersonalDataChange = useCallback((checked: boolean) => {
+        setIsPersonalDataAccepted(checked);
+        if (checked) {
+            setErrors((prev) => ({
+                ...prev,
+                personalData: null,
+            }));
+        }
+    }, []);
 
-    const renderCodeStep = () => (
-        <div className="space-y-6">
-            <div className="space-y-2 text-center">
-                <p className="text-sm text-muted-foreground">
-                    Введите код из SMS, отправленного на {maskedPhone}
-                </p>
-                <InputOTP
-                    maxLength={6}
-                    value={code}
-                    onChange={(value) => setCode(value)}
-                    containerClassName="flex justify-center"
-                >
-                    <InputOTPGroup>
-                        {Array.from({ length: 6 }).map((_, index) => (
-                            <InputOTPSlot key={index} index={index} />
-                        ))}
-                    </InputOTPGroup>
-                </InputOTP>
-                {errors.code && (
-                    <p className="text-sm text-destructive">{errors.code}</p>
+    const renderPhoneStep = useMemo(
+        () => (
+            <div className="space-y-6">
+                <div className="subscribe-sponsor-modal__input-wrapper">
+                    <span className="subscribe-sponsor-modal__label-text">
+                        Введите номер телефона
+                    </span>
+                    <div
+                        className={cn(
+                            'relative',
+                            errors.phone &&
+                                'subscribe-sponsor-modal__phone-input-wrapper--error',
+                        )}
+                    >
+                        <RussianPhoneInput
+                            value={phone}
+                            onValueChange={handlePhoneChange}
+                            name="phone"
+                            autoComplete="tel"
+                            inputMode="tel"
+                            className="phone-input--with-label"
+                        />
+                    </div>
+                    <p className="subscribe-sponsor-modal__help-text">
+                        Мы отправим SMS с кодом подтверждения. Номер должен быть
+                        российским.
+                    </p>
+                    {errors.phone && (
+                        <p className="subscribe-sponsor-modal__error-message">
+                            {errors.phone}
+                        </p>
+                    )}
+                </div>
+                <div className="subscribe-sponsor-modal__consent-wrapper">
+                    <PersonalDataConsent
+                        checked={isPersonalDataAccepted}
+                        onChange={handlePersonalDataChange}
+                        policyHref="/privacy-policy"
+                    />
+                </div>
+                {errors.personalData && (
+                    <p className="subscribe-sponsor-modal__error-message">
+                        {errors.personalData}
+                    </p>
                 )}
-            </div>
-            <div className="space-y-3">
                 <Button
-                    className="w-full"
-                    onClick={handleVerifyCode}
-                    disabled={loading || code.length !== 6}
+                    className="subscribe-sponsor-modal__button subscribe-sponsor-modal__button--primary w-full"
+                    onClick={handleRequestCode}
+                    disabled={
+                        loading ||
+                        !organization?.id ||
+                        phoneDigitsLength !== 10 ||
+                        !isPersonalDataAccepted
+                    }
                 >
                     {loading && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Подтвердить
-                </Button>
-                <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleResendCode}
-                    disabled={loading}
-                >
-                    Отправить код повторно
+                    Получить код
                 </Button>
             </div>
-        </div>
+        ),
+        [
+            phone,
+            handlePhoneChange,
+            errors.phone,
+            errors.personalData,
+            isPersonalDataAccepted,
+            handlePersonalDataChange,
+            loading,
+            organization?.id,
+            phoneDigitsLength,
+            handleRequestCode,
+        ],
     );
 
-    const renderProfileStep = () => (
-        <div className="space-y-6">
-            <div className="space-y-2">
-                <Label htmlFor="profile-name">Имя и фамилия</Label>
-                <Input
-                    id="profile-name"
-                    value={profile.name}
-                    onChange={(e) =>
-                        setProfile((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                        }))
-                    }
-                    placeholder="Как вас подписать"
-                />
-            </div>
+    const handleCodeChange = useCallback(
+        (value: string) => {
+            setCode(value);
+            if (errors.code) {
+                setErrors((prev) => ({ ...prev, code: null }));
+            }
+        },
+        [errors.code],
+    );
 
-            <div className="space-y-2">
-                <Label htmlFor="profile-email">Email (необязательно)</Label>
-                <Input
-                    id="profile-email"
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) =>
-                        setProfile((prev) => ({
-                            ...prev,
-                            email: e.target.value,
-                        }))
-                    }
-                    placeholder="email@example.com"
-                />
-                {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email}</p>
-                )}
-            </div>
-
-            {requiresPassword && (
-                <>
-                    <div className="space-y-2">
-                        <Label htmlFor="profile-password">Пароль</Label>
-                        <Input
-                            id="profile-password"
-                            type="password"
-                            value={profile.password}
-                            onChange={(e) => {
-                                setProfile((prev) => ({
-                                    ...prev,
-                                    password: e.target.value,
-                                }));
-                                setErrors((prev) => ({
-                                    ...prev,
-                                    password: null,
-                                }));
-                            }}
-                            placeholder="Придумайте пароль"
-                        />
+    const renderCodeStep = useMemo(
+        () => (
+            <div className="space-y-6">
+                <div className="space-y-4 text-center">
+                    <p className="subscribe-sponsor-modal__help-text">
+                        Введите код из SMS, отправленного на {maskedPhone}
+                    </p>
+                    <div className="subscribe-sponsor-modal__otp-container">
+                        <InputOTP
+                            maxLength={6}
+                            value={code}
+                            onChange={handleCodeChange}
+                            containerClassName="flex justify-center"
+                        >
+                            <InputOTPGroup>
+                                {Array.from({ length: 6 }).map((_, index) => (
+                                    <InputOTPSlot key={index} index={index} />
+                                ))}
+                            </InputOTPGroup>
+                        </InputOTP>
                     </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="profile-password-confirmation">
-                            Повторите пароль
-                        </Label>
-                        <Input
-                            id="profile-password-confirmation"
-                            type="password"
-                            value={profile.password_confirmation}
-                            onChange={(e) => {
-                                setProfile((prev) => ({
-                                    ...prev,
-                                    password_confirmation: e.target.value,
-                                }));
-                                setErrors((prev) => ({
-                                    ...prev,
-                                    password: null,
-                                }));
-                            }}
-                            placeholder="Ещё раз пароль"
-                        />
-                    </div>
-
-                    {errors.password && (
-                        <p className="text-sm text-destructive">
-                            {errors.password}
+                    {errors.code && (
+                        <p className="subscribe-sponsor-modal__error-message">
+                            {errors.code}
                         </p>
                     )}
-                </>
-            )}
+                </div>
+                <div className="space-y-3">
+                    <Button
+                        className="subscribe-sponsor-modal__button subscribe-sponsor-modal__button--primary w-full"
+                        onClick={handleVerifyCode}
+                        disabled={loading || code.length !== 6}
+                    >
+                        {loading && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Подтвердить
+                    </Button>
+                    <Button
+                        className="subscribe-sponsor-modal__button subscribe-sponsor-modal__button--outline w-full"
+                        onClick={handleResendCode}
+                        disabled={loading}
+                    >
+                        Отправить код повторно
+                    </Button>
+                </div>
+            </div>
+        ),
+        [
+            maskedPhone,
+            code,
+            handleCodeChange,
+            errors.code,
+            loading,
+            handleVerifyCode,
+            handleResendCode,
+        ],
+    );
 
-            <div className="space-y-2">
-                <Label htmlFor="profile-photo">Фото (необязательно)</Label>
-                <Input
-                    id="profile-photo"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleUploadPhoto}
-                />
-                {photoPreview && (
-                    <img
-                        src={photoPreview}
-                        alt="Предпросмотр"
-                        className="h-24 w-24 rounded-full object-cover"
+    const handleProfileNameChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            setProfile((prev) => ({
+                ...prev,
+                name: e.target.value,
+            }));
+        },
+        [],
+    );
+
+    const handleProfileEmailChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            setProfile((prev) => ({
+                ...prev,
+                email: e.target.value,
+            }));
+        },
+        [],
+    );
+
+    const handleProfilePasswordChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            setProfile((prev) => ({
+                ...prev,
+                password: e.target.value,
+            }));
+            setErrors((prev) => ({
+                ...prev,
+                password: null,
+            }));
+        },
+        [],
+    );
+
+    const handleProfilePasswordConfirmationChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            setProfile((prev) => ({
+                ...prev,
+                password_confirmation: e.target.value,
+            }));
+            setErrors((prev) => ({
+                ...prev,
+                password: null,
+            }));
+        },
+        [],
+    );
+
+    const renderProfileStep = useMemo(
+        () => (
+            <div className="space-y-6">
+                <div className="subscribe-sponsor-modal__input-wrapper">
+                    <span className="subscribe-sponsor-modal__label-text">
+                        Имя и фамилия
+                    </span>
+                    <input
+                        id="profile-name"
+                        type="text"
+                        value={profile.name}
+                        onChange={handleProfileNameChange}
+                        placeholder="Как вас подписать"
+                        className={cn(
+                            'subscribe-sponsor-modal__input',
+                            errors.profile &&
+                                'subscribe-sponsor-modal__input--error',
+                        )}
                     />
+                </div>
+
+                <div className="subscribe-sponsor-modal__input-wrapper">
+                    <span className="subscribe-sponsor-modal__label-text">
+                        Email (необязательно)
+                    </span>
+                    <input
+                        id="profile-email"
+                        type="email"
+                        value={profile.email}
+                        onChange={handleProfileEmailChange}
+                        placeholder="email@example.com"
+                        className={cn(
+                            'subscribe-sponsor-modal__input',
+                            errors.email &&
+                                'subscribe-sponsor-modal__input--error',
+                        )}
+                    />
+                    {errors.email && (
+                        <p className="subscribe-sponsor-modal__error-message">
+                            {errors.email}
+                        </p>
+                    )}
+                </div>
+
+                {requiresPassword && (
+                    <>
+                        <div className="subscribe-sponsor-modal__input-wrapper">
+                            <span className="subscribe-sponsor-modal__label-text">
+                                Пароль
+                            </span>
+                            <input
+                                id="profile-password"
+                                type="password"
+                                value={profile.password}
+                                onChange={handleProfilePasswordChange}
+                                placeholder="Придумайте пароль"
+                                className={cn(
+                                    'subscribe-sponsor-modal__input',
+                                    errors.password &&
+                                        'subscribe-sponsor-modal__input--error',
+                                )}
+                            />
+                        </div>
+
+                        <div className="subscribe-sponsor-modal__input-wrapper">
+                            <span className="subscribe-sponsor-modal__label-text">
+                                Повторите пароль
+                            </span>
+                            <input
+                                id="profile-password-confirmation"
+                                type="password"
+                                value={profile.password_confirmation}
+                                onChange={
+                                    handleProfilePasswordConfirmationChange
+                                }
+                                placeholder="Ещё раз пароль"
+                                className={cn(
+                                    'subscribe-sponsor-modal__input',
+                                    errors.password &&
+                                        'subscribe-sponsor-modal__input--error',
+                                )}
+                            />
+                        </div>
+
+                        {errors.password && (
+                            <p className="subscribe-sponsor-modal__error-message">
+                                {errors.password}
+                            </p>
+                        )}
+                    </>
                 )}
-                {errors.photo && (
-                    <p className="text-sm text-destructive">{errors.photo}</p>
+
+                <div className="space-y-2">
+                    <span className="subscribe-sponsor-modal__label-text block">
+                        Фото (необязательно)
+                    </span>
+                    <input
+                        id="profile-photo"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUploadPhoto}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {photoPreview && (
+                        <img
+                            src={photoPreview}
+                            alt="Предпросмотр"
+                            className="subscribe-sponsor-modal__photo-preview"
+                        />
+                    )}
+                    {errors.photo && (
+                        <p className="subscribe-sponsor-modal__error-message">
+                            {errors.photo}
+                        </p>
+                    )}
+                </div>
+
+                {errors.profile && (
+                    <p className="subscribe-sponsor-modal__error-message">
+                        {errors.profile}
+                    </p>
                 )}
+
+                <Button
+                    className="subscribe-sponsor-modal__button subscribe-sponsor-modal__button--primary w-full"
+                    onClick={handleCompleteProfile}
+                    disabled={loading}
+                >
+                    {loading && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Завершить и подписаться
+                </Button>
             </div>
-
-            {errors.profile && (
-                <p className="text-sm text-destructive">{errors.profile}</p>
-            )}
-
-            <Button
-                className="w-full"
-                onClick={handleCompleteProfile}
-                disabled={loading}
-            >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Завершить и подписаться
-            </Button>
-        </div>
+        ),
+        [
+            profile,
+            handleProfileNameChange,
+            handleProfileEmailChange,
+            handleProfilePasswordChange,
+            handleProfilePasswordConfirmationChange,
+            requiresPassword,
+            errors,
+            photoPreview,
+            loading,
+            handleCompleteProfile,
+            handleUploadPhoto,
+        ],
     );
 
-    const renderSuccessStep = () => (
-        <div className="space-y-6 text-center">
-            <div className="space-y-2">
-                <h3 className="text-xl font-semibold">Готово!</h3>
-                <p className="text-sm text-muted-foreground">
-                    Вы стали спонсором {organizationName}. Спасибо за поддержку!
-                </p>
+    const handleClose = useCallback(() => {
+        onOpenChange(false);
+    }, [onOpenChange]);
+
+    const renderSuccessStep = useMemo(
+        () => (
+            <div className="space-y-6 text-center">
+                <div className="space-y-2">
+                    <h3 className="text-xl font-semibold">Готово!</h3>
+                    <p className="subscribe-sponsor-modal__help-text">
+                        Вы стали спонсором {organizationName}. Спасибо за
+                        поддержку!
+                    </p>
+                </div>
+                <Button
+                    className="subscribe-sponsor-modal__button subscribe-sponsor-modal__button--primary w-full"
+                    onClick={handleClose}
+                >
+                    Закрыть
+                </Button>
             </div>
-            <Button className="w-full" onClick={() => onOpenChange(false)}>
-                Закрыть
-            </Button>
-        </div>
+        ),
+        [organizationName, handleClose],
     );
 
-    const renderContent = () => {
+    const renderContent = useMemo(() => {
         switch (step) {
             case 'phone':
-                return renderPhoneStep();
+                return renderPhoneStep;
             case 'code':
-                return renderCodeStep();
+                return renderCodeStep;
             case 'profile':
-                return renderProfileStep();
+                return renderProfileStep;
             case 'success':
-                return renderSuccessStep();
+                return renderSuccessStep;
             default:
                 return null;
         }
-    };
+    }, [
+        step,
+        renderPhoneStep,
+        renderCodeStep,
+        renderProfileStep,
+        renderSuccessStep,
+    ]);
 
     const titleMap: Record<Step, string> = {
-        phone: 'Поддержите организацию',
+        phone: 'Поддержите школу',
         code: 'Подтверждение телефона',
         profile: 'Заполните профиль',
         success: 'Спасибо!',
@@ -686,7 +839,7 @@ export const SubscribeSponsorModal = ({
                             : descriptionMap[step]}
                     </DialogDescription>
                 </DialogHeader>
-                <div>{renderContent()}</div>
+                <div>{renderContent}</div>
             </DialogContent>
         </Dialog>
     );
