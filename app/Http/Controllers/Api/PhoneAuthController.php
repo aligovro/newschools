@@ -30,10 +30,12 @@ class PhoneAuthController extends Controller
 
     public function requestCode(RequestPhoneVerificationRequest $request): JsonResponse
     {
+        $data = $request->validated();
+
         $verification = $this->phoneVerificationService->requestCode(
-            $request->input('phone'),
-            $request->integer('organization_id'),
-            $request->integer('project_id'),
+            $data['phone'],
+            $data['organization_id'] ?? null,
+            $data['project_id'] ?? null,
             Auth::user()
         );
 
@@ -52,11 +54,13 @@ class PhoneAuthController extends Controller
 
     public function verifyCode(VerifyPhoneCodeRequest $request): JsonResponse
     {
+        $data = $request->validated();
+
         $result = $this->phoneVerificationService->verifyCode(
-            $request->input('token'),
-            $request->input('code'),
-            $request->integer('organization_id'),
-            $request->integer('project_id'),
+            $data['token'],
+            $data['code'],
+            $data['organization_id'] ?? null,
+            $data['project_id'] ?? null,
             $request->boolean('remember', false)
         );
 
@@ -66,7 +70,7 @@ class PhoneAuthController extends Controller
         $requiresProfileCompletion = $result['is_new_user'] || blank($user->name);
         $requiresPassword = $result['is_new_user'] || blank($user->password);
 
-        $projectId = $request->integer('project_id') ?: $result['verification']->project_id;
+        $projectId = $data['project_id'] ?? $result['verification']->project_id;
 
         if ($projectId) {
             if ($project = Project::query()->find($projectId)) {
