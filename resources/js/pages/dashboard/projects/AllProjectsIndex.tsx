@@ -235,9 +235,14 @@ export default function AllProjectsIndex({
                                     />
                                 )}
                                 {project.short_description && (
-                                    <p className="mb-4 text-sm text-gray-600">
-                                        {project.short_description}
-                                    </p>
+                                    <div
+                                        className="mb-4 text-sm text-gray-600 prose prose-sm max-w-none"
+                                        // HTML в кратком описании проекта задается администраторами,
+                                        // поэтому мы считаем этот контент доверенным.
+                                        dangerouslySetInnerHTML={{
+                                            __html: project.short_description,
+                                        }}
+                                    />
                                 )}
                                 <div className="mb-4">
                                     <div className="mb-2 flex items-center justify-between text-sm">

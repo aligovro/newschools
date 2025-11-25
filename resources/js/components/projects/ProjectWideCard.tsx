@@ -131,9 +131,14 @@ export default function ProjectWideCard({ project }: ProjectWideCardProps) {
 
                 <div className="project-wide-header">
                     {secondaryDescription && (
-                        <p className="project-wide-description">
-                            {secondaryDescription}
-                        </p>
+                        <div
+                            className="project-wide-description"
+                            // HTML в описании проекта задается администраторами,
+                            // поэтому мы считаем этот контент доверенным.
+                            dangerouslySetInnerHTML={{
+                                __html: secondaryDescription,
+                            }}
+                        />
                     )}
                     <h3 className="project-wide-title">
                         <Link

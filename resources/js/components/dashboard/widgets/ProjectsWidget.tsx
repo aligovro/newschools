@@ -151,9 +151,14 @@ export const ProjectsWidget: React.FC<ProjectsWidgetProps> = ({
                             </div>
 
                             {showDescription && project.description && (
-                                <p className="mb-4 text-gray-600">
-                                    {project.description}
-                                </p>
+                                <div
+                                    className="mb-4 text-gray-600"
+                                    // HTML в описании проекта задается администраторами,
+                                    // поэтому мы считаем этот контент доверенным.
+                                    dangerouslySetInnerHTML={{
+                                        __html: project.description,
+                                    }}
+                                />
                             )}
 
                             {showProgress && (

@@ -264,9 +264,14 @@ export default function NewsShow({ context, news, permissions }: NewsShowProps) 
                                 <h3 className="font-medium text-gray-500">
                                     Контент
                                 </h3>
-                                <div className="prose max-w-none whitespace-pre-wrap">
-                                    {item.content}
-                                </div>
+                                <div
+                                    className="prose max-w-none"
+                                    // HTML в контенте новости задается администраторами,
+                                    // поэтому мы считаем этот контент доверенным.
+                                    dangerouslySetInnerHTML={{
+                                        __html: item.content,
+                                    }}
+                                />
                             </div>
                         )}
                     </CardContent>

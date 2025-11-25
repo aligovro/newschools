@@ -168,9 +168,14 @@ export const ProjectsOutput: React.FC<WidgetOutputProps> = ({
                 <div className="p-6">
                     {/** Короткое описание в одну строку */}
                     {(project as any).short_description && (
-                        <p className="mb-1 line-clamp-1 text-sm text-gray-600">
-                            {(project as any).short_description}
-                        </p>
+                        <div
+                            className="mb-1 line-clamp-1 text-sm text-gray-600"
+                            // HTML в кратком описании проекта задается администраторами,
+                            // поэтому мы считаем этот контент доверенным.
+                            dangerouslySetInnerHTML={{
+                                __html: (project as any).short_description,
+                            }}
+                        />
                     )}
                     {/** Заголовок проекта */}
                     <h3 className="mb-2 text-xl font-semibold text-gray-900">
@@ -178,9 +183,14 @@ export const ProjectsOutput: React.FC<WidgetOutputProps> = ({
                     </h3>
 
                     {showDescription && project.description && (
-                        <p className="mb-4 line-clamp-3 text-gray-600">
-                            {project.description}
-                        </p>
+                        <div
+                            className="mb-4 line-clamp-3 text-gray-600"
+                            // HTML в описании проекта задается администраторами,
+                            // поэтому мы считаем этот контент доверенным.
+                            dangerouslySetInnerHTML={{
+                                __html: project.description,
+                            }}
+                        />
                     )}
 
                     {showProgress && (
