@@ -172,6 +172,14 @@ class ProjectController extends Controller
             return redirect()->route('organizations.projects.edit', [$organization, $project])
                 ->with('success', 'Проект успешно создан. Теперь вы можете добавить этапы.');
         } catch (\Exception $e) {
+            // Логируем полную информацию об ошибке, чтобы её было проще диагностировать
+            Log::error('Ошибка создания проекта', [
+                'organization_id' => $organization->id,
+                'request' => $request->all(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return redirect()->back()
                 ->with('error', 'Ошибка создания проекта: ' . $e->getMessage())
                 ->withInput();

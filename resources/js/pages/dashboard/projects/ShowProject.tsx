@@ -190,9 +190,14 @@ export default function ShowProject({ organization, project }: Props) {
                             </CardHeader>
                             <CardContent>
                                 {project.short_description && (
-                                    <p className="mb-4 text-lg text-gray-700">
-                                        {project.short_description}
-                                    </p>
+                                    <div
+                                        className="mb-4 text-lg text-gray-700 prose prose-sm max-w-none"
+                                        // HTML в кратком описании проекта задается администраторами,
+                                        // поэтому мы считаем этот контент доверенным.
+                                        dangerouslySetInnerHTML={{
+                                            __html: project.short_description,
+                                        }}
+                                    />
                                 )}
                                 {project.description && (
                                     <div

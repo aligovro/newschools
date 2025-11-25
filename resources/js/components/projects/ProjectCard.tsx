@@ -135,9 +135,14 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             <div className="p-4">
                 {/* Project Description */}
                 {project.description && (
-                    <p className="project-description line-clamp-2">
-                        {project.description}
-                    </p>
+                    <div
+                        className="project-description line-clamp-2"
+                        // HTML в описании проекта задается администраторами,
+                        // поэтому мы считаем этот контент доверенным.
+                        dangerouslySetInnerHTML={{
+                            __html: project.description,
+                        }}
+                    />
                 )}
 
                 {/* Project Title */}

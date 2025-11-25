@@ -46,17 +46,17 @@ class RegisteredUserController extends Controller
 
         $validated = $request->validate(
             [
-                'name' => 'required|string|max:255',
-                'email' => [
-                    'nullable',
-                    'string',
-                    'lowercase',
-                    'email',
-                    'max:255',
-                    Rule::unique(User::class, 'email'),
-                ],
-                'phone' => ['nullable', new RussianPhoneNumber(), Rule::unique(User::class, 'phone')],
-                'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'name' => 'required|string|max:255',
+            'email' => [
+                'nullable',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                Rule::unique(User::class, 'email'),
+            ],
+            'phone' => ['nullable', new RussianPhoneNumber(), Rule::unique(User::class, 'phone')],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
             ],
             [
                 'name.required' => 'Пожалуйста, введите имя.',

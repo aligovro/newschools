@@ -51,9 +51,14 @@ export default function OrganizationInfoCard({
                         <p className="text-sm font-medium text-gray-500">
                             Описание
                         </p>
-                        <p className="text-sm text-gray-900 dark:text-white">
-                            {organization.description}
-                        </p>
+                        <div
+                            className="text-sm text-gray-900 dark:text-white prose prose-sm max-w-none"
+                            // HTML в описании организации задается администраторами,
+                            // поэтому мы считаем этот контент доверенным.
+                            dangerouslySetInnerHTML={{
+                                __html: organization.description,
+                            }}
+                        />
                     </div>
                 )}
 
