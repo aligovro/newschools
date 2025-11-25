@@ -147,6 +147,12 @@ class CitySupportersService
             ];
         });
 
+        // Не показываем города без школ (schools_count = 0),
+        // чтобы не выводить записи вида "0 школ" при наличии только исторических донатов.
+        $data = $data->filter(function (array $row) {
+            return ($row['schools_count'] ?? 0) > 0;
+        })->values();
+
         return [
             'data' => $data,
             'pagination' => [
@@ -237,6 +243,11 @@ class CitySupportersService
                 'subscriptions_count' => isset($subscriptionsCounts[$row->id]) ? (int) $subscriptionsCounts[$row->id] : 0,
             ];
         });
+
+        // Для публичного топа тоже скрываем города без школ.
+        $data = $data->filter(function (array $row) {
+            return ($row['schools_count'] ?? 0) > 0;
+        })->values();
 
         return [
             'data' => $data,
