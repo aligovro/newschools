@@ -60,6 +60,11 @@
     justify-content: center;
 }
 
+// Иконки только для мобильной версии - скрыты на десктопе
+.city-supporters-output__column-icon--mobile-only {
+    display: none;
+}
+
 .city-supporters-output__column-text {
     font-weight: 500;
     font-size: 14px;
@@ -220,6 +225,25 @@
         font-size: 13px;
         color: #4b5563;
         border-bottom: 1px solid #f0f0f0;
+        gap: 10px;
+    }
+    
+    // Показываем иконки только в мобильной версии
+    .city-supporters-output__column-icon--mobile-only {
+        display: flex;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+    
+    // Колонка с выпускниками с иконкой
+    .city-supporters-output__column--alumni {
+        gap: 10px;
+    }
+    
+    // Колонка с школами с иконкой
+    .city-supporters-output__column--schools {
+        gap: 10px;
     }
 
     .city-supporters-output__column--metric .city-supporters-output__number {
@@ -260,16 +284,29 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        font-size: 15px;
-        font-weight: 600;
-        color: #1a1a1a;
-    }
-
-    .city-supporters-output__column--amount {
         font-weight: 700;
         font-size: 18px;
         color: #1a1a1a;
-        margin-right: 4px;
+        gap: 10px;
+        
+        // Обертка для суммы и знака рубля, чтобы gap не влиял на расстояние между ними
+        .city-supporters-output__amount-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        
+        // Убеждаемся, что и цифры, и знак рубля имеют одинаковый размер шрифта
+        .city-supporters-output__number {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .city-supporters-output__currency {
+            font-size: 18px;
+            font-weight: 700;
+            margin-left: 0;
+        }
     }
 
     .city-supporters-output__column-text {

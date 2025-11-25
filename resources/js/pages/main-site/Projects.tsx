@@ -91,15 +91,17 @@ export default function Projects({
         !!initialFilters.locality_id,
     );
 
-    // Синхронизация с новыми данными при изменении фильтров
+    // Синхронизация с новыми данными при изменении фильтров (категория / город).
+    // При догрузке страниц через "Загрузить ещё" фильтры не меняются, поэтому
+    // здесь не сбрасываем локальный список проектов.
     useEffect(() => {
         setProjects(initialProjects.data);
         setCurrentPage(initialProjects.current_page);
         setLastPage(initialProjects.last_page);
     }, [
-        initialProjects.data,
-        initialProjects.current_page,
-        initialProjects.last_page,
+        initialFilters.search,
+        initialFilters.category,
+        initialFilters.locality_id,
     ]);
 
     // Синхронизация города из URL (если пользователь выбирал его ранее)

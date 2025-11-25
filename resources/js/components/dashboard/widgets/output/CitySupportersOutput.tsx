@@ -294,7 +294,14 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
                 </div>
 
                 {/* Вторая колонка: Количество школ */}
-                <div className="city-supporters-output__column city-supporters-output__column--metric">
+                <div className="city-supporters-output__column city-supporters-output__column--metric city-supporters-output__column--schools">
+                    <div className="city-supporters-output__column-icon city-supporters-output__column-icon--mobile-only">
+                        <img
+                            src="/icons/mobile-menu/schools.svg"
+                            alt=""
+                            className="h-full w-full object-contain"
+                        />
+                    </div>
                     {city.schools_count !== undefined ? (
                         <>
                             <span className="city-supporters-output__number">
@@ -314,7 +321,14 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
                 </div>
 
                 {/* Третья колонка: Количество выпускников */}
-                <div className="city-supporters-output__column city-supporters-output__column--metric">
+                <div className="city-supporters-output__column city-supporters-output__column--metric city-supporters-output__column--alumni">
+                    <div className="city-supporters-output__column-icon city-supporters-output__column-icon--mobile-only">
+                        <img
+                            src="/icons/organization/graduates.svg"
+                            alt=""
+                            className="h-full w-full object-contain"
+                        />
+                    </div>
                     {city.alumni_count != null ? (
                         <>
                             <span className="city-supporters-output__number">
@@ -329,7 +343,10 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
                             </span>
                         </>
                     ) : (
-                        '-'
+                        <>
+                            <span className="city-supporters-output__number">0</span>{' '}
+                            <span>выпускников</span>
+                        </>
                     )}
                 </div>
 
@@ -365,15 +382,22 @@ export const CitySupportersOutput: React.FC<WidgetOutputProps> = ({
 
                 {/* Пятая колонка: Общая сумма сборов */}
                 <div className="city-supporters-output__column city-supporters-output__column--metric city-supporters-output__column--amount">
+                    <div className="city-supporters-output__column-icon city-supporters-output__column-icon--mobile-only">
+                        <img
+                            src="/icons/organization/auto-payments.svg"
+                            alt=""
+                            className="h-full w-full object-contain"
+                        />
+                    </div>
                     {typeof city.total_amount === 'number' ? (
-                        <>
+                        <div className="city-supporters-output__amount-wrapper">
                             <span className="city-supporters-output__number">
                                 {formatNumber(
                                     Math.round(city.total_amount / 100),
                                 )}
-                            </span>{' '}
-                            <span>₽</span>
-                        </>
+                            </span>
+                            <span className="city-supporters-output__currency">₽</span>
+                        </div>
                     ) : (
                         '-'
                     )}
