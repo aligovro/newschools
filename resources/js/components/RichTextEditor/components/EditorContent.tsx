@@ -9,6 +9,7 @@ interface EditorContentProps {
   height: number;
   placeholder: string;
   onInput: () => void;
+  onPaste: (e: React.ClipboardEvent<HTMLDivElement>) => void;
   onFocus: () => void;
   onBlur: () => void;
   onClick: (e: React.MouseEvent) => void;
@@ -25,6 +26,7 @@ export const EditorContent: React.FC<EditorContentProps> = React.memo(
     height,
     placeholder,
     onInput,
+    onPaste,
     onFocus,
     onBlur,
     onClick,
@@ -42,7 +44,7 @@ export const EditorContent: React.FC<EditorContentProps> = React.memo(
           suppressContentEditableWarning={true}
           style={{ minHeight: `${height}px` }}
           onInput={onInput}
-          onPaste={onInput}
+          onPaste={onPaste}
           onFocus={onFocus}
           onBlur={onBlur}
           onClick={onClick}

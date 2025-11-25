@@ -32,6 +32,7 @@ import { useTableInsertion } from './hooks/useTableInsertion';
 import { useVideoInsertion } from './hooks/useVideoInsertion';
 import { removeImageCompletely } from './utils/htmlFormatter';
 import { countWordsFromElement } from './utils/wordCounter';
+import { sanitizeHtml } from '@/utils/htmlSanitizer';
 
 interface IRichTextEditor {
     value: string;
@@ -288,6 +289,54 @@ const RichTextEditor: React.FC<IRichTextEditor> = ({
     const handleFocus = useCallback(() => {
         // no-op
     }, []);
+
+    // Обработка вставки из буфера обмена
+    const handlePaste = useCallback(
+        (e: React.ClipboardEvent<HTMLDivElement>) => {
+            if (!editorRef.current || !isActive) {
+                return;
+            }
+
+            // В HTML-режиме не вмешиваемся: пользователь сам редактирует исходник
+            if (isHtmlMode) {
+                return;
+            }
+
+            e.preventDefault();
+
+            const clipboardData = e.clipboardData || (window as any).clipboardData;
+            let pastedHtml = clipboardData.getData('text/html');
+
+            if (!pastedHtml) {
+                const text = clipboardData.getData('text/plain');
+                if (!text) {
+                    return;
+                }
+
+                // Преобразуем обычный текст в простой HTML, сохраняя переводы строк
+                const escaped = text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\r\n|\r|\n/g, '<br>');
+
+                pastedHtml = `<p>${escaped}</p>`;
+            }
+
+            // Для вставки всегда чистим HTML как для обычного пользователя:
+            // убираем инлайн-стили у текстовых элементов, font-family и прочий мусор
+            // из внешних источников. Стили у img/iframe оставляем.
+            const cleaned = sanitizeHtml(pastedHtml, false, {
+                stripTextStyles: true,
+            });
+
+            document.execCommand('insertHTML', false, cleaned);
+
+            // Обновляем внутреннее состояние редактора
+            handleInputDeferred();
+        },
+        [isActive, isHtmlMode, handleInputDeferred],
+    );
 
     // Обработка клика в редакторе
     const handleEditorClick = useCallback((e: React.MouseEvent) => {
@@ -1121,6 +1170,7 @@ const RichTextEditor: React.FC<IRichTextEditor> = ({
                         height={height}
                         placeholder={placeholder}
                         onInput={handleInputDeferred}
+                        onPaste={handlePaste}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                         onClick={handleEditorClick}
