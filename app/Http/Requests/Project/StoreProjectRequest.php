@@ -24,7 +24,6 @@ class StoreProjectRequest extends FormRequest
             'slug' => 'nullable|string|max:255',
             'short_description' => 'nullable|string|max:500',
             'description' => 'nullable|string',
-            'category' => ['nullable', 'string'],
             'category_ids' => ['required', 'array', 'min:1'],
             'category_ids.*' => ['exists:project_categories,id'],
             'target_amount' => 'nullable|numeric|min:0',

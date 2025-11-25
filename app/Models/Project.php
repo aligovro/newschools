@@ -32,7 +32,6 @@ class Project extends Model
         'target_amount',
         'collected_amount',
         'status',
-        'category',
         'tags',
         'start_date',
         'end_date',
@@ -123,9 +122,15 @@ class Project extends Model
         return $query->where('featured', true);
     }
 
-    public function scopeByCategory($query, $category)
+    /**
+     * Фильтр по категории проекта через связь many-to-many.
+     * Принимает slug категории из таблицы project_categories.
+     */
+    public function scopeByCategory($query, string $categorySlug)
     {
-        return $query->where('category', $category);
+        return $query->whereHas('categories', function ($q) use ($categorySlug) {
+            $q->where('project_categories.slug', $categorySlug);
+        });
     }
 
     public function scopeByStatus($query, $status)
@@ -190,7 +195,7 @@ class Project extends Model
             return (string) ($this->categories->first()->name ?? '');
         }
 
-        return $this->category ?? '';
+        return '';
     }
 
     /**
