@@ -384,9 +384,28 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                         return;
                     }
 
-                    if (paymentData?.qr_code) {
+                    // 1. Если у нас есть сгенерированный SVG — всегда показываем модалку с QR
+                    if (paymentData?.qr_code_svg) {
                         setFormPendingPayment(paymentData);
                         setFormSuccess(null);
+                        return;
+                    }
+
+                    // 2. Если есть qr_code
+                    if (paymentData?.qr_code) {
+                        const rawCode = paymentData.qr_code.trim();
+                        const isUrl = /^https?:\/\//i.test(rawCode);
+
+                        // 2a. "Голый" base64 / data URL — показываем модалку
+                        if (!isUrl) {
+                            setFormPendingPayment(paymentData);
+                            setFormSuccess(null);
+                            return;
+                        }
+
+                        // 2b. URL, но svg не пришел (значит на нашей стороне не удалось собрать QR) —
+                        // просто перенаправляем пользователя по этому адресу, как для других методов оплаты.
+                        window.location.href = rawCode;
                         return;
                     }
 

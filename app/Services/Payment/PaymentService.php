@@ -11,11 +11,15 @@ use App\Models\Fundraiser;
 use App\Models\Project;
 use App\Models\ProjectStage;
 use App\Models\Payments\YooKassaPartnerMerchant;
+use App\Support\Money;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use App\Support\Money;
 
 class PaymentService
 {
@@ -100,6 +104,12 @@ class PaymentService
             $paymentResult = $gateway->createPayment($transaction);
 
             if ($paymentResult['success']) {
+                $qrCode = $paymentResult['qr_code'] ?? null;
+                $qrCodeSvg = null;
+                if (is_string($qrCode) && $qrCode !== '') {
+                    $qrCodeSvg = $this->generateQrSvg($qrCode);
+                }
+
                 // Обновляем транзакцию с данными от шлюза
                 $transaction->update([
                     'external_id' => $paymentResult['payment_id'] ?? null,
@@ -129,7 +139,8 @@ class PaymentService
                     'transaction_id' => $transaction->transaction_id,
                     'payment_id' => $paymentResult['payment_id'] ?? null,
                     'redirect_url' => $paymentResult['redirect_url'] ?? null,
-                    'qr_code' => $paymentResult['qr_code'] ?? null,
+                    'qr_code' => $qrCode,
+                    'qr_code_svg' => $qrCodeSvg,
                     'deep_link' => $paymentResult['deep_link'] ?? null,
                     'confirmation_url' => $paymentResult['confirmation_url'] ?? null,
                 ];
@@ -765,5 +776,30 @@ class PaymentService
                 ];
             })->toArray(),
         ];
+    }
+
+    /**
+     * Генерация SVG-кода QR для переданной строки (ссылки / payload).
+     * Используем BaconQrCode, который уже подключен через composer.
+     */
+    private function generateQrSvg(string $payload): ?string
+    {
+        try {
+            $renderer = new ImageRenderer(
+                new RendererStyle(256),
+                new SvgImageBackEnd()
+            );
+
+            $writer = new Writer($renderer);
+
+            return $writer->writeString($payload);
+        } catch (\Throwable $e) {
+            Log::error('Failed to generate QR SVG', [
+                'payload' => $payload,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 }
