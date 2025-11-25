@@ -87,18 +87,29 @@ const SANITIZE_CONFIG = {
 };
 
 /**
- * Санитизирует HTML контент, удаляя опасные теги и атрибуты
+ * Опции санитизации HTML.
+ * stripTextStyles: если true — удаляем все inline-стили у текстовых элементов
+ * (используем при вставке из буфера), но оставляем стили у img/iframe.
+ */
+export interface SanitizeHtmlOptions {
+    stripTextStyles?: boolean;
+}
+
+/**
+ * Санитизирует HTML контент, удаляя опасные теги и атрибуты.
  * @param html - HTML строка для санитизации
  * @param isAdmin - является ли пользователь админом (больше разрешений)
+ * @param options - дополнительные опции санитизации
  * @returns очищенный HTML
  */
 export const sanitizeHtml = (
     html: string,
     isAdmin: boolean = false,
+    options: SanitizeHtmlOptions = {},
 ): string => {
     if (!html) return '';
 
-    // Для админов разрешаем больше тегов
+    // Для админов разрешаем больше тегов/атрибутов
     const config = {
         ...SANITIZE_CONFIG,
         ALLOWED_TAGS: isAdmin
@@ -116,7 +127,7 @@ export const sanitizeHtml = (
             : SANITIZE_CONFIG.ALLOWED_ATTR,
     };
 
-    // Сначала очищаем HTML с помощью DOMPurify
+    // 1. Сначала очищаем HTML с помощью DOMPurify
     let sanitizedHtml = DOMPurify.sanitize(html, {
         ALLOWED_TAGS: config.ALLOWED_TAGS,
         ALLOWED_ATTR: config.ALLOWED_ATTR,
@@ -134,7 +145,95 @@ export const sanitizeHtml = (
         ADD_URI_SAFE_ATTR: ['src', 'href'],
     });
 
-    // Дополнительная проверка для iframe (только разрешенные видео домены)
+    // 2. Дополнительно убираем инлайн-стили у текстовых элементов,
+    //    если явно запросили это (например, при вставке из буфера обмена).
+    //    Стили для img/iframe при этом сохраняем.
+    if (options.stripTextStyles && typeof window !== 'undefined') {
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(sanitizedHtml, 'text/html');
+
+            doc.body.querySelectorAll<HTMLElement>('[style]').forEach((el) => {
+                const tag = el.tagName.toLowerCase();
+
+                // Для текстовых блоков стили не сохраняем вообще
+                const textTags = [
+                    'p',
+                    'span',
+                    'strong',
+                    'b',
+                    'em',
+                    'i',
+                    'u',
+                    's',
+                    'strike',
+                    'h1',
+                    'h2',
+                    'h3',
+                    'h4',
+                    'h5',
+                    'h6',
+                    'blockquote',
+                    'li',
+                    'code',
+                    'pre',
+                    'div',
+                ];
+
+                // Стили для изображений и iframe оставляем — ими управляет наш редактор
+                if (tag === 'img' || tag === 'iframe') {
+                    return;
+                }
+
+                // Для всех остальных (включая текстовые элементы) просто убираем style
+                if (el.hasAttribute('style')) {
+                    el.removeAttribute('style');
+                }
+            });
+
+            sanitizedHtml = doc.body.innerHTML;
+        } catch {
+            // В случае ошибки парсинга просто возвращаем результат DOMPurify
+        }
+    }
+
+    // 2b. Независимо от роли, дополнительно вычищаем font-family из оставшихся style,
+    //     чтобы не тянуть шрифты из Word / чужих сайтов.
+    if (typeof window !== 'undefined') {
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(sanitizedHtml, 'text/html');
+
+            doc.body.querySelectorAll<HTMLElement>('[style]').forEach((el) => {
+                const style = el.getAttribute('style') || '';
+                if (!style) return;
+
+                const cleaned = style
+                    .split(';')
+                    .map((rule) => rule.trim())
+                    .filter((rule) => {
+                        if (!rule) return false;
+                        const [prop] = rule.split(':');
+                        return (
+                            prop && prop.trim().toLowerCase() !== 'font-family'
+                        );
+                    })
+                    .join('; ');
+
+                if (cleaned.trim()) {
+                    el.setAttribute('style', cleaned);
+                } else {
+                    el.removeAttribute('style');
+                }
+            });
+
+            sanitizedHtml = doc.body.innerHTML;
+        } catch {
+            // Если что-то пошло не так при парсинге — просто оставляем как есть
+        }
+    }
+
+    // 3. Дополнительная проверка для iframe (только разрешенные видео домены)
     sanitizedHtml = sanitizedHtml.replace(
         /<iframe[^>]*src="([^"]*)"[^>]*>/gi,
         (match, src) => {
