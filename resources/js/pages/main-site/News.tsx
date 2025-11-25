@@ -68,12 +68,15 @@ export default function NewsPage({
     const [searchValue, setSearchValue] = useState(filters?.search ?? '');
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Синхронизация с новыми данными при изменении фильтров (поиск/тип).
+    // При догрузке страниц через "Загрузить ещё" фильтры не меняются, поэтому
+    // здесь не сбрасываем локальный список новостей.
     useEffect(() => {
         setItems(news.data ?? []);
         const nextMeta = resolveMeta(news);
         setCurrentPage(nextMeta.current_page);
         setLastPage(nextMeta.last_page);
-    }, [news]);
+    }, [filters?.search, filters?.type]);
 
     useEffect(() => {
         return () => {

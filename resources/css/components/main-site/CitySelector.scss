@@ -62,6 +62,12 @@
 
 .city-selector__dropdown {
     z-index: 20;
+    
+    // На десктопе выпадающий список должен быть шире кнопки для удобства
+    @media (min-width: 768px) {
+        min-width: 320px;
+        width: auto;
+    }
 }
 
 .city-selector__overlay {
