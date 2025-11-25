@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
-    DonationPaymentData,
     PaymentMethod as ApiPaymentMethod,
+    DonationPaymentData,
 } from '@/lib/api/index';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DonationWidgetConfig } from './types';
 import { normalizePaymentSlug } from './utils';
 
@@ -33,7 +33,9 @@ export interface DonationFormHandlers {
     handleAmountInputChange: (value: number) => void;
     handlePresetAmountSelect: (value: number) => void;
     handleRecurringChange: (value: boolean) => void;
-    handleRecurringPeriodChange: (value: 'daily' | 'weekly' | 'monthly') => void;
+    handleRecurringPeriodChange: (
+        value: 'daily' | 'weekly' | 'monthly',
+    ) => void;
     handleDonorNameChange: (value: string) => void;
     handleDonorEmailChange: (value: string) => void;
     handleDonorPhoneChange: (value: string) => void;
@@ -74,8 +76,9 @@ export const useDonationFormState = ({
 
     const [amount, setAmount] = useState<number>(defaultAmount);
     const [isRecurring, setIsRecurring] = useState<boolean>(false);
-    const [recurringPeriod, setRecurringPeriod] =
-        useState<'daily' | 'weekly' | 'monthly'>(defaultRecurringPeriod);
+    const [recurringPeriod, setRecurringPeriod] = useState<
+        'daily' | 'weekly' | 'monthly'
+    >(defaultRecurringPeriod);
     const [selectedPaymentMethod, setSelectedPaymentMethod] =
         useState<string>(defaultPaymentMethod);
     const [donorName, setDonorName] = useState('');
@@ -209,10 +212,17 @@ export const useDonationFormState = ({
             return null;
         }
 
+        // Уже полноценный data URL
         if (rawCode.startsWith('data:image')) {
             return rawCode;
         }
 
+        // Обычный URL (например, https://qr.nspk.ru/....) — отдаем как есть
+        if (/^https?:\/\//i.test(rawCode)) {
+            return rawCode;
+        }
+
+        // «Голый» base64 — оборачиваем в data URL
         return `data:image/png;base64,${rawCode}`;
     }, [pendingPayment]);
 
@@ -284,4 +294,3 @@ export const useDonationFormState = ({
         isSelectedMethodAvailable,
     };
 };
-
