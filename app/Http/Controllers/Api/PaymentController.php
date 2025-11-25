@@ -72,6 +72,7 @@ class PaymentController extends Controller
             'payment_id' => $result['payment_id'],
             'redirect_url' => $result['redirect_url'],
             'qr_code' => $result['qr_code'] ?? null,
+            'qr_code_svg' => $result['qr_code_svg'] ?? null,
             'deep_link' => $result['deep_link'] ?? null,
             'confirmation_url' => $result['confirmation_url'] ?? null,
           ],

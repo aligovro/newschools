@@ -15,6 +15,8 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> = React.m
             return null;
         }
 
+        const hasSvg = Boolean(payment.qr_code_svg);
+
         return (
             <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/60 px-4">
                 <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
@@ -32,7 +34,18 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> = React.m
                     <p className="mb-4 text-sm text-gray-600">
                         Используйте приложение банка, чтобы завершить оплату.
                     </p>
-                    {qrImageSrc ? (
+                    {hasSvg ? (
+                        <div className="mx-auto h-64 w-64 rounded-lg border border-gray-200 p-2">
+                            <div
+                                className="h-full w-full"
+                                // SVG генерируется на нашем бэке (BaconQrCode),
+                                // поэтому мы считаем этот HTML доверенным.
+                                dangerouslySetInnerHTML={{
+                                    __html: payment.qr_code_svg as string,
+                                }}
+                            />
+                        </div>
+                    ) : qrImageSrc ? (
                         <img
                             src={qrImageSrc}
                             alt="QR код для оплаты"
@@ -72,4 +85,3 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> = React.m
 );
 
 DonationPaymentModal.displayName = 'DonationPaymentModal';
-

@@ -180,6 +180,7 @@ export interface DonationPaymentData {
     redirect_url?: string;
     confirmation_url?: string;
     qr_code?: string;
+    qr_code_svg?: string;
     deep_link?: string;
     error?: string;
 }
