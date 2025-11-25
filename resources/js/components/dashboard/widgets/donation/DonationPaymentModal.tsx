@@ -37,7 +37,7 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> = React.m
                     {hasSvg ? (
                         <div className="mx-auto h-64 w-64 rounded-lg border border-gray-200 p-2">
                             <div
-                                className="h-full w-full"
+                                className="flex h-full w-full items-center justify-center [&_svg]:h-full [&_svg]:w-full [&_svg]:max-h-full [&_svg]:max-w-full"
                                 // SVG генерируется на нашем бэке (BaconQrCode),
                                 // поэтому мы считаем этот HTML доверенным.
                                 dangerouslySetInnerHTML={{
