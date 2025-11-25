@@ -1,5 +1,4 @@
 import type { MoneyAmount } from '@/types/money';
-import '@css/components/organizations/organization-card.scss';
 import { Link, router } from '@inertiajs/react';
 import { User } from 'lucide-react';
 

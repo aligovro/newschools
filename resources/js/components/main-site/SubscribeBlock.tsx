@@ -1,5 +1,4 @@
 import { fetchPublicOrganizations } from '@/lib/api/public';
-import '@css/components/main-site/SubscribeBlock.scss';
 import { usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { Plus, Search } from 'lucide-react';

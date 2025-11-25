@@ -1,4 +1,3 @@
-import '@css/components/ui/share-button.scss';
 import { useState } from 'react';
 
 interface ShareButtonProps {

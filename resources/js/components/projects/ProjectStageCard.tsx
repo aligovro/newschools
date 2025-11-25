@@ -1,4 +1,3 @@
-import '@css/components/projects/project-stage-card.scss';
 import type { MoneyAmount } from '@/types/money';
 
 interface StageFunding {

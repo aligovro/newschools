@@ -1,5 +1,4 @@
 import { fetchPublicOrganizations } from '@/lib/api/public';
-import '@css/components/main-site/OrganizationSearch.scss';
 import { Link, usePage } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

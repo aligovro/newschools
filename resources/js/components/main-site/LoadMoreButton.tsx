@@ -1,4 +1,3 @@
-import '@css/components/main-site/LoadMoreButton.scss';
 
 interface LoadMoreButtonProps {
     onClick: () => void;

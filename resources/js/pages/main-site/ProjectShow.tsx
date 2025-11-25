@@ -7,7 +7,6 @@ import ProjectSponsorsSection, {
 import ProjectStageCard from '@/components/projects/ProjectStageCard';
 import MainLayout from '@/layouts/MainLayout';
 import type { MoneyAmount } from '@/types/money';
-import '@css/pages/projects/project-show.scss';
 import { Link, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { useState, type ComponentProps } from 'react';
