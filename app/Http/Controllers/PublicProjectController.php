@@ -61,6 +61,13 @@ class PublicProjectController extends Controller
       $project->collected_amount_rubles = $funding['collected']['value'];
       $project->progress_percentage = $funding['progress_percentage'];
 
+      // Основная категория проекта (slug первой категории из связи)
+      if ($project->relationLoaded('categories') && $project->categories->isNotEmpty()) {
+        $project->category = $project->categories->first()->slug ?? null;
+      } else {
+        $project->category = null;
+      }
+
       // Форматируем данные организации
       if ($project->organization) {
         $org = $project->organization;
@@ -104,9 +111,15 @@ class PublicProjectController extends Controller
   {
     $project = Project::where('slug', $slug)
       ->where('status', 'active')
-      ->with(['organization', 'organization.region', 'organization.locality', 'stages' => function ($query) {
-        $query->orderBy('order', 'asc');
-      }])
+      ->with([
+        'organization',
+        'organization.region',
+        'organization.locality',
+        'categories',
+        'stages' => function ($query) {
+          $query->orderBy('order', 'asc');
+        }
+      ])
       ->firstOrFail();
 
     // Подготавливаем галерею изображений
@@ -148,6 +161,11 @@ class PublicProjectController extends Controller
     // Подготавливаем данные проекта для отображения
     $projectFunding = $project->funding;
 
+    // Основная категория проекта (slug первой категории), если есть
+    $primaryCategorySlug = $project->relationLoaded('categories') && $project->categories->isNotEmpty()
+      ? ($project->categories->first()->slug ?? null)
+      : null;
+
     $projectData = [
       'id' => $project->id,
       'title' => $project->title,
@@ -164,7 +182,8 @@ class PublicProjectController extends Controller
       'formatted_collected_amount' => $projectFunding['collected']['formatted'],
       'has_stages' => $project->has_stages ?? false,
       'stages' => $stages,
-      'category' => $project->category,
+      // slug основной категории (через связь), вместо легаси-enum поля
+      'category' => $primaryCategorySlug,
       'start_date' => $project->start_date,
       'end_date' => $project->end_date,
       'beneficiaries' => $project->beneficiaries ?? [],

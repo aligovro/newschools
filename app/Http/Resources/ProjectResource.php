@@ -48,7 +48,10 @@ class ProjectResource extends JsonResource
       'days_left' => $this->days_left,
 
       // Категория и статус
-      'category' => $this->category,
+      // slug первой категории (через связь many-to-many), если есть
+      'category' => $this->relationLoaded('categories') && $this->categories->isNotEmpty()
+        ? ($this->categories->first()->slug ?? null)
+        : null,
       'category_name' => $this->category_name,
       'status' => $this->status,
       'featured' => (bool) $this->featured,
