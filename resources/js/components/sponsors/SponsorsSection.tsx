@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { nameToInitials } from '@/utils/nameToInitials';
 
-import '@css/components/main-site/SponsorsSection.scss';
 
 export type SortOption = 'top' | 'recent';
 

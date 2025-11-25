@@ -1,4 +1,3 @@
-import '@css/components/main-site/SubscribeSponsorModal.scss';
 import axios from 'axios';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';

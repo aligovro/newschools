@@ -21,6 +21,8 @@
 @import './widgets/organizations-slider-widget.scss';
 @import './widgets/donation-widget.scss';
 @import './widgets/city-supporters-output.scss';
+@import './widgets/organizations-slider-widget.scss';
+@import './widgets/projects-slider-widget.scss';
 
 // Import UI components
 @import './components/ui/universal-select.scss';
@@ -116,10 +118,23 @@
 @import 'components/main-site/SubscribeSponsorModal.scss';
 @import 'components/main-site/OrganizationSearch.scss';
 @import 'components/main-site/CitySelector.scss';
+@import 'components/main-site/SponsorsSection.scss';
+@import 'components/main-site/LoadMoreButton.scss';
 
 /* Main site pages */
 @import 'pages/main-site/profile-page.scss';
 @import 'pages/main-site/projects-page.scss';
+@import 'pages/projects/project-show.scss';
+@import 'pages/organizations/organization-show.scss';
+
+/* Project & organization cards */
+@import 'components/projects/project-card.scss';
+@import 'components/projects/project-wide-card.scss';
+@import 'components/projects/project-stage-card.scss';
+@import 'components/organizations/organization-card.scss';
+
+/* UI components */
+@import 'components/ui/share-button.scss';
 
 /* Site preview base styles (для страниц предпросмотра и публичного сайта) */
 @import 'site-preview.scss';

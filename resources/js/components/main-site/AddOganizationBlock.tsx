@@ -1,4 +1,3 @@
-import '@css/components/main-site/AddOrganizationBlock.scss';
 import { useCallback, useState } from 'react';
 import CitySelector, { type Locality } from './CitySelector';
 import { MapSelectModal } from './MapSelectModal';

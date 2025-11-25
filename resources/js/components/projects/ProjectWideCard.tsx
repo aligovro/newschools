@@ -1,4 +1,3 @@
-import '@css/components/projects/project-wide-card.scss';
 import { Link, router } from '@inertiajs/react';
 
 import ShareButton from '@/components/ui/ShareButton';

@@ -1,4 +1,3 @@
-import '@css/components/projects/project-card.scss';
 import { Link, router } from '@inertiajs/react';
 
 import type { MoneyAmount } from '@/types/money';

@@ -7,7 +7,6 @@ import ProjectCard from '@/components/projects/ProjectCard';
 import { useDefaultCity } from '@/hooks/useDefaultCity';
 import MainLayout from '@/layouts/MainLayout';
 import { fetchCityById } from '@/lib/api/public';
-import '@css/pages/main-site/projects-page.scss';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 

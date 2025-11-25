@@ -5,7 +5,6 @@ import type { Pagination } from '@/components/sponsors/SponsorsSection';
 import { createEmptyPagination } from '@/components/sponsors/SponsorsSection';
 import { nameToInitials } from '@/utils/nameToInitials';
 
-import '@css/components/main-site/SponsorsSection.scss';
 
 export interface Alumni {
     id: string | number;

@@ -5,7 +5,6 @@ import {
     fetchPublicCities,
     type PublicCity,
 } from '@/lib/api/public';
-import '@css/components/main-site/CitySelector.scss';
 import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
