@@ -106,12 +106,13 @@ class YooKassaGateway extends AbstractPaymentGateway
 
                 // Сохраняем существующие payment_details и дополняем их данными от gateway
                 $existingPaymentDetails = $transaction->payment_details ?? [];
+                $qrCode = $this->extractQrCodeFromResponse($responseData);
                 $updateData = [
                     'external_id' => $responseData['id'] ?? null,
                     'gateway_response' => $responseData,
                     'payment_details' => array_merge($existingPaymentDetails, [
                         'confirmation_url' => $responseData['confirmation']['confirmation_url'] ?? null,
-                        'qr_code' => $responseData['confirmation']['confirmation_data'] ?? null,
+                        'qr_code' => $qrCode,
                         'payment_method' => $responseData['payment_method']['type'] ?? null,
                     ]),
                 ];
@@ -139,12 +140,14 @@ class YooKassaGateway extends AbstractPaymentGateway
                     ['payment_id' => $responseData['id'] ?? null]
                 );
 
+                $qrCode = $this->extractQrCodeFromResponse($responseData);
+
                 return [
                     'success' => true,
                     'payment_id' => $responseData['id'] ?? null,
                     'confirmation_url' => $responseData['confirmation']['confirmation_url'] ?? null,
                     'redirect_url' => $responseData['confirmation']['confirmation_url'] ?? null,
-                    'qr_code' => $responseData['confirmation']['confirmation_data'] ?? null,
+                    'qr_code' => $qrCode,
                     'saved_payment_method_id' => $savedPaymentMethodId,
                     // Для повторных платежей статус может быть сразу succeeded
                     'status' => $responseData['status'] ?? null,
@@ -199,6 +202,37 @@ class YooKassaGateway extends AbstractPaymentGateway
 
             return PaymentTransaction::STATUS_FAILED;
         }
+    }
+
+    /**
+     * Аккуратно извлекаем данные QR-кода из ответа ЮKassa.
+     * В разных версиях API/SDK поле confirmation_data может быть строкой
+     * с base64-данными либо объектом с вложенными полями.
+     */
+    private function extractQrCodeFromResponse(array $responseData): ?string
+    {
+        $confirmation = $responseData['confirmation'] ?? null;
+        if (!is_array($confirmation)) {
+            return null;
+        }
+
+        $raw = $confirmation['confirmation_data'] ?? null;
+
+        // Прямо строка — используем как есть
+        if (is_string($raw) && $raw !== '') {
+            return $raw;
+        }
+
+        // Объект / массив — пробуем вытащить наиболее типичные поля
+        if (is_array($raw)) {
+            foreach (['data', 'image', 'qr', 'payload'] as $key) {
+                if (!empty($raw[$key]) && is_string($raw[$key])) {
+                    return $raw[$key];
+                }
+            }
+        }
+
+        return null;
     }
 
     public function handleWebhook(Request $request): array
