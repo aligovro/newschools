@@ -60,7 +60,7 @@ export default function OrganizationStaffList({
                                     <h4 className="font-medium">
                                         {staffMember.full_name}
                                     </h4>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    <p className="text-sm text-gray-600">
                                         {staffMember.position}
                                     </p>
                                     {staffMember.email && (

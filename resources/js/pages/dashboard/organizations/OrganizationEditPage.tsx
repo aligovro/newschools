@@ -129,10 +129,10 @@ export default function OrganizationEditPage({
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="block__title dark:text-white">
+                            <h1 className="block__title">
                                 Редактировать организацию
                             </h1>
-                            <p className="text-gray-600 dark:text-gray-400">
+                            <p className="text-gray-600">
                                 Изменить данные организации
                             </p>
                         </div>

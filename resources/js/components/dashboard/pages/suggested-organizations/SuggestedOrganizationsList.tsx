@@ -25,7 +25,7 @@ const LoadingState = () => (
         {Array.from({ length: 3 }).map((_, index) => (
             <div
                 key={`suggested-org-skeleton-${index}`}
-                className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+                className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
             >
                 <div className="flex flex-col gap-3">
                     <Skeleton className="h-5 w-56" />
@@ -56,7 +56,7 @@ export const SuggestedOrganizationsList = ({
 
     if (items.length === 0) {
         return (
-            <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
                 Предложенных школ пока нет
             </div>
         );

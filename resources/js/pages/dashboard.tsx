@@ -99,7 +99,7 @@ export default function Dashboard({ mainSiteId }: DashboardProps) {
                     <div className="flex min-h-64 items-center justify-center">
                         <div className="text-center">
                             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
-                            <p className="mt-2 text-gray-600 dark:text-gray-400">
+                            <p className="mt-2 text-gray-600">
                                 Загрузка данных...
                             </p>
                         </div>
@@ -145,10 +145,10 @@ export default function Dashboard({ mainSiteId }: DashboardProps) {
                 {/* Заголовок */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                        <h1 className="text-3xl font-bold text-gray-900">
                             {terminology.dashboard_title}
                         </h1>
-                        <p className="mt-1 text-gray-600 dark:text-gray-400">
+                        <p className="mt-1 text-gray-600">
                             Обзор системы и управление
                         </p>
                     </div>
@@ -264,17 +264,17 @@ export default function Dashboard({ mainSiteId }: DashboardProps) {
                             {getQuickActions(terminology, mainSiteId).map(
                                 (action, index) => (
                                     <Link key={index} href={action.href}>
-                                        <div className="flex items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+                                        <div className="flex items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-gray-50">
                                             <div
                                                 className={`flex h-10 w-10 items-center justify-center rounded-lg ${action.color}`}
                                             >
                                                 <action.icon className="h-5 w-5 text-white" />
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                                <p className="text-sm font-medium text-gray-900">
                                                     {action.title}
                                                 </p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                <p className="text-xs text-gray-500">
                                                     {action.description}
                                                 </p>
                                             </div>
@@ -304,18 +304,18 @@ export default function Dashboard({ mainSiteId }: DashboardProps) {
                                         key={user.id}
                                         className="flex items-center space-x-4"
                                     >
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                                            <span className="text-sm font-medium text-gray-600">
                                                 {user.name
                                                     .charAt(0)
                                                     .toUpperCase()}
                                             </span>
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                            <p className="text-sm font-medium text-gray-900">
                                                 {user.name}
                                             </p>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            <p className="text-sm text-gray-500">
                                                 {user.email}
                                             </p>
                                         </div>
@@ -326,7 +326,7 @@ export default function Dashboard({ mainSiteId }: DashboardProps) {
                                             >
                                                 {user.role}
                                             </Badge>
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                            <span className="text-xs text-gray-500">
                                                 {user.created_at}
                                             </span>
                                         </div>
@@ -364,17 +364,17 @@ export default function Dashboard({ mainSiteId }: DashboardProps) {
                             {stats?.recentOrganizations.map((org) => (
                                 <div
                                     key={org.id}
-                                    className="flex items-center justify-between rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+                                    className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
                                 >
                                     <div className="flex items-center space-x-4">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
-                                            <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+                                            <Building2 className="h-6 w-6 text-blue-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                            <p className="text-sm font-medium text-gray-900">
                                                 {org.name}
                                             </p>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            <p className="text-sm text-gray-500">
                                                 Тип: {org.type}
                                             </p>
                                         </div>
@@ -392,7 +392,7 @@ export default function Dashboard({ mainSiteId }: DashboardProps) {
                                                 ? 'Активна'
                                                 : 'На рассмотрении'}
                                         </Badge>
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        <span className="text-xs text-gray-500">
                                             {org.created_at}
                                         </span>
                                     </div>

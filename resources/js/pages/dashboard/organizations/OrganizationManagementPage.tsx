@@ -146,10 +146,10 @@ export default function OrganizationManagementPage({
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="block__title dark:text-white">
+                        <h1 className="block__title">
                             {terminology.page_title}
                         </h1>
-                        <p className="text-gray-600 dark:text-gray-400">
+                        <p className="text-gray-600">
                             {terminology.page_description}
                         </p>
                     </div>
@@ -235,7 +235,7 @@ export default function OrganizationManagementPage({
                                                 </div>
                                             )}
                                             <div className="min-w-0 flex-1">
-                                                <h3 className="truncate font-semibold text-gray-900 dark:text-white">
+                                                <h3 className="truncate font-semibold text-gray-900">
                                                     {organization.name}
                                                 </h3>
                                                 <p className="text-sm text-gray-500">
@@ -251,7 +251,7 @@ export default function OrganizationManagementPage({
 
                                 <CardContent className="pt-0">
                                     {organization.description && (
-                                        <p className="mb-4 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
+                                        <p className="mb-4 line-clamp-2 text-sm text-gray-600">
                                             {organization.description.replace(
                                                 /<[^>]+>/g,
                                                 '',
@@ -274,7 +274,7 @@ export default function OrganizationManagementPage({
 
                                     <div className="mb-4 grid grid-cols-3 gap-4 text-center">
                                         <div>
-                                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                            <div className="text-lg font-semibold text-gray-900">
                                                 {organization.members_count ||
                                                     0}
                                             </div>
@@ -283,7 +283,7 @@ export default function OrganizationManagementPage({
                                             </div>
                                         </div>
                                         <div>
-                                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                            <div className="text-lg font-semibold text-gray-900">
                                                 {organization.donations_count ||
                                                     0}
                                             </div>
@@ -292,7 +292,7 @@ export default function OrganizationManagementPage({
                                             </div>
                                         </div>
                                         <div>
-                                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                                            <div className="text-lg font-semibold text-gray-900">
                                                 {organization.donations_total
                                                     ? new Intl.NumberFormat(
                                                           'ru-RU',
@@ -350,10 +350,10 @@ export default function OrganizationManagementPage({
                         <CardContent className="p-12">
                             <div className="text-center">
                                 <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-                                <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
+                                <h3 className="mt-4 text-lg font-semibold text-gray-900">
                                     {terminology.no_organizations}
                                 </h3>
-                                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                                <p className="mt-2 text-gray-600">
                                     Попробуйте изменить параметры поиска или
                                     создайте новую организацию
                                 </p>
@@ -373,7 +373,7 @@ export default function OrganizationManagementPage({
                 {/* Pagination */}
                 {organizations.last_page > 1 && (
                     <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                        <div className="text-sm text-gray-700">
                             Показано{' '}
                             {(organizations.current_page - 1) *
                                 organizations.per_page +

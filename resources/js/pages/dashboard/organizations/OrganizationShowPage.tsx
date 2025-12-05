@@ -282,12 +282,12 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                         </Link>
                         <div className="flex flex-col gap-2">
                             <div className="flex flex-wrap items-center gap-3">
-                                <h1 className="block__title dark:text-white">
+                                <h1 className="block__title">
                                     {organization.name}
                                 </h1>
                                 <StatusBadge status={organization.status} />
                             </div>
-                            <p className="text-gray-600 dark:text-gray-400">
+                            <p className="text-gray-600">
                                 {getTypeLabel(organization.type)}
                                 {organization.region?.name &&
                                     ` • ${organization.region.name}`}

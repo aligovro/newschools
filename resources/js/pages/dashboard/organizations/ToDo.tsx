@@ -243,10 +243,10 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="block__title dark:text-white">
+                            <h1 className="block__title">
                                 {organization.name}
                             </h1>
-                            <p className="text-gray-600 dark:text-gray-400">
+                            <p className="text-gray-600">
                                 {getTypeLabel(organization.type)}
                                 {organization.region?.name &&
                                     ` • ${organization.region.name}`}

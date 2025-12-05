@@ -52,9 +52,9 @@ const UserFilters: React.FC<UserFiltersProps> = ({
     const hasActiveFilters = filters.search || filters.role || filters.sort_by;
 
     return (
-        <div className="rounded-lg bg-white p-4 shadow dark:bg-gray-800">
+        <div className="rounded-lg bg-white p-4 shadow">
             <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                <h3 className="text-lg font-medium text-gray-900">
                     Фильтры и поиск
                 </h3>
                 {hasActiveFilters && (
@@ -148,24 +148,24 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             {/* Активные фильтры */}
             {hasActiveFilters && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-sm text-gray-600">
                         Активные фильтры:
                     </span>
 
                     {filters.search && (
-                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">
                             Поиск: "{filters.search}"
                         </span>
                     )}
 
                     {filters.role && (
-                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-200">
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">
                             Роль: {getRoleDisplayName(filters.role)}
                         </span>
                     )}
 
                     {filters.sort_by && (
-                        <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                        <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs text-purple-800">
                             Сортировка:{' '}
                             {getSortDisplayName(
                                 filters.sort_by,

@@ -23,10 +23,10 @@ export default function StatisticsPage() {
                 <div className="flex min-h-64 items-center justify-center">
                     <div className="text-center">
                         <BarChart3 className="mx-auto h-12 w-12 text-gray-400" />
-                        <h2 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">
+                        <h2 className="mt-4 text-xl font-semibold text-gray-900">
                             Статистика
                         </h2>
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">
+                        <p className="mt-2 text-gray-600">
                             Страница находится в разработке
                         </p>
                     </div>

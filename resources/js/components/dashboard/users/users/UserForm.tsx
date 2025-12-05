@@ -584,7 +584,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Основная информация */}
                     <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        <h3 className="text-lg font-medium text-gray-900">
                             Основная информация
                         </h3>
 
@@ -721,8 +721,8 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
 
                     {/* Выбор организации для ролей организации (только для super_admin) - показывается ПЕРЕД ролями */}
                     {showOrganizationSelect && (
-                        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-                            <Label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                            <Label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                                 <Building2 className="h-4 w-4" />
                                 Выберите{' '}
                                 {orgTerm.singular_accusative ||
@@ -730,7 +730,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                                     'организацию'}
                                 <span className="text-red-500">*</span>
                             </Label>
-                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                            <p className="mt-1 text-xs text-gray-600">
                                 Для ролей:{' '}
                                 {formData.roles
                                     .filter((r) =>
@@ -765,7 +765,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                                 />
                             </div>
                             {!formData.organization_id && (
-                                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                <p className="mt-2 text-xs text-red-600">
                                     Необходимо выбрать{' '}
                                     {orgTerm.singular_accusative ||
                                         orgTerm.singular_nominative ||
@@ -773,7 +773,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                                 </p>
                             )}
                             {errors.organization_id && (
-                                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                <p className="mt-2 text-xs text-red-600">
                                     {errors.organization_id}
                                 </p>
                             )}
@@ -784,7 +784,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
                             <Shield className="h-5 w-5" />
-                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                            <h3 className="text-lg font-medium text-gray-900">
                                 Роли пользователя
                             </h3>
                         </div>
@@ -805,7 +805,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
 
                                 return (
                                     <div key={role.id} className="space-y-2">
-                                        <div className="flex items-start space-x-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                        <div className="flex items-start space-x-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
                                             <Checkbox
                                                 checked={isSelected}
                                                 onCheckedChange={(checked) => {
@@ -820,7 +820,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                                             />
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-gray-900 dark:text-white">
+                                                    <span className="font-medium text-gray-900">
                                                         {getRoleDisplayName(
                                                             role.name,
                                                         )}
@@ -832,7 +832,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                                                         {role.name}
                                                     </Badge>
                                                 </div>
-                                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                <p className="mt-1 text-sm text-gray-500">
                                                     {getRoleDescription(
                                                         role.name,
                                                     )}
@@ -847,7 +847,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, roles, onClose }) => {
                         {/* Выбранные роли */}
                         {formData.roles.length > 0 && (
                             <div className="mt-4">
-                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+                                <p className="mb-2 text-sm text-gray-600">
                                     Выбранные роли:
                                 </p>
                                 <div className="flex flex-wrap gap-2">

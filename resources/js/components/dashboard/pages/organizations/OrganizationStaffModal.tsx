@@ -117,8 +117,8 @@ export default function OrganizationStaffModal({
                         {currentDirector &&
                             formData.is_director &&
                             !isEditing && (
-                                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
-                                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                                    <p className="text-sm text-yellow-800">
                                         У данной {singularGenitive} уже есть директор:{' '}
                                         <i>{currentDirector.full_name}</i>
                                     </p>

@@ -3,7 +3,7 @@ import ThemeToggle from './ThemeToggle';
 
 const TailwindTest: React.FC = () => {
     return (
-        <div className="from-primary-500 via-primary-600 to-secondary-600 flex min-h-screen flex-col gap-8 bg-gradient-to-br p-8 text-white dark:from-slate-800 dark:via-slate-900 dark:to-slate-950">
+        <div className="from-primary-500 via-primary-600 to-secondary-600 flex min-h-screen flex-col gap-8 bg-gradient-to-br p-8 text-white">
             {/* Header с переключателем темы */}
             <div className="flex items-center justify-between">
                 <h1 className="bg-gradient-to-r from-white to-blue-200 bg-clip-text text-center text-4xl font-bold text-transparent">

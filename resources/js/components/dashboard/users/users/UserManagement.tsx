@@ -93,10 +93,10 @@ const UserManagement: React.FC<UserManagementProps> = ({
             {/* Заголовок */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="block__title dark:text-white">
+                    <h1 className="block__title">
                         Управление пользователями
                     </h1>
-                    <p className="mt-1 text-gray-600 dark:text-gray-400">
+                    <p className="mt-1 text-gray-600">
                         Создание, редактирование и управление пользователями
                         системы
                     </p>
@@ -112,60 +112,60 @@ const UserManagement: React.FC<UserManagementProps> = ({
 
             {/* Статистика */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                <div className="rounded-lg bg-white p-4 shadow dark:bg-gray-800">
+                <div className="rounded-lg bg-white p-4 shadow">
                     <div className="flex items-center">
                         <Users className="h-8 w-8 text-blue-500" />
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            <p className="text-sm font-medium text-gray-600">
                                 Всего пользователей
                             </p>
-                            <p className="block__title dark:text-white">
+                            <p className="block__title">
                                 {pagination.total || 0}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="rounded-lg bg-white p-4 shadow dark:bg-gray-800">
+                <div className="rounded-lg bg-white p-4 shadow">
                     <div className="flex items-center">
                         <Shield className="h-8 w-8 text-green-500" />
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            <p className="text-sm font-medium text-gray-600">
                                 Ролей
                             </p>
-                            <p className="block__title dark:text-white">
+                            <p className="block__title">
                                 {roles.length || 0}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="rounded-lg bg-white p-4 shadow dark:bg-gray-800">
+                <div className="rounded-lg bg-white p-4 shadow">
                     <div className="flex items-center">
                         <Settings className="h-8 w-8 text-purple-500" />
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            <p className="text-sm font-medium text-gray-600">
                                 Разрешений
                             </p>
-                            <p className="block__title dark:text-white">
+                            <p className="block__title">
                                 {permissions.length || 0}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="rounded-lg bg-white p-4 shadow dark:bg-gray-800">
+                <div className="rounded-lg bg-white p-4 shadow">
                     <div className="flex items-center">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
-                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
+                            <span className="text-sm font-medium text-gray-600">
                                 {pagination.current_page}
                             </span>
                         </div>
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            <p className="text-sm font-medium text-gray-600">
                                 Страница
                             </p>
-                            <p className="block__title dark:text-white">
+                            <p className="block__title">
                                 из {pagination.last_page}
                             </p>
                         </div>

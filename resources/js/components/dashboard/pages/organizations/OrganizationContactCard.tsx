@@ -57,7 +57,7 @@ export default function OrganizationContactCard({
                                 <p className="text-sm font-medium text-gray-500">
                                     Адрес
                                 </p>
-                                <p className="text-sm text-gray-900 dark:text-white">
+                                <p className="text-sm text-gray-900">
                                     {organization.address}
                                 </p>
                             </div>
