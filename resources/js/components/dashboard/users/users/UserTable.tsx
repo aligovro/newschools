@@ -102,10 +102,10 @@ const UserTable: React.FC<UserTableProps> = ({
 
     if (isLoading) {
         return (
-            <div className="rounded-lg bg-white shadow dark:bg-gray-800">
+            <div className="rounded-lg bg-white shadow">
                 <div className="p-8 text-center">
                     <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
-                    <p className="mt-2 text-gray-600 dark:text-gray-400">
+                    <p className="mt-2 text-gray-600">
                         Загрузка пользователей...
                     </p>
                 </div>
@@ -114,7 +114,7 @@ const UserTable: React.FC<UserTableProps> = ({
     }
 
     return (
-        <div className="rounded-lg bg-white shadow dark:bg-gray-800">
+        <div className="rounded-lg bg-white shadow">
             <div className="overflow-x-auto">
                 <Table>
                     <TableHeader>
@@ -147,14 +147,14 @@ const UserTable: React.FC<UserTableProps> = ({
                                                     src={user.photo || undefined}
                                                     alt={user.name}
                                                 />
-                                                <AvatarFallback className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                                                <AvatarFallback className="bg-gray-200 text-gray-600">
                                                     {user.name
                                                         .charAt(0)
                                                         .toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div>
-                                                <div className="font-medium text-gray-900 dark:text-white">
+                                                <div className="font-medium text-gray-900">
                                                     {user.name}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
@@ -164,11 +164,11 @@ const UserTable: React.FC<UserTableProps> = ({
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="text-sm text-gray-900 dark:text-white">
+                                        <div className="text-sm text-gray-900">
                                             {user.email}
                                         </div>
                                         {user.email_verified_at && (
-                                            <div className="text-xs text-green-600 dark:text-green-400">
+                                            <div className="text-xs text-green-600">
                                                 ✓ Подтвержден
                                             </div>
                                         )}
@@ -191,7 +191,7 @@ const UserTable: React.FC<UserTableProps> = ({
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="text-sm text-gray-900 dark:text-white">
+                                        <div className="text-sm text-gray-900">
                                             {formatDate(user.created_at)}
                                         </div>
                                     </TableCell>
@@ -231,7 +231,7 @@ const UserTable: React.FC<UserTableProps> = ({
                                                     onClick={() =>
                                                         handleDelete(user.id)
                                                     }
-                                                    className="text-red-600 dark:text-red-400"
+                                                    className="text-red-600"
                                                 >
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Удалить
@@ -248,9 +248,9 @@ const UserTable: React.FC<UserTableProps> = ({
 
             {/* Пагинация */}
             {pagination.last_page > 1 && (
-                <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+                <div className="border-t border-gray-200 px-6 py-4">
                     <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                        <div className="text-sm text-gray-700">
                             Показано{' '}
                             {(pagination.current_page - 1) *
                                 pagination.per_page +
@@ -269,7 +269,7 @@ const UserTable: React.FC<UserTableProps> = ({
                                 onChange={(e) =>
                                     onPerPageChange(Number(e.target.value))
                                 }
-                                className="rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700"
+                                className="rounded border border-gray-300 bg-white px-2 py-1 text-sm"
                             >
                                 <option value={10}>10</option>
                                 <option value={15}>15</option>
@@ -291,7 +291,7 @@ const UserTable: React.FC<UserTableProps> = ({
                                     Назад
                                 </Button>
 
-                                <span className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+                                <span className="px-3 py-1 text-sm text-gray-700">
                                     {pagination.current_page} из{' '}
                                     {pagination.last_page}
                                 </span>

@@ -222,10 +222,10 @@ export default function SettingsPage({
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                        <h1 className="text-3xl font-bold text-gray-900">
                             Настройки системы
                         </h1>
-                        <p className="mt-1 text-gray-600 dark:text-gray-400">
+                        <p className="mt-1 text-gray-600">
                             Управление всеми настройками платформы поддержки
                             школ
                         </p>
@@ -345,46 +345,46 @@ export default function SettingsPage({
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                            <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
+                            <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3">
                                 <div className="h-2 w-2 rounded-full bg-green-500" />
                                 <div>
-                                    <div className="font-medium text-green-900 dark:text-green-100">
+                                    <div className="font-medium text-green-900">
                                         Глобальные настройки
                                     </div>
-                                    <div className="text-sm text-green-600 dark:text-green-300">
+                                    <div className="text-sm text-green-600">
                                         Активны
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
+                            <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3">
                                 <div className="h-2 w-2 rounded-full bg-green-500" />
                                 <div>
-                                    <div className="font-medium text-green-900 dark:text-green-100">
+                                    <div className="font-medium text-green-900">
                                         Главный сайт
                                     </div>
-                                    <div className="text-sm text-green-600 dark:text-green-300">
+                                    <div className="text-sm text-green-600">
                                         Настроен
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
+                            <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3">
                                 <div className="h-2 w-2 rounded-full bg-green-500" />
                                 <div>
-                                    <div className="font-medium text-green-900 dark:text-green-100">
+                                    <div className="font-medium text-green-900">
                                         Платежи
                                     </div>
-                                    <div className="text-sm text-green-600 dark:text-green-300">
+                                    <div className="text-sm text-green-600">
                                         Работают
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
+                            <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3">
                                 <div className="h-2 w-2 rounded-full bg-green-500" />
                                 <div>
-                                    <div className="font-medium text-green-900 dark:text-green-100">
+                                    <div className="font-medium text-green-900">
                                         Уведомления
                                     </div>
-                                    <div className="text-sm text-green-600 dark:text-green-300">
+                                    <div className="text-sm text-green-600">
                                         Активны
                                     </div>
                                 </div>

@@ -52,7 +52,7 @@ export default function OrganizationInfoCard({
                             Описание
                         </p>
                         <div
-                            className="text-sm text-gray-900 dark:text-white prose prose-sm max-w-none"
+                            className="text-sm text-gray-900 prose prose-sm max-w-none"
                             // HTML в описании организации задается администраторами,
                             // поэтому мы считаем этот контент доверенным.
                             dangerouslySetInnerHTML={{
@@ -64,19 +64,19 @@ export default function OrganizationInfoCard({
 
                 <div className="grid grid-cols-3 gap-4 border-t pt-4">
                     <div className="text-center">
-                        <div className="block__title dark:text-white">
+                        <div className="block__title">
                             {organization.members_count || 0}
                         </div>
                         <div className="text-sm text-gray-500">Участники</div>
                     </div>
                     <div className="text-center">
-                        <div className="block__title dark:text-white">
+                        <div className="block__title">
                             {organization.donations_count || 0}
                         </div>
                         <div className="text-sm text-gray-500">Донаты</div>
                     </div>
                     <div className="text-center">
-                        <div className="block__title dark:text-white">
+                        <div className="block__title">
                             {organization.donations_total &&
                             typeof organization.donations_total === 'number'
                                 ? new Intl.NumberFormat('ru-RU').format(

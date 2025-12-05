@@ -30,7 +30,7 @@ export const PaginationControls = ({
     const hasNext = meta.currentPage < meta.lastPage;
 
     return (
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-4 text-sm text-gray-600 dark:border-gray-800 dark:text-gray-400 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-4 text-sm text-gray-600 md:flex-row">
             <div>{getRangeLabel(meta)}</div>
             <div className="flex gap-2">
                 <Button

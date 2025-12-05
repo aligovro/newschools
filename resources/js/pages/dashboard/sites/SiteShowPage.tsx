@@ -60,10 +60,10 @@ export default function SiteShowPage({ site }: SiteShowPageProps) {
                             </Link>
                         </Button>
                         <div>
-                            <h1 className="block__title dark:text-white">
+                            <h1 className="block__title">
                                 {site.domain}
                             </h1>
-                            <p className="text-gray-600 dark:text-gray-400">
+                            <p className="text-gray-600">
                                 {site.organization.name}
                             </p>
                         </div>
@@ -95,35 +95,35 @@ export default function SiteShowPage({ site }: SiteShowPageProps) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
-                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                <label className="text-sm font-medium text-gray-600">
                                     Домен
                                 </label>
-                                <p className="text-sm text-gray-900 dark:text-white">
+                                <p className="text-sm text-gray-900">
                                     {site.domain}
                                 </p>
                             </div>
                             {site.custom_domain && (
                                 <div>
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                    <label className="text-sm font-medium text-gray-600">
                                         Кастомный домен
                                     </label>
-                                    <p className="text-sm text-gray-900 dark:text-white">
+                                    <p className="text-sm text-gray-900">
                                         {site.custom_domain}
                                     </p>
                                 </div>
                             )}
                             {site.subdomain && (
                                 <div>
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                    <label className="text-sm font-medium text-gray-600">
                                         Поддомен
                                     </label>
-                                    <p className="text-sm text-gray-900 dark:text-white">
+                                    <p className="text-sm text-gray-900">
                                         {site.subdomain}
                                     </p>
                                 </div>
                             )}
                             <div>
-                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                <label className="text-sm font-medium text-gray-600">
                                     Статус
                                 </label>
                                 <div className="mt-1">
@@ -153,7 +153,7 @@ export default function SiteShowPage({ site }: SiteShowPageProps) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
-                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                <label className="text-sm font-medium text-gray-600">
                                     SSL сертификат
                                 </label>
                                 <div className="mt-1">
@@ -172,10 +172,10 @@ export default function SiteShowPage({ site }: SiteShowPageProps) {
                             </div>
                             {site.verified_at && (
                                 <div>
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                    <label className="text-sm font-medium text-gray-600">
                                         Проверен
                                     </label>
-                                    <p className="text-sm text-gray-900 dark:text-white">
+                                    <p className="text-sm text-gray-900">
                                         {new Date(
                                             site.verified_at,
                                         ).toLocaleDateString('ru-RU')}
@@ -184,10 +184,10 @@ export default function SiteShowPage({ site }: SiteShowPageProps) {
                             )}
                             {site.expires_at && (
                                 <div>
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                    <label className="text-sm font-medium text-gray-600">
                                         Истекает
                                     </label>
-                                    <p className="text-sm text-gray-900 dark:text-white">
+                                    <p className="text-sm text-gray-900">
                                         {new Date(
                                             site.expires_at,
                                         ).toLocaleDateString('ru-RU')}
@@ -204,7 +204,7 @@ export default function SiteShowPage({ site }: SiteShowPageProps) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
-                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                <label className="text-sm font-medium text-gray-600">
                                     Основной домен
                                 </label>
                                 <div className="mt-1">
@@ -221,10 +221,10 @@ export default function SiteShowPage({ site }: SiteShowPageProps) {
                             </div>
                             {site.ssl_config && (
                                 <div>
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                    <label className="text-sm font-medium text-gray-600">
                                         SSL конфигурация
                                     </label>
-                                    <pre className="mt-1 rounded bg-gray-100 p-2 text-xs dark:bg-gray-800">
+                                    <pre className="mt-1 rounded bg-gray-100 p-2 text-xs">
                                         {JSON.stringify(
                                             site.ssl_config,
                                             null,
@@ -247,7 +247,7 @@ export default function SiteShowPage({ site }: SiteShowPageProps) {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <pre className="rounded bg-gray-100 p-4 text-sm dark:bg-gray-800">
+                            <pre className="rounded bg-gray-100 p-4 text-sm">
                                 {JSON.stringify(site.dns_records, null, 2)}
                             </pre>
                         </CardContent>

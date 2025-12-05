@@ -329,10 +329,10 @@ export default function SuggestedOrganizationsPage({
             <Head title="Предложенные школы" />
             <div className="flex flex-1 flex-col gap-6 p-6">
                 <div>
-                    <h1 className="block__title dark:text-white">
+                    <h1 className="block__title">
                         Предложенные школы
                     </h1>
-                    <p className="mt-1 text-gray-600 dark:text-gray-400">
+                    <p className="mt-1 text-gray-600">
                         Управляйте школами, предложенными через публичный
                         виджет. Одобряйте, отклоняйте и оставляйте заметки для
                         команды.

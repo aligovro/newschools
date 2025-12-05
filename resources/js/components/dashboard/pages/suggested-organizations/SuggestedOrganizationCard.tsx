@@ -61,17 +61,17 @@ const SuggestedOrganizationCardComponent = ({
     }, [organization.created_at]);
 
     return (
-        <Card className="border border-gray-200 shadow-sm transition hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700">
+        <Card className="border border-gray-200 shadow-sm transition hover:border-gray-300">
             <CardContent className="p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
                                 <Building2 className="h-5 w-5" />
                             </div>
                             <div>
                                 <div className="flex flex-wrap items-center gap-3">
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                    <h3 className="text-lg font-semibold text-gray-900">
                                         {organization.name}
                                     </h3>
                                     <StatusBadge status={organization.status} />
@@ -82,7 +82,7 @@ const SuggestedOrganizationCardComponent = ({
                             </div>
                         </div>
 
-                        <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="space-y-1 text-sm text-gray-600">
                             {organization.city_name && (
                                 <div className="flex items-center gap-2">
                                     <MapPin className="h-4 w-4 text-gray-400" />
@@ -90,21 +90,21 @@ const SuggestedOrganizationCardComponent = ({
                                 </div>
                             )}
                             {organization.address && (
-                                <div className="pl-6 text-gray-500 dark:text-gray-400">
+                                <div className="pl-6 text-gray-500">
                                     {organization.address}
                                 </div>
                             )}
                             {coordinates && (
-                                <div className="pl-6 text-xs text-gray-500 dark:text-gray-400">
+                                <div className="pl-6 text-xs text-gray-500">
                                     Координаты: {coordinates}
                                 </div>
                             )}
                         </div>
 
-                        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="space-y-2 text-sm text-gray-600">
                             {organization.admin_notes && (
-                                <div className="rounded-md bg-gray-100 p-3 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                <div className="rounded-md bg-gray-100 p-3 text-gray-700">
+                                    <p className="text-xs uppercase tracking-wide text-gray-500">
                                         Заметки администратора
                                     </p>
                                     <p className="mt-1 whitespace-pre-line">
@@ -113,7 +113,7 @@ const SuggestedOrganizationCardComponent = ({
                                 </div>
                             )}
                             {organization.reviewer && (
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                <div className="text-xs text-gray-500">
                                     Рассмотрено: {organization.reviewer.name}{' '}
                                     {organization.reviewed_at
                                         ? `(${new Date(
@@ -142,7 +142,7 @@ const SuggestedOrganizationCardComponent = ({
                                 variant="outline"
                                 className={cn(
                                     'flex items-center gap-2',
-                                    'text-green-600 hover:text-green-700 dark:text-green-400',
+                                    'text-green-600 hover:text-green-700',
                                 )}
                                 disabled={
                                     disableActions ||
@@ -160,7 +160,7 @@ const SuggestedOrganizationCardComponent = ({
                                 variant="outline"
                                 className={cn(
                                     'flex items-center gap-2',
-                                    'text-red-600 hover:text-red-700 dark:text-red-400',
+                                    'text-red-600 hover:text-red-700',
                                 )}
                                 disabled={
                                     disableActions ||

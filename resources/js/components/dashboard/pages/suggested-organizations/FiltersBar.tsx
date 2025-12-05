@@ -69,7 +69,7 @@ export const FiltersBar = ({
     );
 
     return (
-        <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
             <div className="flex w-full flex-col gap-4 md:flex-row md:items-center md:gap-3">
                 <div className="relative flex-1 md:max-w-sm">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

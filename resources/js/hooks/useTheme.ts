@@ -21,40 +21,10 @@ export const useTheme = () => {
 
     useEffect(() => {
         const root = document.documentElement;
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-        const applyTheme = () => {
-            if (theme === 'system') {
-                // Для системной темы используем медиа-запрос
-                if (mediaQuery.matches) {
-                    root.classList.add('dark');
-                    setResolvedTheme('dark');
-                } else {
-                    root.classList.remove('dark');
-                    setResolvedTheme('light');
-                }
-            } else if (theme === 'dark') {
-                // Принудительно темная тема
-                root.classList.add('dark');
-                setResolvedTheme('dark');
-            } else {
-                // Принудительно светлая тема
-                root.classList.remove('dark');
-                setResolvedTheme('light');
-            }
-        };
-
-        applyTheme();
-
-        // Слушаем изменения системной темы только для системной темы
-        const handleChange = () => {
-            if (theme === 'system') {
-                applyTheme();
-            }
-        };
-
-        mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
+        
+        // Всегда используем светлую тему, игнорируем системные настройки
+        root.classList.remove('dark');
+        setResolvedTheme('light');
     }, [theme]);
 
     const setThemeAndSave = (newTheme: Theme) => {

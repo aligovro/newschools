@@ -41,7 +41,7 @@ export default function OrganizationDirectorCard({
                     )}
                     <div className="flex-1">
                         <h3 className="text-lg font-semibold">{fullName}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-gray-600">
                             {director.position || 'Директор'}
                         </p>
                         {director.email && (
@@ -55,7 +55,7 @@ export default function OrganizationDirectorCard({
                             </p>
                         )}
                         {director.address && (
-                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            <p className="mt-1 text-sm text-gray-600">
                                 {director.address}
                             </p>
                         )}
