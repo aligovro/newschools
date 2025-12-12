@@ -16,6 +16,8 @@ class YooKassaPartnerClient
   protected string $clientId;
   protected string $secretKey;
   protected ?string $accountId;
+  protected ?string $accessToken;
+  protected bool $useOAuth;
 
   public function __construct(HttpFactory $http, array $config)
   {
@@ -24,8 +26,10 @@ class YooKassaPartnerClient
     $this->clientId = $config['client_id'] ?? '';
     $this->secretKey = $config['secret_key'] ?? '';
     $this->accountId = $config['account_id'] ?? null;
+    $this->accessToken = $config['access_token'] ?? null;
+    $this->useOAuth = !empty($this->accessToken);
 
-    if (!$this->clientId || !$this->secretKey) {
+    if (!$this->useOAuth && (!$this->clientId || !$this->secretKey)) {
       throw new RuntimeException('YooKassa partner credentials are not configured');
     }
   }
@@ -53,6 +57,38 @@ class YooKassaPartnerClient
   public function confirmPayout(string $payoutId, array $payload = []): array
   {
     return $this->request('POST', "/v3/payouts/{$payoutId}/confirm", $payload);
+  }
+
+  /**
+   * Создает платеж через Partner API
+   */
+  public function createPayment(array $payload): array
+  {
+    return $this->request('POST', '/v3/payments', $payload);
+  }
+
+  /**
+   * Получает информацию о платеже
+   */
+  public function getPayment(string $paymentId): array
+  {
+    return $this->request('GET', "/v3/payments/{$paymentId}");
+  }
+
+  /**
+   * Отменяет платеж
+   */
+  public function cancelPayment(string $paymentId): array
+  {
+    return $this->request('POST', "/v3/payments/{$paymentId}/cancel");
+  }
+
+  /**
+   * Создает возврат платежа
+   */
+  public function createRefund(string $paymentId, array $payload): array
+  {
+    return $this->request('POST', '/v3/refunds', $payload);
   }
 
   /**
@@ -88,12 +124,23 @@ class YooKassaPartnerClient
   {
     $url = $this->baseUrl . $uri;
 
-    $request = $this->http->withHeaders([
+    $headers = [
       'Content-Type' => 'application/json',
       'Accept' => 'application/json',
       'Idempotence-Key' => Arr::get($payload, 'idempotence_key', uniqid('ykp_', true)),
-    ])->withBasicAuth($this->clientId, $this->secretKey);
+    ];
 
+    // Если используется OAuth токен, используем Bearer авторизацию
+    if ($this->useOAuth && $this->accessToken) {
+      $request = $this->http->withHeaders($headers)
+        ->withToken($this->accessToken);
+    } else {
+      // Иначе используем Basic Auth
+      $request = $this->http->withHeaders($headers)
+        ->withBasicAuth($this->clientId, $this->secretKey);
+    }
+
+    // Добавляем account_id в заголовок для Partner API
     if ($this->accountId) {
       $request = $request->withHeaders(['X-Account-Id' => $this->accountId]);
     }
@@ -109,6 +156,7 @@ class YooKassaPartnerClient
         'query' => $query,
         'response' => $response->json(),
         'status' => $response->status(),
+        'use_oauth' => $this->useOAuth,
       ]);
 
       throw new RuntimeException('YooKassa partner API error: ' . $response->body());

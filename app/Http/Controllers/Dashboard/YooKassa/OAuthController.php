@@ -117,6 +117,33 @@ class OAuthController extends Controller
         $merchant = $this->merchantService->createDraft($organization);
       }
 
+      // Пытаемся получить account_id из токена или из информации о мерчанте
+      $accountId = $tokenResponse['account_id'] ?? $merchant->external_id ?? null;
+
+      // Если account_id не найден, пытаемся получить его из информации о мерчанте
+      if (!$accountId && $merchant->external_id) {
+        try {
+          // Создаем временный клиент с токеном для получения информации о мерчанте
+          $tempClient = app(\App\Services\Payments\YooKassa\YooKassaPartnerClientFactory::class)
+            ->forSettings([
+              'client_id' => config('services.yookassa_partner.client_id'),
+              'secret_key' => config('services.yookassa_partner.secret_key'),
+              'base_url' => config('services.yookassa_partner.base_url'),
+              'access_token' => $tokenResponse['access_token'] ?? null,
+            ]);
+
+          if ($merchant->external_id) {
+            $merchantInfo = $tempClient->getMerchant($merchant->external_id);
+            $accountId = $merchantInfo['id'] ?? $accountId;
+          }
+        } catch (\Exception $e) {
+          Log::warning('Failed to get merchant info for account_id', [
+            'merchant_id' => $merchant->external_id,
+            'error' => $e->getMessage(),
+          ]);
+        }
+      }
+
       $merchant->update([
         'status' => YooKassaPartnerMerchant::STATUS_ACTIVE,
         'credentials' => array_merge($merchant->credentials ?? [], [
@@ -128,6 +155,7 @@ class OAuthController extends Controller
             ? now()->addSeconds($tokenResponse['expires_in'])
             : null,
           'oauth_authorized_at' => now()->toIso8601String(),
+          'account_id' => $accountId,
         ]),
         'settings' => array_merge($merchant->settings ?? [], [
           'oauth_authorized' => true,
