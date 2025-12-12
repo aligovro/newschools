@@ -40,11 +40,16 @@ class YooKassaPartnerClientFactory
       $credentials = Arr::get($globalSettings, 'credentials.yookassa_partner');
     }
 
+    // Если есть OAuth токен, используем его
+    $accessToken = Arr::get($credentials, 'access_token');
+    $accountId = Arr::get($credentials, 'account_id') ?? $merchant?->external_id;
+
     return [
       'base_url' => Arr::get($credentials, 'base_url', config('services.yookassa_partner.base_url', 'https://api.yookassa.ru')),
       'client_id' => Arr::get($credentials, 'client_id', config('services.yookassa_partner.client_id')),
       'secret_key' => Arr::get($credentials, 'secret_key', config('services.yookassa_partner.secret_key')),
-      'account_id' => Arr::get($credentials, 'account_id'),
+      'access_token' => $accessToken,
+      'account_id' => $accountId,
     ];
   }
 }
