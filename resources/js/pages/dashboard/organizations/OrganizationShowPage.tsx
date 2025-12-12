@@ -9,6 +9,7 @@ import {
     getTypeLabel,
     useOrganizationTerms,
 } from '@/components/dashboard/pages/organizations/utils';
+import YooKassaOAuthBlock from '@/components/dashboard/pages/organizations/YooKassaOAuthBlock';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useOrganizationStaff } from '@/hooks/useOrganizationStaff';
@@ -386,6 +387,9 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                     {/* Контактная информация и персонал */}
                     <div className="space-y-6">
                         <OrganizationContactCard organization={organization} />
+
+                        {/* YooKassa OAuth блок */}
+                        <YooKassaOAuthBlock organizationId={organization.id} />
 
                         {/* Директор */}
                         {organization.director && organization.director.id && (

@@ -12,8 +12,20 @@ export interface YooKassaMerchant {
     contract_id?: string | null;
     payout_account_id?: string | null;
     payout_status?: string | null;
-    credentials?: Record<string, unknown> | null;
-    settings?: Record<string, unknown> | null;
+    credentials?: {
+        access_token?: string | null;
+        refresh_token?: string | null;
+        expires_in?: number | null;
+        token_type?: string | null;
+        expires_at?: string | null;
+        oauth_authorized_at?: string | null;
+        [key: string]: unknown;
+    } | null;
+    settings?: {
+        oauth_authorized?: boolean;
+        oauth_authorized_at?: string | null;
+        [key: string]: unknown;
+    } | null;
     documents?: Record<string, unknown> | null;
     activated_at?: string | null;
     last_synced_at?: string | null;
@@ -159,7 +171,20 @@ export const yookassaApi = {
         );
         return response.data as { data: YooKassaSettingsPayload };
     },
+
+    async getAuthorizationUrl(organizationId: number) {
+        const response = await apiClient.get(
+            `/dashboard/yookassa/oauth/authorize/${organizationId}`,
+        );
+        return response.data as { authorization_url: string };
+    },
+
+    async getMerchantByOrganization(organizationId: number) {
+        const response = await apiClient.get(
+            `/dashboard/yookassa/organizations/${organizationId}/merchant`,
+        );
+        return response.data as { data: YooKassaMerchant | null };
+    },
 };
 
 export default yookassaApi;
-
