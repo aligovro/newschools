@@ -91,6 +91,7 @@ const MerchantsPage: React.FC = () => {
         Record<number, MerchantStats>
     >({});
     const [loadingStats, setLoadingStats] = useState<Set<number>>(new Set());
+    const [isSyncingAuthorized, setIsSyncingAuthorized] = useState(false);
 
     const loadMerchants = useCallback(
         async (pageNumber = 1, status = statusFilter) => {
@@ -179,6 +180,31 @@ const MerchantsPage: React.FC = () => {
         }).format(amount / 100);
     };
 
+    const handleSyncAuthorized = async () => {
+        try {
+            setIsSyncingAuthorized(true);
+            setError(null);
+            const response = await yookassaApi.syncAuthorizedMerchants();
+            toast.success(
+                response.message ||
+                    `Синхронизировано ${response.data.synced_count} магазинов`,
+            );
+            await loadMerchants(page, statusFilter);
+
+            if (response.data.errors_count > 0) {
+                toast.warning(
+                    `Ошибок при синхронизации: ${response.data.errors_count}`,
+                );
+            }
+        } catch (err) {
+            console.error(err);
+            setError('Не удалось синхронизировать магазины');
+            toast.error('Не удалось синхронизировать магазины из YooKassa');
+        } finally {
+            setIsSyncingAuthorized(false);
+        }
+    };
+
     const totalMerchants = merchants.meta.total ?? merchants.data.length;
 
     const subtitle = useMemo(() => {
@@ -200,6 +226,19 @@ const MerchantsPage: React.FC = () => {
                         </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={handleSyncAuthorized}
+                            disabled={isSyncingAuthorized}
+                        >
+                            <RefreshCw
+                                className={`mr-2 h-4 w-4 ${isSyncingAuthorized ? 'animate-spin' : ''}`}
+                            />
+                            {isSyncingAuthorized
+                                ? 'Синхронизация...'
+                                : 'Синхронизировать из YooKassa'}
+                        </Button>
                         {STATUS_OPTIONS.map((option) => (
                             <Button
                                 key={option.value}

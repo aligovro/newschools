@@ -53,6 +53,12 @@ Route::middleware(['web', 'auth', 'verified'])
 
     // Статистика мерчанта
     Route::get('/merchants/{merchant}/stats', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'getStats']);
+
+    // Синхронизация авторизованных магазинов из YooKassa
+    Route::post('/merchants/sync-authorized', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'syncAuthorizedMerchants']);
+
+    // Привязка мерчанта к организации
+    Route::post('/merchants/{merchant}/attach/{organization}', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'attachToOrganization']);
   });
 
 // Получение текущего пользователя для API

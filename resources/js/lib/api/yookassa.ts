@@ -216,6 +216,31 @@ export const yookassaApi = {
             };
         };
     },
+
+    async syncAuthorizedMerchants() {
+        const response = await apiClient.post(
+            '/dashboard/yookassa/merchants/sync-authorized',
+        );
+        return response.data as {
+            data: {
+                synced: Array<{
+                    merchant_id: number;
+                    external_id: string;
+                    action: 'created' | 'updated';
+                    organization_id: number | null;
+                    note?: string;
+                }>;
+                errors: Array<{
+                    external_id: string;
+                    error: string;
+                }>;
+                total: number;
+                synced_count: number;
+                errors_count: number;
+            };
+            message: string;
+        };
+    },
 };
 
 export default yookassaApi;
