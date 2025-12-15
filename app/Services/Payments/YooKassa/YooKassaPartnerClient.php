@@ -44,6 +44,18 @@ class YooKassaPartnerClient
     return $this->request('GET', "/v3/merchants/{$merchantId}");
   }
 
+  /**
+   * Получает информацию о текущем мерчанте через OAuth токен
+   * Использует endpoint /v3/me
+   */
+  public function getMe(): array
+  {
+    if (!$this->useOAuth || !$this->accessToken) {
+      throw new RuntimeException('OAuth token is required for /me endpoint');
+    }
+    return $this->request('GET', '/v3/me');
+  }
+
   public function listPayments(array $query = []): array
   {
     return $this->request('GET', '/v3/payments', [], $query);

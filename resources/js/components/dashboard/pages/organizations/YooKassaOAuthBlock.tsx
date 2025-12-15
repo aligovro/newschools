@@ -24,7 +24,6 @@ import {
     CheckCircle2,
     Copy,
     ExternalLink,
-    Link as LinkIcon,
     Loader2,
     Shield,
 } from 'lucide-react';
@@ -45,9 +44,11 @@ export default function YooKassaOAuthBlock({
     const [isCopied, setIsCopied] = useState(false);
     const [merchant, setMerchant] = useState<YooKassaMerchant | null>(null);
     const [isLoadingMerchant, setIsLoadingMerchant] = useState(true);
-    const [isAttachDialogOpen, setIsAttachDialogOpen] = useState(false);
-    const [externalId, setExternalId] = useState('');
-    const [isAttaching, setIsAttaching] = useState(false);
+    const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
+    const [oauthToken, setOAuthToken] = useState('');
+    const [oauthRefreshToken, setOAuthRefreshToken] = useState('');
+    const [oauthExpiresIn, setOAuthExpiresIn] = useState('');
+    const [isSavingToken, setIsSavingToken] = useState(false);
 
     useEffect(() => {
         loadMerchantStatus();
@@ -96,44 +97,39 @@ export default function YooKassaOAuthBlock({
         toast.success('Статус обновлен');
     };
 
-    const handleRestoreMerchant = async () => {
-        setIsLoading(true);
-        try {
-            await yookassaApi.restoreMerchantFromOAuth(organizationId);
-            await loadMerchantStatus();
-            toast.success('Мерчант успешно восстановлен');
-        } catch (error) {
-            console.error('Failed to restore merchant:', error);
-            toast.error('Не удалось восстановить мерчант');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleAttachByExternalId = async () => {
-        if (!externalId.trim()) {
-            toast.error('Введите ID магазина');
+    const handleSaveOAuthToken = async () => {
+        if (!oauthToken.trim()) {
+            toast.error('Введите OAuth токен');
             return;
         }
 
-        setIsAttaching(true);
+        setIsSavingToken(true);
         try {
-            await yookassaApi.attachMerchantByExternalId(
-                organizationId,
-                externalId.trim(),
-            );
+            await yookassaApi.saveOAuthToken(organizationId, {
+                access_token: oauthToken.trim(),
+                refresh_token: oauthRefreshToken.trim() || undefined,
+                expires_in: oauthExpiresIn
+                    ? parseInt(oauthExpiresIn, 10)
+                    : undefined,
+                external_id: merchant?.external_id || undefined,
+            });
             await loadMerchantStatus();
-            setIsAttachDialogOpen(false);
-            setExternalId('');
-            toast.success('Магазин успешно привязан к организации');
+            setIsTokenDialogOpen(false);
+            setOAuthToken('');
+            setOAuthRefreshToken('');
+            setOAuthExpiresIn('');
+            toast.success(
+                'OAuth токен успешно сохранен. Магазин готов к работе с API.',
+            );
         } catch (error: unknown) {
-            console.error('Failed to attach merchant:', error);
+            console.error('Failed to save OAuth token:', error);
             const errorMessage =
                 (error as { response?: { data?: { error?: string } } })
-                    ?.response?.data?.error || 'Не удалось привязать магазин';
+                    ?.response?.data?.error ||
+                'Не удалось сохранить OAuth токен';
             toast.error(errorMessage);
         } finally {
-            setIsAttaching(false);
+            setIsSavingToken(false);
         }
     };
 
@@ -281,89 +277,133 @@ export default function YooKassaOAuthBlock({
                             авторизовали приложение в YooKassa, вы можете
                             привязать магазин по его ID.
                         </p>
-                        <div className="flex gap-2">
-                            <Dialog
-                                open={isAttachDialogOpen}
-                                onOpenChange={setIsAttachDialogOpen}
-                            >
-                                <DialogTrigger asChild>
-                                    <Button
-                                        variant="default"
-                                        className="flex-1"
-                                        size="sm"
-                                    >
-                                        <LinkIcon className="mr-2 h-4 w-4" />
-                                        Привязать магазин по ID
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>
-                                            Привязать магазин YooKassa
-                                        </DialogTitle>
-                                        <DialogDescription>
-                                            Введите ID магазина (merchant_id) из
-                                            личного кабинета YooKassa. ID можно
-                                            найти в настройках магазина в
-                                            разделе «Интеграция».
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="external-id">
-                                                ID магазина (merchant_id)
-                                            </Label>
-                                            <Input
-                                                id="external-id"
-                                                placeholder="Например: 12345678"
-                                                value={externalId}
-                                                onChange={(e) =>
-                                                    setExternalId(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                disabled={isAttaching}
-                                            />
-                                            <p className="text-xs text-muted-foreground">
-                                                ID магазина можно найти в личном
-                                                кабинете YooKassa в разделе
-                                                «Настройки» → «Интеграция»
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => {
-                                                setIsAttachDialogOpen(false);
-                                                setExternalId('');
-                                            }}
-                                            disabled={isAttaching}
-                                        >
-                                            Отмена
-                                        </Button>
-                                        <Button
-                                            onClick={handleAttachByExternalId}
-                                            disabled={
-                                                isAttaching ||
-                                                !externalId.trim()
+                        <Dialog
+                            open={isTokenDialogOpen}
+                            onOpenChange={setIsTokenDialogOpen}
+                        >
+                            <DialogTrigger asChild>
+                                <Button variant="default" className="w-full">
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    Ввести OAuth токен
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>
+                                        Ввести OAuth токен для привязки магазина
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        Введите OAuth токен, полученный при
+                                        авторизации магазина в YooKassa. Shop ID
+                                        будет автоматически получен из токена.
+                                        <br />
+                                        <br />
+                                        <strong>Где найти OAuth токен:</strong>
+                                        <br />
+                                        • После успешной OAuth авторизации токен
+                                        возвращается в ответе callback
+                                        <br />• Или создайте новую ссылку для
+                                        авторизации и пройдите процесс заново
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="oauth-token">
+                                            Access Token (обязательно)
+                                        </Label>
+                                        <Input
+                                            id="oauth-token"
+                                            type="password"
+                                            placeholder="Введите access_token"
+                                            value={oauthToken}
+                                            onChange={(e) =>
+                                                setOAuthToken(e.target.value)
                                             }
-                                        >
-                                            {isAttaching ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Привязка...
-                                                </>
-                                            ) : (
-                                                'Привязать'
-                                            )}
-                                        </Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
+                                            disabled={isSavingToken}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="oauth-refresh-token">
+                                            Refresh Token (необязательно)
+                                        </Label>
+                                        <Input
+                                            id="oauth-refresh-token"
+                                            type="password"
+                                            placeholder="Введите refresh_token"
+                                            value={oauthRefreshToken}
+                                            onChange={(e) =>
+                                                setOAuthRefreshToken(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            disabled={isSavingToken}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="oauth-expires-in">
+                                            Срок действия (секунды,
+                                            необязательно)
+                                        </Label>
+                                        <Input
+                                            id="oauth-expires-in"
+                                            type="number"
+                                            placeholder="Например: 157680000"
+                                            value={oauthExpiresIn}
+                                            onChange={(e) =>
+                                                setOAuthExpiresIn(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            disabled={isSavingToken}
+                                        />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            setIsTokenDialogOpen(false);
+                                            setOAuthToken('');
+                                            setOAuthRefreshToken('');
+                                            setOAuthExpiresIn('');
+                                        }}
+                                        disabled={isSavingToken}
+                                    >
+                                        Отмена
+                                    </Button>
+                                    <Button
+                                        onClick={handleSaveOAuthToken}
+                                        disabled={
+                                            isSavingToken || !oauthToken.trim()
+                                        }
+                                    >
+                                        {isSavingToken ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Сохранение...
+                                            </>
+                                        ) : (
+                                            'Сохранить токен'
+                                        )}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                )}
+                {merchant && !isAuthorized && merchant.external_id && (
+                    <div className="space-y-3 rounded-md border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-950">
+                        <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                            Магазин привязан, но требуется OAuth авторизация
+                        </p>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                            Для работы с API необходимо пройти OAuth авторизацию
+                            или ввести OAuth токен вручную.
+                        </p>
+                        <div className="flex gap-2">
                             <Button
-                                onClick={handleRestoreMerchant}
-                                variant="outline"
+                                onClick={handleGenerateLink}
+                                variant="default"
                                 className="flex-1"
                                 size="sm"
                                 disabled={isLoading}
@@ -371,15 +411,122 @@ export default function YooKassaOAuthBlock({
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Восстановление...
+                                        Создание...
                                     </>
                                 ) : (
                                     <>
                                         <Shield className="mr-2 h-4 w-4" />
-                                        Восстановить
+                                        Создать ссылку OAuth
                                     </>
                                 )}
                             </Button>
+                            <Dialog
+                                open={isTokenDialogOpen}
+                                onOpenChange={setIsTokenDialogOpen}
+                            >
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                        Ввести токен
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            Ввести OAuth токен вручную
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                            Если у вас есть OAuth токен,
+                                            полученный при авторизации магазина,
+                                            введите его здесь. Shop ID будет
+                                            автоматически получен из токена.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="oauth-token-existing">
+                                                Access Token (обязательно)
+                                            </Label>
+                                            <Input
+                                                id="oauth-token-existing"
+                                                type="password"
+                                                placeholder="Введите access_token"
+                                                value={oauthToken}
+                                                onChange={(e) =>
+                                                    setOAuthToken(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                disabled={isSavingToken}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="oauth-refresh-token-existing">
+                                                Refresh Token (необязательно)
+                                            </Label>
+                                            <Input
+                                                id="oauth-refresh-token-existing"
+                                                type="password"
+                                                placeholder="Введите refresh_token"
+                                                value={oauthRefreshToken}
+                                                onChange={(e) =>
+                                                    setOAuthRefreshToken(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                disabled={isSavingToken}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="oauth-expires-in-existing">
+                                                Срок действия (секунды,
+                                                необязательно)
+                                            </Label>
+                                            <Input
+                                                id="oauth-expires-in-existing"
+                                                type="number"
+                                                placeholder="Например: 157680000"
+                                                value={oauthExpiresIn}
+                                                onChange={(e) =>
+                                                    setOAuthExpiresIn(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                disabled={isSavingToken}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setIsTokenDialogOpen(false);
+                                                setOAuthToken('');
+                                                setOAuthRefreshToken('');
+                                                setOAuthExpiresIn('');
+                                            }}
+                                            disabled={isSavingToken}
+                                        >
+                                            Отмена
+                                        </Button>
+                                        <Button
+                                            onClick={handleSaveOAuthToken}
+                                            disabled={
+                                                isSavingToken ||
+                                                !oauthToken.trim()
+                                            }
+                                        >
+                                            {isSavingToken ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Сохранение...
+                                                </>
+                                            ) : (
+                                                'Сохранить токен'
+                                            )}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         </div>
                     </div>
                 )}

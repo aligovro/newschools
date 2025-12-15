@@ -164,44 +164,96 @@ class MerchantController extends Controller
         ], 400);
       }
 
-      // Пытаемся получить информацию о магазине через API
-      $clientFactory = app(\App\Services\Payments\YooKassa\YooKassaPartnerClientFactory::class);
-      $client = $clientFactory->forSettings([
-        'client_id' => config('services.yookassa_partner.client_id'),
-        'secret_key' => config('services.yookassa_partner.secret_key'),
-        'base_url' => config('services.yookassa_partner.base_url', 'https://api.yookassa.ru'),
-      ]);
+      // ВАЖНО: endpoint /v3/merchants/{id} работает ТОЛЬКО с OAuth токеном конкретного магазина
+      // Credentials приложения (YOOKASSA_CLIENT_ID/YOOKASSA_CLIENT_SECRET) НЕ дают доступ к информации о магазинах
+      // Если магазин уже авторизовал приложение через OAuth, но callback не сработал,
+      // мы просто сохраняем Shop ID и помечаем как активный
+      // Полную информацию о магазине можно будет получить позже через синхронизацию, когда будет OAuth токен
 
-      $merchantInfo = $client->getMerchant($externalId);
+      $merchantInfo = null;
+
+      // Пытаемся получить информацию о магазине через API только если есть OAuth токен этого магазина
+      if ($existingMerchant && !empty($existingMerchant->credentials['access_token'])) {
+        try {
+          $clientFactory = app(\App\Services\Payments\YooKassa\YooKassaPartnerClientFactory::class);
+          $client = $clientFactory->forSettings([
+            'client_id' => config('services.yookassa_partner.client_id'),
+            'secret_key' => config('services.yookassa_partner.secret_key'),
+            'base_url' => config('services.yookassa_partner.base_url', 'https://api.yookassa.ru'),
+            'access_token' => $existingMerchant->credentials['access_token'],
+          ]);
+
+          $merchantInfo = $client->getMerchant($externalId);
+          Log::info('Got merchant info using OAuth token', [
+            'external_id' => $externalId,
+          ]);
+        } catch (\Exception $e) {
+          Log::warning('Failed to get merchant info with OAuth token, will save Shop ID only', [
+            'external_id' => $externalId,
+            'error' => $e->getMessage(),
+          ]);
+        }
+      } else {
+        // Если нет OAuth токена, просто сохраняем Shop ID без запроса к API
+        // Это нормально, если магазин уже авторизовал приложение, но callback не сработал
+        // Credentials приложения (YOOKASSA_CLIENT_ID/YOOKASSA_CLIENT_SECRET) не дают доступ к /v3/merchants/{id}
+        Log::info('Saving Shop ID without API call (OAuth token not available, credentials app cannot access merchant info)', [
+          'external_id' => $externalId,
+          'organization_id' => $organization->id,
+        ]);
+      }
 
       // Создаем или обновляем мерчант
       if ($existingMerchant) {
         // Обновляем существующий мерчант
-        $existingMerchant->update([
+        $updateData = [
           'organization_id' => $organization->id,
-          'status' => Arr::get($merchantInfo, 'status', $existingMerchant->status),
-          'contract_id' => Arr::get($merchantInfo, 'contract_id', $existingMerchant->contract_id),
-          'payout_account_id' => Arr::get($merchantInfo, 'payout_account.id', $existingMerchant->payout_account_id),
-          'payout_status' => Arr::get($merchantInfo, 'payout_account.status', $existingMerchant->payout_status),
-          'credentials' => $this->merchantService->mergeCredentials($existingMerchant->credentials, Arr::get($merchantInfo, 'credentials', [])),
-          'documents' => Arr::get($merchantInfo, 'documents', $existingMerchant->documents),
+          'external_id' => $externalId,
           'last_synced_at' => now(),
-        ]);
+        ];
 
+        // Если получили информацию через API, обновляем дополнительные поля
+        if ($merchantInfo) {
+          $updateData = array_merge($updateData, [
+            'status' => Arr::get($merchantInfo, 'status', $existingMerchant->status),
+            'contract_id' => Arr::get($merchantInfo, 'contract_id', $existingMerchant->contract_id),
+            'payout_account_id' => Arr::get($merchantInfo, 'payout_account.id', $existingMerchant->payout_account_id),
+            'payout_status' => Arr::get($merchantInfo, 'payout_account.status', $existingMerchant->payout_status),
+            'credentials' => $this->merchantService->mergeCredentials($existingMerchant->credentials, Arr::get($merchantInfo, 'credentials', [])),
+            'documents' => Arr::get($merchantInfo, 'documents', $existingMerchant->documents),
+          ]);
+        } else {
+          // Если информации нет, но магазин авторизован, помечаем как активный
+          if (empty($existingMerchant->status) || $existingMerchant->status === YooKassaPartnerMerchant::STATUS_DRAFT) {
+            $updateData['status'] = YooKassaPartnerMerchant::STATUS_ACTIVE;
+          }
+        }
+
+        $existingMerchant->update($updateData);
         $merchant = $existingMerchant;
       } else {
         // Создаем новый мерчант
         $merchant = $this->merchantService->createDraft($organization);
-        $merchant->update([
+
+        $merchantData = [
           'external_id' => $externalId,
-          'status' => Arr::get($merchantInfo, 'status', YooKassaPartnerMerchant::STATUS_ACTIVE),
-          'contract_id' => Arr::get($merchantInfo, 'contract_id'),
-          'payout_account_id' => Arr::get($merchantInfo, 'payout_account.id'),
-          'payout_status' => Arr::get($merchantInfo, 'payout_account.status'),
-          'credentials' => Arr::get($merchantInfo, 'credentials', []),
-          'documents' => Arr::get($merchantInfo, 'documents'),
-          'last_synced_at' => now(),
-        ]);
+          'status' => YooKassaPartnerMerchant::STATUS_ACTIVE,
+        ];
+
+        // Если получили информацию через API, добавляем дополнительные поля
+        if ($merchantInfo) {
+          $merchantData = array_merge($merchantData, [
+            'status' => Arr::get($merchantInfo, 'status', YooKassaPartnerMerchant::STATUS_ACTIVE),
+            'contract_id' => Arr::get($merchantInfo, 'contract_id'),
+            'payout_account_id' => Arr::get($merchantInfo, 'payout_account.id'),
+            'payout_status' => Arr::get($merchantInfo, 'payout_account.status'),
+            'credentials' => Arr::get($merchantInfo, 'credentials', []),
+            'documents' => Arr::get($merchantInfo, 'documents'),
+            'last_synced_at' => now(),
+          ]);
+        }
+
+        $merchant->update($merchantData);
       }
 
       // Обновляем связь в организации
@@ -215,11 +267,18 @@ class MerchantController extends Controller
         'organization_id' => $organization->id,
         'merchant_id' => $merchant->id,
         'external_id' => $externalId,
+        'has_oauth_token' => !empty($merchant->credentials['access_token']),
       ]);
+
+      $message = 'Магазин успешно привязан к организации';
+      if (empty($merchant->credentials['access_token'])) {
+        $message .= '. Для работы с API необходимо пройти OAuth авторизацию - создайте новую ссылку для авторизации.';
+      }
 
       return response()->json([
         'data' => MerchantResource::make($merchant),
-        'message' => 'Магазин успешно привязан к организации',
+        'message' => $message,
+        'requires_oauth' => empty($merchant->credentials['access_token']),
       ]);
     } catch (\Exception $e) {
       Log::error('Failed to attach merchant by external_id', [
@@ -230,6 +289,166 @@ class MerchantController extends Controller
 
       return response()->json([
         'error' => 'Не удалось привязать магазин: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  /**
+   * Сохраняет OAuth токен для мерчанта вручную
+   * Используется, если токен был получен, но не сохранен через callback
+   */
+  public function saveOAuthToken(Request $request, Organization $organization)
+  {
+    $request->validate([
+      'access_token' => 'required|string',
+      'refresh_token' => 'nullable|string',
+      'expires_in' => 'nullable|integer',
+      'external_id' => 'nullable|string',
+    ]);
+
+    try {
+      $merchant = $organization->yookassaPartnerMerchant;
+
+      if (!$merchant) {
+        $merchant = $this->merchantService->createDraft($organization);
+      }
+
+      // Если передан external_id, обновляем его
+      if ($request->filled('external_id')) {
+        $merchant->external_id = $request->input('external_id');
+      }
+
+      // Сохраняем OAuth токен
+      $credentials = $merchant->credentials ?? [];
+      $credentials = array_merge($credentials, [
+        'access_token' => $request->input('access_token'),
+        'refresh_token' => $request->input('refresh_token'),
+        'expires_in' => $request->input('expires_in'),
+        'token_type' => 'Bearer',
+        'expires_at' => $request->filled('expires_in')
+          ? now()->addSeconds($request->input('expires_in'))
+          : null,
+        'oauth_authorized_at' => now()->toIso8601String(),
+      ]);
+
+      // Пытаемся получить account_id через /v3/me
+      $accountId = null;
+      if ($request->filled('access_token')) {
+        try {
+          $clientFactory = app(\App\Services\Payments\YooKassa\YooKassaPartnerClientFactory::class);
+          $client = $clientFactory->forSettings([
+            'client_id' => config('services.yookassa_partner.client_id'),
+            'secret_key' => config('services.yookassa_partner.secret_key'),
+            'base_url' => config('services.yookassa_partner.base_url', 'https://api.yookassa.ru'),
+            'access_token' => $request->input('access_token'),
+          ]);
+
+          $meInfo = $client->getMe();
+          $accountId = $meInfo['id'] ?? $meInfo['merchant_id'] ?? $merchant->external_id;
+
+          // Если external_id не был передан, используем account_id
+          if (!$merchant->external_id && $accountId) {
+            $merchant->external_id = $accountId;
+          }
+
+          Log::info('Got account_id from /v3/me', [
+            'account_id' => $accountId,
+            'external_id' => $merchant->external_id,
+          ]);
+        } catch (\Exception $e) {
+          Log::warning('Failed to get account_id from /v3/me', [
+            'error' => $e->getMessage(),
+          ]);
+          // Используем external_id как account_id, если он есть
+          $accountId = $merchant->external_id;
+        }
+      }
+
+      if ($accountId) {
+        $credentials['account_id'] = $accountId;
+      }
+
+      $merchant->update([
+        'status' => YooKassaPartnerMerchant::STATUS_ACTIVE,
+        'credentials' => $credentials,
+        'settings' => array_merge($merchant->settings ?? [], [
+          'oauth_authorized' => true,
+          'oauth_authorized_at' => now()->toIso8601String(),
+        ]),
+      ]);
+
+      $merchant->load('organization');
+
+      Log::info('OAuth token saved manually', [
+        'organization_id' => $organization->id,
+        'merchant_id' => $merchant->id,
+        'external_id' => $merchant->external_id,
+        'account_id' => $accountId,
+      ]);
+
+      return response()->json([
+        'data' => MerchantResource::make($merchant),
+        'message' => 'OAuth токен успешно сохранен. Магазин готов к работе с API.',
+      ]);
+    } catch (\Exception $e) {
+      Log::error('Failed to save OAuth token', [
+        'organization_id' => $organization->id,
+        'error' => $e->getMessage(),
+      ]);
+
+      return response()->json([
+        'error' => 'Не удалось сохранить OAuth токен: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  /**
+   * Получает информацию о магазине через OAuth токен (endpoint /v3/me)
+   * Используется, если магазин уже авторизован, но мы не знаем его ID
+   */
+  public function getMerchantByOAuthToken(Request $request, Organization $organization)
+  {
+    try {
+      // Проверяем, есть ли OAuth токен в запросе
+      $accessToken = $request->input('access_token');
+
+      if (!$accessToken) {
+        return response()->json([
+          'error' => 'OAuth токен не предоставлен',
+        ], 400);
+      }
+
+      // Создаем клиент с OAuth токеном
+      $clientFactory = app(\App\Services\Payments\YooKassa\YooKassaPartnerClientFactory::class);
+      $client = $clientFactory->forSettings([
+        'client_id' => config('services.yookassa_partner.client_id'),
+        'secret_key' => config('services.yookassa_partner.secret_key'),
+        'base_url' => config('services.yookassa_partner.base_url', 'https://api.yookassa.ru'),
+        'access_token' => $accessToken,
+      ]);
+
+      // Получаем информацию о текущем мерчанте
+      $merchantInfo = $client->getMe();
+      $externalId = $merchantInfo['id'] ?? $merchantInfo['merchant_id'] ?? null;
+
+      if (!$externalId) {
+        return response()->json([
+          'error' => 'Не удалось получить ID магазина из ответа API',
+          'response' => $merchantInfo,
+        ], 400);
+      }
+
+      // Используем attachByExternalId для привязки
+      $request->merge(['external_id' => $externalId]);
+      return $this->attachByExternalId($request, $organization);
+    } catch (\Exception $e) {
+      Log::error('Failed to get merchant by OAuth token', [
+        'organization_id' => $organization->id,
+        'error' => $e->getMessage(),
+      ]);
+
+      return response()->json([
+        'error' => 'Не удалось получить информацию о магазине: ' . $e->getMessage(),
       ], 500);
     }
   }
