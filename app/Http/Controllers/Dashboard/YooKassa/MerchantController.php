@@ -89,6 +89,58 @@ class MerchantController extends Controller
   }
 
   /**
+   * Привязывает мерчант к организации
+   */
+  public function attachToOrganization(Request $request, YooKassaPartnerMerchant $merchant, Organization $organization)
+  {
+    if ($merchant->organization_id && $merchant->organization_id !== $organization->id) {
+      return response()->json([
+        'error' => 'Мерчант уже привязан к другой организации',
+      ], 400);
+    }
+
+    // Проверяем, нет ли у организации уже другого мерчанта
+    $existingMerchant = $organization->yookassaPartnerMerchant;
+    if ($existingMerchant && $existingMerchant->id !== $merchant->id) {
+      return response()->json([
+        'error' => 'У организации уже есть привязанный мерчант',
+      ], 400);
+    }
+
+    $merchant->update([
+      'organization_id' => $organization->id,
+    ]);
+
+    // Обновляем связь в организации
+    $organization->update([
+      'yookassa_partner_merchant_id' => $merchant->id,
+    ]);
+
+    $merchant->load('organization');
+
+    return MerchantResource::make($merchant);
+  }
+
+  /**
+   * Синхронизация авторизованных магазинов из YooKassa API
+   */
+  public function syncAuthorizedMerchants()
+  {
+    try {
+      $result = $this->merchantService->syncAuthorizedMerchants();
+
+      return response()->json([
+        'data' => $result,
+        'message' => "Синхронизировано {$result['synced_count']} из {$result['total']} магазинов",
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'error' => 'Ошибка синхронизации: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  /**
    * Получение статистики для мерчанта
    */
   public function getStats(YooKassaPartnerMerchant $merchant)
