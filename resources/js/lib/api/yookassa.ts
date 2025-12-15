@@ -30,6 +30,10 @@ export interface YooKassaMerchant {
     activated_at?: string | null;
     last_synced_at?: string | null;
     created_at?: string | null;
+    oauth?: {
+        authorized: boolean;
+        authorized_at?: string | null;
+    };
 }
 
 export interface YooKassaPayment {
@@ -184,6 +188,33 @@ export const yookassaApi = {
             `/dashboard/yookassa/organizations/${organizationId}/merchant`,
         );
         return response.data as { data: YooKassaMerchant | null };
+    },
+
+    async getMerchantStats(merchantId: number) {
+        const response = await apiClient.get(
+            `/dashboard/yookassa/merchants/${merchantId}/stats`,
+        );
+        return response.data as {
+            data: {
+                payments: {
+                    total: number;
+                    succeeded: number;
+                    pending: number;
+                    total_amount: number;
+                };
+                payouts: {
+                    total: number;
+                    succeeded: number;
+                    pending: number;
+                    total_amount: number;
+                };
+                oauth: {
+                    authorized: boolean;
+                    authorized_at: string | null;
+                    token_expires_at: string | null;
+                };
+            };
+        };
     },
 };
 

@@ -12,9 +12,9 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { yookassaApi, type YooKassaPayment } from '@/lib/api/yookassa';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { Head } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Head } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
 
 type PaymentResponse = {
@@ -54,7 +54,16 @@ const PaymentsPage: React.FC = () => {
         const loadPayments = async () => {
             try {
                 setIsLoading(true);
-                const response = await yookassaApi.listPayments({ per_page: 20 });
+                // Получаем параметр merchant из URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const merchantId = urlParams.get('merchant');
+
+                const params: Record<string, unknown> = { per_page: 20 };
+                if (merchantId) {
+                    params.merchant = merchantId;
+                }
+
+                const response = await yookassaApi.listPayments(params);
                 setPayments({
                     data: response.data,
                     meta: response.meta ?? {},
@@ -130,8 +139,7 @@ const PaymentsPage: React.FC = () => {
                                                     <div className="space-y-1">
                                                         <div className="text-sm font-medium">
                                                             {
-                                                                payment
-                                                                    .merchant
+                                                                payment.merchant
                                                                     .organization
                                                                     .name
                                                             }
@@ -189,4 +197,3 @@ PaymentsPage.layout = (page: React.ReactNode) => (
 );
 
 export default PaymentsPage;
-

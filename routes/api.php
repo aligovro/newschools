@@ -50,6 +50,9 @@ Route::middleware(['web', 'auth', 'verified'])
 
     // Получение мерчанта по организации
     Route::get('/organizations/{organization}/merchant', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'getByOrganization']);
+
+    // Статистика мерчанта
+    Route::get('/merchants/{merchant}/stats', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'getStats']);
   });
 
 // Получение текущего пользователя для API
