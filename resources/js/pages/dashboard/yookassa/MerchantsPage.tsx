@@ -237,7 +237,7 @@ const MerchantsPage: React.FC = () => {
                             />
                             {isSyncingAuthorized
                                 ? 'Синхронизация...'
-                                : 'Синхронизировать из YooKassa'}
+                                : 'Синхронизировать данные'}
                         </Button>
                         {STATUS_OPTIONS.map((option) => (
                             <Button

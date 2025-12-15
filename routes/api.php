@@ -59,6 +59,12 @@ Route::middleware(['web', 'auth', 'verified'])
 
     // Привязка мерчанта к организации
     Route::post('/merchants/{merchant}/attach/{organization}', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'attachToOrganization']);
+
+    // Восстановление мерчанта после OAuth авторизации
+    Route::post('/organizations/{organization}/merchants/restore-oauth', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'restoreFromOAuth']);
+
+    // Привязка магазина по external_id
+    Route::post('/organizations/{organization}/merchants/attach-by-id', [App\Http\Controllers\Dashboard\YooKassa\MerchantController::class, 'attachByExternalId']);
   });
 
 // Получение текущего пользователя для API

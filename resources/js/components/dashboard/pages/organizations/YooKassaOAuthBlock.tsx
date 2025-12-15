@@ -7,12 +7,24 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { yookassaApi, type YooKassaMerchant } from '@/lib/api/yookassa';
 import {
     Check,
     CheckCircle2,
     Copy,
     ExternalLink,
+    Link as LinkIcon,
     Loader2,
     Shield,
 } from 'lucide-react';
@@ -33,6 +45,9 @@ export default function YooKassaOAuthBlock({
     const [isCopied, setIsCopied] = useState(false);
     const [merchant, setMerchant] = useState<YooKassaMerchant | null>(null);
     const [isLoadingMerchant, setIsLoadingMerchant] = useState(true);
+    const [isAttachDialogOpen, setIsAttachDialogOpen] = useState(false);
+    const [externalId, setExternalId] = useState('');
+    const [isAttaching, setIsAttaching] = useState(false);
 
     useEffect(() => {
         loadMerchantStatus();
@@ -79,6 +94,47 @@ export default function YooKassaOAuthBlock({
     const handleRefreshStatus = async () => {
         await loadMerchantStatus();
         toast.success('Статус обновлен');
+    };
+
+    const handleRestoreMerchant = async () => {
+        setIsLoading(true);
+        try {
+            await yookassaApi.restoreMerchantFromOAuth(organizationId);
+            await loadMerchantStatus();
+            toast.success('Мерчант успешно восстановлен');
+        } catch (error) {
+            console.error('Failed to restore merchant:', error);
+            toast.error('Не удалось восстановить мерчант');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleAttachByExternalId = async () => {
+        if (!externalId.trim()) {
+            toast.error('Введите ID магазина');
+            return;
+        }
+
+        setIsAttaching(true);
+        try {
+            await yookassaApi.attachMerchantByExternalId(
+                organizationId,
+                externalId.trim(),
+            );
+            await loadMerchantStatus();
+            setIsAttachDialogOpen(false);
+            setExternalId('');
+            toast.success('Магазин успешно привязан к организации');
+        } catch (error: unknown) {
+            console.error('Failed to attach merchant:', error);
+            const errorMessage =
+                (error as { response?: { data?: { error?: string } } })
+                    ?.response?.data?.error || 'Не удалось привязать магазин';
+            toast.error(errorMessage);
+        } finally {
+            setIsAttaching(false);
+        }
     };
 
     const handleCopyLink = async () => {
@@ -216,6 +272,115 @@ export default function YooKassaOAuthBlock({
                         >
                             Создать новую ссылку
                         </Button>
+                    </div>
+                )}
+                {!merchant && !isLoadingMerchant && (
+                    <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                            Мерчант не найден в базе данных. Если вы уже
+                            авторизовали приложение в YooKassa, вы можете
+                            привязать магазин по его ID.
+                        </p>
+                        <div className="flex gap-2">
+                            <Dialog
+                                open={isAttachDialogOpen}
+                                onOpenChange={setIsAttachDialogOpen}
+                            >
+                                <DialogTrigger asChild>
+                                    <Button
+                                        variant="default"
+                                        className="flex-1"
+                                        size="sm"
+                                    >
+                                        <LinkIcon className="mr-2 h-4 w-4" />
+                                        Привязать магазин по ID
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            Привязать магазин YooKassa
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                            Введите ID магазина (merchant_id) из
+                                            личного кабинета YooKassa. ID можно
+                                            найти в настройках магазина в
+                                            разделе «Интеграция».
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="external-id">
+                                                ID магазина (merchant_id)
+                                            </Label>
+                                            <Input
+                                                id="external-id"
+                                                placeholder="Например: 12345678"
+                                                value={externalId}
+                                                onChange={(e) =>
+                                                    setExternalId(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                disabled={isAttaching}
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                ID магазина можно найти в личном
+                                                кабинете YooKassa в разделе
+                                                «Настройки» → «Интеграция»
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setIsAttachDialogOpen(false);
+                                                setExternalId('');
+                                            }}
+                                            disabled={isAttaching}
+                                        >
+                                            Отмена
+                                        </Button>
+                                        <Button
+                                            onClick={handleAttachByExternalId}
+                                            disabled={
+                                                isAttaching ||
+                                                !externalId.trim()
+                                            }
+                                        >
+                                            {isAttaching ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Привязка...
+                                                </>
+                                            ) : (
+                                                'Привязать'
+                                            )}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                            <Button
+                                onClick={handleRestoreMerchant}
+                                variant="outline"
+                                className="flex-1"
+                                size="sm"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Восстановление...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Shield className="mr-2 h-4 w-4" />
+                                        Восстановить
+                                    </>
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 )}
                 {isAuthorized && (

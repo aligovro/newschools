@@ -12,7 +12,7 @@ use RuntimeException;
 class YooKassaPartnerMerchantService
 {
   public function __construct(
-    protected YooKassaPartnerClientFactory $clientFactory
+    public YooKassaPartnerClientFactory $clientFactory
   ) {}
 
   public function createDraft(Organization $organization, array $payload = []): YooKassaPartnerMerchant
@@ -21,6 +21,7 @@ class YooKassaPartnerMerchantService
       $merchant = $organization->yookassaPartnerMerchant()->firstOrNew([]);
 
       $merchant->fill([
+        'organization_id' => $organization->id,
         'status' => YooKassaPartnerMerchant::STATUS_DRAFT,
         'settings' => array_merge($merchant->settings ?? [], Arr::get($payload, 'settings', [])),
       ]);
@@ -90,81 +91,57 @@ class YooKassaPartnerMerchantService
 
   /**
    * Синхронизирует список авторизованных магазинов из YooKassa API
-   * Использует credentials приложения (не OAuth токены магазинов)
+   * ВАЖНО: YooKassa Partner API не предоставляет endpoint для получения списка всех магазинов
+   * Этот метод синхронизирует только те магазины, которые уже есть в нашей базе данных
+   * Для получения новых магазинов нужно использовать OAuth авторизацию
    */
   public function syncAuthorizedMerchants(): array
   {
+    // Получаем все мерчанты из нашей базы, которые имеют external_id
+    $localMerchants = YooKassaPartnerMerchant::whereNotNull('external_id')->get();
+
+    $synced = [];
+    $errors = [];
+
+    // Создаем клиент для синхронизации
     $client = $this->clientFactory->forSettings([
       'client_id' => config('services.yookassa_partner.client_id'),
       'secret_key' => config('services.yookassa_partner.secret_key'),
       'base_url' => config('services.yookassa_partner.base_url', 'https://api.yookassa.ru'),
     ]);
 
-    $response = $client->listMerchants();
-    $merchants = Arr::get($response, 'items', []);
-
-    $synced = [];
-    $errors = [];
-
-    foreach ($merchants as $merchantData) {
+    foreach ($localMerchants as $merchant) {
       try {
-        $externalId = Arr::get($merchantData, 'id');
-        if (!$externalId) {
-          continue;
-        }
+        // Синхронизируем каждый мерчант через getMerchant
+        $merchantData = $client->getMerchant($merchant->external_id);
 
-        // Ищем существующий мерчант по external_id
-        $merchant = YooKassaPartnerMerchant::where('external_id', $externalId)->first();
+        // Обновляем данные мерчанта
+        $merchant->update([
+          'status' => Arr::get($merchantData, 'status', $merchant->status),
+          'contract_id' => Arr::get($merchantData, 'contract_id', $merchant->contract_id),
+          'payout_account_id' => Arr::get($merchantData, 'payout_account.id', $merchant->payout_account_id),
+          'payout_status' => Arr::get($merchantData, 'payout_account.status', $merchant->payout_status),
+          'credentials' => $this->mergeCredentials($merchant->credentials, Arr::get($merchantData, 'credentials', [])),
+          'documents' => Arr::get($merchantData, 'documents', $merchant->documents),
+          'last_synced_at' => now(),
+        ]);
 
-        if ($merchant) {
-          // Обновляем существующий мерчант
-          $merchant->update([
-            'status' => Arr::get($merchantData, 'status', $merchant->status),
-            'contract_id' => Arr::get($merchantData, 'contract_id', $merchant->contract_id),
-            'payout_account_id' => Arr::get($merchantData, 'payout_account.id', $merchant->payout_account_id),
-            'payout_status' => Arr::get($merchantData, 'payout_account.status', $merchant->payout_status),
-            'credentials' => $this->mergeCredentials($merchant->credentials, Arr::get($merchantData, 'credentials', [])),
-            'documents' => Arr::get($merchantData, 'documents', $merchant->documents),
-            'last_synced_at' => now(),
-          ]);
-
-          $synced[] = [
-            'merchant_id' => $merchant->id,
-            'external_id' => $externalId,
-            'action' => 'updated',
-            'organization_id' => $merchant->organization_id,
-          ];
-        } else {
-          // Создаем новый мерчант (но без привязки к организации)
-          // Пользователь должен будет вручную привязать его к организации
-          $merchant = YooKassaPartnerMerchant::create([
-            'organization_id' => null, // Будет привязано вручную
-            'status' => Arr::get($merchantData, 'status', YooKassaPartnerMerchant::STATUS_ACTIVE),
-            'external_id' => $externalId,
-            'contract_id' => Arr::get($merchantData, 'contract_id'),
-            'payout_account_id' => Arr::get($merchantData, 'payout_account.id'),
-            'payout_status' => Arr::get($merchantData, 'payout_account.status'),
-            'credentials' => Arr::get($merchantData, 'credentials', []),
-            'documents' => Arr::get($merchantData, 'documents'),
-            'last_synced_at' => now(),
-          ]);
-
-          $synced[] = [
-            'merchant_id' => $merchant->id,
-            'external_id' => $externalId,
-            'action' => 'created',
-            'organization_id' => null,
-            'note' => 'Требуется привязка к организации вручную',
-          ];
-        }
+        $synced[] = [
+          'merchant_id' => $merchant->id,
+          'external_id' => $merchant->external_id,
+          'action' => 'updated',
+          'organization_id' => $merchant->organization_id,
+        ];
       } catch (\Exception $e) {
         Log::error('Failed to sync merchant from YooKassa', [
-          'merchant_data' => $merchantData,
+          'merchant_id' => $merchant->id,
+          'external_id' => $merchant->external_id,
           'error' => $e->getMessage(),
         ]);
 
         $errors[] = [
-          'external_id' => Arr::get($merchantData, 'id'),
+          'merchant_id' => $merchant->id,
+          'external_id' => $merchant->external_id,
           'error' => $e->getMessage(),
         ];
       }
@@ -173,13 +150,14 @@ class YooKassaPartnerMerchantService
     return [
       'synced' => $synced,
       'errors' => $errors,
-      'total' => count($merchants),
+      'total' => $localMerchants->count(),
       'synced_count' => count($synced),
       'errors_count' => count($errors),
+      'note' => 'Синхронизированы только магазины, которые уже есть в базе. Для добавления новых используйте OAuth авторизацию.',
     ];
   }
 
-  protected function mergeCredentials(?array $existing, array $incoming): array
+  public function mergeCredentials(?array $existing, array $incoming): array
   {
     $existing = $existing ?? [];
 
