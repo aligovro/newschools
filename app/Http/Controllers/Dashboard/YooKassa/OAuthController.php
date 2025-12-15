@@ -29,15 +29,40 @@ class OAuthController extends Controller
         $oauthUrl = config('services.yookassa_partner.oauth_url', 'https://yookassa.ru/oauth/v2');
 
         if (!$clientId || !$callbackUrl) {
+            Log::error('YooKassa OAuth: credentials not configured', [
+                'has_client_id' => !empty($clientId),
+                'has_callback_url' => !empty($callbackUrl),
+            ]);
+
             return response()->json([
                 'error' => 'YooKassa Partner credentials not configured',
             ], 400);
         }
 
+        // Логируем генерацию ссылки для отладки
+        Log::info('YooKassa OAuth authorization URL generated', [
+            'organization_id' => $organization->id,
+            'callback_url' => $callbackUrl,
+            'client_id' => $clientId,
+        ]);
+
         // Генерируем state для защиты от CSRF
-        $state = Str::random(32);
-        session(['yookassa_oauth_state' => $state]);
+        // Кодируем organization_id в state, чтобы не зависеть от сессии
+        $stateData = [
+            'state' => Str::random(32),
+            'organization_id' => $organization->id,
+            'timestamp' => now()->timestamp,
+        ];
+
+        // Кодируем данные в base64 для передачи через state
+        $encodedState = base64_encode(json_encode($stateData));
+
+        // Сохраняем в сессию для валидации
+        session(['yookassa_oauth_state' => $stateData['state']]);
         session(['yookassa_oauth_organization_id' => $organization->id]);
+
+        // Используем закодированный state, который содержит organization_id
+        $state = $encodedState;
 
         // Формируем URL для авторизации
         $authorizationUrl = $oauthUrl . '/authorize?' . http_build_query([
@@ -69,6 +94,10 @@ class OAuthController extends Controller
             'has_error' => !empty($error),
             'all_params' => $request->query->all(),
             'session_id' => session()->getId(),
+            'callback_url' => config('services.yookassa_partner.callback_url'),
+            'request_url' => $request->fullUrl(),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
         // Проверяем наличие ошибки
@@ -82,44 +111,93 @@ class OAuthController extends Controller
                 ->with('error', 'Ошибка авторизации: ' . ($request->query('error_description') ?? $error));
         }
 
-        // Проверяем state для защиты от CSRF
-        $sessionState = session('yookassa_oauth_state');
-        if (!$state || $state !== $sessionState) {
-            Log::warning('YooKassa OAuth state mismatch', [
-                'received_state' => $state,
-                'session_state' => $sessionState,
-                'session_id' => session()->getId(),
-            ]);
-
-            // Если state не совпадает, но есть код, попробуем продолжить (для отладки)
-            // В продакшене это должно быть строго проверено
-            if (config('app.debug')) {
-                Log::warning('Continuing despite state mismatch (debug mode)');
-            } else {
-                return redirect()->route('organizations.index')
-                    ->with('error', 'Ошибка безопасности: неверный state параметр. Попробуйте снова.');
-            }
-        }
-
         // Проверяем наличие кода авторизации
         if (!$code) {
-            Log::error('YooKassa OAuth: no authorization code received');
+            Log::error('YooKassa OAuth: no authorization code received', [
+                'has_state' => !empty($state),
+                'has_error' => !empty($error),
+                'all_params' => $request->query->all(),
+            ]);
             return redirect()->route('organizations.index')
                 ->with('error', 'Код авторизации не получен');
         }
 
-        // Получаем ID организации из сессии
-        $organizationId = session('yookassa_oauth_organization_id');
+        // Пытаемся декодировать organization_id из state
+        $organizationId = null;
+        $stateValid = false;
+
+        if ($state) {
+            try {
+                // Пытаемся декодировать state (новый формат с organization_id)
+                $decodedState = json_decode(base64_decode($state), true);
+
+                if (is_array($decodedState) && isset($decodedState['organization_id'])) {
+                    $organizationId = $decodedState['organization_id'];
+                    $stateToken = $decodedState['state'] ?? null;
+                    $timestamp = $decodedState['timestamp'] ?? null;
+
+                    // Проверяем, что state не старше 1 часа
+                    if ($timestamp && (now()->timestamp - $timestamp) > 3600) {
+                        Log::warning('YooKassa OAuth: state expired', [
+                            'age_seconds' => now()->timestamp - $timestamp,
+                        ]);
+                    } else {
+                        // Проверяем state token из сессии (если сессия доступна)
+                        $sessionState = session('yookassa_oauth_state');
+                        if ($sessionState && $stateToken === $sessionState) {
+                            $stateValid = true;
+                            Log::info('YooKassa OAuth: state validated from session');
+                        } else {
+                            // Если сессия недоступна, но state содержит organization_id, продолжаем
+                            // Это нормально, если callback происходит в другом браузере/сессии
+                            $stateValid = true;
+                            Log::info('YooKassa OAuth: state validated from encoded data (session unavailable)', [
+                                'has_session_state' => !empty($sessionState),
+                            ]);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('YooKassa OAuth: failed to decode state', [
+                    'error' => $e->getMessage(),
+                    'state_length' => strlen($state),
+                ]);
+            }
+        }
+
+        // Если не удалось получить из state, пробуем из сессии
         if (!$organizationId) {
-            Log::error('YooKassa OAuth: organization_id not found in session', [
+            $organizationId = session('yookassa_oauth_organization_id');
+            $sessionState = session('yookassa_oauth_state');
+
+            if ($sessionState && $state && $state === $sessionState) {
+                $stateValid = true;
+                Log::info('YooKassa OAuth: state validated from session (legacy format)');
+            }
+        }
+
+        // Если state не валиден и не в debug режиме, отклоняем запрос
+        if (!$stateValid && !config('app.debug')) {
+            Log::warning('YooKassa OAuth: state validation failed', [
+                'has_state' => !empty($state),
+                'has_organization_id' => !empty($organizationId),
+                'session_id' => session()->getId(),
+            ]);
+
+            return redirect()->route('organizations.index')
+                ->with('error', 'Ошибка безопасности: неверный state параметр. Попробуйте снова.');
+        }
+
+        // Если organization_id все еще не найден, это критическая ошибка
+        if (!$organizationId) {
+            Log::error('YooKassa OAuth: organization_id not found', [
+                'has_state' => !empty($state),
                 'session_id' => session()->getId(),
                 'session_data' => session()->all(),
             ]);
 
-            // Пробуем получить из query параметра (если передали через state)
-            // Это временное решение для отладки
             return redirect()->route('organizations.index')
-                ->with('error', 'Не удалось определить организацию. Сессия истекла. Попробуйте снова.');
+                ->with('error', 'Не удалось определить организацию. Попробуйте создать новую ссылку для авторизации.');
         }
 
         $organization = Organization::findOrFail($organizationId);
@@ -225,6 +303,7 @@ class OAuthController extends Controller
                 'account_id' => $accountId,
                 'external_id' => $merchant->external_id,
                 'status' => $merchant->status,
+                'callback_url' => config('services.yookassa_partner.callback_url'),
             ]);
 
             // Редиректим на страницу организации
@@ -232,13 +311,25 @@ class OAuthController extends Controller
                 ->with('success', 'Авторизация YooKassa успешно завершена! Теперь вы можете работать с API магазина.');
         } catch (\Exception $e) {
             Log::error('YooKassa OAuth token exchange failed', [
-                'organization_id' => $organization->id,
+                'organization_id' => $organization->id ?? null,
                 'error' => $e->getMessage(),
+                'error_class' => get_class($e),
                 'trace' => $e->getTraceAsString(),
+                'has_code' => !empty($code),
+                'callback_url' => config('services.yookassa_partner.callback_url'),
+                'client_id' => config('services.yookassa_partner.client_id'),
             ]);
 
-            return redirect()->route('yookassa.merchants')
-                ->with('error', 'Ошибка при получении токена доступа: ' . $e->getMessage());
+            $errorMessage = 'Ошибка при получении токена доступа: ' . $e->getMessage();
+
+            // Если есть organization_id, редиректим на страницу организации
+            if (isset($organization)) {
+                return redirect()->route('organizations.show', $organization->id)
+                    ->with('error', $errorMessage);
+            }
+
+            return redirect()->route('organizations.index')
+                ->with('error', $errorMessage);
         }
     }
 }

@@ -269,6 +269,36 @@ export const yookassaApi = {
             message: string;
         };
     },
+
+    async getMerchantByOAuthToken(organizationId: number, accessToken: string) {
+        const response = await apiClient.post(
+            `/dashboard/yookassa/organizations/${organizationId}/merchants/get-by-token`,
+            { access_token: accessToken },
+        );
+        return response.data as {
+            data: YooKassaMerchant;
+            message: string;
+        };
+    },
+
+    async saveOAuthToken(
+        organizationId: number,
+        tokenData: {
+            access_token: string;
+            refresh_token?: string;
+            expires_in?: number;
+            external_id?: string;
+        },
+    ) {
+        const response = await apiClient.post(
+            `/dashboard/yookassa/organizations/${organizationId}/merchants/save-oauth-token`,
+            tokenData,
+        );
+        return response.data as {
+            data: YooKassaMerchant;
+            message: string;
+        };
+    },
 };
 
 export default yookassaApi;
