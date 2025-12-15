@@ -44,15 +44,6 @@ class YooKassaPartnerClient
     return $this->request('GET', "/v3/merchants/{$merchantId}");
   }
 
-  /**
-   * Получает список авторизованных магазинов приложения
-   * Использует Basic Auth с credentials приложения
-   */
-  public function listMerchants(array $query = []): array
-  {
-    return $this->request('GET', '/v3/merchants', [], $query);
-  }
-
   public function listPayments(array $query = []): array
   {
     return $this->request('GET', '/v3/payments', [], $query);

@@ -50,12 +50,12 @@ class YooKassaPartnerMerchant extends Model
 
   public function paymentDetails(): HasMany
   {
-    return $this->hasMany(YooKassaPartnerPaymentDetail::class);
+    return $this->hasMany(YooKassaPartnerPaymentDetail::class, 'yookassa_partner_merchant_id');
   }
 
   public function payouts(): HasMany
   {
-    return $this->hasMany(YooKassaPartnerPayout::class);
+    return $this->hasMany(YooKassaPartnerPayout::class, 'yookassa_partner_merchant_id');
   }
 
   public function scopeActive($query)
