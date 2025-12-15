@@ -87,4 +87,46 @@ class MerchantController extends Controller
 
     return MerchantResource::make($merchant);
   }
+
+  /**
+   * Получение статистики для мерчанта
+   */
+  public function getStats(YooKassaPartnerMerchant $merchant)
+  {
+    // Получаем суммы платежей из связанных транзакций
+    $succeededPayments = $merchant->paymentDetails()
+      ->where('status', 'succeeded')
+      ->with('transaction')
+      ->get();
+
+    $paymentsTotalAmount = $succeededPayments->sum(function ($payment) {
+      return $payment->transaction?->amount ?? 0;
+    });
+
+    $stats = [
+      'payments' => [
+        'total' => $merchant->paymentDetails()->count(),
+        'succeeded' => $merchant->paymentDetails()->where('status', 'succeeded')->count(),
+        'pending' => $merchant->paymentDetails()->where('status', 'pending')->count(),
+        'total_amount' => $paymentsTotalAmount,
+      ],
+      'payouts' => [
+        'total' => $merchant->payouts()->count(),
+        'succeeded' => $merchant->payouts()->where('status', 'succeeded')->count(),
+        'pending' => $merchant->payouts()->where('status', 'pending')->count(),
+        'total_amount' => (int) $merchant->payouts()
+          ->where('status', 'succeeded')
+          ->sum('amount'),
+      ],
+      'oauth' => [
+        'authorized' => !empty($merchant->credentials['access_token']),
+        'authorized_at' => $merchant->credentials['oauth_authorized_at'] ?? $merchant->settings['oauth_authorized_at'] ?? null,
+        'token_expires_at' => $merchant->credentials['expires_at'] ?? null,
+      ],
+    ];
+
+    return response()->json([
+      'data' => $stats,
+    ]);
+  }
 }

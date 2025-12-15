@@ -12,9 +12,9 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { yookassaApi, type YooKassaPayout } from '@/lib/api/yookassa';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { Head } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Head } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
 
 type PayoutResponse = {
@@ -49,7 +49,16 @@ const PayoutsPage: React.FC = () => {
         const loadPayouts = async () => {
             try {
                 setIsLoading(true);
-                const response = await yookassaApi.listPayouts({ per_page: 20 });
+                // Получаем параметр merchant из URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const merchantId = urlParams.get('merchant');
+
+                const params: Record<string, unknown> = { per_page: 20 };
+                if (merchantId) {
+                    params.merchant = merchantId;
+                }
+
+                const response = await yookassaApi.listPayouts(params);
                 setPayouts({
                     data: response.data,
                     meta: response.meta ?? {},
@@ -136,7 +145,9 @@ const PayoutsPage: React.FC = () => {
                                                     }
                                                 </div>
                                                 <MerchantStatusBadge
-                                                    status={payout.merchant.status}
+                                                    status={
+                                                        payout.merchant.status
+                                                    }
                                                 />
                                             </TableCell>
                                             <TableCell>
@@ -179,4 +190,3 @@ PayoutsPage.layout = (page: React.ReactNode) => (
 );
 
 export default PayoutsPage;
-
