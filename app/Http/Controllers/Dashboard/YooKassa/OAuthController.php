@@ -242,6 +242,18 @@ class OAuthController extends Controller
       $accountId = $tokenResponse['account_id'] ?? $merchant->external_id ?? null;
       $externalId = $merchant->external_id;
 
+      // Если external_id не установлен, пробуем получить из настроек организации (Shop ID)
+      if (!$externalId) {
+        $orgPaymentSettings = $organization->settings['payment_settings'] ?? null;
+        if ($orgPaymentSettings && isset($orgPaymentSettings['credentials']['yookassa']['shop_id'])) {
+          $externalId = $orgPaymentSettings['credentials']['yookassa']['shop_id'];
+          Log::info('Using Shop ID from organization payment settings', [
+            'shop_id' => $externalId,
+            'organization_id' => $organization->id,
+          ]);
+        }
+      }
+
       // Если account_id не найден, пытаемся получить его через API /v3/me
       if (!$accountId && !empty($tokenResponse['access_token'])) {
         try {
@@ -257,18 +269,47 @@ class OAuthController extends Controller
           // Используем /v3/me для получения информации о текущем мерчанте
           try {
             $meInfo = $tempClient->getMe();
-            $accountId = $meInfo['id'] ?? $meInfo['merchant_id'] ?? $accountId;
 
-            // Если external_id не установлен, используем account_id
-            if (!$externalId && $accountId) {
-              $externalId = $accountId;
+            // Логируем полный ответ для диагностики
+            Log::info('YooKassa /v3/me response', [
+              'full_response' => $meInfo,
+              'response_keys' => array_keys($meInfo),
+            ]);
+
+            // Пробуем получить account_id из разных возможных полей
+            // account_id может быть строкой или числом
+            $accountId = null;
+            if (isset($meInfo['account_id'])) {
+              $accountId = $meInfo['account_id'];
+              // Преобразуем в строку, если это число
+              if (is_numeric($accountId)) {
+                $accountId = (string) $accountId;
+              }
+            } elseif (isset($meInfo['id'])) {
+              $accountId = is_numeric($meInfo['id']) ? (string) $meInfo['id'] : $meInfo['id'];
+            } elseif (isset($meInfo['merchant_id'])) {
+              $accountId = is_numeric($meInfo['merchant_id']) ? (string) $meInfo['merchant_id'] : $meInfo['merchant_id'];
             }
 
-            Log::info('Got account_id from /v3/me', [
-              'account_id' => $accountId,
-              'external_id' => $externalId,
-              'me_info_keys' => array_keys($meInfo),
-            ]);
+            // Если account_id все еще null или пустая строка, логируем предупреждение
+            if (empty($accountId)) {
+              Log::warning('account_id is empty in /v3/me response', [
+                'me_info' => $meInfo,
+                'account_id_value' => $meInfo['account_id'] ?? 'not_set',
+                'account_id_type' => isset($meInfo['account_id']) ? gettype($meInfo['account_id']) : 'not_set',
+              ]);
+            } else {
+              // Если external_id не установлен, используем account_id
+              if (!$externalId && $accountId) {
+                $externalId = $accountId;
+              }
+
+              Log::info('Got account_id from /v3/me', [
+                'account_id' => $accountId,
+                'external_id' => $externalId,
+                'account_id_type' => gettype($accountId),
+              ]);
+            }
           } catch (\Exception $e) {
             Log::warning('Failed to get account_id from /v3/me', [
               'error' => $e->getMessage(),
@@ -333,9 +374,9 @@ class OAuthController extends Controller
         'callback_url' => config('services.yookassa_partner.callback_url'),
       ]);
 
-      // Редиректим на страницу организации в dashboard
-      return redirect()->route('dashboard.organizations.show', $organization->id)
-        ->with('success', 'Авторизация YooKassa успешно завершена! Теперь вы можете работать с API магазина.');
+      // Редиректим на страницу мерчантов YooKassa
+      return redirect()->route('yookassa.merchants')
+        ->with('success', 'Авторизация YooKassa успешно завершена! Магазин подключен и готов к работе.');
     } catch (\Exception $e) {
       Log::error('YooKassa OAuth token exchange failed', [
         'organization_id' => $organization->id ?? null,
@@ -349,9 +390,9 @@ class OAuthController extends Controller
 
       $errorMessage = 'Ошибка при получении токена доступа: ' . $e->getMessage();
 
-      // Если есть organization_id, редиректим на страницу организации в dashboard
+      // Если есть organization_id, редиректим на страницу мерчантов
       if (isset($organization)) {
-        return redirect()->route('organizations.show', $organization->id)
+        return redirect()->route('yookassa.merchants')
           ->with('error', $errorMessage);
       }
 

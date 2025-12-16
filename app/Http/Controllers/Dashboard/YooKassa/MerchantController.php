@@ -344,7 +344,19 @@ class MerchantController extends Controller
           ]);
 
           $meInfo = $client->getMe();
-          $accountId = $meInfo['id'] ?? $meInfo['merchant_id'] ?? $merchant->external_id;
+
+          // Пробуем получить account_id из разных полей
+          $accountId = $meInfo['account_id'] ?? $meInfo['id'] ?? $meInfo['merchant_id'] ?? null;
+
+          // Преобразуем в строку если число
+          if ($accountId && is_numeric($accountId)) {
+            $accountId = (string) $accountId;
+          }
+
+          // Если не найден, используем external_id
+          if (!$accountId) {
+            $accountId = $merchant->external_id;
+          }
 
           // Если external_id не был передан, используем account_id
           if (!$merchant->external_id && $accountId) {
