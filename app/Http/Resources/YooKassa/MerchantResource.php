@@ -31,7 +31,7 @@ class MerchantResource extends JsonResource
       'contract_id' => $this->contract_id,
       'payout_account_id' => $this->payout_account_id,
       'payout_status' => $this->payout_status,
-      'credentials' => $this->when($request->user()?->can('manage-payments'), $this->credentials),
+      'credentials' => $this->when($request->user()?->can('payments.manage'), $this->credentials),
       'settings' => $this->settings,
       'documents' => $this->documents,
       'activated_at' => $this->activated_at?->toIso8601String(),
