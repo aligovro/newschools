@@ -4,107 +4,127 @@ namespace App\Services\Payments\YooKassa;
 
 use App\Models\Payments\YooKassaPartnerEvent;
 use App\Models\Payments\YooKassaPartnerMerchant;
+use App\Services\Payment\PaymentService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class YooKassaPartnerWebhookService
 {
-    public function __construct(
-        protected YooKassaPartnerMerchantService $merchantService,
-        protected YooKassaPartnerPaymentService $paymentService,
-    ) {
+  public function __construct(
+    protected YooKassaPartnerMerchantService $merchantService,
+    protected YooKassaPartnerPaymentService $paymentService,
+    protected PaymentService $paymentServiceMain,
+  ) {}
+
+  public function registerEvent(array $payload): YooKassaPartnerEvent
+  {
+    return YooKassaPartnerEvent::create([
+      'event_type' => Arr::get($payload, 'event_type', 'unknown'),
+      'object_id' => Arr::get($payload, 'object.id'),
+      'object_type' => Arr::get($payload, 'object.type'),
+      'payload' => $payload,
+    ]);
+  }
+
+  public function handle(YooKassaPartnerEvent $event): void
+  {
+    if ($event->processing_status === YooKassaPartnerEvent::STATUS_PROCESSED) {
+      return;
     }
 
-    public function registerEvent(array $payload): YooKassaPartnerEvent
-    {
-        return YooKassaPartnerEvent::create([
-            'event_type' => Arr::get($payload, 'event_type', 'unknown'),
-            'object_id' => Arr::get($payload, 'object.id'),
-            'object_type' => Arr::get($payload, 'object.type'),
-            'payload' => $payload,
-        ]);
+    $event->update(['processing_status' => YooKassaPartnerEvent::STATUS_PROCESSING]);
+
+    DB::beginTransaction();
+    try {
+      $objectType = $event->object_type;
+      $payload = $event->payload ?? [];
+
+      if ($objectType === 'merchant') {
+        $this->handleMerchantEvent($payload);
+      } elseif ($objectType === 'payment') {
+        $this->handlePaymentEvent($payload);
+      }
+
+      $event->update([
+        'processing_status' => YooKassaPartnerEvent::STATUS_PROCESSED,
+        'processed_at' => now(),
+      ]);
+
+      DB::commit();
+    } catch (\Throwable $e) {
+      DB::rollBack();
+      Log::error('YooKassa partner webhook processing failed', [
+        'event_id' => $event->id,
+        'error' => $e->getMessage(),
+      ]);
+
+      $event->update([
+        'processing_status' => YooKassaPartnerEvent::STATUS_FAILED,
+        'processing_error' => $e->getMessage(),
+      ]);
+    }
+  }
+
+  protected function handleMerchantEvent(array $payload): void
+  {
+    $externalId = Arr::get($payload, 'id');
+    if (!$externalId) {
+      return;
     }
 
-    public function handle(YooKassaPartnerEvent $event): void
-    {
-        if ($event->processing_status === YooKassaPartnerEvent::STATUS_PROCESSED) {
-            return;
-        }
+    $merchant = YooKassaPartnerMerchant::where('external_id', $externalId)->first();
 
-        $event->update(['processing_status' => YooKassaPartnerEvent::STATUS_PROCESSING]);
+    if (!$merchant) {
+      Log::warning('YooKassa merchant event received for unknown merchant', ['external_id' => $externalId]);
+      return;
+    }
 
-        DB::beginTransaction();
+    $merchant->update([
+      'status' => Arr::get($payload, 'status', $merchant->status),
+      'documents' => Arr::get($payload, 'documents', $merchant->documents),
+      'payout_status' => Arr::get($payload, 'payout_account.status', $merchant->payout_status),
+      'contract_id' => Arr::get($payload, 'contract_id', $merchant->contract_id),
+      'activated_at' => Arr::get($payload, 'status') === YooKassaPartnerMerchant::STATUS_ACTIVE
+        ? now()
+        : $merchant->activated_at,
+      'last_synced_at' => now(),
+    ]);
+  }
+
+  protected function handlePaymentEvent(array $payload): void
+  {
+    $externalId = Arr::get($payload, 'merchant.id');
+    if (!$externalId) {
+      return;
+    }
+
+    $merchant = YooKassaPartnerMerchant::where('external_id', $externalId)->first();
+    if (!$merchant) {
+      Log::warning('YooKassa payment event for unknown merchant', ['external_id' => $externalId]);
+      return;
+    }
+
+    // Сохраняем платеж и получаем транзакцию
+    $detail = $this->paymentService->storePayment($merchant, $payload);
+    $transaction = $detail->transaction;
+
+    if ($transaction) {
+      // Если платеж успешен, создаем Donation для отчетов
+      if ($transaction->isCompleted()) {
         try {
-            $objectType = $event->object_type;
-            $payload = $event->payload ?? [];
-
-            if ($objectType === 'merchant') {
-                $this->handleMerchantEvent($payload);
-            } elseif ($objectType === 'payment') {
-                $this->handlePaymentEvent($payload);
-            }
-
-            $event->update([
-                'processing_status' => YooKassaPartnerEvent::STATUS_PROCESSED,
-                'processed_at' => now(),
-            ]);
-
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('YooKassa partner webhook processing failed', [
-                'event_id' => $event->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            $event->update([
-                'processing_status' => YooKassaPartnerEvent::STATUS_FAILED,
-                'processing_error' => $e->getMessage(),
-            ]);
+          $this->paymentServiceMain->ensureDonationForTransaction($transaction);
+          Log::info('Donation created from YooKassa Partner webhook', [
+            'transaction_id' => $transaction->id,
+            'payment_id' => Arr::get($payload, 'id'),
+          ]);
+        } catch (\Exception $e) {
+          Log::error('Failed to create donation from YooKassa Partner webhook', [
+            'transaction_id' => $transaction->id,
+            'error' => $e->getMessage(),
+          ]);
         }
+      }
     }
-
-    protected function handleMerchantEvent(array $payload): void
-    {
-        $externalId = Arr::get($payload, 'id');
-        if (!$externalId) {
-            return;
-        }
-
-        $merchant = YooKassaPartnerMerchant::where('external_id', $externalId)->first();
-
-        if (!$merchant) {
-            Log::warning('YooKassa merchant event received for unknown merchant', ['external_id' => $externalId]);
-            return;
-        }
-
-        $merchant->update([
-            'status' => Arr::get($payload, 'status', $merchant->status),
-            'documents' => Arr::get($payload, 'documents', $merchant->documents),
-            'payout_status' => Arr::get($payload, 'payout_account.status', $merchant->payout_status),
-            'contract_id' => Arr::get($payload, 'contract_id', $merchant->contract_id),
-            'activated_at' => Arr::get($payload, 'status') === YooKassaPartnerMerchant::STATUS_ACTIVE
-                ? now()
-                : $merchant->activated_at,
-            'last_synced_at' => now(),
-        ]);
-    }
-
-    protected function handlePaymentEvent(array $payload): void
-    {
-        $externalId = Arr::get($payload, 'merchant.id');
-        if (!$externalId) {
-            return;
-        }
-
-        $merchant = YooKassaPartnerMerchant::where('external_id', $externalId)->first();
-        if (!$merchant) {
-            Log::warning('YooKassa payment event for unknown merchant', ['external_id' => $externalId]);
-            return;
-        }
-
-        $this->paymentService->storePayment($merchant, $payload);
-    }
+  }
 }
-
