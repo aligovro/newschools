@@ -72,7 +72,6 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     const isMerchantActive = merchant?.is_operational ?? true;
 
     const loadWidgetData = useCallback(async () => {
-        console.log('[DonationWidget] loadWidgetData called');
         if (!resolvedOrganizationId) {
             setFundraiser(null);
             setProjectInfo(null);
@@ -138,10 +137,20 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 );
             }
 
-            setOrganizationNeeds(
+            // Обновляем organizationNeeds с новыми данными (включая collected_amount)
+            const updatedNeeds =
                 (widgetData.organization_needs as OrganizationNeeds | null) ??
-                    null,
-            );
+                null;
+            setOrganizationNeeds(updatedNeeds);
+
+            // Логируем обновление для отладки
+            if (updatedNeeds) {
+                console.log('Widget data updated:', {
+                    collected: updatedNeeds.collected,
+                    target: updatedNeeds.target,
+                    progress: updatedNeeds.progress_percentage,
+                });
+            }
 
             if (widgetData.project) {
                 setProjectInfo(widgetData.project as ProjectSummary);

@@ -11,6 +11,7 @@ use App\Models\Fundraiser;
 use App\Models\Project;
 use App\Models\ProjectStage;
 use App\Models\Payments\YooKassaPartnerMerchant;
+use App\Models\Site;
 use App\Support\Money;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -700,30 +701,29 @@ class PaymentService
             // Обновляем агрегаты организации (needs_collected_amount)
             // Это сумма всех завершенных донатов организации
             if ($transaction->organization) {
-                $organization = $transaction->organization;
-                $organizationDonations = $organization->donations()
+                $organizationDonations = $transaction->organization->donations()
                     ->where('status', 'completed')
                     ->sum('amount');
 
-                $organization->update([
+                $transaction->organization->update([
                     'needs_collected_amount' => $organizationDonations,
                 ]);
 
-                // Сбрасываем кэш мемоизации для needs
-                // Это нужно, чтобы getNeedsAttribute пересчитал collected из обновленного needs_collected_amount
-                // resolveCollectedMinor использует needs_collected_amount напрямую, если оно > 0,
-                // но сброс кэша гарантирует актуальность данных
-                unset($organization->attributes['__needs_collected_minor']);
-
-                // Обновляем атрибут needs_collected_amount в объекте модели
-                $organization->setAttribute('needs_collected_amount', $organizationDonations);
-
                 // Очищаем кэш виджета для этой организации
-                Cache::forget("donation_widget_subscribers_count_{$organization->id}");
+                Cache::forget("donation_widget_subscribers_count_{$transaction->organization->id}");
+
+                // Очищаем кеш виджетов всех сайтов организации
+                $organization = $transaction->organization;
+                $sites = Site::where('organization_id', $organization->id)->pluck('id');
+                foreach ($sites as $siteId) {
+                    Cache::forget("site_widgets_config_{$siteId}");
+                    Cache::forget("site_widget_settings_{$siteId}");
+                }
 
                 Log::info('Organization aggregates updated', [
-                    'organization_id' => $organization->id,
+                    'organization_id' => $transaction->organization->id,
                     'needs_collected_amount' => $organizationDonations,
+                    'sites_cache_cleared' => $sites->count(),
                 ]);
             }
         } catch (\Throwable $e) {

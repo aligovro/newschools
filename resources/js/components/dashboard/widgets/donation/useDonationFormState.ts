@@ -250,22 +250,15 @@ export const useDonationFormState = ({
         setPendingPayment(null);
         resetForm();
         // Вызываем callback для обновления данных виджета (collected_amount и т.д.)
-        // Добавляем задержку, чтобы дать время бэкенду обновить агрегаты после создания доната
-        if (onPaymentSuccess) {
-            console.log(
-                '[useDonationFormState] Calling onPaymentSuccess (loadWidgetData)',
-            );
-            setTimeout(() => {
+        // Добавляем небольшую задержку, чтобы дать время бэкенду обновить агрегаты
+        setTimeout(() => {
+            if (onPaymentSuccess) {
                 console.log(
-                    '[useDonationFormState] Executing onPaymentSuccess',
+                    'Calling onPaymentSuccess to reload widget data...',
                 );
                 onPaymentSuccess();
-            }, 1000); // Увеличена задержка до 1 секунды для гарантии обновления агрегатов
-        } else {
-            console.warn(
-                '[useDonationFormState] onPaymentSuccess is not defined',
-            );
-        }
+            }
+        }, 500);
     }, [setSuccess, resetForm, onPaymentSuccess]);
 
     const handlePaymentError = useCallback(
