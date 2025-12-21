@@ -369,6 +369,9 @@ Route::prefix('api/projects/{id}')->middleware('auth')->group(function () {
 Route::get('/dashboard/api/regions/{id}', [RegionController::class, 'show']);
 Route::get('/dashboard/api/localities/{id}', [CityController::class, 'show']);
 
+// Обработка возврата после оплаты
+Route::get('/payment/return', [App\Http\Controllers\PaymentReturnController::class, 'return'])->name('payment.return');
+
 // Публичные страницы сайтов (должен быть последним, чтобы не конфликтовать с другими роутами)
 // Страницы главного сайта: /{slug} (например, /kontakty)
 // Исключаем известные маршруты, чтобы не перехватывать их
