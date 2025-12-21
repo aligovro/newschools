@@ -35,8 +35,13 @@ class DonationWidgetController extends Controller
         $fundraiserId = $request->input('fundraiser_id');
         $projectId = $request->input('project_id');
 
-        // Перезагружаем модель организации, чтобы получить актуальные данные (включая needs_collected_amount)
+        // Перезагружаем модель организации, чтобы получить актуальные данные из БД
         $organization->refresh();
+
+        // Сбрасываем кэш мемоизации для needs, чтобы пересчитать collected из актуального needs_collected_amount
+        // Это нужно, так как resolveCollectedMinor использует мемоизацию, если needs_collected_amount == 0
+        unset($organization->attributes['__needs_collected_minor']);
+
         $organization->loadMissing('yookassaPartnerMerchant');
 
         $merchant = $organization->yookassaPartnerMerchant;
