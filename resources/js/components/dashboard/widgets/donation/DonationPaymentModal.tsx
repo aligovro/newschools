@@ -25,9 +25,11 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
         ({ visible, payment, qrImageSrc, onClose, onSuccess, onError }) => {
             const [status, setStatus] = useState<PaymentStatus>('pending');
             const [isChecking, setIsChecking] = useState(false);
+            const [checkCount, setCheckCount] = useState(0);
             const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
             const maxPollingAttempts = 60; // 5 минут (60 * 5 секунд)
             const pollingAttemptsRef = useRef(0);
+            const lastCheckTimeRef = useRef<number>(0);
 
             // Очистка интервала при размонтировании или закрытии
             useEffect(() => {
@@ -56,8 +58,22 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
                         return;
                     }
 
+                    // Предотвращаем слишком частые запросы (минимум 3 секунды между запросами)
+                    const now = Date.now();
+                    if (now - lastCheckTimeRef.current < 3000) {
+                        return;
+                    }
+                    lastCheckTimeRef.current = now;
+
                     try {
-                        setIsChecking(true);
+                        // Показываем индикатор только при первой проверке и каждые 5 проверок
+                        if (
+                            pollingAttemptsRef.current === 0 ||
+                            pollingAttemptsRef.current % 5 === 0
+                        ) {
+                            setIsChecking(true);
+                        }
+
                         const response = await apiClient.get<{
                             success: boolean;
                             data?: {
@@ -71,9 +87,11 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
                             // API возвращает { success: true, data: { status, transaction_id, ... } }
                             const paymentStatus = response.data.data.status;
                             pollingAttemptsRef.current++;
+                            setCheckCount(pollingAttemptsRef.current);
 
                             if (paymentStatus === 'completed') {
                                 setStatus('completed');
+                                setIsChecking(false);
                                 if (pollingIntervalRef.current) {
                                     clearInterval(pollingIntervalRef.current);
                                     pollingIntervalRef.current = null;
@@ -88,6 +106,7 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
                                 paymentStatus === 'cancelled'
                             ) {
                                 setStatus('failed');
+                                setIsChecking(false);
                                 if (pollingIntervalRef.current) {
                                     clearInterval(pollingIntervalRef.current);
                                     pollingIntervalRef.current = null;
@@ -95,20 +114,23 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
                                 onError?.('Платеж не был выполнен');
                             } else {
                                 setStatus('pending');
+                                // Скрываем индикатор после проверки, если статус не изменился
+                                setTimeout(() => setIsChecking(false), 500);
                             }
                         }
                     } catch (error) {
                         console.error('Error checking payment status:', error);
-                        // Продолжаем polling даже при ошибке
-                    } finally {
                         setIsChecking(false);
+                        // Продолжаем polling даже при ошибке, но увеличиваем интервал
                     }
                 };
 
-                // Первая проверка сразу
-                checkPaymentStatus();
+                // Первая проверка через 3 секунды (даем время пользователю отсканировать QR)
+                setTimeout(() => {
+                    checkPaymentStatus();
+                }, 3000);
 
-                // Затем каждые 5 секунд
+                // Затем каждые 5 секунд (адаптивный интервал)
                 pollingIntervalRef.current = setInterval(
                     checkPaymentStatus,
                     5000,
@@ -178,13 +200,21 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
                                 <p className="mb-4 text-sm text-gray-600">
                                     Используйте приложение банка, чтобы
                                     завершить оплату.
-                                    {isChecking && (
-                                        <span className="ml-2 inline-flex items-center text-blue-600">
-                                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                                            Проверяем статус...
-                                        </span>
-                                    )}
                                 </p>
+                                {checkCount > 0 && (
+                                    <div className="mb-4 flex items-center justify-center gap-2 text-xs text-gray-500">
+                                        {isChecking ? (
+                                            <>
+                                                <Loader2 className="h-3 w-3 animate-spin text-blue-600" />
+                                                <span>Проверяем статус...</span>
+                                            </>
+                                        ) : (
+                                            <span>
+                                                Ожидаем подтверждения оплаты...
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </>
                         )}
                         {!showSuccess && !showError && (
