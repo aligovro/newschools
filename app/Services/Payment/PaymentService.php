@@ -11,7 +11,6 @@ use App\Models\Fundraiser;
 use App\Models\Project;
 use App\Models\ProjectStage;
 use App\Models\Payments\YooKassaPartnerMerchant;
-use App\Models\Site;
 use App\Support\Money;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -712,18 +711,9 @@ class PaymentService
                 // Очищаем кэш виджета для этой организации
                 Cache::forget("donation_widget_subscribers_count_{$transaction->organization->id}");
 
-                // Очищаем кеш виджетов всех сайтов организации
-                $organization = $transaction->organization;
-                $sites = Site::where('organization_id', $organization->id)->pluck('id');
-                foreach ($sites as $siteId) {
-                    Cache::forget("site_widgets_config_{$siteId}");
-                    Cache::forget("site_widget_settings_{$siteId}");
-                }
-
                 Log::info('Organization aggregates updated', [
                     'organization_id' => $transaction->organization->id,
                     'needs_collected_amount' => $organizationDonations,
-                    'sites_cache_cleared' => $sites->count(),
                 ]);
             }
         } catch (\Throwable $e) {
