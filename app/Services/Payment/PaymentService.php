@@ -700,19 +700,29 @@ class PaymentService
             // Обновляем агрегаты организации (needs_collected_amount)
             // Это сумма всех завершенных донатов организации
             if ($transaction->organization) {
-                $organizationDonations = $transaction->organization->donations()
+                $organization = $transaction->organization;
+                $organizationDonations = $organization->donations()
                     ->where('status', 'completed')
                     ->sum('amount');
 
-                $transaction->organization->update([
+                $organization->update([
                     'needs_collected_amount' => $organizationDonations,
                 ]);
 
+                // Сбрасываем кэш мемоизации для needs
+                // Это нужно, чтобы getNeedsAttribute пересчитал collected из обновленного needs_collected_amount
+                // resolveCollectedMinor использует needs_collected_amount напрямую, если оно > 0,
+                // но сброс кэша гарантирует актуальность данных
+                unset($organization->attributes['__needs_collected_minor']);
+
+                // Обновляем атрибут needs_collected_amount в объекте модели
+                $organization->setAttribute('needs_collected_amount', $organizationDonations);
+
                 // Очищаем кэш виджета для этой организации
-                Cache::forget("donation_widget_subscribers_count_{$transaction->organization->id}");
+                Cache::forget("donation_widget_subscribers_count_{$organization->id}");
 
                 Log::info('Organization aggregates updated', [
-                    'organization_id' => $transaction->organization->id,
+                    'organization_id' => $organization->id,
                     'needs_collected_amount' => $organizationDonations,
                 ]);
             }

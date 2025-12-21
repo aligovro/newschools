@@ -10,56 +10,56 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class YooKassaPartnerMerchant extends Model
 {
-  use HasFactory;
+    use HasFactory;
 
-  protected $table = 'yookassa_partner_merchants';
+    protected $table = 'yookassa_partner_merchants';
 
-  protected $fillable = [
-    'organization_id',
-    'status',
-    'external_id',
-    'onboarding_id',
-    'contract_id',
-    'payout_account_id',
-    'payout_status',
-    'credentials',
-    'settings',
-    'documents',
-    'activated_at',
-    'last_synced_at',
-  ];
+    protected $fillable = [
+        'organization_id',
+        'status',
+        'external_id',
+        'onboarding_id',
+        'contract_id',
+        'payout_account_id',
+        'payout_status',
+        'credentials',
+        'settings',
+        'documents',
+        'activated_at',
+        'last_synced_at',
+    ];
 
-  protected $casts = [
-    'credentials' => 'array',
-    'settings' => 'array',
-    'documents' => 'array',
-    'activated_at' => 'datetime',
-    'last_synced_at' => 'datetime',
-  ];
+    protected $casts = [
+        'credentials' => 'array',
+        'settings' => 'array',
+        'documents' => 'array',
+        'activated_at' => 'datetime',
+        'last_synced_at' => 'datetime',
+    ];
 
-  public const STATUS_DRAFT = 'draft';
-  public const STATUS_PENDING = 'pending';
-  public const STATUS_ACTIVE = 'active';
-  public const STATUS_REJECTED = 'rejected';
-  public const STATUS_BLOCKED = 'blocked';
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_BLOCKED = 'blocked';
 
-  public function organization(): BelongsTo
-  {
-    return $this->belongsTo(Organization::class);
-  }
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
 
-  public function paymentDetails(): HasMany
-  {
+    public function paymentDetails(): HasMany
+    {
     return $this->hasMany(YooKassaPartnerPaymentDetail::class, 'yookassa_partner_merchant_id');
   }
 
   public function payouts(): HasMany
   {
     return $this->hasMany(YooKassaPartnerPayout::class, 'yookassa_partner_merchant_id');
-  }
+    }
 
-  public function scopeActive($query)
-  {
-    return $query->where('status', self::STATUS_ACTIVE);
-  }
+    public function scopeActive($query)
+    {
+        return $query->where('status', self::STATUS_ACTIVE);
+    }
 }
