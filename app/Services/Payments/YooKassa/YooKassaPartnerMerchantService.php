@@ -57,21 +57,78 @@ class YooKassaPartnerMerchantService
       throw new RuntimeException('Merchant does not have external_id. Submit onboarding first.');
     }
 
-    $client = $this->clientFactory->forOrganization($merchant->organization);
-    $response = $client->getMerchant($merchant->external_id);
+    $credentials = $merchant->credentials ?? [];
+    $accessToken = $credentials['access_token'] ?? null;
 
-    $merchant->update([
-      'status' => Arr::get($response, 'status', $merchant->status),
-      'contract_id' => Arr::get($response, 'contract_id', $merchant->contract_id),
-      'payout_account_id' => Arr::get($response, 'payout_account.id', $merchant->payout_account_id),
-      'payout_status' => Arr::get($response, 'payout_account.status', $merchant->payout_status),
-      'credentials' => $this->mergeCredentials($merchant->credentials, Arr::get($response, 'credentials', [])),
-      'documents' => Arr::get($response, 'documents', $merchant->documents),
-      'activated_at' => Arr::get($response, 'activated_at') ? now() : $merchant->activated_at,
-      'last_synced_at' => now(),
-    ]);
+    // Endpoint /v3/merchants/{id} требует OAuth токен конкретного магазина
+    // Если токена нет, используем /v3/me для получения информации о текущем мерчанте
+    if (!$accessToken) {
+      Log::warning('Cannot sync merchant: OAuth token not available', [
+        'merchant_id' => $merchant->id,
+        'external_id' => $merchant->external_id,
+      ]);
 
-    return $merchant;
+      // Обновляем только last_synced_at, чтобы показать, что попытка была
+      $merchant->update(['last_synced_at' => now()]);
+
+      throw new RuntimeException('Для синхронизации мерчанта необходим OAuth токен. Пожалуйста, пройдите OAuth авторизацию.');
+    }
+
+    try {
+      $client = $this->clientFactory->forOrganization($merchant->organization);
+      $response = $client->getMerchant($merchant->external_id);
+
+      $merchant->update([
+        'status' => Arr::get($response, 'status', $merchant->status),
+        'contract_id' => Arr::get($response, 'contract_id', $merchant->contract_id),
+        'payout_account_id' => Arr::get($response, 'payout_account.id', $merchant->payout_account_id),
+        'payout_status' => Arr::get($response, 'payout_account.status', $merchant->payout_status),
+        'credentials' => $this->mergeCredentials($merchant->credentials, Arr::get($response, 'credentials', [])),
+        'documents' => Arr::get($response, 'documents', $merchant->documents),
+        'activated_at' => Arr::get($response, 'activated_at') ? now() : $merchant->activated_at,
+        'last_synced_at' => now(),
+      ]);
+
+      return $merchant;
+    } catch (\Exception $e) {
+      // Если endpoint недоступен, пробуем использовать /v3/me как альтернативу
+      if (str_contains($e->getMessage(), 'no processor') || str_contains($e->getMessage(), 'invalid_request')) {
+        Log::info('getMerchant endpoint not available, trying /v3/me instead', [
+          'merchant_id' => $merchant->id,
+          'external_id' => $merchant->external_id,
+        ]);
+
+        try {
+          $client = $this->clientFactory->forOrganization($merchant->organization);
+          $meInfo = $client->getMe();
+
+          // Обновляем данные из /v3/me (ограниченная информация)
+          $merchant->update([
+            'external_id' => $meInfo['id'] ?? $meInfo['merchant_id'] ?? $meInfo['account_id'] ?? $merchant->external_id,
+            'last_synced_at' => now(),
+          ]);
+
+          Log::info('Merchant synced using /v3/me', [
+            'merchant_id' => $merchant->id,
+          ]);
+
+          return $merchant;
+        } catch (\Exception $meException) {
+          Log::error('Failed to sync merchant using /v3/me', [
+            'merchant_id' => $merchant->id,
+            'error' => $meException->getMessage(),
+          ]);
+
+          // Обновляем только last_synced_at
+          $merchant->update(['last_synced_at' => now()]);
+
+          throw new RuntimeException('Не удалось синхронизировать мерчант. Endpoint недоступен или требует дополнительных прав. Ошибка: ' . $e->getMessage());
+        }
+      }
+
+      // Для других ошибок просто пробрасываем исключение
+      throw $e;
+    }
   }
 
   public function deactivate(YooKassaPartnerMerchant $merchant, string $reason = null): YooKassaPartnerMerchant

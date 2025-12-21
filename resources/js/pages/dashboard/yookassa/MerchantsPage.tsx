@@ -317,20 +317,30 @@ const MerchantsPage: React.FC = () => {
                                                 }}
                                             >
                                                 <TableCell>
-                                                    <div className="font-medium">
-                                                        {
-                                                            merchant
-                                                                .organization
-                                                                .name
-                                                        }
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        ID:{' '}
-                                                        {
-                                                            merchant
-                                                                .organization.id
-                                                        }
-                                                    </div>
+                                                    {merchant.organization ? (
+                                                        <>
+                                                            <div className="font-medium">
+                                                                {
+                                                                    merchant
+                                                                        .organization
+                                                                        .name
+                                                                }
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">
+                                                                ID:{' '}
+                                                                {
+                                                                    merchant
+                                                                        .organization
+                                                                        .id
+                                                                }
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="text-sm text-gray-400">
+                                                            Организация не
+                                                            привязана
+                                                        </div>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell>
                                                     <MerchantStatusBadge

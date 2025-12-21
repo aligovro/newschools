@@ -21,10 +21,10 @@ class MerchantResource extends JsonResource
 
     return [
       'id' => $this->id,
-      'organization' => [
+      'organization' => $this->organization ? [
         'id' => $this->organization->id,
         'name' => $this->organization->name,
-      ],
+      ] : null,
       'status' => $this->status,
       'external_id' => $this->external_id,
       'onboarding_id' => $this->onboarding_id,

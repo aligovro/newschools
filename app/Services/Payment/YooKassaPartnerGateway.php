@@ -68,6 +68,52 @@ class YooKassaPartnerGateway extends AbstractPaymentGateway
         'account_id' => $accountId,
       ]);
 
+      // Формируем metadata с полной информацией для восстановления при webhook
+      $metadata = [
+        'transaction_id' => $transaction->transaction_id,
+        'organization_id' => $transaction->organization_id,
+      ];
+
+      if ($transaction->fundraiser_id) {
+        $metadata['fundraiser_id'] = $transaction->fundraiser_id;
+      }
+      if ($transaction->project_id) {
+        $metadata['project_id'] = $transaction->project_id;
+      }
+      if ($transaction->project_stage_id) {
+        $metadata['project_stage_id'] = $transaction->project_stage_id;
+      }
+
+      // Добавляем данные донора из payment_details в metadata для восстановления при webhook
+      $paymentDetails = $transaction->payment_details ?? [];
+      if (isset($paymentDetails['donor_name'])) {
+        $metadata['donor_name'] = $paymentDetails['donor_name'];
+      }
+      if (isset($paymentDetails['donor_email'])) {
+        $metadata['donor_email'] = $paymentDetails['donor_email'];
+      }
+      if (isset($paymentDetails['donor_phone'])) {
+        $metadata['donor_phone'] = $paymentDetails['donor_phone'];
+      }
+      if (isset($paymentDetails['donor_message'])) {
+        $metadata['donor_message'] = $paymentDetails['donor_message'];
+      }
+      if (isset($paymentDetails['is_anonymous'])) {
+        $metadata['is_anonymous'] = $paymentDetails['is_anonymous'];
+      }
+      if (isset($paymentDetails['send_receipt'])) {
+        $metadata['send_receipt'] = $paymentDetails['send_receipt'];
+      }
+      if (isset($paymentDetails['is_recurring'])) {
+        $metadata['is_recurring'] = $paymentDetails['is_recurring'];
+      }
+      if (isset($paymentDetails['recurring_period'])) {
+        $metadata['recurring_period'] = $paymentDetails['recurring_period'];
+      }
+      if (isset($paymentDetails['referrer_user_id'])) {
+        $metadata['referrer_user_id'] = $paymentDetails['referrer_user_id'];
+      }
+
       $paymentData = [
         'amount' => [
           'value' => $this->formatAmount($transaction->amount),
@@ -76,12 +122,7 @@ class YooKassaPartnerGateway extends AbstractPaymentGateway
         'capture' => true,
         'confirmation' => $this->buildConfirmation($transaction),
         'description' => $this->getPaymentDescription($transaction),
-        'metadata' => [
-          'transaction_id' => $transaction->transaction_id,
-          'organization_id' => $transaction->organization_id,
-          'fundraiser_id' => $transaction->fundraiser_id,
-          'project_id' => $transaction->project_id,
-        ],
+        'metadata' => $metadata,
       ];
 
       // Проверяем, является ли это регулярным пожертвованием
@@ -373,6 +414,13 @@ class YooKassaPartnerGateway extends AbstractPaymentGateway
 
   /**
    * Формирование данных подтверждения оплаты.
+   *
+   * ВАЖНО: return_url в запросе создания платежа имеет приоритет над настройками магазина в YooKassa.
+   * Это гарантирует, что пользователь вернется на наш сайт после оплаты, если платеж создан через наш сайт.
+   *
+   * Если платеж создан НЕ через наш сайт (например, напрямую через сайт магазина),
+   * пользователь вернется на сайт магазина, но webhook все равно придет к нам.
+   * В таком случае в payment_details будет установлен флаг created_via_our_site = false.
    */
   private function buildConfirmation(PaymentTransaction $transaction): array
   {

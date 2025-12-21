@@ -333,6 +333,7 @@ class OAuthController extends Controller
 
       // Обновляем external_id если он был получен
       $updateData = [
+        'organization_id' => $organization->id, // Убеждаемся, что organization_id установлен
         'status' => YooKassaPartnerMerchant::STATUS_ACTIVE,
         'credentials' => array_merge($merchant->credentials ?? [], [
           'access_token' => $tokenResponse['access_token'] ?? null,
