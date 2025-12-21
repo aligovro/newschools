@@ -72,6 +72,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     const isMerchantActive = merchant?.is_operational ?? true;
 
     const loadWidgetData = useCallback(async () => {
+        console.log('[DonationWidget] loadWidgetData called');
         if (!resolvedOrganizationId) {
             setFundraiser(null);
             setProjectInfo(null);
