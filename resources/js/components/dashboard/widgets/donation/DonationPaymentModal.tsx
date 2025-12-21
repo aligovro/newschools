@@ -99,7 +99,8 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
                                 // Вызываем callback успеха через небольшую задержку для показа статуса
                                 setTimeout(() => {
                                     onSuccess?.();
-                                    onClose();
+                                    // Обновляем страницу для обновления суммы "Собрали"
+                                    window.location.reload();
                                 }, 2000);
                             } else if (
                                 paymentStatus === 'failed' ||
