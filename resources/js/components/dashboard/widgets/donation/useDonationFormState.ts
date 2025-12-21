@@ -250,8 +250,21 @@ export const useDonationFormState = ({
         setPendingPayment(null);
         resetForm();
         // Вызываем callback для обновления данных виджета (collected_amount и т.д.)
+        // Добавляем задержку, чтобы дать время бэкенду обновить агрегаты после создания доната
         if (onPaymentSuccess) {
-            onPaymentSuccess();
+            console.log(
+                '[useDonationFormState] Calling onPaymentSuccess (loadWidgetData)',
+            );
+            setTimeout(() => {
+                console.log(
+                    '[useDonationFormState] Executing onPaymentSuccess',
+                );
+                onPaymentSuccess();
+            }, 1000); // Увеличена задержка до 1 секунды для гарантии обновления агрегатов
+        } else {
+            console.warn(
+                '[useDonationFormState] onPaymentSuccess is not defined',
+            );
         }
     }, [setSuccess, resetForm, onPaymentSuccess]);
 
