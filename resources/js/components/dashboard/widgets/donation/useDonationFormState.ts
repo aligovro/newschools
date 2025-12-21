@@ -10,6 +10,7 @@ interface UseDonationFormStateOptions {
     config: DonationWidgetConfig;
     paymentMethods: ApiPaymentMethod[];
     isMerchantActive: boolean;
+    onPaymentSuccess?: () => void;
 }
 
 export interface DonationFormValues {
@@ -71,6 +72,7 @@ export const useDonationFormState = ({
     config,
     paymentMethods,
     isMerchantActive,
+    onPaymentSuccess,
 }: UseDonationFormStateOptions): DonationFormStateHook => {
     const defaultAmount = config.default_amount ?? 100;
     const defaultRecurringPeriod = config.default_recurring_period ?? 'daily';
@@ -247,7 +249,11 @@ export const useDonationFormState = ({
         setSuccess('Платеж успешно выполнен! Спасибо за ваше пожертвование!');
         setPendingPayment(null);
         resetForm();
-    }, [setSuccess, resetForm]);
+        // Вызываем callback для обновления данных виджета (collected_amount и т.д.)
+        if (onPaymentSuccess) {
+            onPaymentSuccess();
+        }
+    }, [setSuccess, resetForm, onPaymentSuccess]);
 
     const handlePaymentError = useCallback(
         (error: string) => {
