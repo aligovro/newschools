@@ -106,6 +106,22 @@ class PaymentController extends Controller
       $result = $this->paymentService->getPaymentStatus($transactionId);
 
       if ($result['success']) {
+        // Если платеж успешен, убеждаемся, что донат создан
+        if (isset($result['status']) && $result['status'] === 'completed') {
+          try {
+            $transaction = PaymentTransaction::where('transaction_id', $transactionId)->first();
+            if ($transaction) {
+              $this->paymentService->ensureDonationForTransaction($transaction);
+            }
+          } catch (\Exception $e) {
+            // Логируем ошибку, но не прерываем ответ
+            \Illuminate\Support\Facades\Log::warning('Failed to ensure donation in status endpoint', [
+              'transaction_id' => $transactionId,
+              'error' => $e->getMessage(),
+            ]);
+          }
+        }
+
         return response()->json([
           'success' => true,
           'data' => $result,
@@ -308,7 +324,7 @@ class PaymentController extends Controller
 
       return response()->json([
         'success' => true,
-        'data' => $resource->toArray($request),
+        'data' => $resource->toArray(request()),
       ]);
     } catch (\Exception $e) {
       return response()->json([
