@@ -51,6 +51,26 @@ class PaymentReturnController extends Controller
       // Обновляем статус транзакции из платежной системы
       $statusResult = $this->paymentService->getPaymentStatus($transactionId);
 
+      // Обновляем объект транзакции после проверки статуса
+      $transaction->refresh();
+
+      // Если платеж успешен, создаем Donation
+      if ($transaction->isCompleted()) {
+        try {
+          $this->paymentService->ensureDonationForTransaction($transaction);
+          Log::info('Donation created from payment return', [
+            'transaction_id' => $transactionId,
+            'transaction_status' => $transaction->status,
+            'organization_id' => $transaction->organization_id,
+          ]);
+        } catch (\Exception $e) {
+          Log::error('Failed to create donation from payment return', [
+            'transaction_id' => $transactionId,
+            'error' => $e->getMessage(),
+          ]);
+        }
+      }
+
       // Логируем возврат
       Log::info('Payment return processed', [
         'transaction_id' => $transactionId,
