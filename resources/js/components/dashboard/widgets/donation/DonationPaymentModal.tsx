@@ -65,7 +65,7 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
                                 transaction_id: string;
                             };
                             error?: string;
-                        }>(`/api/payments/status/${payment.transaction_id}`);
+                        }>(`/payments/status/${payment.transaction_id}`);
 
                         if (response.data.success && response.data.data) {
                             // API возвращает { success: true, data: { status, transaction_id, ... } }

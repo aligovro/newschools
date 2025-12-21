@@ -213,39 +213,72 @@ class PaymentService
     try {
       $transaction = PaymentTransaction::where('transaction_id', $transactionId)->firstOrFail();
 
-      // Если платеж еще не завершен, проверяем статус в шлюзе
-      if ($transaction->isPending()) {
+      // Проверяем статус в шлюзе, если есть external_id
+      // Проверяем для всех статусов, не только pending, чтобы синхронизировать состояние
+      if ($transaction->external_id) {
         $transaction->loadMissing('paymentMethod');
 
-        if (!$transaction->paymentMethod) {
-          throw new \RuntimeException('Payment method is missing for transaction ' . $transaction->transaction_id);
-        }
+        if ($transaction->paymentMethod) {
+          $organization = $transaction->organization()->with(['yookassaPartnerMerchant', 'settings'])->first();
+          $organizationSettings = $this->getOrganizationPaymentSettings($organization);
 
-        $organization = $transaction->organization()->with(['yookassaPartnerMerchant', 'settings'])->first();
-        $organizationSettings = $this->getOrganizationPaymentSettings($organization);
+          $gatewayPaymentMethod = $this->applyProviderCredentials(
+            clone $transaction->paymentMethod,
+            $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
+              $transaction->paymentMethod->gateway
+            ),
+            $organizationSettings
+          );
 
-        $gatewayPaymentMethod = $this->applyProviderCredentials(
-          clone $transaction->paymentMethod,
-          $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
-            $transaction->paymentMethod->gateway
-          ),
-          $organizationSettings
-        );
+          $partnerMerchant = $organization->yookassaPartnerMerchant;
+          $gateway = PaymentGatewayFactory::createForProvider(
+            $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
+              $transaction->paymentMethod->gateway
+            ),
+            $gatewayPaymentMethod,
+            $partnerMerchant
+          );
 
-        $partnerMerchant = $organization->yookassaPartnerMerchant;
-        $gateway = PaymentGatewayFactory::createForProvider(
-          $transaction->payment_provider ?? PaymentGatewayFactory::guessProviderFromGatewayClass(
-            $transaction->paymentMethod->gateway
-          ),
-          $gatewayPaymentMethod,
-          $partnerMerchant
-        );
-        $externalStatus = $gateway->getPaymentStatus($transaction->external_id);
+          try {
+            $externalStatus = $gateway->getPaymentStatus($transaction->external_id);
+            $oldStatus = $transaction->status;
 
-        if ($externalStatus !== $transaction->status) {
-          $transaction->update(['status' => $externalStatus]);
+            if ($externalStatus !== $transaction->status) {
+              $updateData = ['status' => $externalStatus];
+
+              // Обновляем дату оплаты при успешном платеже
+              if ($externalStatus === PaymentTransaction::STATUS_COMPLETED && !$transaction->paid_at) {
+                $updateData['paid_at'] = now();
+              }
+
+              // Обновляем дату ошибки при неуспешном платеже
+              if (in_array($externalStatus, [PaymentTransaction::STATUS_FAILED, PaymentTransaction::STATUS_CANCELLED]) && !$transaction->failed_at) {
+                $updateData['failed_at'] = now();
+              }
+
+              $transaction->update($updateData);
+              $transaction->refresh(); // Обновляем объект после сохранения
+
+              Log::info('Transaction status updated from gateway', [
+                'transaction_id' => $transaction->transaction_id,
+                'old_status' => $oldStatus,
+                'new_status' => $externalStatus,
+                'organization_id' => $transaction->organization_id,
+              ]);
+            }
+          } catch (\Exception $e) {
+            Log::warning('Failed to check payment status from gateway', [
+              'transaction_id' => $transaction->transaction_id,
+              'external_id' => $transaction->external_id,
+              'error' => $e->getMessage(),
+            ]);
+            // Продолжаем выполнение, возвращаем текущий статус транзакции
+          }
         }
       }
+
+      // Обновляем объект транзакции перед возвратом
+      $transaction->refresh();
 
       return [
         'success' => true,
