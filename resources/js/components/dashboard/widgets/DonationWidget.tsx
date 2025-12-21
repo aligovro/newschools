@@ -112,6 +112,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         config: localConfig,
         paymentMethods,
         isMerchantActive,
+        onPaymentSuccess: loadWidgetData,
     });
 
     useEffect(() => {
@@ -615,7 +616,8 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 progress.currency =
                     organizationNeeds.target.currency ?? progress.currency;
                 progress.percentage =
-                    organizationNeeds.progress_percentage ?? progress.percentage;
+                    organizationNeeds.progress_percentage ??
+                    progress.percentage;
                 return progress;
             }
         }
