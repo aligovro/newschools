@@ -137,20 +137,10 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 );
             }
 
-            // Обновляем organizationNeeds с новыми данными (включая collected_amount)
-            const updatedNeeds =
+            setOrganizationNeeds(
                 (widgetData.organization_needs as OrganizationNeeds | null) ??
-                null;
-            setOrganizationNeeds(updatedNeeds);
-
-            // Логируем обновление для отладки
-            if (updatedNeeds) {
-                console.log('Widget data updated:', {
-                    collected: updatedNeeds.collected,
-                    target: updatedNeeds.target,
-                    progress: updatedNeeds.progress_percentage,
-                });
-            }
+                    null,
+            );
 
             if (widgetData.project) {
                 setProjectInfo(widgetData.project as ProjectSummary);
@@ -245,7 +235,6 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         config: localConfig,
         paymentMethods,
         isMerchantActive,
-        onPaymentSuccess: loadWidgetData,
     });
 
     useEffect(() => {

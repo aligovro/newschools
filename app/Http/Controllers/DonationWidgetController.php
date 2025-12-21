@@ -35,9 +35,6 @@ class DonationWidgetController extends Controller
         $fundraiserId = $request->input('fundraiser_id');
         $projectId = $request->input('project_id');
 
-        // Обновляем данные организации из БД, чтобы получить актуальные агрегаты
-        // Это важно для получения актуального needs_collected_amount
-        $organization->refresh();
         $organization->loadMissing('yookassaPartnerMerchant');
 
         $merchant = $organization->yookassaPartnerMerchant;
