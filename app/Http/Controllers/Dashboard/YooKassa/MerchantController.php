@@ -29,6 +29,9 @@ class MerchantController extends Controller
   {
     $query = YooKassaPartnerMerchant::query()->with('organization');
 
+    // Показываем только мерчанты с привязанной организацией
+    $query->whereNotNull('organization_id');
+
     if ($request->filled('status')) {
       $query->where('status', $request->string('status'));
     }
@@ -62,17 +65,43 @@ class MerchantController extends Controller
 
   public function sync(SyncMerchantRequest $request, YooKassaPartnerMerchant $merchant)
   {
-    $merchant = $this->merchantService->sync($merchant);
+    try {
+      $merchant = $this->merchantService->sync($merchant);
 
-    if ($request->boolean('with_payments')) {
-      $this->paymentService->syncMerchantPayments($merchant);
+      if ($request->boolean('with_payments')) {
+        try {
+          $this->paymentService->syncMerchantPayments($merchant);
+        } catch (\Exception $e) {
+          Log::warning('Failed to sync merchant payments', [
+            'merchant_id' => $merchant->id,
+            'error' => $e->getMessage(),
+          ]);
+        }
+      }
+
+      if ($request->boolean('with_payouts')) {
+        try {
+          $this->payoutService->syncMerchantPayouts($merchant);
+        } catch (\Exception $e) {
+          Log::warning('Failed to sync merchant payouts', [
+            'merchant_id' => $merchant->id,
+            'error' => $e->getMessage(),
+          ]);
+        }
+      }
+
+      return MerchantResource::make($merchant);
+    } catch (\Exception $e) {
+      Log::error('Merchant sync failed', [
+        'merchant_id' => $merchant->id,
+        'error' => $e->getMessage(),
+      ]);
+
+      return response()->json([
+        'error' => $e->getMessage(),
+        'message' => 'Не удалось синхронизировать мерчант: ' . $e->getMessage(),
+      ], 400);
     }
-
-    if ($request->boolean('with_payouts')) {
-      $this->payoutService->syncMerchantPayouts($merchant);
-    }
-
-    return MerchantResource::make($merchant);
   }
 
   public function getByOrganization(Organization $organization)

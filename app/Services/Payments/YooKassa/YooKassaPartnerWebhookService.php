@@ -94,36 +94,69 @@ class YooKassaPartnerWebhookService
 
   protected function handlePaymentEvent(array $payload): void
   {
-    $externalId = Arr::get($payload, 'merchant.id');
-    if (!$externalId) {
+    // В Partner API webhook'е merchant.id может быть в object.merchant.id или в корне payload
+    $merchantId = Arr::get($payload, 'object.merchant.id')
+      ?? Arr::get($payload, 'merchant.id')
+      ?? Arr::get($payload, 'object.id'); // Для некоторых событий может быть в object.id
+
+    if (!$merchantId) {
+      Log::warning('YooKassa payment event: merchant ID not found', [
+        'payload_keys' => array_keys($payload),
+        'object_keys' => array_keys(Arr::get($payload, 'object', [])),
+      ]);
       return;
     }
 
-    $merchant = YooKassaPartnerMerchant::where('external_id', $externalId)->first();
+    $merchant = YooKassaPartnerMerchant::where('external_id', $merchantId)->first();
     if (!$merchant) {
-      Log::warning('YooKassa payment event for unknown merchant', ['external_id' => $externalId]);
+      Log::warning('YooKassa payment event for unknown merchant', [
+        'external_id' => $merchantId,
+        'payment_id' => Arr::get($payload, 'object.id') ?? Arr::get($payload, 'id'),
+      ]);
       return;
     }
+
+    // Получаем объект платежа из payload (может быть в object или в корне)
+    $paymentObject = Arr::get($payload, 'object', $payload);
 
     // Сохраняем платеж и получаем транзакцию
-    $detail = $this->paymentService->storePayment($merchant, $payload);
+    $detail = $this->paymentService->storePayment($merchant, $paymentObject);
     $transaction = $detail->transaction;
 
     if ($transaction) {
-      // Если платеж успешен, создаем Donation для отчетов
-      if ($transaction->isCompleted()) {
-        try {
-          $this->paymentServiceMain->ensureDonationForTransaction($transaction);
-          Log::info('Donation created from YooKassa Partner webhook', [
-            'transaction_id' => $transaction->id,
-            'payment_id' => Arr::get($payload, 'id'),
-          ]);
-        } catch (\Exception $e) {
-          Log::error('Failed to create donation from YooKassa Partner webhook', [
-            'transaction_id' => $transaction->id,
-            'error' => $e->getMessage(),
-          ]);
-        }
+      // Определяем, был ли платеж создан через наш сайт
+      $paymentDetails = $transaction->payment_details ?? [];
+      $isCreatedViaOurSite = $paymentDetails['created_via_our_site'] ?? false;
+
+      // Обновляем webhook_data для отслеживания
+      $transaction->update([
+        'webhook_data' => array_merge($transaction->webhook_data ?? [], [
+          'webhook_received_at' => now()->toIso8601String(),
+          'event_type' => Arr::get($payload, 'event_type'),
+          'created_via_our_site' => $isCreatedViaOurSite,
+        ]),
+      ]);
+
+      // Создаем или обновляем Donation для всех статусов (не только succeeded)
+      // Это нужно для отчетов и отслеживания всех платежей
+      // Обрабатываем все платежи от OAuth-связанных мерчантов, независимо от источника создания
+      try {
+        $this->paymentServiceMain->ensureDonationForTransaction($transaction);
+        Log::info('Transaction processed from YooKassa Partner webhook', [
+          'transaction_id' => $transaction->id,
+          'payment_id' => Arr::get($paymentObject, 'id'),
+          'status' => $transaction->status,
+          'organization_id' => $transaction->organization_id,
+          'created_via_our_site' => $isCreatedViaOurSite,
+          'note' => $isCreatedViaOurSite
+            ? 'Платеж создан через наш сайт, пользователь вернется к нам'
+            : 'Платеж создан не через наш сайт, пользователь вернется на сайт магазина',
+        ]);
+      } catch (\Exception $e) {
+        Log::error('Failed to process transaction from YooKassa Partner webhook', [
+          'transaction_id' => $transaction->id,
+          'error' => $e->getMessage(),
+        ]);
       }
     }
   }
