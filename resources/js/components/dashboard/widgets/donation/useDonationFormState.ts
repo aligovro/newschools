@@ -247,10 +247,6 @@ export const useDonationFormState = ({
         setSuccess('Платеж успешно выполнен! Спасибо за ваше пожертвование!');
         setPendingPayment(null);
         resetForm();
-        // Обновляем страницу для обновления суммы "Собрали"
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
     }, [setSuccess, resetForm]);
 
     const handlePaymentError = useCallback(
