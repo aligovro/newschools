@@ -51,6 +51,8 @@ export interface DonationPaymentModalState {
     payment: DonationPaymentData | null;
     qrImageSrc: string | null;
     onClose: () => void;
+    onSuccess?: () => void;
+    onError?: (error: string) => void;
 }
 
 export interface DonationFormStateHook {
@@ -241,6 +243,20 @@ export const useDonationFormState = ({
         setPendingPayment(null);
     }, []);
 
+    const handlePaymentSuccess = useCallback(() => {
+        setSuccess('Платеж успешно выполнен! Спасибо за ваше пожертвование!');
+        setPendingPayment(null);
+        resetForm();
+    }, [setSuccess, resetForm]);
+
+    const handlePaymentError = useCallback(
+        (error: string) => {
+            setError(error);
+            // Не закрываем модалку автоматически при ошибке, чтобы пользователь мог попробовать еще раз
+        },
+        [setError],
+    );
+
     const isSelectedMethodAvailable = useMemo(() => {
         return paymentMethods.some((method) => {
             const slug = normalizePaymentSlug(method);
@@ -290,6 +306,8 @@ export const useDonationFormState = ({
             payment: pendingPayment,
             qrImageSrc: paymentQrImageSrc,
             onClose: handleClosePaymentModal,
+            onSuccess: handlePaymentSuccess,
+            onError: handlePaymentError,
         },
         isSelectedMethodAvailable,
     };
