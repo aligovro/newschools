@@ -60,6 +60,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     const [subscribersCount, setSubscribersCount] = useState<number | null>(
         null,
     );
+    const [widgetLoadError, setWidgetLoadError] = useState<string | null>(null);
 
     const resolvedOrganizationId =
         parseNumericId(organizationId) ??
@@ -70,61 +71,6 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
     const isMerchantActive = merchant?.is_operational ?? true;
 
-    const {
-        values: {
-            amount,
-            isRecurring,
-            recurringPeriod,
-            selectedPaymentMethod,
-            donorName,
-            donorEmail,
-            donorPhone,
-            donorMessage,
-            isAnonymous,
-            agreedToPolicy,
-            agreedToRecurring,
-            isProcessing,
-            error,
-            success,
-        },
-        handlers: {
-            handleAmountInputChange,
-            handlePresetAmountSelect,
-            handleRecurringChange,
-            handleRecurringPeriodChange,
-            handleDonorNameChange,
-            handleDonorEmailChange,
-            handleDonorPhoneChange,
-            handleDonorMessageChange,
-            handleAnonymousChange,
-            handleAgreedToPolicyChange,
-            handleAgreedToRecurringChange,
-            handlePaymentMethodSelect,
-        },
-        setError: setFormError,
-        setSuccess: setFormSuccess,
-        setIsProcessing: setFormProcessing,
-        setPendingPayment: setFormPendingPayment,
-        resetForm,
-        paymentModal,
-        isSelectedMethodAvailable,
-    } = useDonationFormState({
-        config: localConfig,
-        paymentMethods,
-        isMerchantActive,
-        onPaymentSuccess: loadWidgetData,
-    });
-
-    useEffect(() => {
-        setLocalConfig(config);
-    }, [config]);
-
-    useEffect(() => {
-        if (autoExpandSettings || isEditable) {
-            setIsSettingsExpanded(true);
-        }
-    }, [autoExpandSettings, isEditable]);
-
     const loadWidgetData = useCallback(async () => {
         if (!resolvedOrganizationId) {
             setFundraiser(null);
@@ -132,7 +78,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
             setOrganizationNeeds(null);
             setMerchant(null);
             setIsLoading(true);
-            setFormError(null);
+            setWidgetLoadError(null);
 
             try {
                 const methods =
@@ -141,7 +87,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 setPaymentMethods(methodsList);
             } catch (err) {
                 console.error('Error loading public payment methods:', err);
-                setFormError('Ошибка загрузки данных виджета');
+                setWidgetLoadError('Ошибка загрузки данных виджета');
             } finally {
                 setIsLoading(false);
             }
@@ -150,7 +96,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         }
 
         setIsLoading(true);
-        setFormError(null);
+        setWidgetLoadError(null);
 
         try {
             const params: {
@@ -235,7 +181,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
             setPaymentMethods(methodsList);
         } catch (err: unknown) {
             console.error('Error loading widget data:', err);
-            setFormError('Ошибка загрузки данных виджета');
+            setWidgetLoadError('Ошибка загрузки данных виджета');
         } finally {
             setIsLoading(false);
         }
@@ -245,8 +191,62 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         localConfig.project_id,
         contextProjectId,
         contextStageId,
-        setFormError,
     ]);
+
+    const {
+        values: {
+            amount,
+            isRecurring,
+            recurringPeriod,
+            selectedPaymentMethod,
+            donorName,
+            donorEmail,
+            donorPhone,
+            donorMessage,
+            isAnonymous,
+            agreedToPolicy,
+            agreedToRecurring,
+            isProcessing,
+            error,
+            success,
+        },
+        handlers: {
+            handleAmountInputChange,
+            handlePresetAmountSelect,
+            handleRecurringChange,
+            handleRecurringPeriodChange,
+            handleDonorNameChange,
+            handleDonorEmailChange,
+            handleDonorPhoneChange,
+            handleDonorMessageChange,
+            handleAnonymousChange,
+            handleAgreedToPolicyChange,
+            handleAgreedToRecurringChange,
+            handlePaymentMethodSelect,
+        },
+        setError: setFormError,
+        setSuccess: setFormSuccess,
+        setIsProcessing: setFormProcessing,
+        setPendingPayment: setFormPendingPayment,
+        resetForm,
+        paymentModal,
+        isSelectedMethodAvailable,
+    } = useDonationFormState({
+        config: localConfig,
+        paymentMethods,
+        isMerchantActive,
+        onPaymentSuccess: loadWidgetData,
+    });
+
+    useEffect(() => {
+        setLocalConfig(config);
+    }, [config]);
+
+    useEffect(() => {
+        if (autoExpandSettings || isEditable) {
+            setIsSettingsExpanded(true);
+        }
+    }, [autoExpandSettings, isEditable]);
 
     useEffect(() => {
         if (!isEditable) {
