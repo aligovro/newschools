@@ -89,11 +89,15 @@ class SeoPresenter
         $twitterImage = $this->getString($rawSeo['twitter_image'] ?? null)
             ?? $ogImage;
 
+        // Robots meta tag для управления индексацией
+        $robots = $this->getString($rawSeo['robots'] ?? null) ?? 'index, follow';
+
         return [
             'title' => $metaTitle,
             'description' => $metaDescription,
             'keywords' => $seoKeywords,
             'canonical_url' => $canonicalUrl,
+            'robots' => $robots,
             'og_title' => $ogTitle,
             'og_description' => $ogDescription,
             'og_type' => $ogType,

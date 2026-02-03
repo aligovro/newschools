@@ -364,6 +364,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 {seoData.canonicalUrl && (
                     <link rel="canonical" href={seoData.canonicalUrl} />
                 )}
+                {/* Robots meta tag для индексации */}
+                <meta name="robots" content="index, follow" />
                 {/* Open Graph */}
                 <meta property="og:type" content={seoData.ogType} />
                 <meta property="og:title" content={seoData.ogTitle} />
