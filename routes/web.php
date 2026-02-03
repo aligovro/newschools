@@ -20,21 +20,43 @@ use App\Http\Controllers\Dashboard\SitePageController;
 use App\Http\Controllers\Webhook\YooKassaPartnerWebhookController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\PublicProjectController;
+use App\Http\Controllers\PublicSponsorController;
+use App\Http\Controllers\PublicAlumniController;
+use App\Http\Controllers\PublicOrganizationController;
+use App\Http\Controllers\SitePreviewController;
+use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\Dashboard\ImageUploadController;
+use App\Http\Controllers\Dashboard\GlobalSettingsController;
+use App\Http\Controllers\Dashboard\OrganizationConsoleController;
+use App\Http\Controllers\Dashboard\OrganizationSettingsController;
+use App\Http\Controllers\Dashboard\OrganizationPaymentsController;
+use App\Http\Controllers\Dashboard\OrganizationTelegramController;
+use App\Http\Controllers\Dashboard\WidgetController;
+use App\Http\Controllers\Dashboard\OrganizationStaffController;
+use App\Http\Controllers\Dashboard\OrganizationReportsController;
+use App\Http\Controllers\Dashboard\YooKassa\OAuthController as YooKassaOAuthController;
+use App\Http\Controllers\Api\SiteController as ApiSiteController;
+use App\Http\Controllers\Api\ProjectController as ApiProjectController;
+use App\Http\Controllers\Api\FormWidgetController;
+use App\Http\Controllers\Api\FormSubmissionController;
+use App\Http\Controllers\PaymentReturnController;
+use App\Http\Controllers\PublicSitePageController;
 
 Route::get('/', [MainSiteController::class, 'index'])->name('home');
 Route::get('/organizations', [MainSiteController::class, 'organizations'])->name('main-site.organizations');
 Route::get('/organization/{slug}', [MainSiteController::class, 'organization'])->name('main-site.organization');
-Route::get('/projects', [App\Http\Controllers\PublicProjectController::class, 'index'])->name('main-site.projects');
-Route::get('/project/{slug}', [App\Http\Controllers\PublicProjectController::class, 'show'])->name('main-site.project');
+Route::get('/projects', [PublicProjectController::class, 'index'])->name('main-site.projects');
+Route::get('/project/{slug}', [PublicProjectController::class, 'show'])->name('main-site.project');
 Route::get('/news', [MainSiteController::class, 'news'])->name('main-site.news');
 Route::get('/news/{slug}', [MainSiteController::class, 'showNews'])->name('main-site.news.show');
-Route::get('/project/{project:slug}/sponsors', [App\Http\Controllers\PublicSponsorController::class, 'projectSponsors'])->name('main-site.project.sponsors');
-Route::get('/organization/{organization:slug}/sponsors', [App\Http\Controllers\PublicSponsorController::class, 'organizationSponsors'])->name('main-site.organization.sponsors');
-Route::get('/organization/{organization:slug}/alumni', [App\Http\Controllers\PublicAlumniController::class, 'organizationAlumni'])->name('main-site.organization.alumni');
+Route::get('/project/{project:slug}/sponsors', [PublicSponsorController::class, 'projectSponsors'])->name('main-site.project.sponsors');
+Route::get('/organization/{organization:slug}/sponsors', [PublicSponsorController::class, 'organizationSponsors'])->name('main-site.organization.sponsors');
+Route::get('/organization/{organization:slug}/alumni', [PublicAlumniController::class, 'organizationAlumni'])->name('main-site.organization.alumni');
 
 // Публичные API для организаций (используются через /api/public/organizations)
-Route::get('/api/organization-types', [App\Http\Controllers\PublicOrganizationController::class, 'types'])->name('organizations.types');
-Route::get('/api/regions', [App\Http\Controllers\PublicOrganizationController::class, 'regions'])->name('organizations.regions');
+Route::get('/api/organization-types', [PublicOrganizationController::class, 'types'])->name('organizations.types');
+Route::get('/api/regions', [PublicOrganizationController::class, 'regions'])->name('organizations.regions');
 
 // Тестовая страница для проверки Tailwind CSS
 Route::get('/tailwind-test', function () {
@@ -42,12 +64,12 @@ Route::get('/tailwind-test', function () {
 })->name('tailwind-test');
 
 // Публичный маршрут для превью сайта (только опубликованные)
-Route::get('/sites/{slug}/preview', [App\Http\Controllers\SitePreviewController::class, 'preview'])->name('sites.preview');
+Route::get('/sites/{slug}/preview', [SitePreviewController::class, 'preview'])->name('sites.preview');
 
 // Profile routes
 Route::middleware(['auth'])->group(function () {
-    Route::get('/profile', [App\Http\Controllers\Settings\ProfileController::class, 'show'])->name('profile.show');
-    Route::match(['put', 'post'], '/profile', [App\Http\Controllers\Settings\ProfileController::class, 'update'])->name('profile.update.public');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::match(['put', 'post'], '/profile', [ProfileController::class, 'update'])->name('profile.update.public');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -107,12 +129,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Organization staff management
         Route::prefix('organizations/{organization}/staff')->name('organizations.staff.')->group(function () {
-            Route::get('/check-director', [App\Http\Controllers\Dashboard\OrganizationStaffController::class, 'checkDirector'])->name('check-director');
-            Route::get('/', [App\Http\Controllers\Dashboard\OrganizationStaffController::class, 'index'])->name('index');
-            Route::post('/', [App\Http\Controllers\Dashboard\OrganizationStaffController::class, 'store'])->name('store');
-            Route::get('/{staff:id}', [App\Http\Controllers\Dashboard\OrganizationStaffController::class, 'show'])->name('show');
-            Route::put('/{staff:id}', [App\Http\Controllers\Dashboard\OrganizationStaffController::class, 'update'])->name('update');
-            Route::delete('/{staff:id}', [App\Http\Controllers\Dashboard\OrganizationStaffController::class, 'destroy'])->name('destroy');
+            Route::get('/check-director', [OrganizationStaffController::class, 'checkDirector'])->name('check-director');
+            Route::get('/', [OrganizationStaffController::class, 'index'])->name('index');
+            Route::post('/', [OrganizationStaffController::class, 'store'])->name('store');
+            Route::get('/{staff:id}', [OrganizationStaffController::class, 'show'])->name('show');
+            Route::put('/{staff:id}', [OrganizationStaffController::class, 'update'])->name('update');
+            Route::delete('/{staff:id}', [OrganizationStaffController::class, 'destroy'])->name('destroy');
         });
 
         // Projects management (all projects for super admin)
@@ -139,33 +161,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/organizations/{organization}/projects/check-slug', [ProjectController::class, 'checkSlug'])->name('organizations.projects.check-slug');
 
         // Image upload routes
-        Route::post('/api/upload/organization-logo', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadOrganizationLogo'])->name('api.upload.organization-logo');
-        Route::post('/api/upload/slider-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadSliderImage'])->name('api.upload.slider-image');
-        Route::post('/api/upload/gallery-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadGalleryImage'])->name('api.upload.gallery-image');
-        Route::post('/api/upload/news-cover-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadNewsCoverImage'])->name('api.upload.news-cover-image');
-        Route::post('/api/upload/news-gallery-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadNewsGalleryImage'])->name('api.upload.news-gallery-image');
-        Route::post('/api/upload/text-widget-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'uploadTextWidgetImage'])->name('api.upload.text-widget-image');
-        Route::delete('/api/upload/delete-image', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'deleteImage'])->name('api.upload.delete-image');
-        Route::get('/api/upload/image-info', [App\Http\Controllers\Dashboard\ImageUploadController::class, 'getImageInfo'])->name('api.upload.image-info');
+        Route::post('/api/upload/organization-logo', [ImageUploadController::class, 'uploadOrganizationLogo'])->name('api.upload.organization-logo');
+        Route::post('/api/upload/slider-image', [ImageUploadController::class, 'uploadSliderImage'])->name('api.upload.slider-image');
+        Route::post('/api/upload/gallery-image', [ImageUploadController::class, 'uploadGalleryImage'])->name('api.upload.gallery-image');
+        Route::post('/api/upload/news-cover-image', [ImageUploadController::class, 'uploadNewsCoverImage'])->name('api.upload.news-cover-image');
+        Route::post('/api/upload/news-gallery-image', [ImageUploadController::class, 'uploadNewsGalleryImage'])->name('api.upload.news-gallery-image');
+        Route::post('/api/upload/text-widget-image', [ImageUploadController::class, 'uploadTextWidgetImage'])->name('api.upload.text-widget-image');
+        Route::delete('/api/upload/delete-image', [ImageUploadController::class, 'deleteImage'])->name('api.upload.delete-image');
+        Route::get('/api/upload/image-info', [ImageUploadController::class, 'getImageInfo'])->name('api.upload.image-info');
 
         // Suggested schools management (super admin only)
         Route::get('/suggested-organizations', [SuggestedOrganizationController::class, 'index'])->name('suggested-organizations.index');
 
         // Global settings management (super admin only)
         Route::prefix('admin')->name('admin.')->group(function () {
-            Route::get('/global-settings', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'index'])->name('global-settings.index');
-            Route::post('/global-settings/terminology', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updateTerminology'])->name('global-settings.terminology');
-            Route::post('/global-settings/system', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updateSystemSettings'])->name('global-settings.system');
-            Route::post('/global-settings/organization-defaults', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updateDefaultOrganizationSettings'])->name('global-settings.organization-defaults');
-            Route::post('/global-settings/features', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updateFeatureFlags'])->name('global-settings.features');
-            Route::post('/global-settings/system-config', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updateSystemConfig'])->name('global-settings.system-config');
-            Route::post('/global-settings/integrations', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updateIntegrationSettings'])->name('global-settings.integrations');
-            Route::post('/global-settings/payments', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'updatePaymentSettings'])->name('global-settings.payments');
-            Route::get('/global-settings/export', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'export'])->name('global-settings.export');
-            Route::post('/global-settings/import', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'import'])->name('global-settings.import');
-            Route::post('/global-settings/reset', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'reset'])->name('global-settings.reset');
-            Route::post('/global-settings/preview-terminology', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'previewTerminology'])->name('global-settings.preview-terminology');
-            Route::post('/global-settings/clear-cache', [App\Http\Controllers\Dashboard\GlobalSettingsController::class, 'clearCache'])->name('global-settings.clear-cache');
+            Route::get('/global-settings', [GlobalSettingsController::class, 'index'])->name('global-settings.index');
+            Route::post('/global-settings/terminology', [GlobalSettingsController::class, 'updateTerminology'])->name('global-settings.terminology');
+            Route::post('/global-settings/system', [GlobalSettingsController::class, 'updateSystemSettings'])->name('global-settings.system');
+            Route::post('/global-settings/organization-defaults', [GlobalSettingsController::class, 'updateDefaultOrganizationSettings'])->name('global-settings.organization-defaults');
+            Route::post('/global-settings/features', [GlobalSettingsController::class, 'updateFeatureFlags'])->name('global-settings.features');
+            Route::post('/global-settings/system-config', [GlobalSettingsController::class, 'updateSystemConfig'])->name('global-settings.system-config');
+            Route::post('/global-settings/integrations', [GlobalSettingsController::class, 'updateIntegrationSettings'])->name('global-settings.integrations');
+            Route::post('/global-settings/payments', [GlobalSettingsController::class, 'updatePaymentSettings'])->name('global-settings.payments');
+            Route::get('/global-settings/export', [GlobalSettingsController::class, 'export'])->name('global-settings.export');
+            Route::post('/global-settings/import', [GlobalSettingsController::class, 'import'])->name('global-settings.import');
+            Route::post('/global-settings/reset', [GlobalSettingsController::class, 'reset'])->name('global-settings.reset');
+            Route::post('/global-settings/preview-terminology', [GlobalSettingsController::class, 'previewTerminology'])->name('global-settings.preview-terminology');
+            Route::post('/global-settings/clear-cache', [GlobalSettingsController::class, 'clearCache'])->name('global-settings.clear-cache');
         });
 
         // Organization workspace (shared admin area)
@@ -177,62 +199,62 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/analytics', [OrganizationAdminController::class, 'analytics'])->name('analytics');
 
             Route::prefix('console')->name('console.')->group(function () {
-                Route::get('/', [App\Http\Controllers\Dashboard\OrganizationConsoleController::class, 'index'])->name('index');
-                Route::get('/statistics', [App\Http\Controllers\Dashboard\OrganizationConsoleController::class, 'statistics'])->name('statistics');
-                Route::get('/revenue', [App\Http\Controllers\Dashboard\OrganizationConsoleController::class, 'revenue'])->name('revenue');
-                Route::get('/members', [App\Http\Controllers\Dashboard\OrganizationConsoleController::class, 'members'])->name('members');
-                Route::get('/projects', [App\Http\Controllers\Dashboard\OrganizationConsoleController::class, 'projects'])->name('projects');
-                Route::get('/notifications', [App\Http\Controllers\Dashboard\OrganizationConsoleController::class, 'notifications'])->name('notifications');
-                Route::post('/quick-action', [App\Http\Controllers\Dashboard\OrganizationConsoleController::class, 'quickAction'])->name('quick-action');
+                Route::get('/', [OrganizationConsoleController::class, 'index'])->name('index');
+                Route::get('/statistics', [OrganizationConsoleController::class, 'statistics'])->name('statistics');
+                Route::get('/revenue', [OrganizationConsoleController::class, 'revenue'])->name('revenue');
+                Route::get('/members', [OrganizationConsoleController::class, 'members'])->name('members');
+                Route::get('/projects', [OrganizationConsoleController::class, 'projects'])->name('projects');
+                Route::get('/notifications', [OrganizationConsoleController::class, 'notifications'])->name('notifications');
+                Route::post('/quick-action', [OrganizationConsoleController::class, 'quickAction'])->name('quick-action');
             });
 
             Route::prefix('settings')->name('settings.')->group(function () {
-                Route::get('/', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'index'])->name('index');
-                Route::put('/general', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'updateGeneral'])->name('update-general');
-                Route::put('/site', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'updateSiteSettings'])->name('update-site');
-                Route::put('/payments', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'updatePaymentSettings'])->name('update-payments');
-                Route::put('/notifications', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'updateNotificationSettings'])->name('update-notifications');
-                Route::put('/integrations', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'updateIntegrationSettings'])->name('update-integrations');
-                Route::post('/test-telegram', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'testTelegramBot'])->name('test-telegram');
-                Route::get('/export', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'exportSettings'])->name('export');
-                Route::post('/import', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'importSettings'])->name('import');
-                Route::post('/reset', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'resetToDefaults'])->name('reset');
+                Route::get('/', [OrganizationSettingsController::class, 'index'])->name('index');
+                Route::put('/general', [OrganizationSettingsController::class, 'updateGeneral'])->name('update-general');
+                Route::put('/site', [OrganizationSettingsController::class, 'updateSiteSettings'])->name('update-site');
+                Route::put('/payments', [OrganizationSettingsController::class, 'updatePaymentSettings'])->name('update-payments');
+                Route::put('/notifications', [OrganizationSettingsController::class, 'updateNotificationSettings'])->name('update-notifications');
+                Route::put('/integrations', [OrganizationSettingsController::class, 'updateIntegrationSettings'])->name('update-integrations');
+                Route::post('/test-telegram', [OrganizationSettingsController::class, 'testTelegramBot'])->name('test-telegram');
+                Route::get('/export', [OrganizationSettingsController::class, 'exportSettings'])->name('export');
+                Route::post('/import', [OrganizationSettingsController::class, 'importSettings'])->name('import');
+                Route::post('/reset', [OrganizationSettingsController::class, 'resetToDefaults'])->name('reset');
             });
 
             Route::prefix('payments')->name('payments.')->group(function () {
-                Route::get('/', [App\Http\Controllers\Dashboard\OrganizationPaymentsController::class, 'index'])->name('index');
-                Route::get('/transactions', [App\Http\Controllers\Dashboard\OrganizationPaymentsController::class, 'transactions'])->name('transactions');
-                Route::post('/create', [App\Http\Controllers\Dashboard\OrganizationPaymentsController::class, 'createPayment'])->name('create');
-                Route::post('/webhook/yookassa', [App\Http\Controllers\Dashboard\OrganizationPaymentsController::class, 'yookassaWebhook'])->name('yookassa-webhook');
-                Route::post('/refund/{donation}', [App\Http\Controllers\Dashboard\OrganizationPaymentsController::class, 'refund'])->name('refund');
-                Route::get('/export', [App\Http\Controllers\Dashboard\OrganizationPaymentsController::class, 'export'])->name('export');
-                Route::get('/settings', [App\Http\Controllers\Dashboard\OrganizationPaymentsController::class, 'settings'])->name('settings');
-                Route::put('/settings', [App\Http\Controllers\Dashboard\OrganizationPaymentsController::class, 'updateSettings'])->name('update-settings');
-                Route::post('/test', [App\Http\Controllers\Dashboard\OrganizationPaymentsController::class, 'testPayment'])->name('test');
+                Route::get('/', [OrganizationPaymentsController::class, 'index'])->name('index');
+                Route::get('/transactions', [OrganizationPaymentsController::class, 'transactions'])->name('transactions');
+                Route::post('/create', [OrganizationPaymentsController::class, 'createPayment'])->name('create');
+                Route::post('/webhook/yookassa', [OrganizationPaymentsController::class, 'yookassaWebhook'])->name('yookassa-webhook');
+                Route::post('/refund/{donation}', [OrganizationPaymentsController::class, 'refund'])->name('refund');
+                Route::get('/export', [OrganizationPaymentsController::class, 'export'])->name('export');
+                Route::get('/settings', [OrganizationPaymentsController::class, 'settings'])->name('settings');
+                Route::put('/settings', [OrganizationPaymentsController::class, 'updateSettings'])->name('update-settings');
+                Route::post('/test', [OrganizationPaymentsController::class, 'testPayment'])->name('test');
             });
 
             Route::prefix('telegram')->name('telegram.')->group(function () {
-                Route::get('/', [App\Http\Controllers\Dashboard\OrganizationTelegramController::class, 'index'])->name('index');
-                Route::post('/setup', [App\Http\Controllers\Dashboard\OrganizationTelegramController::class, 'setupBot'])->name('setup');
-                Route::post('/test-message', [App\Http\Controllers\Dashboard\OrganizationTelegramController::class, 'sendTestMessage'])->name('test-message');
-                Route::post('/send-donation-notification', [App\Http\Controllers\Dashboard\OrganizationTelegramController::class, 'sendDonationNotification'])->name('send-donation-notification');
-                Route::get('/stats', [App\Http\Controllers\Dashboard\OrganizationTelegramController::class, 'getBotStats'])->name('stats');
-                Route::post('/webhook/setup', [App\Http\Controllers\Dashboard\OrganizationTelegramController::class, 'setupWebhook'])->name('setup-webhook');
-                Route::delete('/webhook', [App\Http\Controllers\Dashboard\OrganizationTelegramController::class, 'removeWebhook'])->name('remove-webhook');
-                Route::post('/webhook', [App\Http\Controllers\Dashboard\OrganizationTelegramController::class, 'handleWebhook'])->name('webhook');
+                Route::get('/', [OrganizationTelegramController::class, 'index'])->name('index');
+                Route::post('/setup', [OrganizationTelegramController::class, 'setupBot'])->name('setup');
+                Route::post('/test-message', [OrganizationTelegramController::class, 'sendTestMessage'])->name('test-message');
+                Route::post('/send-donation-notification', [OrganizationTelegramController::class, 'sendDonationNotification'])->name('send-donation-notification');
+                Route::get('/stats', [OrganizationTelegramController::class, 'getBotStats'])->name('stats');
+                Route::post('/webhook/setup', [OrganizationTelegramController::class, 'setupWebhook'])->name('setup-webhook');
+                Route::delete('/webhook', [OrganizationTelegramController::class, 'removeWebhook'])->name('remove-webhook');
+                Route::post('/webhook', [OrganizationTelegramController::class, 'handleWebhook'])->name('webhook');
             });
 
             Route::prefix('api/widgets')->name('widgets.')->group(function () {
-                Route::get('/', [App\Http\Controllers\Dashboard\WidgetController::class, 'index'])->name('index');
-                Route::get('/template/{template}', [App\Http\Controllers\Dashboard\WidgetController::class, 'getForTemplate'])->name('template');
-                Route::get('/site/{site}', [App\Http\Controllers\Dashboard\WidgetController::class, 'getForSite'])->name('site');
-                Route::post('/site/{site}/add', [App\Http\Controllers\Dashboard\WidgetController::class, 'addToSite'])->name('add');
-                Route::put('/site/{site}/widget/{widget}', [App\Http\Controllers\Dashboard\WidgetController::class, 'updateSiteWidget'])->name('update');
-                Route::delete('/site/{site}/widget/{widget}', [App\Http\Controllers\Dashboard\WidgetController::class, 'removeFromSite'])->name('remove');
-                Route::patch('/site/{site}/reorder', [App\Http\Controllers\Dashboard\WidgetController::class, 'reorderWidgets'])->name('reorder');
-                Route::get('/config/{widget}', [App\Http\Controllers\Dashboard\WidgetController::class, 'getConfig'])->name('config');
-                Route::get('/template/{template}/positions', [App\Http\Controllers\Dashboard\WidgetController::class, 'getTemplatePositions'])->name('positions');
-                Route::get('/position/{position}/widgets', [App\Http\Controllers\Dashboard\WidgetController::class, 'getWidgetsForPosition'])->name('position-widgets');
+                Route::get('/', [WidgetController::class, 'index'])->name('index');
+                Route::get('/template/{template}', [WidgetController::class, 'getForTemplate'])->name('template');
+                Route::get('/site/{site}', [WidgetController::class, 'getForSite'])->name('site');
+                Route::post('/site/{site}/add', [WidgetController::class, 'addToSite'])->name('add');
+                Route::put('/site/{site}/widget/{widget}', [WidgetController::class, 'updateSiteWidget'])->name('update');
+                Route::delete('/site/{site}/widget/{widget}', [WidgetController::class, 'removeFromSite'])->name('remove');
+                Route::patch('/site/{site}/reorder', [WidgetController::class, 'reorderWidgets'])->name('reorder');
+                Route::get('/config/{widget}', [WidgetController::class, 'getConfig'])->name('config');
+                Route::get('/template/{template}/positions', [WidgetController::class, 'getTemplatePositions'])->name('positions');
+                Route::get('/position/{position}/widgets', [WidgetController::class, 'getWidgetsForPosition'])->name('position-widgets');
             });
 
             Route::get('/news', [DashboardNewsController::class, 'index'])->name('news.index');
@@ -255,15 +277,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
 
             Route::prefix('reports')->name('reports.')->group(function () {
-                Route::get('/', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'index'])->name('index');
-                Route::get('/projects', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'projectOptions'])->name('projects');
-                Route::get('/projects/{project}/stages', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'projectStages'])->name('projects.stages');
-                Route::get('/{report}/runs', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'runs'])->name('runs');
-                Route::post('/', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'store'])->name('store');
-                Route::patch('/{report}', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'update'])->name('update');
-                Route::delete('/{report}', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'destroy'])->name('destroy');
-                Route::post('/generate', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'generate'])->name('generate');
-                Route::post('/export', [App\Http\Controllers\Dashboard\OrganizationReportsController::class, 'export'])->name('export');
+                Route::get('/', [OrganizationReportsController::class, 'index'])->name('index');
+                Route::get('/projects', [OrganizationReportsController::class, 'projectOptions'])->name('projects');
+                Route::get('/projects/{project}/stages', [OrganizationReportsController::class, 'projectStages'])->name('projects.stages');
+                Route::get('/{report}/runs', [OrganizationReportsController::class, 'runs'])->name('runs');
+                Route::post('/', [OrganizationReportsController::class, 'store'])->name('store');
+                Route::patch('/{report}', [OrganizationReportsController::class, 'update'])->name('update');
+                Route::delete('/{report}', [OrganizationReportsController::class, 'destroy'])->name('destroy');
+                Route::post('/generate', [OrganizationReportsController::class, 'generate'])->name('generate');
+                Route::post('/export', [OrganizationReportsController::class, 'export'])->name('export');
             });
         });
 
@@ -291,14 +313,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Админский просмотр сайта (включая неопубликованные)
         // Должен быть после builder, но перед общим /sites/{site}
-        Route::get('/sites/{id}/view', [App\Http\Controllers\SitePreviewController::class, 'adminView'])->name('sites.admin-view');
+        Route::get('/sites/{id}/view', [SitePreviewController::class, 'adminView'])->name('sites.admin-view');
 
         // Site widgets management
-        Route::post('/sites/{site}/widgets', [App\Http\Controllers\Api\SiteController::class, 'addWidget'])->name('sites.add-widget');
-        Route::put('/sites/{site}/widgets/{widgetId}', [App\Http\Controllers\Api\SiteController::class, 'updateWidget'])->name('sites.update-widget');
-        Route::delete('/sites/{site}/widgets/{widgetId}', [App\Http\Controllers\Api\SiteController::class, 'deleteWidget'])->name('sites.delete-widget');
-        Route::post('/sites/{site}/widgets/{widgetId}/move', [App\Http\Controllers\Api\SiteController::class, 'moveWidget'])->name('sites.move-widget');
-        Route::get('/sites/{site}/config', [App\Http\Controllers\Api\SiteController::class, 'getConfig'])->name('sites.get-config');
+        Route::post('/sites/{site}/widgets', [ApiSiteController::class, 'addWidget'])->name('sites.add-widget');
+        Route::put('/sites/{site}/widgets/{widgetId}', [ApiSiteController::class, 'updateWidget'])->name('sites.update-widget');
+        Route::delete('/sites/{site}/widgets/{widgetId}', [ApiSiteController::class, 'deleteWidget'])->name('sites.delete-widget');
+        Route::post('/sites/{site}/widgets/{widgetId}/move', [ApiSiteController::class, 'moveWidget'])->name('sites.move-widget');
+        Route::get('/sites/{site}/config', [ApiSiteController::class, 'getConfig'])->name('sites.get-config');
 
         // Statistics
         Route::get('/statistics', [DashboardController::class, 'statistics'])->name('statistics.index');
@@ -312,7 +334,7 @@ Route::post('/webhook/yookassa/partner', YooKassaPartnerWebhookController::class
     ->name('webhook.yookassa.partner');
 
 // OAuth callback от YooKassa (публичный роут, без авторизации)
-Route::get('/yook-callback-url', [App\Http\Controllers\Dashboard\YooKassa\OAuthController::class, 'handleCallback'])
+Route::get('/yook-callback-url', [YooKassaOAuthController::class, 'handleCallback'])
     ->name('yookassa.oauth.callback');
 
 require __DIR__ . '/settings.php';
@@ -321,48 +343,48 @@ require __DIR__ . '/auth.php';
 // Site configuration routes - модульная система
 Route::prefix('api/sites/{id}')->middleware('auth')->group(function () {
     // Основные настройки сайта
-    Route::post('/settings/basic', [App\Http\Controllers\Api\SiteController::class, 'saveBasicSettings'])
+    Route::post('/settings/basic', [ApiSiteController::class, 'saveBasicSettings'])
         ->name('sites.save-basic-settings');
-    Route::post('/settings/design', [App\Http\Controllers\Api\SiteController::class, 'saveDesignSettings'])
+    Route::post('/settings/design', [ApiSiteController::class, 'saveDesignSettings'])
         ->name('sites.save-design-settings');
-    Route::post('/settings/seo', [App\Http\Controllers\Api\SiteController::class, 'saveSeoSettings'])
+    Route::post('/settings/seo', [ApiSiteController::class, 'saveSeoSettings'])
         ->name('sites.save-seo-settings');
 
     // Интеграции: Telegram
-    Route::post('/settings/telegram', [App\Http\Controllers\Api\SiteController::class, 'saveTelegramSettings'])
+    Route::post('/settings/telegram', [ApiSiteController::class, 'saveTelegramSettings'])
         ->name('sites.save-telegram-settings');
 
     // Платежи сайта
-    Route::post('/settings/payments', [App\Http\Controllers\Api\SiteController::class, 'savePaymentSettings'])
+    Route::post('/settings/payments', [ApiSiteController::class, 'savePaymentSettings'])
         ->name('sites.save-payment-settings');
 
     // Макет сайта
-    Route::post('/settings/layout', [App\Http\Controllers\Api\SiteController::class, 'saveLayoutSettings'])
+    Route::post('/settings/layout', [ApiSiteController::class, 'saveLayoutSettings'])
         ->name('sites.save-layout-settings');
 
     // Виджеты
-    Route::post('/widgets', [App\Http\Controllers\Api\SiteController::class, 'addWidget'])
+    Route::post('/widgets', [ApiSiteController::class, 'addWidget'])
         ->name('sites.add-widget');
-    Route::put('/widgets/{widgetId}', [App\Http\Controllers\Api\SiteController::class, 'updateWidget'])
+    Route::put('/widgets/{widgetId}', [ApiSiteController::class, 'updateWidget'])
         ->name('sites.update-widget');
-    Route::delete('/widgets/{widgetId}', [App\Http\Controllers\Api\SiteController::class, 'deleteWidget'])
+    Route::delete('/widgets/{widgetId}', [ApiSiteController::class, 'deleteWidget'])
         ->name('sites.delete-widget');
-    Route::post('/widgets/{widgetId}/move', [App\Http\Controllers\Api\SiteController::class, 'moveWidget'])
+    Route::post('/widgets/{widgetId}/move', [ApiSiteController::class, 'moveWidget'])
         ->name('sites.move-widget');
 
     // Конфигурация
-    Route::get('/config', [App\Http\Controllers\Api\SiteController::class, 'getConfig'])
+    Route::get('/config', [ApiSiteController::class, 'getConfig'])
         ->name('sites.get-config');
 
     // Превью
-    Route::get('/preview', [App\Http\Controllers\Api\SiteController::class, 'preview'])
+    Route::get('/preview', [ApiSiteController::class, 'preview'])
         ->name('sites.preview');
 });
 
 // Project configuration routes
 Route::prefix('api/projects/{id}')->middleware('auth')->group(function () {
     // Платежные настройки проекта
-    Route::post('/settings/payments', [App\Http\Controllers\Api\ProjectController::class, 'savePaymentSettings'])
+    Route::post('/settings/payments', [ApiProjectController::class, 'savePaymentSettings'])
         ->name('projects.save-payment-settings');
 });
 
@@ -370,11 +392,11 @@ Route::get('/dashboard/api/regions/{id}', [RegionController::class, 'show']);
 Route::get('/dashboard/api/localities/{id}', [CityController::class, 'show']);
 
 // Обработка возврата после оплаты
-Route::get('/payment/return', [App\Http\Controllers\PaymentReturnController::class, 'return'])->name('payment.return');
+Route::get('/payment/return', [PaymentReturnController::class, 'return'])->name('payment.return');
 
 // Публичные страницы сайтов (должен быть последним, чтобы не конфликтовать с другими роутами)
 // Страницы главного сайта: /{slug} (например, /kontakty)
 // Исключаем известные маршруты, чтобы не перехватывать их
-Route::get('/{slug}', [App\Http\Controllers\PublicSitePageController::class, 'showMainSitePage'])
+Route::get('/{slug}', [PublicSitePageController::class, 'showMainSitePage'])
     ->where('slug', '^(?!api|dashboard|organizations|organization|projects|project|tailwind-test|sites|login|register|password|email|verify).+')
     ->name('public.page.show');
