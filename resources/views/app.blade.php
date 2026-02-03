@@ -67,6 +67,9 @@
     <meta name="keywords" content="{{ $seoProps['keywords'] }}">
     @endif
 
+    {{-- Robots meta tag для индексации --}}
+    <meta name="robots" content="{{ $seoProps['robots'] ?? 'index, follow' }}">
+
     <link rel="canonical" href="{{ $currentUrl }}">
 
     {{-- Open Graph --}}
