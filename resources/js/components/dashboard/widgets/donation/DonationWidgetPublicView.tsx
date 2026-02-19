@@ -2,14 +2,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import RussianPhoneInput from '@/components/ui/RussianPhoneInput';
 import type { DonationPaymentData, PaymentMethod } from '@/lib/api/index';
 import { AlertCircle, CheckCircle2, Heart, Loader2 } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
+import { BankRequisitesTab } from './BankRequisitesTab';
 import { DonationPaymentMethods } from './DonationPaymentMethods';
 import { DonationPaymentModal } from './DonationPaymentModal';
 import { DonationProgressSection } from './DonationProgressSection';
 import { DonationRecurringSection } from './DonationRecurringSection';
-import type { DonationProgressData, DonationWidgetConfig } from './types';
+import type {
+    BankRequisites,
+    DonationProgressData,
+    DonationWidgetConfig,
+} from './types';
 import { CURRENCY_SYMBOLS } from './utils';
 
 interface DonationPaymentModalState {
@@ -41,6 +47,7 @@ interface DonationFormProps {
     onDonorEmailChange: (value: string) => void;
     donorPhone: string;
     onDonorPhoneChange: (value: string) => void;
+    donorPhoneFromProfile?: string;
     donorMessage: string;
     onDonorMessageChange: (value: string) => void;
     isAnonymous: boolean;
@@ -49,7 +56,6 @@ interface DonationFormProps {
     onAgreedToPolicyChange: (value: boolean) => void;
     requireName: boolean;
     requireEmail: boolean;
-    requirePhone: boolean;
     allowAnonymous: boolean;
     showMessageField: boolean;
     isProcessing: boolean;
@@ -57,6 +63,7 @@ interface DonationFormProps {
     error: string | null;
     success: string | null;
     onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+    onGenerateBankRequisitesPdf?: (event: React.FormEvent<HTMLFormElement>) => void;
 }
 
 interface DonationPaymentMethodsState {
@@ -65,6 +72,8 @@ interface DonationPaymentMethodsState {
     onSelect: (slug: string) => void;
     isMerchantActive: boolean;
 }
+
+type PaymentTab = 'online' | 'card_transfer' | 'bank_requisites';
 
 interface DonationWidgetPublicViewProps {
     config: DonationWidgetConfig;
@@ -80,11 +89,16 @@ interface DonationWidgetPublicViewProps {
     form: DonationFormProps;
     paymentMethods: DonationPaymentMethodsState;
     subscribersCount?: number | null;
+    bankRequisites?: BankRequisites | null;
+    organizationId?: number | null;
+    projectId?: number | null;
+    siteId?: number | null;
 }
 
 export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
     React.memo(
         ({
+            bankRequisites,
             borderRadiusClass,
             buttonStyleClass,
             buttonText,
@@ -98,7 +112,20 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
             showTitle,
             subscribersCount,
             title,
+            organizationId,
+            projectId,
+            siteId,
         }) => {
+            const hasCards = !!(
+                bankRequisites?.sber_card || bankRequisites?.tinkoff_card
+            );
+            const hasRequisitesText = !!bankRequisites?.text;
+            const showCardTransferTab = hasCards;
+            const showBankRequisitesTab = hasRequisitesText;
+            const hasTabs = showCardTransferTab || showBankRequisitesTab;
+
+            const [activeTab, setActiveTab] = useState<PaymentTab>('online');
+
             return (
                 <>
                     <DonationPaymentModal
@@ -136,8 +163,64 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                 }
                             />
 
+                            {hasTabs && (
+                                <div className="donation-tabs">
+                                    <button
+                                        type="button"
+                                        className={`donation-tabs__tab ${activeTab === 'online' ? 'donation-tabs__tab--active' : ''}`}
+                                        onClick={() => setActiveTab('online')}
+                                    >
+                                        Онлайн оплата
+                                    </button>
+                                    {showCardTransferTab && (
+                                        <button
+                                            type="button"
+                                            className={`donation-tabs__tab ${activeTab === 'card_transfer' ? 'donation-tabs__tab--active' : ''}`}
+                                            onClick={() =>
+                                                setActiveTab('card_transfer')
+                                            }
+                                        >
+                                            Перевод на карту
+                                        </button>
+                                    )}
+                                    {showBankRequisitesTab && (
+                                        <button
+                                            type="button"
+                                            className={`donation-tabs__tab ${activeTab === 'bank_requisites' ? 'donation-tabs__tab--active' : ''}`}
+                                            onClick={() =>
+                                                setActiveTab('bank_requisites')
+                                            }
+                                        >
+                                            Расчетный счет
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'card_transfer' &&
+                                bankRequisites && (
+                                    <BankRequisitesTab
+                                        requisites={{
+                                            sber_card: bankRequisites.sber_card,
+                                            tinkoff_card:
+                                                bankRequisites.tinkoff_card,
+                                            card_recipient:
+                                                bankRequisites.card_recipient,
+                                        }}
+                                        organizationId={organizationId || undefined}
+                                        projectId={projectId || undefined}
+                                        siteId={siteId || undefined}
+                                    />
+                                )}
+
                             <form
-                                onSubmit={form.onSubmit}
+                                onSubmit={(e) => {
+                                    if (activeTab === 'bank_requisites' && form.onGenerateBankRequisitesPdf) {
+                                        form.onGenerateBankRequisitesPdf(e);
+                                    } else {
+                                        form.onSubmit(e);
+                                    }
+                                }}
                                 className="space-y-4"
                             >
                                 {form.requireName && (
@@ -208,23 +291,28 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                     </div>
                                 )}
 
-                                {form.requirePhone && (
-                                    <div>
-                                        <Label htmlFor="donor_phone">
-                                            Телефон
-                                        </Label>
-                                        <Input
+                                {form.donorPhoneFromProfile && (
+                                    <div className="relative">
+                                        <RussianPhoneInput
                                             id="donor_phone"
-                                            type="tel"
                                             value={form.donorPhone}
-                                            onChange={(e) =>
-                                                form.onDonorPhoneChange(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            placeholder="+7 (___) ___-__-__"
-                                            required={form.requirePhone}
+                                            onValueChange={() => {
+                                                // Readonly - не обрабатываем изменения
+                                            }}
+                                            disabled
+                                            readOnly
+                                            className="phone-input--with-label"
+                                            style={{
+                                                opacity: 0.9,
+                                                cursor: 'not-allowed',
+                                            }}
                                         />
+                                        <label
+                                            htmlFor="donor_phone"
+                                            className="profile-section__label pointer-events-none absolute left-4 top-[9px]"
+                                        >
+                                            Телефон
+                                        </label>
                                     </div>
                                 )}
 
@@ -422,17 +510,19 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                     subscribersCount={subscribersCount}
                                 />
 
-                                <DonationPaymentMethods
-                                    methods={paymentMethods.items}
-                                    selectedMethod={
-                                        paymentMethods.selectedMethod
-                                    }
-                                    onSelect={paymentMethods.onSelect}
-                                    borderRadiusClass={borderRadiusClass}
-                                    isMerchantActive={
-                                        paymentMethods.isMerchantActive
-                                    }
-                                />
+                                {activeTab === 'online' && (
+                                    <DonationPaymentMethods
+                                        methods={paymentMethods.items}
+                                        selectedMethod={
+                                            paymentMethods.selectedMethod
+                                        }
+                                        onSelect={paymentMethods.onSelect}
+                                        borderRadiusClass={borderRadiusClass}
+                                        isMerchantActive={
+                                            paymentMethods.isMerchantActive
+                                        }
+                                    />
+                                )}
 
                                 <div className="donation-policy-checkbox border-t pt-4">
                                     <Checkbox
@@ -482,7 +572,7 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                     type="submit"
                                     disabled={
                                         form.isProcessing ||
-                                        !form.isSelectedMethodAvailable
+                                        (activeTab === 'online' && !form.isSelectedMethodAvailable)
                                     }
                                     className={`btn-accent w-full px-6 py-3 ${borderRadiusClass} flex items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${buttonStyleClass || ''}`}
                                 >
@@ -494,7 +584,7 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                     ) : (
                                         <>
                                             <Heart className="h-5 w-5" />
-                                            {buttonText}
+                                            {activeTab === 'bank_requisites' ? 'Создать счет' : buttonText}
                                         </>
                                     )}
                                 </button>

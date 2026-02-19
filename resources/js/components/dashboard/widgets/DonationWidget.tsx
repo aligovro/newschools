@@ -3,10 +3,12 @@ import {
     type PaymentMethod as ApiPaymentMethod,
     type DonationWidgetData,
 } from '@/lib/api/index';
+import { usePage } from '@inertiajs/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DonationWidgetEditor } from './donation/DonationWidgetEditor';
 import { DonationWidgetPublicView } from './donation/DonationWidgetPublicView';
 import type {
+    BankRequisites,
     DonationProgressData,
     DonationWidgetConfig,
     Fundraiser,
@@ -40,6 +42,12 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     organizationId,
     publicContext,
 }) => {
+    const { auth } = usePage<{
+        auth?: { user?: { phone?: string | null; name?: string | null } };
+    }>().props;
+    const userPhone = auth?.user?.phone?.trim() || undefined;
+    const userName = auth?.user?.name?.trim() || undefined;
+
     const [isSettingsExpanded, setIsSettingsExpanded] =
         useState(autoExpandSettings);
     const [localConfig, setLocalConfig] =
@@ -60,6 +68,8 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     const [subscribersCount, setSubscribersCount] = useState<number | null>(
         null,
     );
+    const [bankRequisites, setBankRequisites] =
+        useState<BankRequisites | null>(null);
     const [widgetLoadError, setWidgetLoadError] = useState<string | null>(null);
 
     const resolvedOrganizationId =
@@ -130,6 +140,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
             setMerchant(widgetData.merchant ?? null);
             setSubscribersCount(widgetData.subscribers_count ?? null);
+            setBankRequisites(widgetData.bank_requisites ?? null);
 
             if (widgetData.terminology) {
                 setTerminology(
@@ -235,6 +246,8 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         config: localConfig,
         paymentMethods,
         isMerchantActive,
+        initialDonorPhone: userPhone,
+        initialDonorName: userName,
     });
 
     useEffect(() => {
@@ -286,11 +299,6 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
             if (localConfig.require_email && !donorEmail.trim()) {
                 setFormError('Пожалуйста, введите ваш email');
-                return;
-            }
-
-            if (localConfig.require_phone && !donorPhone.trim()) {
-                setFormError('Пожалуйста, введите ваш телефон');
                 return;
             }
 
@@ -465,7 +473,6 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
             localConfig.max_amount,
             localConfig.require_email,
             localConfig.require_name,
-            localConfig.require_phone,
             localConfig.send_receipt,
             paymentMethods,
             resolvedOrganizationId,
@@ -476,6 +483,99 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
             setFormPendingPayment,
             setFormProcessing,
             setFormSuccess,
+        ],
+    );
+
+    const handleGenerateBankRequisitesPdf = useCallback(
+        async (event: React.FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            setFormError(null);
+            setFormSuccess(null);
+
+            // Та же валидация, что и в handleSubmit
+            if (!isAnonymous && localConfig.require_name && !donorName.trim()) {
+                setFormError('Пожалуйста, введите ваше имя');
+                return;
+            }
+
+            if (localConfig.require_email && !donorEmail.trim()) {
+                setFormError('Пожалуйста, введите ваш email');
+                return;
+            }
+
+            if (!agreedToPolicy) {
+                setFormError(
+                    'Необходимо принять условия обработки персональных данных',
+                );
+                return;
+            }
+
+            const minAmount = localConfig.min_amount || 1;
+            const maxAmount = localConfig.max_amount || 0;
+
+            if (amount < minAmount) {
+                setFormError(
+                    `Минимальная сумма: ${minAmount} ${CURRENCY_SYMBOLS[localConfig.currency ?? 'RUB']}`,
+                );
+                return;
+            }
+
+            if (maxAmount > 0 && amount > maxAmount) {
+                setFormError(
+                    `Максимальная сумма: ${maxAmount} ${CURRENCY_SYMBOLS[localConfig.currency ?? 'RUB']}`,
+                );
+                return;
+            }
+
+            if (!resolvedOrganizationId) {
+                setFormError(
+                    'Пожертвования доступны на страницах организаций',
+                );
+                return;
+            }
+
+            try {
+                const params = new URLSearchParams();
+                
+                if (derivedProjectId) {
+                    params.append('project_id', derivedProjectId.toString());
+                }
+                if (amount > 0) {
+                    params.append('amount', amount.toString());
+                }
+                if (localConfig.currency) {
+                    params.append('currency', localConfig.currency);
+                }
+                if (donorName.trim()) {
+                    params.append('donor_name', isAnonymous ? 'Анонимный донор' : donorName.trim());
+                }
+                if (donorEmail.trim()) {
+                    params.append('donor_email', donorEmail.trim());
+                }
+
+                const url = `/api/organizations/${resolvedOrganizationId}/donation-widget/bank-requisites/pdf?${params.toString()}`;
+                
+                // Открываем PDF в новом окне/вкладке
+                window.open(url, '_blank');
+            } catch (err) {
+                setFormError('Ошибка при генерации счета. Попробуйте еще раз.');
+                console.error('Error generating PDF:', err);
+            }
+        },
+        [
+            agreedToPolicy,
+            amount,
+            derivedProjectId,
+            donorEmail,
+            donorName,
+            isAnonymous,
+            localConfig.currency,
+            localConfig.min_amount,
+            localConfig.max_amount,
+            localConfig.require_email,
+            localConfig.require_name,
+            resolvedOrganizationId,
+            setFormError,
         ],
     );
 
@@ -492,7 +592,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         recurring_periods = ['daily', 'weekly', 'monthly'],
         require_name = true,
         require_email = false,
-        require_phone = false,
+        require_phone = false, // phone never required; shown read-only when user has it in profile
         allow_anonymous = true,
         show_message_field = false,
         button_text = defaultButtonText,
@@ -703,6 +803,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 onDonorEmailChange: handleDonorEmailChange,
                 donorPhone,
                 onDonorPhoneChange: handleDonorPhoneChange,
+                donorPhoneFromProfile: userPhone,
                 donorMessage,
                 onDonorMessageChange: handleDonorMessageChange,
                 isAnonymous,
@@ -711,7 +812,6 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 onAgreedToPolicyChange: handleAgreedToPolicyChange,
                 requireName: require_name,
                 requireEmail: require_email,
-                requirePhone: require_phone,
                 allowAnonymous: allow_anonymous,
                 showMessageField: show_message_field,
                 isProcessing,
@@ -719,6 +819,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 error,
                 success,
                 onSubmit: handleSubmit,
+                onGenerateBankRequisitesPdf: handleGenerateBankRequisitesPdf,
             }}
             paymentMethods={{
                 items: paymentMethods,
@@ -727,6 +828,10 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 isMerchantActive,
             }}
             subscribersCount={subscribersCount}
+            bankRequisites={bankRequisites}
+            organizationId={resolvedOrganizationId}
+            projectId={derivedProjectId}
+            siteId={undefined}
         />
     );
 

@@ -70,6 +70,12 @@ export const DonationsListOutput: React.FC<WidgetOutputProps> = ({
     };
 
     const renderDonation = (donation: DonationItem, index: number) => {
+        const d = donation as DonationItem & Record<string, unknown>;
+        const donorName = donation.donorName ?? d.donor_name;
+        const date = donation.date ?? d.created_at;
+        const isAnonymous = donation.isAnonymous ?? d.is_anonymous;
+        const message = donation.message ?? d.donor_message;
+        const currency = donation.currency ?? d.currency ?? 'RUB';
         return (
             <div
                 key={donation.id}
@@ -77,7 +83,7 @@ export const DonationsListOutput: React.FC<WidgetOutputProps> = ({
             >
                 {/* Avatar */}
                 <div className="flex-shrink-0">
-                    {donation.isAnonymous ? (
+                    {isAnonymous ? (
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200">
                             <svg
                                 className="h-5 w-5 text-gray-500"
@@ -95,8 +101,8 @@ export const DonationsListOutput: React.FC<WidgetOutputProps> = ({
                         </div>
                     ) : (
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-medium text-blue-600">
-                            {donation.donorName
-                                ? getInitials(donation.donorName)
+                            {donorName
+                                ? getInitials(donorName)
                                 : '?'}
                         </div>
                     )}
@@ -107,20 +113,20 @@ export const DonationsListOutput: React.FC<WidgetOutputProps> = ({
                     <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
                             {showDonorName &&
-                                !donation.isAnonymous &&
-                                donation.donorName && (
+                                !isAnonymous &&
+                                donorName && (
                                     <p className="truncate text-sm font-medium text-gray-900">
-                                        {donation.donorName}
+                                        {donorName}
                                     </p>
                                 )}
-                            {donation.isAnonymous && (
+                            {isAnonymous && (
                                 <p className="text-sm font-medium text-gray-500">
                                     Анонимный донор
                                 </p>
                             )}
-                            {showDate && (
+                            {showDate && date && (
                                 <p className="text-xs text-gray-500">
-                                    {formatDate(donation.date)}
+                                    {formatDate(date)}
                                 </p>
                             )}
                         </div>
@@ -129,16 +135,16 @@ export const DonationsListOutput: React.FC<WidgetOutputProps> = ({
                                 <p className="text-lg font-semibold text-green-600">
                                     {formatCurrency(
                                         donation.amount,
-                                        donation.currency,
+                                        currency,
                                     )}
                                 </p>
                             </div>
                         )}
                     </div>
 
-                    {showMessage && donation.message && (
+                    {showMessage && message && (
                         <p className="mt-1 line-clamp-2 text-sm text-gray-600">
-                            "{donation.message}"
+                            "{message}"
                         </p>
                     )}
                 </div>

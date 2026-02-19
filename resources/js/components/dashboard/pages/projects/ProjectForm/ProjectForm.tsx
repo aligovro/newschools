@@ -672,6 +672,8 @@ export default function ProjectForm({
                             onSlugChange={handleSlugChange}
                             onAutoGenerateSlugChange={handleAutoGenerateSlugChange}
                             onRegenerateSlug={regenerateSlug}
+                            organization={organization}
+                            projectId={project?.id}
                         />
                     ) : (
                         <StagesTab

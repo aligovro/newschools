@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Donation;
+use App\Models\Project;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -136,6 +138,22 @@ class SiteWidget extends Model
     public function imageSettings(): HasOne
     {
         return $this->hasOne(SiteWidgetImageSettings::class);
+    }
+
+    /**
+     * Отношение к настройкам виджета «Топ по донорам»
+     */
+    public function topDonorsSettings(): HasOne
+    {
+        return $this->hasOne(SiteWidgetTopDonorsSettings::class);
+    }
+
+    /**
+     * Отношение к настройкам виджета «Топ регулярно-поддерживающих»
+     */
+    public function topRecurringDonorsSettings(): HasOne
+    {
+        return $this->hasOne(SiteWidgetTopRecurringDonorsSettings::class);
     }
 
     // Скоупы
@@ -417,14 +435,18 @@ class SiteWidget extends Model
 
             case 'donations_list':
                 if ($this->donationsListSettings) {
+                    $settings = $this->donationsListSettings;
+                    $organizationId = $settings->organization_id ?? $this->site?->organization_id;
                     $config = array_merge($config, [
-                        'organizationId' => $this->donationsListSettings->organization_id,
-                        'limit' => $this->donationsListSettings->limit,
-                        'showAmount' => $this->donationsListSettings->show_amount,
-                        'showDate' => $this->donationsListSettings->show_date,
-                        'showAnonymous' => $this->donationsListSettings->show_anonymous,
-                        'sortBy' => $this->donationsListSettings->sort_by,
-                        'sortOrder' => $this->donationsListSettings->sort_order,
+                        'organizationId' => $organizationId,
+                        'limit' => $settings->items_per_page ?? 10,
+                        'showAmount' => $settings->show_amount,
+                        'showDate' => $settings->show_date,
+                        'showDonorName' => $settings->show_donor_name,
+                        'showMessage' => $settings->show_message,
+                        'showAnonymous' => $settings->show_anonymous,
+                        'sortBy' => $settings->sort_by ?? 'date',
+                        'sortOrder' => $settings->sort_direction ?? 'desc',
                     ]);
                 }
                 break;
@@ -438,6 +460,53 @@ class SiteWidget extends Model
                         'showRanking' => $this->referralLeaderboardSettings->show_ranking,
                         'showStats' => $this->referralLeaderboardSettings->show_stats,
                     ]);
+                }
+                break;
+
+            case 'top_donors':
+                if ($this->topDonorsSettings) {
+                    $project = $this->topDonorsSettings->project;
+                    $config = array_merge($config, [
+                        'projectId' => $this->topDonorsSettings->project_id,
+                        'projectSlug' => $project?->slug,
+                        'period' => $this->topDonorsSettings->period,
+                        'limit' => $this->topDonorsSettings->limit,
+                        'title' => $this->topDonorsSettings->title,
+                    ]);
+                }
+                break;
+
+            case 'top_recurring_donors':
+                if ($this->topRecurringDonorsSettings) {
+                    $project = $this->topRecurringDonorsSettings->project;
+                    $config = array_merge($config, [
+                        'projectId' => $this->topRecurringDonorsSettings->project_id,
+                        'projectSlug' => $project?->slug,
+                        'limit' => $this->topRecurringDonorsSettings->limit,
+                        'title' => $this->topRecurringDonorsSettings->title,
+                    ]);
+                }
+                break;
+
+            case 'org_top_donors':
+            case 'org_top_recurring_donors':
+            case 'org_donations_feed':
+                $organization = $this->site?->organization;
+                if ($organization) {
+                    $config = array_merge($config, [
+                        'organizationId' => $organization->id,
+                        'organizationSlug' => $organization->slug,
+                    ]);
+                    $projectId = (int) ($config['project_id'] ?? $config['projectId'] ?? 0);
+                    if ($projectId && $this->site) {
+                        $project = Project::query()
+                            ->where('id', $projectId)
+                            ->where('organization_id', $this->site->organization_id)
+                            ->first();
+                        if ($project) {
+                            $config['projectSlug'] = $project->slug;
+                        }
+                    }
                 }
                 break;
 
@@ -550,6 +619,40 @@ class SiteWidget extends Model
                     ];
                 })->toArray();
                 break;
+
+            case 'donations_list':
+                $organizationId = $this->donationsListSettings?->organization_id
+                    ?? $this->site?->organization_id;
+                if ($organizationId) {
+                    $limit = $this->donationsListSettings?->items_per_page ?? 10;
+                    $sortBy = $this->donationsListSettings?->sort_by ?? 'date';
+                    $sortOrder = $this->donationsListSettings?->sort_direction ?? 'desc';
+                    $sortColumn = match ($sortBy) {
+                        'amount' => 'amount',
+                        'donor_name' => 'donor_name',
+                        default => 'created_at',
+                    };
+
+                    $donations = Donation::query()
+                        ->where('organization_id', $organizationId)
+                        ->where('status', 'completed')
+                        ->orderBy($sortColumn, $sortOrder)
+                        ->limit($limit)
+                        ->get();
+
+                    $baseData['config']['donations'] = $donations->map(function (Donation $d) {
+                        return [
+                            'id' => $d->id,
+                            'donorName' => $d->donor_name,
+                            'amount' => $d->amount_rubles,
+                            'currency' => $d->currency ?? 'RUB',
+                            'message' => $d->donor_message,
+                            'date' => $d->created_at->toIso8601String(),
+                            'isAnonymous' => $d->is_anonymous,
+                        ];
+                    })->toArray();
+                }
+                break;
         }
 
         // Добавляем дополнительные поля для совместимости
@@ -657,6 +760,32 @@ class SiteWidget extends Model
                         }
                     }
                     unset($column); // Сбрасываем ссылку
+                }
+                break;
+
+            case 'top_donors':
+                foreach (['project_id', 'period', 'limit', 'title'] as $key) {
+                    if (array_key_exists($key, $config)) {
+                        $specializedData[$key] = $config[$key];
+                        unset($config[$key]);
+                    }
+                }
+                if (isset($config['projectId'])) {
+                    $specializedData['project_id'] = $config['projectId'];
+                    unset($config['projectId']);
+                }
+                break;
+
+            case 'top_recurring_donors':
+                foreach (['project_id', 'limit', 'title'] as $key) {
+                    if (array_key_exists($key, $config)) {
+                        $specializedData[$key] = $config[$key];
+                        unset($config[$key]);
+                    }
+                }
+                if (isset($config['projectId'])) {
+                    $specializedData['project_id'] = $config['projectId'];
+                    unset($config['projectId']);
                 }
                 break;
         }
@@ -976,6 +1105,29 @@ class SiteWidget extends Model
                     ];
 
                     $this->imageSettings()->create($imageSettingsData);
+                }
+                break;
+
+            case 'top_donors':
+                $this->topDonorsSettings()->delete();
+                if (! empty($data) && ! empty($data['project_id'])) {
+                    $this->topDonorsSettings()->create([
+                        'project_id' => $data['project_id'],
+                        'period' => in_array($data['period'] ?? null, ['week', 'month', 'all'], true) ? $data['period'] : 'all',
+                        'limit' => max(1, min(50, (int) ($data['limit'] ?? 10))),
+                        'title' => $data['title'] ?? null,
+                    ]);
+                }
+                break;
+
+            case 'top_recurring_donors':
+                $this->topRecurringDonorsSettings()->delete();
+                if (! empty($data) && ! empty($data['project_id'])) {
+                    $this->topRecurringDonorsSettings()->create([
+                        'project_id' => $data['project_id'],
+                        'limit' => max(1, min(50, (int) ($data['limit'] ?? 10))),
+                        'title' => $data['title'] ?? null,
+                    ]);
                 }
                 break;
         }

@@ -230,11 +230,18 @@ class Project extends Model
             ? min(100, ($collectedValue / $targetValue) * 100)
             : 0;
 
-        return [
+        $result = [
             'target' => $target,
             'collected' => $collected,
             'progress_percentage' => round($progress, 2),
         ];
+
+        $monthlyGoal = (is_array($this->payment_settings) ? $this->payment_settings : [])['monthly_goal'] ?? null;
+        if ($monthlyGoal !== null && (int) $monthlyGoal > 0) {
+            $result['monthly_goal'] = \App\Support\Money::toArray((int) $monthlyGoal);
+        }
+
+        return $result;
     }
 
     protected function resolveFundingTotals(): array

@@ -9,6 +9,7 @@
 /resources/js/wayfinder
 /storage/*.key
 /storage/pail
+/storage/app/site-styles/*.scss
 /vendor
 .DS_Store
 .env
@@ -29,3 +30,6 @@ yarn-error.log
 /wp-example
 /.osp
 /prod
+
+# Модуль импорта из WP blagoqr_prod (локально, не в prod)
+/blagoqr_import

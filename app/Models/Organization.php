@@ -139,6 +139,11 @@ class Organization extends Model
     return $this->hasMany(Member::class);
   }
 
+  public function userProfiles(): HasMany
+  {
+    return $this->hasMany(OrganizationUserProfile::class);
+  }
+
   public function donations(): HasMany
   {
     return $this->hasMany(Donation::class);

@@ -1,7 +1,10 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    Avatar,
+    AvatarImage,
+    AvatarUserFallback,
+} from '@/components/ui/avatar';
 import RussianPhoneInput from '@/components/ui/RussianPhoneInput';
 import MainLayout from '@/layouts/MainLayout';
-import { nameToInitials } from '@/utils/nameToInitials';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -282,9 +285,7 @@ export default function ProfilePage({
                                                     className="object-cover"
                                                 />
                                             ) : (
-                                                <AvatarFallback className="profile-section__avatar-fallback">
-                                                    {nameToInitials(data.name)}
-                                                </AvatarFallback>
+                                                <AvatarUserFallback />
                                             )}
                                         </Avatar>
                                         <div className="flex flex-col gap-2">

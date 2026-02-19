@@ -122,6 +122,62 @@ class AllWidgetsSeeder extends Seeder
                 'is_active' => true,
                 'sort_order' => 14,
             ],
+            [
+                'name' => 'Топ по донорам',
+                'widget_slug' => 'top_donors',
+                'description' => 'Топ поддержавших по сумме и количеству платежей (за неделю / месяц / всё время)',
+                'icon' => '🏆',
+                'category' => 'content',
+                'component_name' => 'TopDonorsWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 14,
+            ],
+            [
+                'name' => 'Топ регулярно-поддерживающих',
+                'widget_slug' => 'top_recurring_donors',
+                'description' => 'Топ доноров с регулярными платежами по проекту',
+                'icon' => '🔄',
+                'category' => 'content',
+                'component_name' => 'TopRecurringDonorsWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 14,
+            ],
+            // Виджеты по организации: топы и лента поступлений
+            [
+                'name' => 'Топ поддержавших выпусков',
+                'widget_slug' => 'org_top_donors',
+                'description' => 'Топ по сумме и количеству платежей по всей организации (За неделю / месяц / всё время).',
+                'icon' => '📊',
+                'category' => 'content',
+                'component_name' => 'OrgTopDonorsWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 14,
+            ],
+            [
+                'name' => 'Топ регулярно-поддерживающих',
+                'widget_slug' => 'org_top_recurring_donors',
+                'description' => 'Топ доноров с регулярными платежами по всей организации.',
+                'icon' => '♻️',
+                'category' => 'content',
+                'component_name' => 'OrgTopRecurringDonorsWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 14,
+            ],
+            [
+                'name' => 'Все поступления',
+                'widget_slug' => 'org_donations_feed',
+                'description' => 'Лента всех пожертвований организации с пагинацией и группировкой по дате.',
+                'icon' => '📜',
+                'category' => 'content',
+                'component_name' => 'OrgDonationsFeedWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 14,
+            ],
 
             // СТАТИСТИКА ВЫПУСКНИКОВ
             [
@@ -256,6 +312,18 @@ class AllWidgetsSeeder extends Seeder
                 'allowed_site_types' => ['main'], // Только для главного сайта
                 'sort_order' => 20,
             ],
+
+            // КНОПКИ «ПОДЕЛИТЬСЯ» (WhatsApp, Telegram, VK)
+            [
+                'name' => 'Поделиться',
+                'widget_slug' => 'share_buttons',
+                'description' => 'Кнопки «Поделиться» в социальных сетях (WhatsApp, Telegram, VK) со счётчиками',
+                'icon' => '🔗',
+                'category' => 'content',
+                'component_name' => 'ShareButtonsWidget',
+                'is_active' => true,
+                'sort_order' => 25,
+            ],
         ];
 
         foreach ($widgets as $widgetData) {
@@ -286,5 +354,6 @@ class AllWidgetsSeeder extends Seeder
         $this->command->info('  💳 Виджет пожертвований');
         $this->command->info('  📋 Блок подписки на школы - только для главного сайта');
         $this->command->info('  ➕ Блок добавления организации - только для главного сайта');
+        $this->command->info('  🔗 Поделиться - кнопки шаринга со счётчиками');
     }
 }

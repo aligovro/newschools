@@ -80,6 +80,7 @@ Route::get('/user', [AuthController::class, 'me'])->middleware('auth:sanctum');
 Route::middleware('web')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
 
@@ -91,6 +92,15 @@ Route::middleware('web')->group(function () {
             Route::post('/photo', [PhoneAuthController::class, 'uploadPhoto']);
             Route::post('/attach', [PhoneAuthController::class, 'attach']);
         });
+    });
+
+    Route::prefix('site-account')->middleware('auth')->group(function () {
+        Route::get('/profile', [App\Http\Controllers\Api\SiteAccountController::class, 'profile']);
+        Route::patch('/profile', [App\Http\Controllers\Api\SiteAccountController::class, 'updateProfile']);
+        Route::get('/payments', [App\Http\Controllers\Api\SiteAccountController::class, 'payments']);
+        Route::get('/auto-payments', [App\Http\Controllers\Api\SiteAccountController::class, 'autoPayments']);
+        Route::get('/cards', [App\Http\Controllers\Api\SiteAccountController::class, 'cards']);
+        Route::get('/referral', [App\Http\Controllers\Api\SiteAccountController::class, 'referral']);
     });
 });
 
@@ -353,6 +363,9 @@ Route::prefix('organizations/{organization}/donation-widget')->group(function ()
 
     // Получение статуса платежа
     Route::get('/payment-status/{transactionId}', [App\Http\Controllers\DonationWidgetController::class, 'getPaymentStatus']);
+
+    // Генерация PDF с банковскими реквизитами
+    Route::get('/bank-requisites/pdf', [App\Http\Controllers\DonationWidgetController::class, 'generateBankRequisitesPdf']);
 });
 
 // Маршруты для рейтинга регионов

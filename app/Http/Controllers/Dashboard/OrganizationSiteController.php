@@ -187,7 +187,7 @@ class OrganizationSiteController extends Controller
      */
     public function editWithBuilder(Organization $organization, Site $site)
     {
-        $site->load(['pages']);
+        $site->load(['pages', 'domain']);
 
         // Загружаем виджеты с нормализованными данными
         $site->load([
@@ -237,8 +237,20 @@ class OrganizationSiteController extends Controller
             }
         }
 
+        $stylesService = app(\App\Services\SiteStylesService::class);
+
+        // Загружаем настройки организации для передачи реквизитов
+        $organization->load('settings');
+
+        $organizationData = (new OrganizationResource($organization))->toArray(request());
+        if ($organization->settings) {
+            $organizationData['settings'] = [
+                'payment_settings' => $organization->settings->payment_settings,
+            ];
+        }
+
         return Inertia::render('dashboard/organization/sites/builder/OrganizationSiteBuilder', [
-            'organization' => (new OrganizationResource($organization))->toArray(request()),
+            'organization' => $organizationData,
             'site' => [
                 'id' => $site->id,
                 'name' => $site->name,
@@ -254,9 +266,17 @@ class OrganizationSiteController extends Controller
                 'seo_config' => $site->formatted_seo_config ?? [],
                 'payment_settings' => $site->payment_settings ?? [],
                 'custom_settings' => $site->custom_settings ?? [],
+                'domain' => $site->domain ? [
+                    'id' => $site->domain->id,
+                    'domain' => $site->domain->domain,
+                    'custom_domain' => $site->domain->custom_domain,
+                    'beget_domain_id' => $site->domain->beget_domain_id,
+                ] : null,
                 'created_at' => $site->created_at,
                 'updated_at' => $site->updated_at,
                 'widgets' => $widgets,
+                'styles_file_path' => $stylesService->getStylesRelativePath($site->id),
+                'styles_css_url' => $stylesService->getStylesCssUrl($site->id),
             ],
         ]);
     }

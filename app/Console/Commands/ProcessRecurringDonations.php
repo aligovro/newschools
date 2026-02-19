@@ -17,7 +17,8 @@ class ProcessRecurringDonations extends Command
      *
      * @var string
      */
-    protected $signature = 'donations:process-recurring';
+    protected $signature = 'donations:process-recurring
+        {--dry-run : Только показать, какие платежи были бы созданы, без реального списания}';
 
     /**
      * The console command description.
@@ -39,6 +40,11 @@ class ProcessRecurringDonations extends Command
      */
     public function handle()
     {
+        $dryRun = $this->option('dry-run');
+        if ($dryRun) {
+            $this->warn('Режим DRY-RUN: реальные платежи НЕ создаются.');
+        }
+
         $this->info('Начинаем обработку регулярных пожертвований...');
 
         // Находим все завершенные регулярные пожертвования
@@ -56,6 +62,13 @@ class ProcessRecurringDonations extends Command
             try {
                 // Проверяем, нужно ли создать следующий платеж
                 if ($this->shouldCreateNextPayment($donation)) {
+                    if ($dryRun) {
+                        $amountRub = round(($donation->amount ?? 0) / 100, 2);
+                        $this->line("  [DRY-RUN] Подписка #{$donation->id}: сумма {$amountRub} ₽, org_id={$donation->organization_id}");
+                        $created++;
+                        continue;
+                    }
+
                     $result = $this->createRecurringPayment($donation);
 
                     if ($result['success']) {
@@ -100,7 +113,8 @@ class ProcessRecurringDonations extends Command
                     ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring') = true")
                     ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.recurring_period') IS NOT NULL");
             })
-            ->whereNotNull(DB::raw("JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id')"))
+            ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id'))"))
+            ->where(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id'))"), '!=', '')
             ->select('donations.*')
             ->with(['paymentTransaction', 'organization'])
             ->get()
@@ -156,7 +170,7 @@ class ProcessRecurringDonations extends Command
         // Находим последний платеж с тем же saved_payment_method_id
         return PaymentTransaction::query()
             ->where('organization_id', $originalDonation->organization_id)
-            ->whereRaw("JSON_EXTRACT(payment_details, '$.saved_payment_method_id') = ?", [$savedPaymentMethodId])
+            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_details, '$.saved_payment_method_id')) = ?", [$savedPaymentMethodId])
             ->where('status', 'completed')
             ->orderBy('paid_at', 'desc')
             ->orderBy('created_at', 'desc')
@@ -191,7 +205,7 @@ class ProcessRecurringDonations extends Command
         // Проверяем, есть ли платеж с тем же saved_payment_method_id в этот день
         return PaymentTransaction::query()
             ->where('organization_id', $donation->organization_id)
-            ->whereRaw("JSON_EXTRACT(payment_details, '$.saved_payment_method_id') = ?", [$savedPaymentMethodId])
+            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_details, '$.saved_payment_method_id')) = ?", [$savedPaymentMethodId])
             ->whereDate('created_at', $date->toDateString())
             ->where('status', '!=', 'cancelled')
             ->first();
@@ -213,6 +227,12 @@ class ProcessRecurringDonations extends Command
             ];
         }
 
+        // Сумма — строго из оригинального доната (никогда не больше разрешённой при подключении)
+        $amount = (int) $originalDonation->amount;
+        if ($amount <= 0) {
+            return ['success' => false, 'error' => 'Некорректная сумма подписки'];
+        }
+
         // Подготавливаем данные для нового платежа
         $paymentData = [
             'organization_id' => $originalDonation->organization_id,
@@ -220,7 +240,7 @@ class ProcessRecurringDonations extends Command
             'project_id' => $originalDonation->project_id,
             'project_stage_id' => $originalDonation->project_stage_id,
             'payment_method_slug' => $originalTransaction->payment_method_slug,
-            'amount' => $originalDonation->amount,
+            'amount' => $amount,
             'currency' => $originalDonation->currency,
             'description' => $originalDonation->is_anonymous
                 ? 'Регулярное анонимное пожертвование'

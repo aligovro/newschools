@@ -12,6 +12,7 @@ use App\Http\Controllers\Dashboard\OrganizationAdminController;
 use App\Http\Controllers\Dashboard\OrganizationCreationController;
 use App\Http\Controllers\SiteConstructorController;
 use App\Http\Controllers\Dashboard\OrganizationSiteController;
+use App\Http\Controllers\Dashboard\BegetDomainController;
 use App\Http\Controllers\Dashboard\ProjectController;
 use App\Http\Controllers\Dashboard\NewsController as DashboardNewsController;
 use App\Http\Controllers\Dashboard\SuggestedOrganizationController;
@@ -22,6 +23,8 @@ use App\Http\Controllers\RegionController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\PublicProjectController;
 use App\Http\Controllers\PublicSponsorController;
+use App\Http\Controllers\PublicProjectDonationsController;
+use App\Http\Controllers\PublicOrganizationDonationsController;
 use App\Http\Controllers\PublicAlumniController;
 use App\Http\Controllers\PublicOrganizationController;
 use App\Http\Controllers\SitePreviewController;
@@ -42,8 +45,12 @@ use App\Http\Controllers\Api\FormWidgetController;
 use App\Http\Controllers\Api\FormSubmissionController;
 use App\Http\Controllers\PaymentReturnController;
 use App\Http\Controllers\PublicSitePageController;
+use App\Http\Controllers\SiteStylesController;
 
-Route::get('/', [MainSiteController::class, 'index'])->name('home');
+Route::get('/', [PublicSitePageController::class, 'showHomeOrPage'])->name('home');
+
+// Скомпилированные стили сайта (SCSS → CSS на лету, без npm build)
+Route::get('/site-css/{id}', [SiteStylesController::class, 'show'])->name('site-css.show')->whereNumber('id');
 Route::get('/organizations', [MainSiteController::class, 'organizations'])->name('main-site.organizations');
 Route::get('/organization/{slug}', [MainSiteController::class, 'organization'])->name('main-site.organization');
 Route::get('/projects', [PublicProjectController::class, 'index'])->name('main-site.projects');
@@ -51,8 +58,14 @@ Route::get('/project/{slug}', [PublicProjectController::class, 'show'])->name('m
 Route::get('/news', [MainSiteController::class, 'news'])->name('main-site.news');
 Route::get('/news/{slug}', [MainSiteController::class, 'showNews'])->name('main-site.news.show');
 Route::get('/project/{project:slug}/sponsors', [PublicSponsorController::class, 'projectSponsors'])->name('main-site.project.sponsors');
+Route::get('/project/{project:slug}/donations/top', [PublicProjectDonationsController::class, 'topByDonor'])->name('main-site.project.donations.top');
+Route::get('/project/{project:slug}/donations/top-recurring', [PublicProjectDonationsController::class, 'topRecurring'])->name('main-site.project.donations.top-recurring');
+Route::get('/project/{project:slug}/donations', [PublicProjectDonationsController::class, 'allDonations'])->name('main-site.project.donations');
 Route::get('/organization/{organization:slug}/sponsors', [PublicSponsorController::class, 'organizationSponsors'])->name('main-site.organization.sponsors');
 Route::get('/organization/{organization:slug}/alumni', [PublicAlumniController::class, 'organizationAlumni'])->name('main-site.organization.alumni');
+Route::get('/organization/{organization:slug}/donations/top', [PublicOrganizationDonationsController::class, 'topByDonor'])->name('main-site.organization.donations.top');
+Route::get('/organization/{organization:slug}/donations/top-recurring', [PublicOrganizationDonationsController::class, 'topRecurring'])->name('main-site.organization.donations.top-recurring');
+Route::get('/organization/{organization:slug}/donations', [PublicOrganizationDonationsController::class, 'allDonations'])->name('main-site.organization.donations');
 
 // Публичные API для организаций (используются через /api/public/organizations)
 Route::get('/api/organization-types', [PublicOrganizationController::class, 'types'])->name('organizations.types');
@@ -70,6 +83,15 @@ Route::get('/sites/{slug}/preview', [SitePreviewController::class, 'preview'])->
 Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::match(['put', 'post'], '/profile', [ProfileController::class, 'update'])->name('profile.update.public');
+});
+
+// Личный кабинет на сайтах организаций (my-account)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/my-account', [App\Http\Controllers\SiteAccountController::class, 'index'])->name('site-account.index');
+    Route::get('/my-account/{section}', [App\Http\Controllers\SiteAccountController::class, 'show'])
+        ->where('section', 'personal|payments|auto-payments|cards|invite')
+        ->defaults('section', 'personal')
+        ->name('site-account.show');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -125,6 +147,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/{site}/archive', [OrganizationSiteController::class, 'archive'])->name('archive');
             Route::patch('/{site}/enable-maintenance', [OrganizationSiteController::class, 'enableMaintenanceMode'])->name('enable-maintenance');
             Route::patch('/{site}/disable-maintenance', [OrganizationSiteController::class, 'disableMaintenanceMode'])->name('disable-maintenance');
+            // Beget: привязка доменов
+            Route::get('/{site}/beget/domains', [BegetDomainController::class, 'domains'])->name('beget.domains');
+            Route::post('/{site}/beget/bind', [BegetDomainController::class, 'bind'])->name('beget.bind');
+            Route::delete('/{site}/beget/unbind', [BegetDomainController::class, 'unbind'])->name('beget.unbind');
         });
 
         // Organization staff management
@@ -213,6 +239,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::put('/general', [OrganizationSettingsController::class, 'updateGeneral'])->name('update-general');
                 Route::put('/site', [OrganizationSettingsController::class, 'updateSiteSettings'])->name('update-site');
                 Route::put('/payments', [OrganizationSettingsController::class, 'updatePaymentSettings'])->name('update-payments');
+                Route::put('/bank-requisites', [OrganizationSettingsController::class, 'updateBankRequisites'])->name('update-bank-requisites');
                 Route::put('/notifications', [OrganizationSettingsController::class, 'updateNotificationSettings'])->name('update-notifications');
                 Route::put('/integrations', [OrganizationSettingsController::class, 'updateIntegrationSettings'])->name('update-integrations');
                 Route::post('/test-telegram', [OrganizationSettingsController::class, 'testTelegramBot'])->name('test-telegram');
@@ -358,9 +385,17 @@ Route::prefix('api/sites/{id}')->middleware('auth')->group(function () {
     Route::post('/settings/payments', [ApiSiteController::class, 'savePaymentSettings'])
         ->name('sites.save-payment-settings');
 
+    // Банковские реквизиты сайта
+    Route::post('/bank-requisites', [ApiSiteController::class, 'saveBankRequisites'])
+        ->name('sites.save-bank-requisites');
+
     // Макет сайта
     Route::post('/settings/layout', [ApiSiteController::class, 'saveLayoutSettings'])
         ->name('sites.save-layout-settings');
+
+    // Дополнительные стили сайта (пустой или свой CSS поверх виджетов)
+    Route::post('/settings/custom-styles', [ApiSiteController::class, 'saveCustomStyles'])
+        ->name('sites.save-custom-styles');
 
     // Виджеты
     Route::post('/widgets', [ApiSiteController::class, 'addWidget'])
@@ -386,6 +421,17 @@ Route::prefix('api/projects/{id}')->middleware('auth')->group(function () {
     // Платежные настройки проекта
     Route::post('/settings/payments', [ApiProjectController::class, 'savePaymentSettings'])
         ->name('projects.save-payment-settings');
+    
+    // Банковские реквизиты проекта
+    Route::post('/bank-requisites', [ApiProjectController::class, 'saveBankRequisites'])
+        ->name('projects.save-bank-requisites');
+});
+
+// Organization configuration routes
+Route::prefix('api/organizations/{organization}')->middleware('auth')->group(function () {
+    // Банковские реквизиты организации
+    Route::post('/bank-requisites', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'updateBankRequisitesApi'])
+        ->name('organizations.save-bank-requisites');
 });
 
 Route::get('/dashboard/api/regions/{id}', [RegionController::class, 'show']);
@@ -395,8 +441,7 @@ Route::get('/dashboard/api/localities/{id}', [CityController::class, 'show']);
 Route::get('/payment/return', [PaymentReturnController::class, 'return'])->name('payment.return');
 
 // Публичные страницы сайтов (должен быть последним, чтобы не конфликтовать с другими роутами)
-// Страницы главного сайта: /{slug} (например, /kontakty)
-// Исключаем известные маршруты, чтобы не перехватывать их
-Route::get('/{slug}', [PublicSitePageController::class, 'showMainSitePage'])
+// /{slug} — главный сайт или сайт организации (по домену)
+Route::get('/{slug}', [PublicSitePageController::class, 'showHomeOrPage'])
     ->where('slug', '^(?!api|dashboard|organizations|organization|projects|project|tailwind-test|sites|login|register|password|email|verify).+')
     ->name('public.page.show');

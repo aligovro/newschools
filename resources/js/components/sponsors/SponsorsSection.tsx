@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { nameToInitials } from '@/utils/nameToInitials';
+import {
+    Avatar,
+    AvatarImage,
+    AvatarUserFallback,
+} from '@/components/ui/avatar';
 
 
 export type SortOption = 'top' | 'recent';
@@ -264,11 +267,8 @@ export default function SponsorsSection({
 
     const renderSponsorCard = useCallback(
         (sponsor: Sponsor) => (
-            <div
-                key={sponsor.id}
-                className="sponsors-section__card flex items-center justify-between gap-4"
-            >
-                <div className="flex items-center gap-3">
+            <div key={sponsor.id} className="sponsors-section__card">
+                <div className="sponsors-section__card-content">
                     <Avatar className="sponsors-section__avatar">
                         {sponsor.avatar ? (
                             <AvatarImage
@@ -277,13 +277,11 @@ export default function SponsorsSection({
                                 className="object-cover"
                             />
                         ) : (
-                            <AvatarFallback className="sponsors-section__avatar-fallback">
-                                {nameToInitials(sponsor.name)}
-                            </AvatarFallback>
+                            <AvatarUserFallback />
                         )}
                     </Avatar>
 
-                    <div className="flex flex-col">
+                    <div className="sponsors-section__card-text">
                         <span className="sponsors-section__card-label">
                             {monthlyLabel}
                         </span>
@@ -306,75 +304,78 @@ export default function SponsorsSection({
     }
 
     return (
-        <section className="sponsors-section mt-12 space-y-6">
-            <div className="flex flex-col gap-4">
-                <h2 className="sponsors-section__title">
-                    {title} · {activeState?.pagination?.total ?? 0}
-                </h2>
+        <section className="sponsors-section mt-12">
+            <div className="sponsors-section__wrapper">
+                <div className="sponsors-section__header">
+                    <h2 className="sponsors-section__title">
+                        {title} · {activeState?.pagination?.total ?? 0}
+                    </h2>
+                    <div className="sponsors-section__sort-row">
+                        {SORT_BUTTONS.map((button) => {
+                            const isActive = button.key === activeSort;
+                            const classes = [
+                                'sponsors-section__sort-button',
+                                isActive
+                                    ? 'sponsors-section__sort-button--active'
+                                    : '',
+                                isLoading && !isActive
+                                    ? 'sponsors-section__sort-button--disabled'
+                                    : '',
+                            ]
+                                .filter(Boolean)
+                                .join(' ');
 
-                <div className="flex flex-wrap gap-3">
-                    {SORT_BUTTONS.map((button) => {
-                        const isActive = button.key === activeSort;
-                        const classes = [
-                            'sponsors-section__sort-button',
-                            isActive
-                                ? 'sponsors-section__sort-button--active'
-                                : '',
-                            isLoading && !isActive
-                                ? 'sponsors-section__sort-button--disabled'
-                                : '',
-                        ]
-                            .filter(Boolean)
-                            .join(' ');
-
-                        return (
-                            <button
-                                key={button.key}
-                                type="button"
-                                onClick={() => handleSortChange(button.key)}
-                                disabled={isLoading && !isActive}
-                                className={classes}
-                            >
-                                {button.label}
-                            </button>
-                        );
-                    })}
+                            return (
+                                <button
+                                    key={button.key}
+                                    type="button"
+                                    onClick={() =>
+                                        handleSortChange(button.key)
+                                    }
+                                    disabled={isLoading && !isActive}
+                                    className={classes}
+                                >
+                                    {button.label}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
 
-            {error && (
-                <div
-                    className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                    role="alert"
-                >
-                    {error}
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {activeState?.data.map(renderSponsorCard)}
-            </div>
-
-            {activeState?.data.length === 0 && !isLoading && !error && (
-                <div className="sponsors-section__empty">
-                    <p className="sponsors-section__empty-text">
-                        {emptyStateMessage}
-                    </p>
-                </div>
-            )}
-
-            {(hasMore || isLoading) && (
-                <div className="flex">
-                    <button
-                        type="button"
-                        onClick={handleLoadMore}
-                        disabled={isLoading || !hasMore}
-                        className="sponsors-section__load-more"
+                {error && (
+                    <div
+                        className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                        role="alert"
                     >
-                        {isLoading ? 'Загрузка…' : 'Загрузить больше'}
-                    </button>
+                        {error}
+                    </div>
+                )}
+
+                <div className="sponsors-section__grid">
+                    {activeState?.data.map(renderSponsorCard)}
                 </div>
-            )}
+
+                {activeState?.data.length === 0 && !isLoading && !error && (
+                    <div className="sponsors-section__empty">
+                        <p className="sponsors-section__empty-text">
+                            {emptyStateMessage}
+                        </p>
+                    </div>
+                )}
+
+                {(hasMore || isLoading) && (
+                    <div className="sponsors-section__load-more-row">
+                        <button
+                            type="button"
+                            onClick={handleLoadMore}
+                            disabled={isLoading || !hasMore}
+                            className="sponsors-section__load-more"
+                        >
+                            {isLoading ? 'Загрузка…' : 'Загрузить больше'}
+                        </button>
+                    </div>
+                )}
+            </div>
         </section>
     );
 }

@@ -35,7 +35,7 @@ class MainSiteController extends Controller
         $data = $this->getSiteWidgetsAndPositions();
 
         /** @var Site|null $siteModel */
-        $siteModel = Site::where('site_type', 'main')->published()->first();
+        $siteModel = $this->resolveCurrentSite();
 
         $seo = null;
         if ($siteModel) {
@@ -180,9 +180,11 @@ class MainSiteController extends Controller
 
     public function news(Request $request)
     {
+        $orgId = app()->bound('current_organization_id') ? app('current_organization_id') : null;
+
         $query = News::query()
             ->with(['organization:id,name,slug'])
-            ->whereNull('organization_id')
+            ->when($orgId !== null, fn ($q) => $q->where('organization_id', $orgId), fn ($q) => $q->whereNull('organization_id'))
             ->where('status', NewsStatus::Published)
             ->where('visibility', NewsVisibility::Public)
             ->where(function ($q) {
@@ -236,14 +238,16 @@ class MainSiteController extends Controller
         $data = $this->getSiteWidgetsAndPositions();
 
         /** @var Site|null $siteModel */
-        $siteModel = Site::where('site_type', 'main')->published()->first();
+        $siteModel = $orgId && app()->bound('current_organization_site')
+            ? app('current_organization_site')
+            : Site::where('site_type', 'main')->published()->first();
         $seo = null;
         if ($siteModel) {
             $seo = $this->seoPresenter->forSite(
                 $siteModel,
                 [
                     'pageTitle' => 'Новости',
-                    'pageDescription' => 'Новости и события главного сайта',
+                    'pageDescription' => $orgId ? 'Новости и события' : 'Новости и события главного сайта',
                     'seo_overrides' => [],
                 ],
                 $request->fullUrl()
@@ -259,10 +263,12 @@ class MainSiteController extends Controller
 
     public function showNews(Request $request, string $slug)
     {
+        $orgId = app()->bound('current_organization_id') ? app('current_organization_id') : null;
+
         $news = News::query()
             ->with(['organization:id,name,slug'])
             ->where('slug', $slug)
-            ->whereNull('organization_id')
+            ->when($orgId !== null, fn ($q) => $q->where('organization_id', $orgId), fn ($q) => $q->whereNull('organization_id'))
             ->where('status', NewsStatus::Published)
             ->where('visibility', NewsVisibility::Public)
             ->where(function ($q) {
@@ -276,7 +282,9 @@ class MainSiteController extends Controller
         $data = $this->getSiteWidgetsAndPositions();
 
         /** @var Site|null $siteModel */
-        $siteModel = Site::where('site_type', 'main')->published()->first();
+        $siteModel = $orgId && app()->bound('current_organization_site')
+            ? app('current_organization_site')
+            : Site::where('site_type', 'main')->published()->first();
         $seo = null;
         if ($siteModel) {
             $seo = $this->seoPresenter->forNews(
@@ -447,7 +455,7 @@ class MainSiteController extends Controller
         $data = $this->getSiteWidgetsAndPositions();
 
         /** @var Site|null $siteModel */
-        $siteModel = Site::where('site_type', 'main')->published()->first();
+        $siteModel = $this->resolveCurrentSite();
         $seo = null;
         if ($siteModel) {
             $seo = $this->seoPresenter->forOrganization(
@@ -459,10 +467,22 @@ class MainSiteController extends Controller
 
         return Inertia::render('main-site/OrganizationShow', array_merge($data, [
             'organization' => $organizationData,
-            'organizationId' => $organization->id, // Передаем organizationId для виджетов
+            'organizationId' => $organization->id,
             'sponsors' => $sponsorsPayload,
             'alumni' => $alumniPayload,
             'seo' => $seo,
         ]));
+    }
+
+    /**
+     * Текущий сайт: организации (на кастомном домене) или главный.
+     */
+    private function resolveCurrentSite(): ?Site
+    {
+        if (app()->bound('current_organization_site')) {
+            return app('current_organization_site');
+        }
+
+        return Site::where('site_type', 'main')->published()->first();
     }
 }

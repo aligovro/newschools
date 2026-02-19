@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -59,6 +60,16 @@ class User extends Authenticatable
         return $this->belongsToMany(Organization::class, 'organization_users')
             ->withPivot(['role', 'status', 'permissions', 'joined_at', 'last_active_at'])
             ->withTimestamps();
+    }
+
+    public function organizationProfiles(): HasMany
+    {
+        return $this->hasMany(OrganizationUserProfile::class);
+    }
+
+    public function profileForOrganization(int $organizationId): ?OrganizationUserProfile
+    {
+        return $this->organizationProfiles()->where('organization_id', $organizationId)->first();
     }
 
     public function isSuperAdmin(): bool

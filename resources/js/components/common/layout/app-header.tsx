@@ -1,6 +1,10 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Icon } from '@/components/icon';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    Avatar,
+    AvatarImage,
+    AvatarUserFallback,
+} from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -26,7 +30,6 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { UserMenuContent } from '@/components/user-menu-content';
-import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
@@ -64,7 +67,6 @@ interface AppHeaderProps {
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
-    const getInitials = useInitials();
     return (
         <>
             <div className="border-sidebar-border/80 border-b">
@@ -242,9 +244,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             src={auth.user.avatar}
                                             alt={auth.user.name}
                                         />
-                                        <AvatarFallback className="rounded-lg bg-neutral-200 text-black">
-                                            {getInitials(auth.user.name)}
-                                        </AvatarFallback>
+                                        <AvatarUserFallback />
                                     </Avatar>
                                 </Button>
                             </DropdownMenuTrigger>

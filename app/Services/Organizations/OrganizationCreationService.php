@@ -354,9 +354,10 @@ class OrganizationCreationService
       // Дублируем галлерею для сайта
       $this->duplicateGalleryForSite($organization, $site);
 
-
-      // Создаем автоматические страницы
-      $this->createAutoPagesForSite($organization, $site);
+      // Создаем автоматические страницы (если не отключено — напр. при миграции из blagoqr)
+      if (! ($siteData['skip_default_pages'] ?? false)) {
+        $this->createAutoPagesForSite($organization, $site);
+      }
 
       return $site->load(['pages']);
     });
@@ -381,6 +382,14 @@ class OrganizationCreationService
     }
   }
 
+
+  /**
+   * Slug'и дефолтных автопстраниц (для удаления при миграции)
+   */
+  public static function getDefaultAutoPageSlugs(): array
+  {
+    return ['thanks', 'contacts', 'about', 'projects'];
+  }
 
   /**
    * Создать автоматические страницы для сайта
@@ -525,7 +534,7 @@ class OrganizationCreationService
         'domain' => $domainData,
       ], [
         'is_primary' => true,
-        'is_active' => true,
+        'status' => 'active',
         'is_ssl_enabled' => true,
       ]);
     }
@@ -535,7 +544,7 @@ class OrganizationCreationService
       'domain' => $organization->slug . '.' . config('app.domain', 'localhost'),
     ], [
       'is_primary' => true,
-      'is_active' => true,
+      'status' => 'active',
       'is_ssl_enabled' => false,
     ]);
   }

@@ -755,6 +755,148 @@
     }
 }
 
+// Payment method tabs (Онлайн оплата / Перевод на карту / Расчетный счет)
+.donation-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #e8ecf3;
+
+    &__tab {
+        flex: 1;
+        padding: 10px 12px;
+        border: none;
+        background: transparent;
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 120%;
+        color: #b5b9c3;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        text-align: center;
+        white-space: nowrap;
+
+        &:hover {
+            color: #1a1a1a;
+        }
+
+        &--active {
+            color: #1a1a1a;
+            border-bottom-color: #1a1a1a;
+        }
+    }
+}
+
+// Bank Requisites
+.bank-requisites {
+    padding: 8px 0 16px;
+
+    &__cards {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    &__card {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid #e8ecf3;
+        background: #fafbfc;
+    }
+
+    &__card--sber {
+        border-left: 3px solid #21a038;
+    }
+
+    &__card--tinkoff {
+        border-left: 3px solid #ffdd2d;
+    }
+
+    &__card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__card-label {
+        font-weight: 700;
+        font-size: 14px;
+        color: #1a1a1a;
+    }
+
+    &__card-number {
+        font-weight: 600;
+        font-size: 20px;
+        color: #1a1a1a;
+        letter-spacing: 2px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__card-recipient {
+        font-weight: 500;
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    &__text {
+        border: 1px solid #e8ecf3;
+        border-radius: 12px;
+        padding: 16px;
+        background: #fafbfc;
+    }
+
+    &__text-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    &__text-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    &__text-content {
+        font-size: 13px;
+        line-height: 1.6;
+        color: #374151;
+        word-break: break-word;
+
+        p {
+            margin: 0 0 4px;
+        }
+    }
+
+    &__copy-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid #e8ecf3;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        color: #6b7280;
+        transition: all 0.2s;
+        flex-shrink: 0;
+
+        &:hover {
+            background: #f5f6f8;
+            color: #1a1a1a;
+        }
+    }
+}
+
 // Global checkbox styles - черные чекбоксы с белыми галочками
 input[type='checkbox']:checked {
     background-color: #1a1a1a !important;

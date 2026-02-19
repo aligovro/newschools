@@ -71,6 +71,40 @@ interface WidgetRendererProps {
     previewMode?: boolean;
 }
 
+// Вспомогательная функция для парсинга конфига виджета
+const parseWidgetConfig = (
+    configs: WidgetData['configs'],
+    fallbackConfig: Record<string, unknown>,
+): Record<string, unknown> => {
+    if (!configs) {
+        return fallbackConfig || {};
+    }
+
+    const config: Record<string, unknown> = {};
+    configs.forEach((item) => {
+        let value: unknown = item.config_value;
+        switch (item.config_type) {
+            case 'number':
+                value = parseFloat(value as string);
+                break;
+            case 'boolean':
+                value = value === '1' || value === 'true';
+                break;
+            case 'json':
+                try {
+                    value = JSON.parse(value as string);
+                } catch {
+                    // ignore
+                }
+                break;
+            default:
+                break;
+        }
+        config[item.config_key] = value;
+    });
+    return config;
+};
+
 export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
     ({
         widget,
@@ -83,33 +117,10 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
         const renderedWidget = useMemo(() => {
             // Специальный превью для текстового виджета (плейсхолдер)
             if (previewMode && widget.widget_slug === 'text') {
-                const cfg = widget.configs
-                    ? (() => {
-                          const config: Record<string, unknown> = {};
-                          widget.configs.forEach((item) => {
-                              let value: unknown = item.config_value;
-                              switch (item.config_type) {
-                                  case 'number':
-                                      value = parseFloat(value as string);
-                                      break;
-                                  case 'boolean':
-                                      value = value === '1' || value === 'true';
-                                      break;
-                                  case 'json':
-                                      try {
-                                          value = JSON.parse(value as string);
-                                      } catch {
-                                          // ignore
-                                      }
-                                      break;
-                                  default:
-                                      break;
-                              }
-                              config[item.config_key] = value;
-                          });
-                          return config;
-                      })()
-                    : widget.config || {};
+                const cfg = parseWidgetConfig(
+                    widget.configs,
+                    widget.config || {},
+                );
                 const title =
                     (cfg.title as string) || widget.name || 'Текстовый блок';
 
@@ -127,33 +138,10 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
 
             // Специальный превью для Hero виджета - показываем простой плейсхолдер
             if (previewMode && widget.widget_slug === 'hero') {
-                const cfg = widget.configs
-                    ? (() => {
-                          const config: Record<string, unknown> = {};
-                          widget.configs.forEach((item) => {
-                              let value: unknown = item.config_value;
-                              switch (item.config_type) {
-                                  case 'number':
-                                      value = parseFloat(value as string);
-                                      break;
-                                  case 'boolean':
-                                      value = value === '1' || value === 'true';
-                                      break;
-                                  case 'json':
-                                      try {
-                                          value = JSON.parse(value as string);
-                                      } catch {
-                                          // ignore
-                                      }
-                                      break;
-                                  default:
-                                      break;
-                              }
-                              config[item.config_key] = value;
-                          });
-                          return config;
-                      })()
-                    : widget.config || {};
+                const cfg = parseWidgetConfig(
+                    widget.configs,
+                    widget.config || {},
+                );
                 const title = (cfg.title as string) || widget.name || 'Hero';
 
                 return (
@@ -170,33 +158,10 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
 
             // Специальный превью для Slider виджета - показываем простой плейсхолдер
             if (previewMode && widget.widget_slug === 'slider') {
-                const cfg = widget.configs
-                    ? (() => {
-                          const config: Record<string, unknown> = {};
-                          widget.configs.forEach((item) => {
-                              let value: unknown = item.config_value;
-                              switch (item.config_type) {
-                                  case 'number':
-                                      value = parseFloat(value as string);
-                                      break;
-                                  case 'boolean':
-                                      value = value === '1' || value === 'true';
-                                      break;
-                                  case 'json':
-                                      try {
-                                          value = JSON.parse(value as string);
-                                      } catch {
-                                          // ignore
-                                      }
-                                      break;
-                                  default:
-                                      break;
-                              }
-                              config[item.config_key] = value;
-                          });
-                          return config;
-                      })()
-                    : widget.config || {};
+                const cfg = parseWidgetConfig(
+                    widget.configs,
+                    widget.config || {},
+                );
 
                 // Получаем количество слайдов для отображения
                 let slidesCount = 0;
@@ -227,6 +192,27 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
                         </div>
                         <div className="mt-1 text-sm text-gray-500">
                             {subtitle}
+                        </div>
+                    </div>
+                );
+            }
+
+            // Специальный превью для Projects Slider виджета - показываем простой плейсхолдер
+            if (previewMode && widget.widget_slug === 'projects_slider') {
+                const cfg = parseWidgetConfig(
+                    widget.configs,
+                    widget.config || {},
+                );
+                const title =
+                    (cfg.title as string) || widget.name || 'Слайдер проектов';
+
+                return (
+                    <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                        <div className="text-2xl font-bold text-gray-800">
+                            {title}
+                        </div>
+                        <div className="mt-1 text-sm text-gray-500">
+                            {widget.widget_slug}
                         </div>
                     </div>
                 );

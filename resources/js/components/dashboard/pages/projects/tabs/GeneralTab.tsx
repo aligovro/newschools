@@ -4,6 +4,7 @@ import { MediaSection } from '../ProjectForm/MediaSection';
 import { PaymentSettingsSection } from '../ProjectForm/PaymentSettingsSection';
 import { ProjectDatesSection } from '../ProjectForm/ProjectDatesSection';
 import { SettingsSection } from '../ProjectForm/SettingsSection';
+import { BankRequisitesSettings } from '@/components/dashboard/bank-requisites/BankRequisitesSettings';
 import type {
     PaymentSettings,
     ProjectFormData,
@@ -35,6 +36,8 @@ interface GeneralTabProps {
     onSlugChange: (value: string) => void;
     onAutoGenerateSlugChange: (checked: boolean) => void;
     onRegenerateSlug: () => void;
+    organization?: { id: number; name?: string; slug?: string; settings?: { payment_settings?: any } };
+    projectId?: number;
 }
 
 export default function GeneralTab({
@@ -56,7 +59,49 @@ export default function GeneralTab({
     onSlugChange,
     onAutoGenerateSlugChange,
     onRegenerateSlug,
+    organization,
+    projectId,
 }: GeneralTabProps) {
+    // Извлекаем реквизиты проекта из paymentSettings
+    const projectRequisites = projectId && paymentSettings ? {
+        // Структурированные поля (если есть)
+        recipient_name: (paymentSettings as any).bank_requisites_structured?.recipient_name || null,
+        bank_name: (paymentSettings as any).bank_requisites_structured?.bank_name || null,
+        inn: (paymentSettings as any).bank_requisites_structured?.inn || null,
+        kpp: (paymentSettings as any).bank_requisites_structured?.kpp || null,
+        bik: (paymentSettings as any).bank_requisites_structured?.bik || null,
+        account: (paymentSettings as any).bank_requisites_structured?.account || null,
+        corr_account: (paymentSettings as any).bank_requisites_structured?.corr_account || null,
+        beneficiary_name: (paymentSettings as any).bank_requisites_structured?.beneficiary_name || null,
+        ogrn: (paymentSettings as any).bank_requisites_structured?.ogrn || null,
+        address: (paymentSettings as any).bank_requisites_structured?.address || null,
+        // Текстовое поле (для обратной совместимости)
+        bank_requisites: paymentSettings.bank_requisites as string | null,
+        sber_card: paymentSettings.sber_card as string | null,
+        tinkoff_card: paymentSettings.tinkoff_card as string | null,
+        card_recipient: paymentSettings.card_recipient as string | null,
+    } : null;
+
+    // Извлекаем реквизиты организации
+    const organizationRequisites = organization?.settings?.payment_settings ? {
+        // Структурированные поля
+        recipient_name: organization.settings.payment_settings.bank_requisites_structured?.recipient_name,
+        bank_name: organization.settings.payment_settings.bank_requisites_structured?.bank_name,
+        inn: organization.settings.payment_settings.bank_requisites_structured?.inn,
+        kpp: organization.settings.payment_settings.bank_requisites_structured?.kpp,
+        bik: organization.settings.payment_settings.bank_requisites_structured?.bik,
+        account: organization.settings.payment_settings.bank_requisites_structured?.account,
+        corr_account: organization.settings.payment_settings.bank_requisites_structured?.corr_account,
+        beneficiary_name: organization.settings.payment_settings.bank_requisites_structured?.beneficiary_name,
+        ogrn: organization.settings.payment_settings.bank_requisites_structured?.ogrn,
+        address: organization.settings.payment_settings.bank_requisites_structured?.address,
+        // Текстовое поле (для обратной совместимости)
+        bank_requisites: organization.settings.payment_settings.bank_requisites as string | null,
+        sber_card: organization.settings.payment_settings.sber_card as string | null,
+        tinkoff_card: organization.settings.payment_settings.tinkoff_card as string | null,
+        card_recipient: organization.settings.payment_settings.card_recipient as string | null,
+    } : null;
+
     return (
         <>
             <div className="create-organization__main-content">
@@ -85,6 +130,16 @@ export default function GeneralTab({
                     onPaymentChange={onPaymentChange}
                     onCredentialChange={onCredentialChange}
                 />
+
+                {projectId && organization && (
+                    <BankRequisitesSettings
+                        entityId={projectId}
+                        entityType="project"
+                        initialRequisites={projectRequisites}
+                        organizationRequisites={organizationRequisites}
+                        showInheritanceInfo={true}
+                    />
+                )}
 
                 <ProjectDatesSection
                     data={data}

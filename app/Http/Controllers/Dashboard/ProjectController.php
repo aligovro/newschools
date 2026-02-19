@@ -459,8 +459,18 @@ class ProjectController extends Controller
             return $stage;
         });
 
+        // Загружаем настройки организации для передачи реквизитов
+        $organization->load('settings');
+
         return Inertia::render('dashboard/projects/EditProject', [
-            'organization' => $organization->only(['id', 'name', 'slug']),
+            'organization' => [
+                'id' => $organization->id,
+                'name' => $organization->name,
+                'slug' => $organization->slug,
+                'settings' => $organization->settings ? [
+                    'payment_settings' => $organization->settings->payment_settings,
+                ] : null,
+            ],
             'project' => $project,
             'projectCategories' => $projectCategories,
             'defaultPaymentSettings' => $this->resolveDefaultPaymentSettings($organization),

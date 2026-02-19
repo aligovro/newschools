@@ -48,4 +48,29 @@ function AvatarFallback({
   )
 }
 
-export { Avatar, AvatarImage, AvatarFallback }
+const USER_ICON_SRC = "/icons/user.svg"
+
+function AvatarUserFallback({
+  className,
+  ...props
+}: Omit<React.ComponentProps<typeof AvatarPrimitive.Fallback>, "children">) {
+  return (
+    <AvatarPrimitive.Fallback
+      data-slot="avatar-user-fallback"
+      className={cn(
+        "avatar-user-fallback flex size-full items-center justify-center rounded-[20px] border-none bg-[#F5F6F8]",
+        className
+      )}
+      {...props}
+    >
+      <img
+        src={USER_ICON_SRC}
+        alt=""
+        className="size-6 shrink-0"
+        aria-hidden
+      />
+    </AvatarPrimitive.Fallback>
+  )
+}
+
+export { Avatar, AvatarImage, AvatarFallback, AvatarUserFallback }

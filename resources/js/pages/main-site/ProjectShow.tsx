@@ -4,6 +4,7 @@ import SubscribeSponsorModal from '@/components/main-site/SubscribeSponsorModal'
 import ProjectSponsorsSection, {
     type SponsorsPayload,
 } from '@/components/projects/ProjectSponsorsSection';
+import ProjectTopRecurringSection from '@/components/projects/ProjectTopRecurringSection';
 import ProjectStageCard from '@/components/projects/ProjectStageCard';
 import MainLayout from '@/layouts/MainLayout';
 import type { MoneyAmount } from '@/types/money';
@@ -79,12 +80,31 @@ interface Project {
 
 type LayoutProps = ComponentProps<typeof MainLayout>;
 
+interface TopRecurringPayload {
+    data: Array<{
+        id: string;
+        donor_label: string;
+        total_amount: number;
+        total_amount_formatted: string;
+        donations_count: number;
+        duration_label: string;
+        avatar?: string | null;
+    }>;
+    pagination: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
+}
+
 interface ProjectShowProps {
     site: LayoutProps['site'];
     positions: LayoutProps['positions'];
     position_settings?: LayoutProps['position_settings'];
     project: Project;
     sponsors: SponsorsPayload;
+    topRecurring?: TopRecurringPayload;
 }
 
 export default function ProjectShow({
@@ -93,6 +113,7 @@ export default function ProjectShow({
     position_settings = [],
     project,
     sponsors,
+    topRecurring,
 }: ProjectShowProps) {
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
     const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
@@ -333,6 +354,12 @@ export default function ProjectShow({
                         }
                     }
                     initialSort={sponsors?.sort ?? 'top'}
+                />
+
+                <ProjectTopRecurringSection
+                    projectSlug={project.slug}
+                    initialData={topRecurring?.data}
+                    initialPagination={topRecurring?.pagination}
                 />
 
                 {organizationForModal && (

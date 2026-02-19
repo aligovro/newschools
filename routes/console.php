@@ -11,5 +11,5 @@ Artisan::command('inspire', function () {
 // Обработка регулярных пожертвований - запускаем каждый час
 Schedule::command('donations:process-recurring')
     ->hourly()
-    ->withoutOverlapping()
+    ->withoutOverlapping(config('payments.recurring.cron_lock_minutes', 65))
     ->runInBackground();

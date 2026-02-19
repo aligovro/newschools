@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\GetsSiteWidgetsData;
 use App\Models\Site;
 use App\Models\SitePage;
-use App\Models\SitePositionSetting;
 use App\Http\Resources\SitePageResource;
-use App\Services\WidgetDataService;
+use App\Services\OrganizationSiteByDomainService;
 use App\Services\Seo\SeoPresenter;
-use App\Models\SiteTemplate;
-use App\Models\WidgetPosition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -19,8 +17,11 @@ use Inertia\Response;
 
 class PublicSitePageController extends Controller
 {
+    use GetsSiteWidgetsData;
+
     public function __construct(
         private readonly SeoPresenter $seoPresenter,
+        private readonly OrganizationSiteByDomainService $domainService,
     ) {}
 
     /**
@@ -36,13 +37,25 @@ class PublicSitePageController extends Controller
     }
 
     /**
-     * Получить сайт организации по домену
+     * Единая точка входа для / и /{slug}.
+     * Для кастомного домена — сайт организации, иначе — главный сайт.
      */
-    private function getSiteByDomain(?string $domain = null): ?Site
+    public function showHomeOrPage(?string $slug = null): Response
     {
-        // TODO: Реализовать определение сайта по домену
-        // Пока возвращаем null, так как это будет реализовано позже
-        return null;
+        $host = request()->getHost();
+
+        if (!$this->domainService->isMainDomain($host)) {
+            $site = $this->domainService->getSiteByDomain($host);
+            if ($site) {
+                return $this->showOrganizationSitePage($slug);
+            }
+        }
+
+        if (empty($slug)) {
+            return app(MainSiteController::class)->index(request());
+        }
+
+        return $this->showMainSitePage($slug);
     }
 
     /**
@@ -86,7 +99,7 @@ class PublicSitePageController extends Controller
         }
 
         // Получаем данные сайта для виджетов (уже кешируется внутри)
-        $siteData = $this->getSiteWidgetsAndPositions($site);
+        $siteData = $this->getSiteWidgetsAndPositionsFor($site);
 
         // Формируем SEO данные для страницы (единый формат seo)
         $seo = $this->seoPresenter->forSitePage($site, $page, request()->fullUrl());
@@ -99,39 +112,32 @@ class PublicSitePageController extends Controller
 
     /**
      * Просмотр страницы сайта организации
-     * URL: /{slug} (определяется по домену)
+     * URL: / или /{slug} (определяется по домену)
+     *
+     * @param  string|null  $slug  Slug страницы; null или пусто — главная
      */
-    public function showOrganizationSitePage(string $slug, ?string $siteSlug = null): Response
+    public function showOrganizationSitePage(?string $slug = null, ?string $siteSlug = null): Response
     {
-        // Определяем сайт
-        $site = null;
-
-        // Если передан siteSlug, используем его
-        if ($siteSlug) {
-            $site = Site::where('slug', $siteSlug)
-                ->where('site_type', 'organization')
-                ->published()
-                ->first();
-        } else {
-            // Пытаемся определить по домену
-            $site = $this->getSiteByDomain(request()->getHost());
-        }
+        $site = $siteSlug
+            ? Site::where('slug', $siteSlug)->where('site_type', 'organization')->published()->first()
+            : $this->domainService->getSiteByDomain(request()->getHost());
 
         if (!$site) {
             abort(404, 'Сайт не найден');
         }
 
-        $page = SitePage::where('site_id', $site->id)
-            ->where('slug', $slug)
-            ->where(function ($query) {
-                $query->where('status', 'published')
-                    ->orWhere('is_public', true);
-            })
-            ->where(function ($query) {
-                $query->whereNull('published_at')
-                    ->orWhere('published_at', '<=', now());
-            })
-            ->first();
+        $page = empty($slug) || $slug === '/'
+            ? $site->pages()->homepage()->published()->first()
+                ?? $site->pages()->where('status', 'published')->where('is_public', true)->orderBy('sort_order')->first()
+            : SitePage::where('site_id', $site->id)
+                ->where('slug', $slug)
+                ->where(function ($query) {
+                    $query->where('status', 'published')->orWhere('is_public', true);
+                })
+                ->where(function ($query) {
+                    $query->whereNull('published_at')->orWhere('published_at', '<=', now());
+                })
+                ->first();
 
         if (!$page) {
             abort(404, 'Страница не найдена');
@@ -141,96 +147,12 @@ class PublicSitePageController extends Controller
         $page->load(['parent', 'children', 'site']);
 
         // Получаем данные сайта для виджетов
-        $siteData = $this->getSiteWidgetsAndPositions($site);
+        $siteData = $this->getSiteWidgetsAndPositionsFor($site);
 
         return Inertia::render('site/PageShow', array_merge($siteData, [
             'page' => (new SitePageResource($page))->toArray(request()),
             'seo' => $this->seoPresenter->forSitePage($site, $page, request()->fullUrl()),
         ]));
-    }
-
-    /**
-     * Получить виджеты и позиции для сайта (оптимизировано с кешированием)
-     */
-    private function getSiteWidgetsAndPositions(Site $site): array
-    {
-        /** @var WidgetDataService $widgetDataService */
-        $widgetDataService = app(WidgetDataService::class);
-
-        // Кешируем конфигурацию виджетов на 5 минут
-        $widgetsConfig = Cache::remember(
-            "site_widgets_config_{$site->id}",
-            300,
-            function () use ($widgetDataService, $site) {
-                return $widgetDataService->getSiteWidgetsWithData($site->id);
-            }
-        );
-
-        // Кешируем позиции на 10 минут (меняются редко)
-        $positions = Cache::remember(
-            "site_positions_{$site->template}",
-            600,
-            function () use ($site) {
-                $template = SiteTemplate::where('slug', $site->template)->first();
-                $query = WidgetPosition::active()->ordered();
-                if ($template) {
-                    $query->where(function ($q) use ($template) {
-                        $q->where('template_id', $template->id)->orWhereNull('template_id');
-                    });
-                }
-                return $query->get()->map(function ($position) {
-                    return [
-                        'id' => $position->id,
-                        'template_id' => $position->template_id,
-                        'name' => $position->name,
-                        'slug' => $position->slug,
-                        'description' => $position->description,
-                        'area' => $position->area,
-                        'order' => $position->order ?? $position->sort_order ?? 0,
-                        'allowed_widgets' => $position->allowed_widgets ?? [],
-                        'layout_config' => $position->layout_config ?? [],
-                        'is_required' => $position->is_required ?? false,
-                        'is_active' => $position->is_active ?? true,
-                        'created_at' => $position->created_at?->toISOString(),
-                        'updated_at' => $position->updated_at?->toISOString(),
-                    ];
-                });
-            }
-        );
-
-        // Кешируем настройки позиций на 5 минут
-        $positionSettings = Cache::remember(
-            "site_position_settings_{$site->id}",
-            300,
-            function () use ($site) {
-                return SitePositionSetting::where('site_id', $site->id)
-                    ->get()
-                    ->map(function ($setting) {
-                        return [
-                            'position_slug' => $setting->position_slug,
-                            'visibility_rules' => $setting->visibility_rules ?? [],
-                            'layout_overrides' => $setting->layout_overrides ?? [],
-                        ];
-                    });
-            }
-        );
-
-        return [
-            'site' => [
-                'id' => $site->id,
-                'name' => $site->name,
-                'slug' => $site->slug,
-                'description' => $site->description,
-                'favicon' => $site->getFaviconUrlAttribute(),
-                'template' => $site->template,
-                'site_type' => $site->site_type,
-                'widgets_config' => $widgetsConfig,
-                'seo_config' => $site->formatted_seo_config ?? [],
-                'layout_config' => $site->layout_config ?? [],
-            ],
-            'positions' => $positions,
-            'position_settings' => $positionSettings,
-        ];
     }
 
     /**

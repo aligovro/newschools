@@ -2,9 +2,12 @@ import { useCallback, useReducer } from 'react';
 
 export type LoginMode = 'email' | 'phone';
 
+export type LoginView = 'credentials' | 'phone_code' | 'forgot_password';
+
 export interface LoginFormErrors {
     identifier?: string;
     password?: string;
+    code?: string;
     general?: string;
 }
 
@@ -17,12 +20,29 @@ export interface RegisterFormErrors {
     general?: string;
 }
 
+export interface PhoneCodeState {
+    token: string;
+    maskedPhone: string;
+    code: string;
+    resendAvailableIn: number;
+    expiresAt: string | null;
+}
+
+export interface ForgotPasswordState {
+    identifier: string;
+    sent: boolean;
+    message: string;
+}
+
 export interface LoginFormState {
+    view: LoginView;
     mode: LoginMode;
     identifier: string;
     password: string;
     remember: boolean;
     errors: LoginFormErrors;
+    phoneCode: PhoneCodeState;
+    forgotPassword: ForgotPasswordState;
 }
 
 export interface RegisterFormState {
@@ -39,7 +59,7 @@ interface AuthModalState {
     register: RegisterFormState;
 }
 
-export type LoginField = 'mode' | 'identifier' | 'password' | 'remember';
+export type LoginField = 'mode' | 'identifier' | 'password' | 'remember' | 'view' | 'code';
 export type RegisterField =
     | 'name'
     | 'email'
@@ -47,29 +67,40 @@ export type RegisterField =
     | 'password'
     | 'passwordConfirmation';
 
+const INITIAL_PHONE_CODE: PhoneCodeState = {
+    token: '',
+    maskedPhone: '',
+    code: '',
+    resendAvailableIn: 0,
+    expiresAt: null,
+};
+
+const INITIAL_FORGOT_PASSWORD: ForgotPasswordState = {
+    identifier: '',
+    sent: false,
+    message: '',
+};
+
 type Action =
-    | {
-          type: 'SET_LOGIN_FIELD';
-          field: LoginField;
-          value: string | boolean;
-      }
-    | {
-          type: 'SET_REGISTER_FIELD';
-          field: RegisterField;
-          value: string;
-      }
+    | { type: 'SET_LOGIN_FIELD'; field: LoginField; value: string | boolean }
+    | { type: 'SET_REGISTER_FIELD'; field: RegisterField; value: string }
     | { type: 'SET_LOGIN_ERRORS'; errors: LoginFormErrors }
     | { type: 'SET_REGISTER_ERRORS'; errors: RegisterFormErrors }
+    | { type: 'SET_PHONE_CODE_STATE'; payload: Partial<PhoneCodeState> }
+    | { type: 'SET_FORGOT_PASSWORD_STATE'; payload: Partial<ForgotPasswordState> }
     | { type: 'RESET_LOGIN' }
     | { type: 'RESET_REGISTER' };
 
 const initialState: AuthModalState = {
     login: {
+        view: 'credentials',
         mode: 'email',
         identifier: '',
         password: '',
         remember: false,
         errors: {},
+        phoneCode: { ...INITIAL_PHONE_CODE },
+        forgotPassword: { ...INITIAL_FORGOT_PASSWORD },
     },
     register: {
         name: '',
@@ -107,16 +138,42 @@ const reducer = (state: AuthModalState, action: Action): AuthModalState => {
     switch (action.type) {
         case 'SET_LOGIN_FIELD': {
             const { field, value } = action;
+
+            if (field === 'view') {
+                const nextView = value as LoginView;
+                const forgotPassword = nextView === 'forgot_password'
+                    ? { ...INITIAL_FORGOT_PASSWORD, identifier: state.login.identifier }
+                    : state.login.forgotPassword;
+                return {
+                    ...state,
+                    login: {
+                        ...state.login,
+                        view: nextView,
+                        errors: {},
+                        phoneCode: nextView === 'phone_code' ? { ...INITIAL_PHONE_CODE } : state.login.phoneCode,
+                        forgotPassword,
+                    },
+                };
+            }
+
             if (field === 'mode') {
                 const nextMode = value as LoginMode;
                 return {
                     ...state,
                     login: {
+                        ...initialState.login,
                         mode: nextMode,
-                        identifier: '',
-                        password: '',
-                        remember: false,
-                        errors: {},
+                    },
+                };
+            }
+
+            if (field === 'code') {
+                return {
+                    ...state,
+                    login: {
+                        ...state.login,
+                        phoneCode: { ...state.login.phoneCode, code: value as string },
+                        errors: removeFieldError(state.login.errors, 'code'),
                     },
                 };
             }
@@ -130,10 +187,7 @@ const reducer = (state: AuthModalState, action: Action): AuthModalState => {
                 ),
             } as LoginFormState;
 
-            return {
-                ...state,
-                login: nextLogin,
-            };
+            return { ...state, login: nextLogin };
         }
         case 'SET_REGISTER_FIELD': {
             const { field, value } = action;
@@ -146,40 +200,43 @@ const reducer = (state: AuthModalState, action: Action): AuthModalState => {
                 ),
             } as RegisterFormState;
 
-            return {
-                ...state,
-                register: nextRegister,
-            };
+            return { ...state, register: nextRegister };
         }
         case 'SET_LOGIN_ERRORS': {
             return {
                 ...state,
-                login: {
-                    ...state.login,
-                    errors: sanitizeErrors(action.errors),
-                },
+                login: { ...state.login, errors: sanitizeErrors(action.errors) },
             };
         }
         case 'SET_REGISTER_ERRORS': {
             return {
                 ...state,
-                register: {
-                    ...state.register,
-                    errors: sanitizeErrors(action.errors),
+                register: { ...state.register, errors: sanitizeErrors(action.errors) },
+            };
+        }
+        case 'SET_PHONE_CODE_STATE': {
+            return {
+                ...state,
+                login: {
+                    ...state.login,
+                    phoneCode: { ...state.login.phoneCode, ...action.payload },
+                },
+            };
+        }
+        case 'SET_FORGOT_PASSWORD_STATE': {
+            return {
+                ...state,
+                login: {
+                    ...state.login,
+                    forgotPassword: { ...state.login.forgotPassword, ...action.payload },
                 },
             };
         }
         case 'RESET_LOGIN': {
-            return {
-                ...state,
-                login: { ...initialState.login },
-            };
+            return { ...state, login: { ...initialState.login } };
         }
         case 'RESET_REGISTER': {
-            return {
-                ...state,
-                register: { ...initialState.register },
-            };
+            return { ...state, register: { ...initialState.register } };
         }
         default:
             return state;
@@ -216,6 +273,14 @@ export const useAuthModals = () => {
         dispatch({ type: 'SET_REGISTER_ERRORS', errors });
     }, []);
 
+    const setPhoneCodeState = useCallback((payload: Partial<PhoneCodeState>) => {
+        dispatch({ type: 'SET_PHONE_CODE_STATE', payload });
+    }, []);
+
+    const setForgotPasswordState = useCallback((payload: Partial<ForgotPasswordState>) => {
+        dispatch({ type: 'SET_FORGOT_PASSWORD_STATE', payload });
+    }, []);
+
     const resetLoginState = useCallback(() => {
         dispatch({ type: 'RESET_LOGIN' });
     }, []);
@@ -248,6 +313,20 @@ export const useAuthModals = () => {
         setLoginErrors(errors);
         return Object.keys(errors).length === 0;
     }, [state.login.identifier, state.login.mode, state.login.password, setLoginErrors]);
+
+    const validatePhoneForCode = useCallback(() => {
+        const errors: LoginFormErrors = {};
+        const identifier = state.login.identifier.trim();
+
+        if (!identifier) {
+            errors.identifier = 'Укажите номер телефона';
+        } else if (!isValidPhone(identifier)) {
+            errors.identifier = 'Введите корректный номер телефона';
+        }
+
+        setLoginErrors(errors);
+        return Object.keys(errors).length === 0;
+    }, [state.login.identifier, setLoginErrors]);
 
     const validateRegister = useCallback(() => {
         const errors: RegisterFormErrors = {};
@@ -303,11 +382,12 @@ export const useAuthModals = () => {
         setRegisterField,
         setLoginErrors,
         setRegisterErrors,
+        setPhoneCodeState,
+        setForgotPasswordState,
         resetLoginState,
         resetRegisterState,
         validateLogin,
+        validatePhoneForCode,
         validateRegister,
     };
 };
-
-

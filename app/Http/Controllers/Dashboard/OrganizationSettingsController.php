@@ -314,4 +314,60 @@ class OrganizationSettingsController extends Controller
 
         return redirect()->back()->with('success', 'Настройки сброшены к значениям по умолчанию');
     }
+
+    /**
+     * Обновить банковские реквизиты организации
+     */
+    public function updateBankRequisites(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
+
+        $validator = Validator::make($request->all(), [
+            'bank_requisites' => 'nullable|string',
+            'sber_card' => 'nullable|string|max:19',
+            'tinkoff_card' => 'nullable|string|max:19',
+            'card_recipient' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $paymentSettings = $this->settingsService->getSettings($organization)->payment_settings ?? [];
+        $paymentSettings['bank_requisites'] = $request->input('bank_requisites');
+        $paymentSettings['sber_card'] = $request->input('sber_card');
+        $paymentSettings['tinkoff_card'] = $request->input('tinkoff_card');
+        $paymentSettings['card_recipient'] = $request->input('card_recipient');
+
+        $this->settingsService->updateSettings($organization, [
+            'payment_settings' => $paymentSettings,
+        ]);
+
+        return redirect()->back()->with('success', 'Банковские реквизиты успешно обновлены');
+    }
+
+    /**
+     * API endpoint для обновления банковских реквизитов организации
+     */
+    public function updateBankRequisitesApi(\App\Http\Requests\BankRequisitesRequest $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
+
+        try {
+            $bankRequisitesService = app(\App\Services\BankRequisites\BankRequisitesService::class);
+            $bankRequisitesService->saveForOrganization($organization, $request->validated());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Банковские реквизиты успешно сохранены',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

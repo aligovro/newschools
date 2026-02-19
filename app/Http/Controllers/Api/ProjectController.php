@@ -63,6 +63,28 @@ class ProjectController extends Controller
     }
   }
 
+  // Банковские реквизиты проекта
+  public function saveBankRequisites(\App\Http\Requests\BankRequisitesRequest $request, $id): JsonResponse
+  {
+    try {
+      $project = $this->getProject($id);
+      $bankRequisitesService = app(\App\Services\BankRequisites\BankRequisitesService::class);
+      $bankRequisitesService->saveForProject($project, $request->validated());
+      $project->refresh();
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Банковские реквизиты проекта сохранены',
+        'payment_settings' => $project->payment_settings,
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
   private function getProject($id): Project
   {
     $user = Auth::user();

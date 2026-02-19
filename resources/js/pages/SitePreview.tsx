@@ -14,11 +14,14 @@ interface Site {
     description?: string;
     favicon?: string;
     template: string; // slug
+    site_type?: string; // 'main' | 'organization' — для скопа стилей виджетов
     widgets_config: WidgetData[];
     seo_config: Record<string, unknown>;
     layout_config?: {
         sidebar_position?: 'left' | 'right';
     };
+    custom_css?: string | null;
+    styles_css_url?: string | null;
 }
 
 type WidgetPosition = SharedWidgetPosition;
@@ -181,6 +184,12 @@ const SitePreview: React.FC<SitePreviewProps> = ({
 
     return (
         <>
+            {site.custom_css && (
+                <style dangerouslySetInnerHTML={{ __html: site.custom_css }} />
+            )}
+            {site.styles_css_url && (
+                <link rel="stylesheet" href={site.styles_css_url} />
+            )}
             <Head title={seoData.title}>
                 {site.favicon ? <link rel="icon" href={site.favicon} /> : null}
                 <meta name="description" content={seoData.description} />
@@ -235,7 +244,9 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                 />
             </Head>
 
-            <div className="site-preview">
+            <div
+                className={`site-preview${site.site_type ? ` site-type--${site.site_type}` : ''}`}
+            >
                 {/* Header: четыре колонки (header-col-1..4) сверху и полная ширина 'header' снизу */}
                 <header className="site-header">
                     {(() => {

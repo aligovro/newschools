@@ -365,6 +365,9 @@ class WidgetDataService
             'donationsListSettings',
             'referralLeaderboardSettings',
             'imageSettings',
+            'topDonorsSettings.project',
+            'topRecurringDonorsSettings.project',
+            'site.organization',
             'widget',
             'position'
         ])

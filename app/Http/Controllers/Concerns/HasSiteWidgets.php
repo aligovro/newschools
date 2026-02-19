@@ -6,21 +6,27 @@ use App\Models\Site;
 use App\Models\SitePositionSetting;
 use App\Models\SiteTemplate;
 use App\Models\WidgetPosition;
+use App\Services\SiteStylesService;
 use App\Services\WidgetDataService;
 use Illuminate\Support\Facades\Cache;
 
 trait HasSiteWidgets
 {
     /**
-     * Получение виджетов и позиций главного сайта
-     * Используется для отображения виджетов на публичных страницах
+     * Получение виджетов и позиций текущего сайта.
+     *
+     * На кастомном домене организации (current_organization_site) —
+     * возвращает виджеты сайта организации.
+     * На главном домене — виджеты главного сайта.
      */
     protected function getSiteWidgetsAndPositions(): array
     {
-        $site = Site::where('site_type', 'main')->published()->first();
+        $site = app()->bound('current_organization_site')
+            ? app('current_organization_site')
+            : Site::where('site_type', 'main')->published()->first();
 
         if (!$site) {
-            abort(404, 'Главный сайт не настроен');
+            abort(404, 'Сайт не настроен');
         }
 
         /** @var WidgetDataService $widgetDataService */
@@ -37,15 +43,36 @@ trait HasSiteWidgets
                     $q->where('template_id', $template->id)->orWhereNull('template_id');
                 });
             }
-            return $query->get();
+            return $query->get()->map(fn ($p) => [
+                'id' => $p->id,
+                'template_id' => $p->template_id,
+                'name' => $p->name,
+                'slug' => $p->slug,
+                'description' => $p->description,
+                'area' => $p->area,
+                'order' => $p->order ?? $p->sort_order ?? 0,
+                'allowed_widgets' => $p->allowed_widgets ?? [],
+                'layout_config' => $p->layout_config ?? [],
+                'is_required' => $p->is_required ?? false,
+                'is_active' => $p->is_active ?? true,
+                'created_at' => $p->created_at?->toISOString(),
+                'updated_at' => $p->updated_at?->toISOString(),
+            ]);
         });
 
         $positionSettings = Cache::remember("site_position_settings_{$site->id}", 300, function () use ($site) {
-            return SitePositionSetting::where('site_id', $site->id)->get();
+            return SitePositionSetting::where('site_id', $site->id)->get()->map(fn ($s) => [
+                'position_slug' => $s->position_slug,
+                'visibility_rules' => $s->visibility_rules ?? [],
+                'layout_overrides' => $s->layout_overrides ?? [],
+            ]);
         });
 
+        $custom = $site->custom_settings ?? [];
+        $stylesService = app(SiteStylesService::class);
+
         return [
-            'site' => [
+            'site' => array_merge([
                 'id' => $site->id,
                 'name' => $site->name,
                 'slug' => $site->slug,
@@ -56,7 +83,11 @@ trait HasSiteWidgets
                 'widgets_config' => $widgetsConfig,
                 'seo_config' => $site->formatted_seo_config ?? [],
                 'layout_config' => $site->layout_config ?? [],
-            ],
+                'custom_css' => $custom['custom_css'] ?? null,
+            ], [
+                'styles_file_path' => $stylesService->getStylesRelativePath($site->id),
+                'styles_css_url' => $stylesService->getStylesCssUrl($site->id),
+            ]),
             'positions' => $positions,
             'position_settings' => $positionSettings,
         ];

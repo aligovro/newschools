@@ -77,3 +77,10 @@ export interface DonationProgressData {
     currency: string;
 }
 
+export interface BankRequisites {
+    text?: string;
+    sber_card?: string;
+    tinkoff_card?: string;
+    card_recipient?: string;
+}
+

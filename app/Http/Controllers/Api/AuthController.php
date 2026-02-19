@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use App\Rules\RussianPhoneNumber;
@@ -199,6 +200,43 @@ class AuthController extends Controller
       ->first();
 
     return $domain?->organization_id;
+  }
+
+  public function forgotPassword(Request $request): JsonResponse
+  {
+    $validator = Validator::make($request->all(), [
+      'email' => 'nullable|email',
+      'phone' => 'nullable|string',
+    ]);
+
+    if ($validator->fails()) {
+      return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+    }
+
+    if (! $request->filled('email') && ! $request->filled('phone')) {
+      return response()->json(['message' => 'Укажите email или номер телефона'], 422);
+    }
+
+    $email = $request->input('email');
+
+    if (! $email && $request->filled('phone')) {
+      $normalized = PhoneNumber::normalize($request->input('phone'));
+      if ($normalized) {
+        $user = User::where('phone', $normalized)->whereNotNull('email')->first();
+        $email = $user?->email;
+      }
+    }
+
+    if (! $email) {
+      return response()->json(['message' => 'Для указанного номера не найден аккаунт с email'], 422);
+    }
+
+    Password::sendResetLink(['email' => $email]);
+
+    return response()->json([
+      'success' => true,
+      'message' => 'Если аккаунт существует, ссылка для сброса пароля будет отправлена на email.',
+    ]);
   }
 
   private function resolveUser(string $login, string $password): ?User
