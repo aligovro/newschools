@@ -52,6 +52,11 @@ import { ReferralLeaderboardWidgetModal } from './modals/ReferralLeaderboardWidg
 import { SliderWidgetModal } from './modals/SliderWidgetModal';
 import { SubscribeBlockWidgetModal } from './modals/SubscribeBlockWidgetModal';
 import { TextWidgetModal } from './modals/TextWidgetModal';
+import { TopDonorsWidgetModal } from './modals/TopDonorsWidgetModal';
+import { TopRecurringDonorsWidgetModal } from './modals/TopRecurringDonorsWidgetModal';
+import { OrgTopDonorsWidgetModal } from './modals/OrgTopDonorsWidgetModal';
+import { OrgTopRecurringDonorsWidgetModal } from './modals/OrgTopRecurringDonorsWidgetModal';
+import { OrgDonationsFeedWidgetModal } from './modals/OrgDonationsFeedWidgetModal';
 
 interface WidgetEditModalProps {
     widget: WidgetData | null;
@@ -444,6 +449,56 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             case 'projects_slider': {
                 return (
                     <ProjectsSliderWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'top_donors': {
+                return (
+                    <TopDonorsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'top_recurring_donors': {
+                return (
+                    <TopRecurringDonorsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'org_top_donors': {
+                return (
+                    <OrgTopDonorsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'org_top_recurring_donors': {
+                return (
+                    <OrgTopRecurringDonorsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'org_donations_feed': {
+                return (
+                    <OrgDonationsFeedWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
                         onConfigUpdate={handleSetPendingConfig}

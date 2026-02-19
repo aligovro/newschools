@@ -152,6 +152,12 @@ export interface DonationWidgetData {
         } | null;
     };
     subscribers_count?: number;
+    bank_requisites?: {
+        text?: string;
+        sber_card?: string;
+        tinkoff_card?: string;
+        card_recipient?: string;
+    } | null;
 }
 
 export interface DonationRequest {

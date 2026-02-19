@@ -10,6 +10,10 @@ interface UseDonationFormStateOptions {
     config: DonationWidgetConfig;
     paymentMethods: ApiPaymentMethod[];
     isMerchantActive: boolean;
+    /** Phone from user profile when authenticated — prefill and use for donation */
+    initialDonorPhone?: string | null;
+    /** Name from user profile when authenticated — prefill for donation */
+    initialDonorName?: string | null;
 }
 
 export interface DonationFormValues {
@@ -71,6 +75,8 @@ export const useDonationFormState = ({
     config,
     paymentMethods,
     isMerchantActive,
+    initialDonorPhone,
+    initialDonorName,
 }: UseDonationFormStateOptions): DonationFormStateHook => {
     const defaultAmount = config.default_amount ?? 100;
     const defaultRecurringPeriod = config.default_recurring_period ?? 'daily';
@@ -83,9 +89,17 @@ export const useDonationFormState = ({
     >(defaultRecurringPeriod);
     const [selectedPaymentMethod, setSelectedPaymentMethod] =
         useState<string>(defaultPaymentMethod);
-    const [donorName, setDonorName] = useState('');
+    const [donorName, setDonorName] = useState(initialDonorName ?? '');
     const [donorEmail, setDonorEmail] = useState('');
-    const [donorPhone, setDonorPhone] = useState('');
+    const [donorPhone, setDonorPhone] = useState(initialDonorPhone ?? '');
+
+    useEffect(() => {
+        if (initialDonorPhone) setDonorPhone(initialDonorPhone);
+    }, [initialDonorPhone]);
+
+    useEffect(() => {
+        if (initialDonorName) setDonorName(initialDonorName);
+    }, [initialDonorName]);
     const [donorMessage, setDonorMessage] = useState('');
     const [isAnonymous, setIsAnonymous] = useState(false);
     const [agreedToPolicy, setAgreedToPolicy] = useState(false);
@@ -189,7 +203,7 @@ export const useDonationFormState = ({
         setAmount(config.default_amount ?? 100);
         setDonorName('');
         setDonorEmail('');
-        setDonorPhone('');
+        setDonorPhone(initialDonorPhone ?? '');
         setDonorMessage('');
         setIsAnonymous(false);
         setIsRecurring(false);
@@ -197,15 +211,7 @@ export const useDonationFormState = ({
         setAgreedToRecurring(false);
     }, [
         config.default_amount,
-        setAmount,
-        setDonorName,
-        setDonorEmail,
-        setDonorPhone,
-        setDonorMessage,
-        setIsAnonymous,
-        setIsRecurring,
-        setAgreedToPolicy,
-        setAgreedToRecurring,
+        initialDonorPhone,
     ]);
 
     const paymentQrImageSrc = useMemo(() => {

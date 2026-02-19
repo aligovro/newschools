@@ -169,6 +169,41 @@ class SiteWidgetResource extends JsonResource
             ];
         }
 
+        // Inject donations for donations_list widget (preview in builder, etc.)
+        if ($this->widget_slug === 'donations_list') {
+            $organizationId = $this->donationsListSettings?->organization_id
+                ?? $this->site?->organization_id;
+            if ($organizationId) {
+                $limit = $this->donationsListSettings?->items_per_page ?? 10;
+                $sortBy = $this->donationsListSettings?->sort_by ?? 'date';
+                $sortOrder = $this->donationsListSettings?->sort_direction ?? 'desc';
+                $sortColumn = match ($sortBy) {
+                    'amount' => 'amount',
+                    'donor_name' => 'donor_name',
+                    default => 'created_at',
+                };
+
+                $donations = \App\Models\Donation::query()
+                    ->where('organization_id', $organizationId)
+                    ->where('status', 'completed')
+                    ->orderBy($sortColumn, $sortOrder)
+                    ->limit($limit)
+                    ->get();
+
+                $normalizedConfig['donations'] = $donations->map(function ($d) {
+                    return [
+                        'id' => $d->id,
+                        'donorName' => $d->donor_name,
+                        'amount' => $d->amount_rubles,
+                        'currency' => $d->currency ?? 'RUB',
+                        'message' => $d->donor_message,
+                        'date' => $d->created_at->toIso8601String(),
+                        'isAnonymous' => $d->is_anonymous,
+                    ];
+                })->toArray();
+            }
+        }
+
         // Inject image settings if present
         if ($this->relationLoaded('imageSettings') && $this->imageSettings) {
             $imageSettings = $this->imageSettings;

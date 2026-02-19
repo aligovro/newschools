@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Domain extends Model
@@ -17,6 +18,7 @@ class Domain extends Model
     'domain',
     'custom_domain',
     'subdomain',
+    'beget_domain_id',
     'is_primary',
     'is_ssl_enabled',
     'status',
@@ -38,6 +40,11 @@ class Domain extends Model
   public function organization(): BelongsTo
   {
     return $this->belongsTo(Organization::class);
+  }
+
+  public function sites(): HasMany
+  {
+    return $this->hasMany(Site::class);
   }
 
   public function scopePrimary($query)

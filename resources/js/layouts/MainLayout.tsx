@@ -23,6 +23,8 @@ interface MainLayoutProps {
         layout_config?: {
             sidebar_position?: 'left' | 'right';
         };
+        /** Собственные стили сайта (миграция и т.п.) */
+        custom_css?: string | null;
     };
     positions: WidgetPosition[];
     position_settings?: Array<{
@@ -351,6 +353,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
     return (
         <>
+            {site.custom_css && (
+                <style dangerouslySetInnerHTML={{ __html: site.custom_css }} />
+            )}
+            {(site as { styles_css_url?: string | null }).styles_css_url && (
+                <link
+                    rel="stylesheet"
+                    href={(site as { styles_css_url: string }).styles_css_url}
+                />
+            )}
             <Head title={seoData.title}>
                 {site.favicon ? <link rel="icon" href={site.favicon} /> : null}
                 <meta name="description" content={seoData.description} />

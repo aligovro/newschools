@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    Avatar,
+    AvatarImage,
+    AvatarUserFallback,
+} from '@/components/ui/avatar';
 import type { Pagination } from '@/components/sponsors/SponsorsSection';
 import { createEmptyPagination } from '@/components/sponsors/SponsorsSection';
-import { nameToInitials } from '@/utils/nameToInitials';
 
 
 export interface Alumni {
@@ -170,9 +173,7 @@ export default function OrganizationAlumniSection({
                                     className="object-cover"
                                 />
                             ) : (
-                                <AvatarFallback className="alumni-section__avatar-fallback">
-                                    {nameToInitials(alumnus.name)}
-                                </AvatarFallback>
+                                <AvatarUserFallback />
                             )}
                         </Avatar>
 

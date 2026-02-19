@@ -4,6 +4,7 @@ namespace App\Services\Seo;
 
 use App\Models\News;
 use App\Models\Organization;
+use App\Models\Project;
 use App\Models\Site;
 use App\Models\SitePage;
 
@@ -54,9 +55,10 @@ class SeoPresenter
             ?? $seoTitle
             ?? $siteName;
 
-        $metaDescription = $pageDescriptionOverride
-            ?? $seoDescription
-            ?? $siteDescription;
+        $metaDescription = $this->sanitizeForMeta(
+            $pageDescriptionOverride ?? $seoDescription ?? $siteDescription,
+            500
+        );
 
         $canonicalUrl = $this->getString($rawSeo['canonical_url'] ?? null)
             ?? $this->getString($rawSeo['slug_url'] ?? null)
@@ -66,9 +68,12 @@ class SeoPresenter
             ?? $seoTitle
             ?? $metaTitle;
 
-        $ogDescription = $this->getString($rawSeo['og_description'] ?? null)
-            ?? $seoDescription
-            ?? $metaDescription;
+        $ogDescription = $this->sanitizeForMeta(
+            $this->getString($rawSeo['og_description'] ?? null)
+                ?? $seoDescription
+                ?? $metaDescription,
+            200
+        );
 
         $ogType = $this->getString($rawSeo['og_type'] ?? null) ?? 'website';
 
@@ -82,9 +87,12 @@ class SeoPresenter
             ?? $ogTitle
             ?? $metaTitle;
 
-        $twitterDescription = $this->getString($rawSeo['twitter_description'] ?? null)
-            ?? $ogDescription
-            ?? $metaDescription;
+        $twitterDescription = $this->sanitizeForMeta(
+            $this->getString($rawSeo['twitter_description'] ?? null)
+                ?? $ogDescription
+                ?? $metaDescription,
+            200
+        );
 
         $twitterImage = $this->getString($rawSeo['twitter_image'] ?? null)
             ?? $ogImage;
@@ -215,9 +223,57 @@ class SeoPresenter
         ], $currentUrl);
     }
 
+    /**
+     * SEO для страницы проекта (публичная карточка проекта).
+     */
+    public function forProject(Project $project, ?Site $site = null, ?string $currentUrl = null): array
+    {
+        $site = $site ?? Site::where('site_type', 'main')->published()->first();
+        $overrides = $project->seo_settings ?? [];
+
+        $title = $this->getString($overrides['seo_title'] ?? $overrides['meta_title'] ?? null) ?? $project->title;
+        $description = $this->getString($overrides['seo_description'] ?? $overrides['meta_description'] ?? null)
+            ?? $this->sanitizeForMeta($project->short_description ?? $project->description ?? '', 500);
+        $ogImage = $this->getString($overrides['og_image'] ?? $overrides['image'] ?? null);
+        if (! $ogImage && $project->image) {
+            $ogImage = '/storage/' . ltrim($project->image, '/');
+        }
+
+        $overrides['seo_title'] = $title;
+        $overrides['seo_description'] = $description;
+        if ($ogImage) {
+            $overrides['og_image'] = $ogImage;
+        }
+
+        if (! $site) {
+            $site = new Site;
+        }
+
+        return $this->forSite($site, [
+            'pageTitle' => $title,
+            'pageDescription' => $description,
+            'seo_overrides' => $overrides,
+        ], $currentUrl);
+    }
+
     private function getString(mixed $value): ?string
     {
         return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    /**
+     * Убрать HTML из строки для meta/og (безопасность при миграции из WP).
+     */
+    private function sanitizeForMeta(?string $value, int $maxLength = 200): string
+    {
+        if ($value === null || trim($value) === '') {
+            return '';
+        }
+        $text = strip_tags($value);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/\s+/u', ' ', trim($text));
+
+        return mb_substr($text, 0, $maxLength);
     }
 }
 

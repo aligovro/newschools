@@ -1,4 +1,8 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    Avatar,
+    AvatarImage,
+    AvatarUserFallback,
+} from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -147,11 +151,7 @@ const UserTable: React.FC<UserTableProps> = ({
                                                     src={user.photo || undefined}
                                                     alt={user.name}
                                                 />
-                                                <AvatarFallback className="bg-gray-200 text-gray-600">
-                                                    {user.name
-                                                        .charAt(0)
-                                                        .toUpperCase()}
-                                                </AvatarFallback>
+                                                <AvatarUserFallback />
                                             </Avatar>
                                             <div>
                                                 <div className="font-medium text-gray-900">

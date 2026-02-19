@@ -6,6 +6,7 @@ use App\Models\Site;
 use App\Models\SitePositionSetting;
 use App\Models\SiteTemplate;
 use App\Models\WidgetPosition;
+use App\Services\SiteStylesService;
 use App\Services\WidgetDataService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -54,6 +55,7 @@ class SitePreviewController extends Controller
                 'first_widget' => $widgetsConfig[0] ?? null,
             ]);
 
+            $stylesService = app(SiteStylesService::class);
             return Inertia::render('SitePreview', [
                 'site' => [
                     'id' => $site->id,
@@ -61,8 +63,11 @@ class SitePreviewController extends Controller
                     'slug' => $site->slug,
                     'description' => $site->description,
                     'template' => $site->template,
+                    'site_type' => $site->site_type ?? 'organization',
                     'widgets_config' => $widgetsConfig,
                     'seo_config' => $site->formatted_seo_config ?? [],
+                    'styles_file_path' => $stylesService->getStylesRelativePath($site->id),
+                    'styles_css_url' => $stylesService->getStylesCssUrl($site->id),
                 ],
                 'positions' => $positions,
                 'position_settings' => $positionSettings,
@@ -119,6 +124,7 @@ class SitePreviewController extends Controller
 
         $positionSettings = SitePositionSetting::where('site_id', $site->id)->get();
 
+        $stylesService = app(SiteStylesService::class);
         return Inertia::render('SitePreview', [
             'site' => [
                 'id' => $site->id,
@@ -126,8 +132,13 @@ class SitePreviewController extends Controller
                 'slug' => $site->slug,
                 'description' => $site->description,
                 'template' => $site->template,
+                'site_type' => $site->site_type ?? 'organization',
                 'widgets_config' => $widgetsConfig,
                 'seo_config' => $site->formatted_seo_config ?? [],
+                'styles_file_path' => $stylesService->getStylesRelativePath($site->id),
+                'styles_css_url' => $stylesService->hasStylesFile($site->id)
+                    ? route('site-css.show', $site->id)
+                    : null,
             ],
             'positions' => $positions,
             'position_settings' => $positionSettings,

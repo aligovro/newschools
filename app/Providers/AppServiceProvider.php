@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\News;
+use App\Models\Organization;
 use App\Models\User;
 use App\Observers\UserObserver;
 use App\Policies\NewsPolicy;
+use App\Policies\OrganizationPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     User::observe(UserObserver::class);
 
     Gate::policy(News::class, NewsPolicy::class);
+    Gate::policy(Organization::class, OrganizationPolicy::class);
 
     // Поддержка PUT/PATCH запросов с FormData (для Inertia.js)
     \Illuminate\Support\Facades\Request::macro('isFormData', function () {

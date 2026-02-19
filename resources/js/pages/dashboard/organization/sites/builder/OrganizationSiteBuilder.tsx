@@ -498,7 +498,10 @@ export default function OrganizationSiteBuilder({
                                 />
                             )}
                             {activeTab === 'settings' && (
-                                <SettingsContent site={site as any} />
+                                <SettingsContent
+                                    site={site as any}
+                                    organization={organization}
+                                />
                             )}
                         </>
                     )}

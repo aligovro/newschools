@@ -159,6 +159,13 @@
     margin-bottom: 90px;
 }
 
+/* Sidebar: sticky при скролле (публичный сайт) */
+.site-main aside.lg\:col-span-1 {
+    position: sticky;
+    top: 20px;
+    align-self: start;
+}
+
 /* footer */
 .site-footer {
     margin-top: auto;

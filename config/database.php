@@ -97,6 +97,32 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | blagoqr_prod — WordPress мультисайт (локальный импорт)
+        |--------------------------------------------------------------------------
+        | Подключение к БД blagoqr_prod для парсинга данных (донаты, автоплатежи,
+        | доноры). Используется только при миграции с WP. Не настраивать в prod.
+        */
+        'blagoqr' => [
+            'driver' => 'mysql',
+            'host' => env('BLAGOQR_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('BLAGOQR_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('BLAGOQR_DB_DATABASE'),
+            'username' => env('BLAGOQR_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('BLAGOQR_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'unix_socket' => env('BLAGOQR_DB_SOCKET', env('DB_SOCKET', '')),
+            'charset' => env('BLAGOQR_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('BLAGOQR_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => env('BLAGOQR_DB_PREFIX', ''),
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

@@ -5,7 +5,6 @@ import { getOrganizationId } from '@/utils/widgetHelpers';
 import React from 'react';
 import { AlumniStatsWidget } from '../AlumniStatsWidget';
 import { AuthMenuWidget } from '../AuthMenuWidget';
-import { DonationsListWidget } from '../DonationsListWidget';
 import { FormWidget } from '../FormWidget';
 import { GalleryWidget } from '../GalleryWidget';
 import { HeroWidget } from '../HeroWidget';
@@ -13,6 +12,7 @@ import { HtmlWidget } from '../HtmlWidget';
 import { ImageWidget } from '../ImageWidget';
 import { MenuWidget } from '../MenuWidget';
 import { ProjectsWidget } from '../ProjectsWidget';
+import { ProjectsSliderOutput } from '../output/ProjectsSliderOutput';
 import { ReferralLeaderboardWidget } from '../ReferralLeaderboardWidget';
 import { StatsWidget } from '../StatsWidget';
 import { SliderWidget } from '../slider';
@@ -499,24 +499,18 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
         );
     },
 
-    // Виджет списка пожертвований
-    donations_list: ({
-        widget,
-        isEditable,
-        autoExpandSettings,
-        onSave,
-        onConfigChange,
-    }) => (
-        <DonationsListWidget
-            config={widget.config || {}}
-            isEditable={isEditable}
-            autoExpandSettings={autoExpandSettings}
-            onSave={onSave}
-            widgetId={widget.id}
-            organizationId={getOrganizationId(widget.config)}
-            onConfigChange={onConfigChange}
-        />
-    ),
+    // Виджет списка пожертвований — в конструкторе только плейсхолдер,
+    // полный вывод через WidgetOutputRenderer (preview, публичный сайт)
+    donations_list: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) || 'Последние пожертвования';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">donations_list</div>
+            </div>
+        );
+    },
 
     // Виджет рейтинга по приглашениям
     referral_leaderboard: ({
@@ -568,17 +562,9 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     },
 
     // Слайдер проектов
-    projects_slider: ({ widget }) => {
-        const title = (widget.name && widget.name.trim()) || 'Слайдер проектов';
-        return (
-            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
-                <div className="text-2xl font-bold text-gray-800">{title}</div>
-                <div className="mt-1 text-sm text-gray-500">
-                    projects_slider
-                </div>
-            </div>
-        );
-    },
+    projects_slider: ({ widget }) => (
+        <ProjectsSliderOutput widget={widget} className="" style={{}} />
+    ),
 
     // Блок подписки на школы (только для главного сайта) — в конструкторе показываем плейсхолдер
     subscribe_block: ({ widget }) => {
@@ -618,6 +604,83 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
                 <div className="mt-1 text-sm text-gray-500">
                     organization_search
                 </div>
+            </div>
+        );
+    },
+
+    // Топ по донорам (по проекту)
+    top_donors: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) || 'Топ по донорам';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">top_donors</div>
+            </div>
+        );
+    },
+
+    // Топ регулярно-поддерживающих (по проекту)
+    top_recurring_donors: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) ||
+            'Топ регулярно-поддерживающих';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">
+                    top_recurring_donors
+                </div>
+            </div>
+        );
+    },
+
+    // Топ поддержавших выпусков (по организации)
+    org_top_donors: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) ||
+            'Топ поддержавших выпусков';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">Топ поддержавших выпусков</div>
+            </div>
+        );
+    },
+
+    // Топ регулярно-поддерживающих (по организации)
+    org_top_recurring_donors: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) ||
+            'Топ регулярно-поддерживающих';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">Топ регулярно-поддерживающих</div>
+            </div>
+        );
+    },
+
+    // Все поступления (по организации)
+    org_donations_feed: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) || 'Все поступления';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">Все поступления</div>
+            </div>
+        );
+    },
+
+    // Кнопки «Поделиться»
+    share_buttons: ({ widget }) => {
+        const title =
+            (widget.name && widget.name.trim()) || 'Поделиться';
+        return (
+            <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">
+                <div className="text-2xl font-bold text-gray-800">{title}</div>
+                <div className="mt-1 text-sm text-gray-500">share_buttons</div>
             </div>
         );
     },

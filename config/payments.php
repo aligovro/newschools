@@ -399,6 +399,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Recurring Payments (Autopayments)
+    |--------------------------------------------------------------------------
+    */
+    'recurring' => [
+        'enabled' => env('PAYMENT_RECURRING_ENABLED', true),
+        'periods' => ['daily', 'weekly', 'monthly'],
+        'default_period' => env('PAYMENT_RECURRING_DEFAULT_PERIOD', 'monthly'),
+        // Таймаут блокировки крона (минуты) — не запускать повторно, пока предыдущий не завершился
+        'cron_lock_minutes' => env('PAYMENT_RECURRING_CRON_LOCK', 65),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Payment Statuses
     |--------------------------------------------------------------------------
     |

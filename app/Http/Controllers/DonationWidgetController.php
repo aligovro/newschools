@@ -11,20 +11,23 @@ use App\Models\Payments\YooKassaPartnerMerchant;
 use App\Models\PaymentTransaction;
 use App\Models\Donation;
 use App\Services\Payment\PaymentService;
-use App\Helpers\TerminologyHelper;
+use App\Services\DonationWidget\DonationWidgetDataService;
+use App\Services\BankRequisites\BankRequisitesResolver;
+use App\Services\BankRequisites\BankRequisitesQrCodeGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class DonationWidgetController extends Controller
 {
-    protected PaymentService $paymentService;
-
-    public function __construct(PaymentService $paymentService)
-    {
-        $this->paymentService = $paymentService;
+    public function __construct(
+        protected PaymentService $paymentService,
+        protected DonationWidgetDataService $widgetDataService,
+        protected BankRequisitesResolver $bankRequisitesResolver,
+        protected BankRequisitesQrCodeGenerator $qrCodeGenerator
+    ) {
     }
 
     /**
@@ -35,223 +38,15 @@ class DonationWidgetController extends Controller
         $fundraiserId = $request->input('fundraiser_id');
         $projectId = $request->input('project_id');
 
-        $organization->loadMissing('yookassaPartnerMerchant');
-
-        $merchant = $organization->yookassaPartnerMerchant;
-        $merchantStatus = $merchant?->status ?? 'inactive';
-        $hasCredentials = $merchant
-            && is_array($merchant->credentials)
-            && !empty(data_get($merchant->credentials, 'shop_id'))
-            && !empty(data_get($merchant->credentials, 'secret_key'));
-
-        $isMerchantOperational = $merchantStatus === YooKassaPartnerMerchant::STATUS_ACTIVE;
-
-        if ($hasCredentials) {
-            $isMerchantOperational = true;
-        }
-
-        if (!$merchant) {
-            $isMerchantOperational = true;
-        }
-
-        // Подсчет подписчиков (регулярные пожертвования) с кешированием
-        $subscribersCount = Cache::remember(
-            "donation_widget_subscribers_count_{$organization->id}",
-            now()->addMinutes(10),
-            function () use ($organization) {
-                // Ищем регулярные пожертвования
-                // Используем комбинацию идентификаторов:
-                // 1. Если есть donor_id - используем его
-                // 2. Если нет donor_id - используем donor_email из payment_details
-                // 3. Если нет ни того, ни другого (анонимное) - считаем как отдельного подписчика
-                $recurringDonations = DB::table('donations')
-                    ->join('payment_transactions', 'donations.payment_transaction_id', '=', 'payment_transactions.id')
-                    ->where('donations.organization_id', $organization->id)
-                    ->where('donations.status', 'completed')
-                    ->where('payment_transactions.status', 'completed')
-                    ->where(function ($query) {
-                        // Проверяем payment_transactions.payment_details
-                        $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring')) = 'true'")
-                            ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring') = 1")
-                            ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring') = true")
-                            // Проверяем наличие recurring_period как альтернативный признак
-                            ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.recurring_period') IS NOT NULL")
-                            // Проверяем donations.payment_details (на случай если данные там)
-                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(donations.payment_details, '$.is_recurring')) = 'true'")
-                            ->orWhereRaw("JSON_EXTRACT(donations.payment_details, '$.is_recurring') = 1")
-                            ->orWhereRaw("JSON_EXTRACT(donations.payment_details, '$.is_recurring') = true")
-                            ->orWhereRaw("JSON_EXTRACT(donations.payment_details, '$.recurring_period') IS NOT NULL")
-                            // Проверяем gateway_response
-                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.gateway_response, '$.recurring')) = 'true'")
-                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.gateway_response, '$.is_recurring')) = 'true'");
-                    })
-                    ->select(
-                        'donations.donor_id',
-                        'donations.id as donation_id',
-                        DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.donor_email')) as donor_email"),
-                        DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.is_anonymous')) as is_anonymous")
-                    )
-                    ->get();
-
-                // Подсчитываем уникальных подписчиков
-                $uniqueSubscribers = [];
-                foreach ($recurringDonations as $donation) {
-                    // Приоритет: donor_id > donor_email > donation_id (для анонимных)
-                    $identifier = $donation->donor_id
-                        ?? $donation->donor_email
-                        ?? ('anonymous_' . $donation->donation_id);
-
-                    if ($identifier) {
-                        $uniqueSubscribers[$identifier] = true;
-                    }
-                }
-
-                $count = count($uniqueSubscribers);
-
-                return $count;
-            }
+        $data = $this->widgetDataService->getWidgetData(
+            $organization,
+            $fundraiserId,
+            $projectId
         );
-
-        $data = [
-            'organization' => [
-                'id' => $organization->id,
-                'name' => $organization->name,
-                'logo' => $organization->logo ? asset('storage/' . $organization->logo) : null,
-            ],
-            'organization_needs' => tap($organization->needs, function (&$needs) {
-                $needs['is_active'] = ($needs['target']['minor'] ?? 0) > 0;
-            }),
-            'terminology' => [],
-            'payment_methods' => [],
-            'merchant' => $merchant ? [
-                'id' => $merchant->id,
-                'status' => $merchantStatus,
-                'activation_date' => $merchant->activated_at?->toIso8601String(),
-                'is_operational' => $isMerchantOperational,
-                'is_test_mode' => (bool) data_get($merchant->settings, 'is_test_mode', false),
-            ] : null,
-            'subscribers_count' => $subscribersCount,
-        ];
-
-        // Терминология: безопасно с дефолтами, чтобы не падать на проде
-        try {
-            $data['terminology'] = [
-                'organization_singular' => TerminologyHelper::orgSingular(),
-                'organization_genitive' => TerminologyHelper::orgGenitive(),
-                'action_support' => TerminologyHelper::actionSupport(),
-                'member_singular' => TerminologyHelper::memberSingular(),
-                'member_plural' => TerminologyHelper::memberPlural(),
-            ];
-        } catch (\Throwable $e) {
-            Log::warning('DonationWidget terminology fallback used', [
-                'organization_id' => $organization->id,
-                'error' => $e->getMessage(),
-            ]);
-            $data['terminology'] = [
-                'organization_singular' => 'Организация',
-                'organization_genitive' => 'организации',
-                'action_support' => 'Поддержать',
-                'member_singular' => 'участник',
-                'member_plural' => 'участники',
-            ];
-        }
-
-        // Защищаем блок получения методов оплаты, чтобы не отдавать 500 из-за внешних ошибок
-        try {
-            $paymentMethods = PaymentMethod::active()->ordered()->get()->map(function ($method) use ($isMerchantOperational) {
-                return [
-                    'id' => $method->id,
-                    'name' => $method->name,
-                    'slug' => $method->slug,
-                    'icon' => $method->icon,
-                    'description' => $method->description,
-                    'min_amount' => $method->min_amount,
-                    'max_amount' => $method->max_amount,
-                    'available' => $isMerchantOperational,
-                ];
-            });
-
-            $data['payment_methods'] = $paymentMethods;
-        } catch (\Throwable $e) {
-            Log::error('DonationWidget getWidgetData payment_methods failed', [
-                'organization_id' => $organization->id,
-                'error' => $e->getMessage(),
-            ]);
-            // Оставляем payment_methods пустым массивом, чтобы не ломать виджет
-        }
-
-        // Добавляем данные о сборе средств
-        if ($fundraiserId) {
-            $fundraiser = Fundraiser::with(['organization', 'project'])
-                ->where('organization_id', $organization->id)
-                ->findOrFail($fundraiserId);
-
-            $data['fundraiser'] = [
-                'id' => $fundraiser->id,
-                'title' => $fundraiser->title,
-                'description' => $fundraiser->description,
-                'short_description' => $fundraiser->short_description,
-                'image' => $fundraiser->image ? asset('storage/' . $fundraiser->image) : null,
-                'target_amount' => $fundraiser->target_amount,
-                'collected_amount' => $fundraiser->collected_amount,
-                'target_amount_rubles' => $fundraiser->target_amount_rubles,
-                'collected_amount_rubles' => $fundraiser->collected_amount_rubles,
-                'progress_percentage' => $fundraiser->progress_percentage,
-                'start_date' => $fundraiser->start_date?->format('Y-m-d'),
-                'end_date' => $fundraiser->end_date?->format('Y-m-d'),
-                'status' => $fundraiser->status,
-                'min_donation' => $fundraiser->min_donation,
-                'max_donation' => $fundraiser->max_donation,
-            ];
-        }
-
-        // Добавляем данные о проекте
-        if ($projectId) {
-            $project = Project::where('organization_id', $organization->id)
-                ->findOrFail($projectId);
-
-            $activeStage = $project->stages()
-                ->where('status', 'active')
-                ->orderBy('order')
-                ->first();
-
-            $projectFunding = $project->funding;
-
-            $data['project'] = [
-                'id' => $project->id,
-                'title' => $project->title,
-                'description' => $project->description,
-                'image' => $project->image ? asset('storage/' . $project->image) : null,
-                'funding' => $projectFunding,
-                'target_amount' => $projectFunding['target']['minor'],
-                'collected_amount' => $projectFunding['collected']['minor'],
-                'target_amount_rubles' => $projectFunding['target']['value'],
-                'collected_amount_rubles' => $projectFunding['collected']['value'],
-                'progress_percentage' => $projectFunding['progress_percentage'],
-                'has_stages' => (bool) $project->has_stages,
-            ];
-
-            if ($activeStage) {
-                $stageFunding = $activeStage->funding;
-
-                $data['project']['active_stage'] = [
-                    'id' => $activeStage->id,
-                    'title' => $activeStage->title,
-                    'description' => $activeStage->description,
-                    'funding' => $stageFunding,
-                    'target_amount' => $stageFunding['target']['minor'],
-                    'collected_amount' => $stageFunding['collected']['minor'],
-                    'target_amount_rubles' => $stageFunding['target']['value'],
-                    'collected_amount_rubles' => $stageFunding['collected']['value'],
-                    'progress_percentage' => $stageFunding['progress_percentage'],
-                    'status' => $activeStage->status,
-                    'order' => $activeStage->order,
-                ];
-            }
-        }
 
         return response()->json($data);
     }
+
 
     /**
      * Создание пожертвования
@@ -444,7 +239,7 @@ class DonationWidgetController extends Controller
 
         $isOperational = true;
         if ($merchant) {
-            $isOperational = $merchantStatus === YooKassaPartnerMerchant::STATUS_ACTIVE || $hasCredentials;
+            $isOperational = $merchantStatus === \App\Models\Payments\YooKassaPartnerMerchant::STATUS_ACTIVE || $hasCredentials;
         }
 
         $methods = PaymentMethod::active()->ordered()->get()->map(function ($method) use ($isOperational) {
@@ -542,4 +337,86 @@ class DonationWidgetController extends Controller
             'data' => $projects,
         ]);
     }
+
+    /**
+     * Генерация PDF с банковскими реквизитами
+     */
+    public function generateBankRequisitesPdf(Request $request, Organization $organization)
+    {
+        $projectId = $request->input('project_id');
+        $siteId = $request->input('site_id');
+        $amount = $request->input('amount');
+        $currency = $request->input('currency', 'RUB');
+        $donorName = $request->input('donor_name');
+        $donorEmail = $request->input('donor_email');
+
+        $requisites = $this->bankRequisitesResolver->resolve($organization, $projectId, $siteId);
+
+        if (!$requisites || empty($requisites['text'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Банковские реквизиты не найдены',
+            ], 404);
+        }
+
+        try {
+            // Генерируем PNG QR-код для PDF (отдельный метод для PDF)
+            $qrCodePngBase64 = $this->qrCodeGenerator->generatePngForPdf($requisites, $organization);
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('defaultFont', 'DejaVu Sans');
+            // Включаем поддержку UTF-8 для правильной обработки SVG с кириллицей
+            $options->set('isPhpEnabled', true);
+            $options->set('isFontSubsettingEnabled', true);
+
+            $dompdf = new Dompdf($options);
+
+            // Формируем HTML для PDF
+            $html = view('pdf.bank-requisites', [
+                'organization' => $organization,
+                'requisites' => $requisites,
+                'project' => $projectId ? Project::find($projectId) : null,
+                'qrCodePngBase64' => $qrCodePngBase64,
+                'amount' => $amount,
+                'currency' => $currency,
+                'donorName' => $donorName,
+                'donorEmail' => $donorEmail,
+            ])->render();
+
+            $dompdf->loadHtml($html, 'UTF-8');
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            $filename = 'bank-requisites-' . $organization->id;
+            if ($projectId) {
+                $filename .= '-project-' . $projectId;
+            }
+            if ($siteId) {
+                $filename .= '-site-' . $siteId;
+            }
+            $filename .= '.pdf';
+
+            return response()->streamDownload(function () use ($dompdf) {
+                echo $dompdf->output();
+            }, $filename, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error generating bank requisites PDF', [
+                'organization_id' => $organization->id,
+                'project_id' => $projectId,
+                'site_id' => $siteId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при генерации PDF: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }

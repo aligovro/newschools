@@ -15,9 +15,15 @@ class OrganizationSiteResource extends JsonResource
     return [
       'id' => $this->id,
       'domain_id' => $this->domain_id ?? null,
+      'domain' => $this->whenLoaded('domain', fn () => [
+        'id' => $this->domain->id,
+        'domain' => $this->domain->domain,
+        'custom_domain' => $this->domain->custom_domain,
+        'beget_domain_id' => $this->domain->beget_domain_id,
+      ]),
       'name' => $this->name,
       'slug' => $this->slug,
-      'description' => $this->description,
+      'description' => $this->description ? trim(strip_tags(html_entity_decode($this->description, ENT_QUOTES | ENT_HTML5, 'UTF-8'))) : null,
       'template' => $this->template,
       'site_type' => $this->site_type,
       'status' => $this->status->value,

@@ -216,6 +216,37 @@ class SiteController extends Controller
         }
     }
 
+    /**
+     * Дополнительные стили сайта (custom_css).
+     * Подключаются к страницам этого сайта поверх стилей виджетов. Пустая строка = без доп. стилей.
+     */
+    public function saveCustomStyles(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'custom_css' => 'nullable|string|max:50000',
+        ]);
+
+        try {
+            $site = $this->getSite($id);
+
+            $custom = $site->custom_settings ?? [];
+            $custom['custom_css'] = $request->input('custom_css', '');
+            $site->update(['custom_settings' => $custom]);
+
+            Cache::forget("site_widgets_config_{$site->id}");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Дополнительные стили сохранены',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     // Telegram настройки сайта
     public function saveTelegramSettings(Request $request, $id): JsonResponse
     {
@@ -390,6 +421,8 @@ class SiteController extends Controller
                 'donationsListSettings',
                 'referralLeaderboardSettings',
                 'imageSettings',
+                'topDonorsSettings.project',
+                'topRecurringDonorsSettings.project',
             ]);
 
             return response()->json([
@@ -501,6 +534,8 @@ class SiteController extends Controller
                 'donationsListSettings',
                 'referralLeaderboardSettings',
                 'imageSettings',
+                'topDonorsSettings.project',
+                'topRecurringDonorsSettings.project',
             ]);
 
             return response()->json([
@@ -653,6 +688,8 @@ class SiteController extends Controller
                 'donationsListSettings',
                 'referralLeaderboardSettings',
                 'imageSettings',
+                'topDonorsSettings.project',
+                'topRecurringDonorsSettings.project',
             ]);
 
             return response()->json([
@@ -1158,6 +1195,12 @@ class SiteController extends Controller
             case 'referral-leaderboard':
                 $siteWidget->referralLeaderboardSettings()->delete();
                 break;
+            case 'top_donors':
+                $siteWidget->topDonorsSettings()->delete();
+                break;
+            case 'top_recurring_donors':
+                $siteWidget->topRecurringDonorsSettings()->delete();
+                break;
             case 'image':
                 $siteWidget->imageSettings()->delete();
                 break;
@@ -1197,5 +1240,25 @@ class SiteController extends Controller
 
         // Иначе — запрещаем доступ
         throw new \Exception('Пользователь не привязан к организации');
+    }
+
+    // Банковские реквизиты сайта
+    public function saveBankRequisites(\App\Http\Requests\BankRequisitesRequest $request, $id): JsonResponse
+    {
+        try {
+            $site = $this->getSite($id);
+            $bankRequisitesService = app(\App\Services\BankRequisites\BankRequisitesService::class);
+            $bankRequisitesService->saveForSite($site, $request->validated());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Банковские реквизиты сохранены',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

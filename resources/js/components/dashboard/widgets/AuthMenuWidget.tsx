@@ -21,6 +21,9 @@ interface AuthMenuWidgetProps {
     onConfigChange?: (config: Record<string, unknown>) => void;
 }
 
+const getCsrfToken = (): string =>
+    document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+
 export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
     const {
         user,
@@ -35,11 +38,10 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
 
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-    const [sessionUser, setSessionUser] = useState<Record<
-        string,
-        unknown
-    > | null>(null);
+    const [sessionUser, setSessionUser] = useState<Record<string, unknown> | null>(null);
     const [isCheckingSession, setIsCheckingSession] = useState(false);
+    const [phoneAuthLoading, setPhoneAuthLoading] = useState(false);
+    const [forgotLoading, setForgotLoading] = useState(false);
 
     const {
         loginState,
@@ -48,26 +50,24 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         setRegisterField,
         setLoginErrors,
         setRegisterErrors,
+        setPhoneCodeState,
+        setForgotPasswordState,
         resetLoginState,
         resetRegisterState,
         validateLogin,
+        validatePhoneForCode,
         validateRegister,
     } = useAuthModals();
 
     const organizationId = useMemo(() => {
-        // 1) из конфига
         const cfgOrg = (config?.organization_id as number) || undefined;
         if (cfgOrg) return cfgOrg;
-        // 2) из текущего сайта
-        const siteOrg = currentSite?.organizationId;
-        return siteOrg;
+        return currentSite?.organizationId;
     }, [config, currentSite]);
 
     const siteId = useMemo(() => {
-        // 1) из конфига
         const cfgSite = (config?.site_id as number) || undefined;
         if (cfgSite) return cfgSite;
-        // 2) из текущего сайта
         return currentSite?.id;
     }, [config, currentSite]);
 
@@ -77,10 +77,8 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         };
     }, [clearAuthError]);
 
-    // Гидратация из web-сессии, если нет токена/Redux авторизации
     useEffect(() => {
-        const needSessionFetch =
-            !isAuthenticated && !localStorage.getItem('token');
+        const needSessionFetch = !isAuthenticated && !localStorage.getItem('token');
         if (!needSessionFetch) {
             setIsCheckingSession(false);
             return;
@@ -89,9 +87,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         setIsCheckingSession(true);
         (async () => {
             try {
-                const res = await fetch('/api/public/session-user', {
-                    credentials: 'include',
-                });
+                const res = await fetch('/api/public/session-user', { credentials: 'include' });
                 if (!res.ok) {
                     if (!cancelled) {
                         setIsCheckingSession(false);
@@ -112,9 +108,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                 }
             }
         })();
-        return () => {
-            cancelled = true;
-        };
+        return () => { cancelled = true; };
     }, [isAuthenticated]);
 
     const handleLoginOpenChange = useCallback(
@@ -123,10 +117,10 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
             if (!open) {
                 resetLoginState();
                 clearAuthError();
-                return;
+            } else {
+                setLoginErrors({});
+                clearAuthError();
             }
-            setLoginErrors({});
-            clearAuthError();
         },
         [clearAuthError, resetLoginState, setLoginErrors],
     );
@@ -137,18 +131,16 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
             if (!open) {
                 resetRegisterState();
                 clearAuthError();
-                return;
+            } else {
+                setRegisterErrors({});
+                clearAuthError();
             }
-            setRegisterErrors({});
-            clearAuthError();
         },
         [clearAuthError, resetRegisterState, setRegisterErrors],
     );
 
     const handleLoginSubmit = useCallback(async () => {
-        if (!validateLogin()) {
-            return;
-        }
+        if (!validateLogin()) return;
 
         clearAuthError();
         setLoginErrors({});
@@ -172,20 +164,153 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                 : 'Не удалось выполнить вход';
         setLoginErrors({ general: message });
     }, [
-        clearAuthError,
-        login,
-        loginState.identifier,
-        loginState.password,
-        loginState.remember,
-        resetLoginState,
-        setLoginErrors,
-        validateLogin,
+        clearAuthError, login, loginState.identifier, loginState.password,
+        loginState.remember, resetLoginState, setLoginErrors, validateLogin,
     ]);
 
-    const handleRegisterSubmit = useCallback(async () => {
-        if (!validateRegister()) {
+    const handleRequestPhoneCode = useCallback(async () => {
+        if (!validatePhoneForCode()) return;
+
+        setPhoneAuthLoading(true);
+        setLoginErrors({});
+
+        try {
+            const res = await fetch('/api/auth/phone/request-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    phone: loginState.identifier.trim(),
+                    organization_id: organizationId ?? null,
+                }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                const errMsg = data?.errors?.phone?.[0] ?? data?.message ?? 'Не удалось отправить код';
+                setLoginErrors({ identifier: errMsg });
+                return;
+            }
+
+            setPhoneCodeState({
+                token: data.token,
+                maskedPhone: data.masked_phone ?? '',
+                code: '',
+                resendAvailableIn: data.resend_available_in ?? 60,
+                expiresAt: data.expires_at ?? null,
+            });
+        } catch {
+            setLoginErrors({ general: 'Ошибка сети. Попробуйте позже.' });
+        } finally {
+            setPhoneAuthLoading(false);
+        }
+    }, [loginState.identifier, organizationId, setLoginErrors, setPhoneCodeState, validatePhoneForCode]);
+
+    const handleVerifyPhoneCode = useCallback(async () => {
+        const code = loginState.phoneCode.code.trim();
+        if (code.length !== 6) {
+            setLoginErrors({ code: 'Введите 6-значный код' });
             return;
         }
+
+        setPhoneAuthLoading(true);
+        setLoginErrors({});
+
+        try {
+            const res = await fetch('/api/auth/phone/verify-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    token: loginState.phoneCode.token,
+                    code,
+                    organization_id: organizationId ?? null,
+                    remember: loginState.remember,
+                }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                const errMsg = data?.errors?.code?.[0] ?? data?.message ?? 'Неверный код';
+                setLoginErrors({ code: errMsg });
+                return;
+            }
+
+            resetLoginState();
+            setIsLoginOpen(false);
+
+            if (typeof window !== 'undefined') {
+                window.location.reload();
+            }
+        } catch {
+            setLoginErrors({ general: 'Ошибка сети. Попробуйте позже.' });
+        } finally {
+            setPhoneAuthLoading(false);
+        }
+    }, [
+        loginState.phoneCode.code, loginState.phoneCode.token,
+        loginState.remember, organizationId, resetLoginState, setLoginErrors,
+    ]);
+
+    const handleForgotPassword = useCallback(async () => {
+        const { identifier } = loginState.forgotPassword;
+        const isEmail = loginState.mode === 'email';
+
+        if (!identifier.trim()) {
+            setLoginErrors({ identifier: isEmail ? 'Укажите email' : 'Укажите телефон' });
+            return;
+        }
+
+        setForgotLoading(true);
+        setLoginErrors({});
+
+        try {
+            const body: Record<string, string> = {};
+            if (isEmail) {
+                body.email = identifier.trim();
+            } else {
+                body.phone = identifier.trim();
+            }
+
+            const res = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                },
+                credentials: 'include',
+                body: JSON.stringify(body),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                const errMsg = data?.message ?? 'Не удалось отправить ссылку';
+                setLoginErrors({ general: errMsg });
+                return;
+            }
+
+            setForgotPasswordState({
+                sent: true,
+                message: data.message ?? 'Ссылка для сброса пароля отправлена на email.',
+            });
+        } catch {
+            setLoginErrors({ general: 'Ошибка сети. Попробуйте позже.' });
+        } finally {
+            setForgotLoading(false);
+        }
+    }, [loginState.forgotPassword, loginState.mode, setForgotPasswordState, setLoginErrors]);
+
+    const handleRegisterSubmit = useCallback(async () => {
+        if (!validateRegister()) return;
 
         clearAuthError();
         setRegisterErrors({});
@@ -207,18 +332,10 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         const trimmedEmail = registerState.email.trim();
         const trimmedPhone = registerState.phone.trim();
 
-        if (trimmedEmail) {
-            payload.email = trimmedEmail;
-        }
-        if (trimmedPhone) {
-            payload.phone = trimmedPhone;
-        }
-        if (organizationId) {
-            payload.organization_id = organizationId;
-        }
-        if (siteId) {
-            payload.site_id = siteId;
-        }
+        if (trimmedEmail) payload.email = trimmedEmail;
+        if (trimmedPhone) payload.phone = trimmedPhone;
+        if (organizationId) payload.organization_id = organizationId;
+        if (siteId) payload.site_id = siteId;
 
         type AuthResult = { type?: string; payload?: unknown };
         const result = (await register(payload)) as AuthResult;
@@ -235,18 +352,9 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                 : 'Не удалось завершить регистрацию';
         setRegisterErrors({ general: message });
     }, [
-        clearAuthError,
-        organizationId,
-        register,
-        registerState.email,
-        registerState.name,
-        registerState.password,
-        registerState.passwordConfirmation,
-        registerState.phone,
-        resetRegisterState,
-        setRegisterErrors,
-        siteId,
-        validateRegister,
+        clearAuthError, organizationId, register, registerState.email,
+        registerState.name, registerState.password, registerState.passwordConfirmation,
+        registerState.phone, resetRegisterState, setRegisterErrors, siteId, validateRegister,
     ]);
 
     const handleLogout = async () => {
@@ -254,7 +362,6 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
             if (isAuthenticated) {
                 await logout();
             }
-            // всегда пробуем завершить web-сессию, чтобы при обновлении не подтянулся session-user
             await fetch('/api/public/session-logout', {
                 method: 'GET',
                 credentials: 'include',
@@ -269,20 +376,18 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
         }
     };
 
-    const effectiveUser =
-        (user as unknown as Record<string, unknown>) || sessionUser;
+    const combinedLoading = isLoading || phoneAuthLoading || forgotLoading;
+
+    const effectiveUser = (user as unknown as Record<string, unknown>) || sessionUser;
     const effectiveIsAuthenticated = isAuthenticated || Boolean(sessionUser);
     const displayName =
         (effectiveUser?.name as string) ||
         (effectiveUser?.email as string) ||
         'Пользователь';
     const avatarUrl = (effectiveUser as any)?.avatar as string | undefined;
-    const rawRoles = (effectiveUser as Record<string, unknown>)
-        ?.roles as unknown;
+    const rawRoles = (effectiveUser as Record<string, unknown>)?.roles as unknown;
     const roles = Array.isArray(rawRoles)
-        ? (rawRoles as Array<{ name: string }>)
-              .map((r) => r?.name)
-              .filter(Boolean)
+        ? (rawRoles as Array<{ name: string }>).map((r) => r?.name).filter(Boolean)
         : [];
     const isSuperAdmin = roles.includes('super_admin');
     const isOrgAdmin = roles.includes('organization_admin');
@@ -296,7 +401,6 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
     const loginButtonText = String(cfg.loginText ?? 'Войти');
     const registerButtonText = String(cfg.registerText ?? 'Регистрация');
 
-    // Показываем скелетон во время проверки сессии
     if (isCheckingSession) {
         return (
             <div className="auth-menu-widget flex items-center justify-end gap-2">
@@ -331,10 +435,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                         </button>
                     )}
                     {showExtraButton && extraButtonUrl && (
-                        <a
-                            href={extraButtonUrl}
-                            className="btn-accent auth-btn extra-btn"
-                        >
+                        <a href={extraButtonUrl} className="btn-accent auth-btn extra-btn">
                             {extraButtonText}
                         </a>
                     )}
@@ -345,7 +446,12 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                         state={loginState}
                         onFieldChange={setLoginField}
                         onSubmit={handleLoginSubmit}
-                        isLoading={isLoading}
+                        onRequestPhoneCode={handleRequestPhoneCode}
+                        onVerifyPhoneCode={handleVerifyPhoneCode}
+                        onForgotPassword={handleForgotPassword}
+                        onPhoneCodeStateChange={setPhoneCodeState}
+                        onForgotPasswordStateChange={setForgotPasswordState}
+                        isLoading={combinedLoading}
                         globalError={null}
                     />
 
@@ -365,31 +471,17 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                 <>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <button
-                                type="button"
-                                className="btn-outline-primary"
-                            >
-                                {/* Показываем аватар только если есть картинка и showAvatar не отключён */}
-                                {Boolean(
-                                    (cfg.showAvatar ?? true) && avatarUrl,
-                                ) && (
+                            <button type="button" className="btn-outline-primary">
+                                {Boolean((cfg.showAvatar ?? true) && avatarUrl) && (
                                     <Avatar className="h-6 w-6">
-                                        <AvatarImage
-                                            src={avatarUrl}
-                                            alt={displayName}
-                                        />
+                                        <AvatarImage src={avatarUrl} alt={displayName} />
                                         <AvatarFallback className="hidden" />
                                     </Avatar>
                                 )}
-                                {Boolean(cfg.showName ?? true) && (
-                                    <span>{displayName}</span>
-                                )}
+                                {Boolean(cfg.showName ?? true) && <span>{displayName}</span>}
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            align="end"
-                            className="min-w-[220px]"
-                        >
+                        <DropdownMenuContent align="end" className="min-w-[220px]">
                             {isSuperAdmin && (
                                 <DropdownMenuItem asChild>
                                     <a href="/dashboard">Панель управления</a>
@@ -397,9 +489,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                             )}
                             {isOrgAdmin && (
                                 <DropdownMenuItem asChild>
-                                    <a href="/organization/admin">
-                                        Админка организации
-                                    </a>
+                                    <a href="/organization/admin">Админка организации</a>
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuItem asChild>
@@ -409,10 +499,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                                 <a href="/settings">Настройки</a>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full text-left"
-                                >
+                                <button onClick={handleLogout} className="w-full text-left">
                                     Выйти
                                 </button>
                             </DropdownMenuItem>
@@ -420,10 +507,7 @@ export const AuthMenuWidget: React.FC<AuthMenuWidgetProps> = ({ config }) => {
                     </DropdownMenu>
 
                     {showExtraButton && extraButtonUrl && (
-                        <a
-                            href={extraButtonUrl}
-                            className="btn-accent auth-btn extra-btn"
-                        >
+                        <a href={extraButtonUrl} className="btn-accent auth-btn extra-btn">
                             {extraButtonText}
                         </a>
                     )}

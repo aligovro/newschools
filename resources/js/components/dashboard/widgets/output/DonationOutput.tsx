@@ -152,15 +152,23 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
 
     const mapped = {
         title: config.title,
-        show_title: config.show_title ?? true, // По умолчанию true для обратной совместимости
+        show_title: config.show_title ?? true,
         description: config.description,
         preset_amounts: config.suggestedAmounts,
         min_amount: config.minAmount,
         max_amount: config.maxAmount,
         currency: (config.currency as 'RUB' | 'USD' | 'EUR') || 'RUB',
         show_progress: config.showProgress,
-        // Для публичного получения методов оплаты используем organizationId
-        // IDs проектов/фандрайзеров можно добавить в config при необходимости
+        show_target_amount: (config as any).show_target_amount ?? true,
+        show_collected_amount: (config as any).show_collected_amount ?? true,
+        allow_recurring: (config as any).allowRecurring ?? (config as any).allow_recurring ?? true,
+        recurring_periods: (config as any).recurringPeriods ?? (config as any).recurring_periods ?? ['daily', 'weekly', 'monthly'],
+        require_name: (config as any).requireName ?? (config as any).require_name ?? true,
+        require_phone: false, // phone never required; shown read-only when user has it in profile
+        require_email: (config as any).requireEmail ?? (config as any).require_email ?? false,
+        allow_anonymous: (config as any).allowAnonymous ?? (config as any).allow_anonymous ?? true,
+        show_message_field: (config as any).showMessageField ?? (config as any).show_message_field ?? false,
+        button_text: (config as any).buttonText ?? (config as any).button_text ?? 'Внести свой вклад',
     } as Record<string, unknown>;
 
     return (

@@ -1,80 +1,133 @@
 // Menu Widget Styles
-// Общие стили для всех виджетов типа "menu"
+// Только для сайтов организаций (site_type === 'organization').
+// Главный сайт (site-type--main) не трогаем — у него своё меню .main-menu.
 
-// Базовые стили для menu виджетов
-.menu-widget {
+.site-type--organization {
+    .menu-widget {
     font-family: inherit;
     line-height: 1.6;
 
-    // Контейнер виджета
     &.widget-output {
         display: flex;
         align-items: center;
         justify-content: flex-start;
     }
 
-    // Навигационное меню
-    nav {
+    // Контейнер навигации
+    nav.menu-output {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 12px;
+        width: 100%;
     }
 
-    // Ссылки меню
-    a {
-        color: inherit;
+    // Список пунктов — горизонтальный (display задаётся Tailwind: hidden / md:flex)
+    nav ul.flex-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 20px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    // Список пунктов — вертикальный
+    nav ul.flex-col {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        &.space-y-2 > * + * {
+            margin-top: 0.5rem;
+        }
+    }
+
+    // Пункт меню
+    .menu-item {
+        list-style: none;
+        margin: 0;
+    }
+
+    // Ссылка — базовые стили по умолчанию
+    .menu-link {
+        display: inline-block;
+        color: #1a1a1a;
         text-decoration: none;
-        transition:
-            opacity 0.2s ease,
-            color 0.2s ease;
+        font-size: 15px;
+        font-weight: 500;
+        padding: 6px 0;
+        transition: opacity 0.2s ease, color 0.2s ease;
 
         &:hover {
-            opacity: 0.8;
+            opacity: 0.85;
             text-decoration: none;
         }
 
-        // Активное состояние (если нужно)
         &.active {
             font-weight: 600;
         }
     }
 
-    // Заголовок меню (если есть)
-    .menu-widget__title {
+    // Горизонтальное меню — ссылки в ряд с отступом
+    nav .flex-row .menu-link {
+        padding: 8px 4px;
+    }
+
+    // Заголовок блока меню (если есть)
+    .menu-widget__title,
+    nav h2 {
         font-weight: 600;
-        margin-right: 16px;
+        margin: 0 16px 0 0;
+        font-size: 1rem;
     }
 
-    // Различные ориентации
-    &.flex-row {
-        flex-direction: row;
+    // Варианты оформления (классы из конфига)
+    .menu-default .menu-link {
+        color: #374151;
     }
 
-    &.flex-col {
-        flex-direction: column;
-
-        nav {
-            flex-direction: column;
-            align-items: flex-start;
-        }
+    .menu-minimal .menu-link {
+        font-weight: 400;
+        color: #6b7280;
     }
 
-    // Выравнивание
-    &.justify-start {
+    .menu-modern .menu-link {
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    // Выравнивание контейнера
+    &.justify-start nav {
         justify-content: flex-start;
     }
 
-    &.justify-center {
+    &.justify-center nav {
         justify-content: center;
     }
 
-    &.justify-end {
+    &.justify-end nav {
         justify-content: flex-end;
     }
 
-    &.justify-between {
+    &.justify-between nav {
         justify-content: space-between;
+    }
+    }
+
+    // Варианты по позиции (только для сайтов организаций)
+    .header-menu-widget .menu-widget {
+        nav {
+            gap: 16px;
+        }
+        .menu-link {
+            font-size: 14px;
+            font-weight: 500;
+        }
     }
 }
 
@@ -112,17 +165,3 @@
     }
 }
 
-// Специфичные стили для разных классов menu виджетов
-// Например, для header-menu-widget
-.header-menu-widget {
-    .menu-widget {
-        nav {
-            gap: 16px;
-        }
-
-        a {
-            font-size: 14px;
-            font-weight: 500;
-        }
-    }
-}

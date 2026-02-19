@@ -1,9 +1,12 @@
 import React from 'react';
 import { BasicSettings } from '../settings/BasicSettings';
+import { CustomStylesSettings } from '../settings/CustomStylesSettings';
 import { DesignSettings } from '../settings/DesignSettings';
+import { DomainSettings } from '../settings/DomainSettings';
 import PaymentSettings from '../settings/payments/PaymentSettings';
 import { SeoSettings } from '../settings/SeoSettings';
 import TelegramSettings from '../settings/telegram/TelegramSettings';
+import { BankRequisitesSettings } from '@/components/dashboard/bank-requisites/BankRequisitesSettings';
 
 interface SettingsContentProps {
     site: {
@@ -15,14 +18,31 @@ interface SettingsContentProps {
         theme_config?: Record<string, unknown>;
         seo_config?: Record<string, unknown>;
         custom_settings?: Record<string, unknown>;
+        domain?: {
+            id: number;
+            domain: string;
+            custom_domain?: string;
+            beget_domain_id?: number;
+        } | null;
+    };
+    organization?: { 
+        id: number;
+        settings?: { payment_settings?: any };
     };
 }
 
 export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
-    ({ site }) => {
+    ({ site, organization }) => {
         return (
             <div className="h-full overflow-y-auto p-6">
                 <div className="space-y-6 pb-20">
+                    {organization && (
+                        <DomainSettings
+                            siteId={site.id}
+                            organizationId={organization.id}
+                            domain={site.domain}
+                        />
+                    )}
                     <BasicSettings
                         siteId={site.id}
                         initialSettings={{
@@ -79,6 +99,15 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                             footer_style: (site.theme_config as any)
                                 ?.footer_style,
                         }}
+                    />
+
+                    <CustomStylesSettings
+                        siteId={site.id}
+                        initialCss={(site.custom_settings as any)?.custom_css}
+                        stylesFilePath={
+                            (site as { styles_file_path?: string | null })
+                                ?.styles_file_path ?? null
+                        }
                     />
 
                     <TelegramSettings
@@ -150,6 +179,48 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                                 true,
                         }}
                     />
+
+                    {organization && (
+                        <BankRequisitesSettings
+                            entityId={site.id}
+                            entityType="site"
+                            initialRequisites={{
+                                // Структурированные поля
+                                recipient_name: (site.custom_settings as any)?.bank_requisites_structured?.recipient_name,
+                                bank_name: (site.custom_settings as any)?.bank_requisites_structured?.bank_name,
+                                inn: (site.custom_settings as any)?.bank_requisites_structured?.inn,
+                                kpp: (site.custom_settings as any)?.bank_requisites_structured?.kpp,
+                                bik: (site.custom_settings as any)?.bank_requisites_structured?.bik,
+                                account: (site.custom_settings as any)?.bank_requisites_structured?.account,
+                                corr_account: (site.custom_settings as any)?.bank_requisites_structured?.corr_account,
+                                beneficiary_name: (site.custom_settings as any)?.bank_requisites_structured?.beneficiary_name,
+                                ogrn: (site.custom_settings as any)?.bank_requisites_structured?.ogrn,
+                                address: (site.custom_settings as any)?.bank_requisites_structured?.address,
+                                // Текстовое поле (для обратной совместимости)
+                                bank_requisites: (site.custom_settings as any)?.bank_requisites,
+                                sber_card: (site.custom_settings as any)?.sber_card,
+                                tinkoff_card: (site.custom_settings as any)?.tinkoff_card,
+                                card_recipient: (site.custom_settings as any)?.card_recipient,
+                            }}
+                            organizationRequisites={organization?.settings?.payment_settings ? {
+                                recipient_name: organization.settings.payment_settings.bank_requisites_structured?.recipient_name,
+                                bank_name: organization.settings.payment_settings.bank_requisites_structured?.bank_name,
+                                inn: organization.settings.payment_settings.bank_requisites_structured?.inn,
+                                kpp: organization.settings.payment_settings.bank_requisites_structured?.kpp,
+                                bik: organization.settings.payment_settings.bank_requisites_structured?.bik,
+                                account: organization.settings.payment_settings.bank_requisites_structured?.account,
+                                corr_account: organization.settings.payment_settings.bank_requisites_structured?.corr_account,
+                                beneficiary_name: organization.settings.payment_settings.bank_requisites_structured?.beneficiary_name,
+                                ogrn: organization.settings.payment_settings.bank_requisites_structured?.ogrn,
+                                address: organization.settings.payment_settings.bank_requisites_structured?.address,
+                                bank_requisites: organization.settings.payment_settings.bank_requisites,
+                                sber_card: organization.settings.payment_settings.sber_card,
+                                tinkoff_card: organization.settings.payment_settings.tinkoff_card,
+                                card_recipient: organization.settings.payment_settings.card_recipient,
+                            } : null}
+                            showInheritanceInfo={true}
+                        />
+                    )}
                 </div>
             </div>
         );

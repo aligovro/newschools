@@ -288,3 +288,42 @@ export interface ReferralLeaderboardOutputConfig {
     showAvatar?: boolean;
     organizationId?: number;
 }
+
+// Top donors (by project or by organization)
+export interface TopDonorsOutputConfig {
+    projectId?: number;
+    projectSlug?: string;
+    organizationSlug?: string;
+    period?: 'week' | 'month' | 'all';
+    limit?: number;
+    title?: string | null;
+}
+
+// Top recurring donors (by project or by organization)
+export interface TopRecurringDonorsOutputConfig {
+    projectId?: number;
+    projectSlug?: string;
+    organizationSlug?: string;
+    limit?: number;
+    title?: string | null;
+}
+
+// Share buttons widget types
+export interface ShareButtonsOutputConfig {
+    title?: string;
+    show_title?: boolean;
+    share_url?: string;
+    share_text?: string;
+    networks?: string[];
+    show_counts?: boolean;
+    counts?: Record<string, number>;
+}
+
+// All donations feed (organization or project, with pagination)
+export interface OrgDonationsFeedOutputConfig {
+    organizationSlug?: string;
+    organizationId?: number;
+    projectSlug?: string;
+    per_page?: number;
+    title?: string | null;
+}

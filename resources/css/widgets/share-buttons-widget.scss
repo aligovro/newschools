@@ -1,0 +1,21 @@
+.share-buttons-widget {
+    .share-buttons-output {
+        padding: 0.5rem 0;
+    }
+
+    .share-btn {
+        cursor: pointer;
+        border: none;
+        outline: none;
+        line-height: 1;
+
+        svg {
+            flex-shrink: 0;
+        }
+    }
+
+    .share-count {
+        min-width: 1rem;
+        text-align: center;
+    }
+}

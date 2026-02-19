@@ -6,6 +6,8 @@ use App\Http\Controllers\Concerns\HasSiteWidgets;
 use App\Http\Resources\Sponsors\SponsorResource;
 use App\Models\Project;
 use App\Models\ProjectCategory;
+use App\Services\ProjectDonations\ProjectDonationsService;
+use App\Services\Seo\SeoPresenter;
 use App\Services\Sponsors\ProjectSponsorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -17,14 +19,20 @@ class PublicProjectController extends Controller
 
   public function __construct(
     private readonly ProjectSponsorService $projectSponsorService,
+    private readonly ProjectDonationsService $donationsService,
+    private readonly SeoPresenter $seoPresenter,
   ) {}
 
   /**
    * Отображение списка проектов
+   * На кастомном домене организации показываются только проекты этой организации.
    */
   public function index(Request $request)
   {
+    $orgId = app()->bound('current_organization_id') ? app('current_organization_id') : null;
+
     $query = Project::with(['organization', 'organization.region', 'organization.locality', 'categories'])
+      ->when($orgId !== null, fn ($q) => $q->where('organization_id', $orgId))
       ->where('status', 'active');
 
     if ($request->filled('search')) {
@@ -106,10 +114,15 @@ class PublicProjectController extends Controller
 
   /**
    * Отображение конкретного проекта
+   * На домене организации показывается только проект этой организации.
    */
   public function show($slug)
   {
-    $project = Project::where('slug', $slug)
+    $orgId = app()->bound('current_organization_id') ? app('current_organization_id') : null;
+
+    $project = Project::query()
+      ->when($orgId !== null, fn ($q) => $q->where('organization_id', $orgId))
+      ->where('slug', $slug)
       ->where('status', 'active')
       ->with([
         'organization',
@@ -219,12 +232,24 @@ class PublicProjectController extends Controller
       ],
     ];
 
+    $topRecurring = $this->donationsService->topRecurringByDonorName(
+      $project,
+      ProjectDonationsService::PERIOD_ALL,
+      1,
+      6,
+    );
+
     $data = $this->getSiteWidgetsAndPositions();
+
+    $site = app()->bound('current_organization_site') ? app('current_organization_site') : null;
+    $seo = $this->seoPresenter->forProject($project, $site, request()->fullUrl());
 
     return Inertia::render('main-site/ProjectShow', array_merge($data, [
       'project' => $projectData,
       'sponsors' => $sponsorsPayload,
+      'topRecurring' => $topRecurring,
       'organizationId' => $project->organization?->id,
+      'seo' => $seo,
     ]));
   }
 

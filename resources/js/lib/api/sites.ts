@@ -69,6 +69,18 @@ export const sitesApi = {
             .post(`/sites/${siteId}/settings/layout`, updates)
             .then(() => undefined),
 
+    // Дополнительные стили сайта (подключаются поверх стилей виджетов)
+    saveCustomStyles: (
+        siteId: number,
+        payload: { custom_css: string },
+    ): Promise<{ success: boolean; message?: string }> =>
+        apiClient
+            .post<{ success: boolean; message?: string }>(
+                `/sites/${siteId}/settings/custom-styles`,
+                payload,
+            )
+            .then((response) => response.data),
+
     // Перемещение виджета
     moveWidget: (
         siteId: number,

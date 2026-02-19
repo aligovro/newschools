@@ -19,6 +19,8 @@ interface Site {
     layout_config?: {
         sidebar_position?: 'left' | 'right';
     };
+    /** Собственные стили сайта (например после миграции с другого домена) */
+    custom_css?: string | null;
 }
 
 interface Page {
