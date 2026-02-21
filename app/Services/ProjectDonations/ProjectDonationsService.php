@@ -2,7 +2,7 @@
 
 namespace App\Services\ProjectDonations;
 
-use App\BlagoqrMigrated\BlagoqrMigratedDonationsService;
+use App\Migrated\MigratedDonationsService;
 use App\Enums\DonationStatus;
 use App\Models\Donation;
 use App\Models\Organization;
@@ -349,14 +349,14 @@ class ProjectDonationsService
     /**
      * Топ поддержавших по организации (все проекты).
      * При $graduateOnly=true только «Выпуск X г.» и «Друзья лицея».
-     * Для организаций, перенесённых из blagoqr, данные берутся из снапшота (отдельная логика).
+     * Для мигрированных организаций данные берутся из снапшота (отдельная логика).
      */
     public function topByDonorNameForOrganization(Organization $organization, string $period = self::PERIOD_ALL, int $limit = 20, bool $graduateOnly = false): array
     {
         if ($graduateOnly) {
-            $blagoqr = app(BlagoqrMigratedDonationsService::class);
-            if ($blagoqr->isForOrganization($organization)) {
-                return $blagoqr->topOneTimeByGraduation($organization, $limit);
+            $migrated = app(MigratedDonationsService::class);
+            if ($migrated->isForOrganization($organization) && $period === self::PERIOD_ALL) {
+                return $migrated->topOneTimeByGraduation($organization, $limit);
             }
         }
 
@@ -394,7 +394,7 @@ class ProjectDonationsService
     /**
      * Топ регулярно-поддерживающих по организации.
      * При $graduateOnly=true только «Выпуск X г.» и «Друзья лицея».
-     * Для организаций из blagoqr данные берутся из снапшота (модуль BlagoqrMigrated).
+     * Для мигрированных организаций данные берутся из снапшота (модуль Migrated).
      */
     public function topRecurringByDonorNameForOrganization(
         Organization $organization,
@@ -407,9 +407,9 @@ class ProjectDonationsService
         $page = max(1, $page);
 
         if ($graduateOnly) {
-            $blagoqr = app(BlagoqrMigratedDonationsService::class);
-            if ($blagoqr->isForOrganization($organization)) {
-                return $blagoqr->topRecurring($organization, $page, $perPage);
+            $migrated = app(MigratedDonationsService::class);
+            if ($migrated->isForOrganization($organization)) {
+                return $migrated->topRecurring($organization, $page, $perPage);
             }
 
             $snapshots = DB::table('organization_top_recurring_snapshots')

@@ -293,13 +293,21 @@ export default function OrganizationManagementPage({
                                         </div>
                                         <div>
                                             <div className="text-lg font-semibold text-gray-900">
-                                                {organization.donations_total
-                                                    ? new Intl.NumberFormat(
-                                                          'ru-RU',
-                                                      ).format(
-                                                          organization.donations_total,
+                                                {organization.donations_sum_completed != null &&
+                                                typeof organization.donations_sum_completed === 'number'
+                                                    ? new Intl.NumberFormat('ru-RU', {
+                                                          minimumFractionDigits: 2,
+                                                      }).format(
+                                                          organization.donations_sum_completed / 100,
                                                       ) + ' ₽'
-                                                    : '0 ₽'}
+                                                    : organization.donations_sum != null &&
+                                                      typeof organization.donations_sum === 'number'
+                                                      ? new Intl.NumberFormat('ru-RU', {
+                                                            minimumFractionDigits: 2,
+                                                        }).format(
+                                                            organization.donations_sum / 100,
+                                                        ) + ' ₽'
+                                                      : '0 ₽'}
                                             </div>
                                             <div className="text-xs text-gray-500">
                                                 Собрано

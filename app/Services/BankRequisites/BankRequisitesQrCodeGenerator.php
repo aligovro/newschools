@@ -26,18 +26,10 @@ class BankRequisitesQrCodeGenerator
     public function generate(array $requisites, Organization $organization): ?string
     {
         try {
-            // Извлекаем данные из текста реквизитов
-            $text = $requisites['text'] ?? '';
-            
-            // Парсим реквизиты из текста
-            $parsedRequisites = $this->parser->parse($text);
-            
-            // Формируем строку для QR-кода (без транслитерации для модалки - SVG поддерживает UTF-8)
+            $parsedRequisites = $this->resolveParsedRequisites($requisites);
             $qrData = $this->formatQrDataForBank($parsedRequisites, $organization, false);
-            
             if (empty($qrData)) {
-                // Если не удалось распарсить, используем просто текст реквизитов
-                $qrData = strip_tags($text);
+                $qrData = strip_tags($requisites['text'] ?? '');
             }
 
             // Генерируем SVG изображение QR-кода (для модалки)
@@ -47,7 +39,7 @@ class BankRequisitesQrCodeGenerator
             );
 
             $writer = new Writer($renderer);
-            $qrSvg = $writer->writeString($qrData);
+            $qrSvg = $writer->writeString($qrData, 'UTF-8');
             
             // Для модалки возвращаем base64 encoded SVG через data URI
             $base64Svg = base64_encode($qrSvg);
@@ -65,19 +57,19 @@ class BankRequisitesQrCodeGenerator
     /**
      * Генерация PNG QR-кода для PDF (отдельный метод для PDF)
      * Генерирует SVG, затем конвертирует в PNG через Imagick из файла
-     * Использует временный файл для обхода проблем с кодировкой при readImageBlob
+     * Использует кириллицу в UTF-8 — банковские приложения при сканировании требуют
+     * правильные названия на русском, транслитерация не подходит.
      */
     public function generatePngForPdf(array $requisites, Organization $organization): ?string
     {
         try {
-            // Извлекаем данные из текста реквизитов
-            $text = $requisites['text'] ?? '';
-            $parsedRequisites = $this->parser->parse($text);
-            // Для PNG используем транслитерацию кириллицы в латиницу (обходит проблему с кодировкой)
-            $qrData = $this->formatQrDataForBank($parsedRequisites, $organization, true);
-            
+            $parsedRequisites = $this->resolveParsedRequisites($requisites);
+            if (!empty($requisites['amount']) && ($requisites['currency'] ?? 'RUB') === 'RUB') {
+                $parsedRequisites['amount_kopecks'] = (int) round((float) $requisites['amount'] * 100);
+            }
+            $qrData = $this->formatQrDataForBank($parsedRequisites, $organization, false);
             if (empty($qrData)) {
-                $qrData = $this->transliterate(strip_tags($text));
+                $qrData = strip_tags($requisites['text'] ?? '');
             }
 
             // Генерируем SVG (как для модалки, но с транслитерированными данными для PNG)
@@ -87,7 +79,7 @@ class BankRequisitesQrCodeGenerator
             );
 
             $writer = new Writer($renderer);
-            $qrSvg = $writer->writeString($qrData);
+            $qrSvg = $writer->writeString($qrData, 'UTF-8');
             
             // Конвертируем SVG в PNG через Imagick из файла (обходит проблему с кодировкой)
             if (extension_loaded('imagick') && class_exists('Imagick')) {
@@ -99,19 +91,18 @@ class BankRequisitesQrCodeGenerator
                         throw new \RuntimeException('Imagick classes not available');
                     }
                     
-                    // Сохраняем SVG во временный файл с правильной кодировкой UTF-8
+                    // Сохраняем SVG во временный файл с UTF-8 без BOM (BOM может мешать парсингу XML)
                     $tempSvgFile = tempnam(sys_get_temp_dir(), 'qr_') . '.svg';
                     
                     // Убеждаемся, что SVG имеет правильный заголовок с UTF-8
-                    // Если SVG уже содержит заголовок, оставляем как есть, иначе добавляем
                     if (strpos($qrSvg, '<?xml') === false) {
                         $qrSvg = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . $qrSvg;
                     } elseif (strpos($qrSvg, 'encoding="UTF-8"') === false && strpos($qrSvg, 'encoding=') !== false) {
-                        // Заменяем неправильную кодировку на UTF-8
                         $qrSvg = preg_replace('/encoding="[^"]*"/', 'encoding="UTF-8"', $qrSvg);
                     }
                     
-                    file_put_contents($tempSvgFile, $qrSvg);
+                    // UTF-8 без BOM — стандарт для XML/SVG
+                    file_put_contents($tempSvgFile, $qrSvg, LOCK_EX);
                     
                     // Читаем SVG из файла (Imagick лучше обрабатывает файлы, чем blob с кириллицей)
                     $imagick = new $imagickClass();
@@ -188,7 +179,7 @@ class BankRequisitesQrCodeGenerator
             );
             $writer = new Writer($renderer);
             
-            return $writer->writeString($qrData);
+            return $writer->writeString($qrData, 'UTF-8');
         } catch (\Throwable $e) {
             Log::error('Failed to generate bank requisites QR code SVG', [
                 'organization_id' => $organization->id,
@@ -197,6 +188,24 @@ class BankRequisitesQrCodeGenerator
             
             return null;
         }
+    }
+
+    /**
+     * Объединяет распарсенные данные из текста со структурированными (fallback).
+     */
+    protected function resolveParsedRequisites(array $requisites): array
+    {
+        $text = $requisites['text'] ?? '';
+        $parsed = $this->parser->parse($text);
+        $structured = $requisites['structured'] ?? [];
+        $map = ['recipient' => 'recipient_name', 'bank' => 'bank_name', 'inn' => 'inn', 'kpp' => 'kpp',
+                'bik' => 'bik', 'account' => 'account', 'corr_account' => 'corr_account'];
+        foreach ($map as $key => $structKey) {
+            if (empty($parsed[$key]) && !empty($structured[$structKey])) {
+                $parsed[$key] = $structured[$structKey];
+            }
+        }
+        return $parsed;
     }
 
     /**
@@ -245,14 +254,22 @@ class BankRequisitesQrCodeGenerator
             $parts[] = 'CorrespAcc=' . $parsedRequisites['corr_account'];
         }
         
-        // ИНН
+        // ИНН (PayeeINN — для банковских приложений)
         if (!empty($parsedRequisites['inn'])) {
-            $parts[] = 'INN=' . $parsedRequisites['inn'];
+            $inn = preg_replace('/\D/', '', $parsedRequisites['inn']);
+            if ($inn !== '') {
+                $parts[] = 'PayeeINN=' . $inn;
+            }
         }
         
         // КПП
         if (!empty($parsedRequisites['kpp'])) {
-            $parts[] = 'KPP=' . $parsedRequisites['kpp'];
+            $parts[] = 'KPP=' . preg_replace('/\D/', '', $parsedRequisites['kpp']);
+        }
+        
+        // Сумма в копейках (для автозаполнения в банковском приложении)
+        if (!empty($parsedRequisites['amount_kopecks']) && $parsedRequisites['amount_kopecks'] > 0) {
+            $parts[] = 'Sum=' . $parsedRequisites['amount_kopecks'];
         }
         
         return implode('|', $parts);

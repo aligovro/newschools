@@ -158,6 +158,11 @@ export interface DonationWidgetData {
         tinkoff_card?: string;
         card_recipient?: string;
     } | null;
+    monthly_goal?: {
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+    } | null;
 }
 
 export interface DonationRequest {
@@ -241,7 +246,7 @@ export const widgetsSystemApi = {
     // Получение данных виджета пожертвований
     getDonationWidgetData: (
         organizationId: number,
-        params: { fundraiser_id?: number; project_id?: number; project_stage_id?: number } = {},
+        params: { fundraiser_id?: number; project_id?: number; project_stage_id?: number; site_id?: number } = {},
     ): Promise<DonationWidgetData> =>
         apiClient
             .get<DonationWidgetData>(

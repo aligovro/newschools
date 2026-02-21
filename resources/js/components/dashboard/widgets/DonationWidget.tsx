@@ -3,6 +3,7 @@ import {
     type PaymentMethod as ApiPaymentMethod,
     type DonationWidgetData,
 } from '@/lib/api/index';
+import type { MoneyAmount } from '@/types/money';
 import { usePage } from '@inertiajs/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DonationWidgetEditor } from './donation/DonationWidgetEditor';
@@ -70,6 +71,11 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     );
     const [bankRequisites, setBankRequisites] =
         useState<BankRequisites | null>(null);
+    const [monthlyGoal, setMonthlyGoal] = useState<{
+        target: MoneyAmount;
+        collected: MoneyAmount;
+        progress_percentage: number;
+    } | null>(null);
     const [widgetLoadError, setWidgetLoadError] = useState<string | null>(null);
 
     const resolvedOrganizationId =
@@ -113,6 +119,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 fundraiser_id?: number;
                 project_id?: number;
                 project_stage_id?: number;
+                site_id?: number;
             } = {};
 
             const fundraiserId = parseNumericId(localConfig.fundraiser_id);
@@ -133,6 +140,11 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                 params.project_stage_id = contextStageId;
             }
 
+            const contextSiteId = parseNumericId(publicContext?.siteId);
+            if (contextSiteId) {
+                params.site_id = contextSiteId;
+            }
+
             const widgetData = await widgetsSystemApi.getDonationWidgetData(
                 resolvedOrganizationId,
                 params,
@@ -141,6 +153,13 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
             setMerchant(widgetData.merchant ?? null);
             setSubscribersCount(widgetData.subscribers_count ?? null);
             setBankRequisites(widgetData.bank_requisites ?? null);
+            setMonthlyGoal(
+                (widgetData.monthly_goal as {
+                    target: MoneyAmount;
+                    collected: MoneyAmount;
+                    progress_percentage: number;
+                } | null) ?? null,
+            );
 
             if (widgetData.terminology) {
                 setTerminology(
@@ -202,6 +221,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         localConfig.project_id,
         contextProjectId,
         contextStageId,
+        publicContext?.siteId,
     ]);
 
     const {
@@ -674,6 +694,25 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
             }
         }
 
+        // Приоритет: цель на месяц (из настроек сайта/организации при парсинге или ручной настройке)
+        if (monthlyGoal) {
+            const target = getAmount(monthlyGoal.target);
+            const collected = getAmount(monthlyGoal.collected);
+            if (target > 0) {
+                const progress = buildProgress(
+                    target,
+                    collected,
+                    'Цель сбора в этом месяце',
+                    'Собрано',
+                );
+                if (progress) {
+                    progress.currency = (monthlyGoal.target as MoneyAmount)?.currency ?? effectiveCurrency;
+                    progress.percentage = monthlyGoal.progress_percentage ?? progress.percentage;
+                    return progress;
+                }
+            }
+        }
+
         const stage = projectInfo?.active_stage;
         if (stage) {
             const target = getAmount(
@@ -737,6 +776,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         show_progress,
         currency,
         publicContext?.progress,
+        monthlyGoal,
         projectInfo,
         organizationNeeds,
         fundraiser,

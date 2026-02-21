@@ -16,11 +16,14 @@ class BlagoqrImportServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        if (! $this->canLoadModule()) {
-            return;
+        if ($this->canLoadModule()) {
+            $this->app->register(self::MODULE_PROVIDER);
+        } else {
+            $this->app->bind(
+                \App\Contracts\MigratedSiteWidgetsServiceInterface::class,
+                \App\Services\NullMigratedSiteWidgetsService::class
+            );
         }
-
-        $this->app->register(self::MODULE_PROVIDER);
     }
 
     private function canLoadModule(): bool

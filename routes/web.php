@@ -188,6 +188,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Image upload routes
         Route::post('/api/upload/organization-logo', [ImageUploadController::class, 'uploadOrganizationLogo'])->name('api.upload.organization-logo');
+        Route::post('/api/upload/bank-requisites-logo', [ImageUploadController::class, 'uploadBankRequisitesLogo'])->name('api.upload.bank-requisites-logo');
         Route::post('/api/upload/slider-image', [ImageUploadController::class, 'uploadSliderImage'])->name('api.upload.slider-image');
         Route::post('/api/upload/gallery-image', [ImageUploadController::class, 'uploadGalleryImage'])->name('api.upload.gallery-image');
         Route::post('/api/upload/news-cover-image', [ImageUploadController::class, 'uploadNewsCoverImage'])->name('api.upload.news-cover-image');
@@ -251,6 +252,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::prefix('payments')->name('payments.')->group(function () {
                 Route::get('/', [OrganizationPaymentsController::class, 'index'])->name('index');
                 Route::get('/transactions', [OrganizationPaymentsController::class, 'transactions'])->name('transactions');
+                Route::get('/autopayments', [OrganizationPaymentsController::class, 'autopayments'])->name('autopayments');
                 Route::post('/create', [OrganizationPaymentsController::class, 'createPayment'])->name('create');
                 Route::post('/webhook/yookassa', [OrganizationPaymentsController::class, 'yookassaWebhook'])->name('yookassa-webhook');
                 Route::post('/refund/{donation}', [OrganizationPaymentsController::class, 'refund'])->name('refund');
@@ -388,6 +390,8 @@ Route::prefix('api/sites/{id}')->middleware('auth')->group(function () {
     // Банковские реквизиты сайта
     Route::post('/bank-requisites', [ApiSiteController::class, 'saveBankRequisites'])
         ->name('sites.save-bank-requisites');
+    Route::post('/monthly-goal', [ApiSiteController::class, 'saveMonthlyGoal'])
+        ->name('sites.save-monthly-goal');
 
     // Макет сайта
     Route::post('/settings/layout', [ApiSiteController::class, 'saveLayoutSettings'])
@@ -425,6 +429,8 @@ Route::prefix('api/projects/{id}')->middleware('auth')->group(function () {
     // Банковские реквизиты проекта
     Route::post('/bank-requisites', [ApiProjectController::class, 'saveBankRequisites'])
         ->name('projects.save-bank-requisites');
+    Route::post('/monthly-goal', [ApiProjectController::class, 'saveMonthlyGoal'])
+        ->name('projects.save-monthly-goal');
 });
 
 // Organization configuration routes
@@ -432,6 +438,8 @@ Route::prefix('api/organizations/{organization}')->middleware('auth')->group(fun
     // Банковские реквизиты организации
     Route::post('/bank-requisites', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'updateBankRequisitesApi'])
         ->name('organizations.save-bank-requisites');
+    Route::post('/monthly-goal', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'updateMonthlyGoalApi'])
+        ->name('organizations.save-monthly-goal');
 });
 
 Route::get('/dashboard/api/regions/{id}', [RegionController::class, 'show']);

@@ -21,6 +21,9 @@ use Carbon\Carbon;
 use App\Http\Resources\OrganizationResource;
 use App\Http\Resources\OrganizationDonationResource;
 use App\Support\InertiaResource;
+use App\Services\Autopayments\OrganizationAutopaymentsService;
+use App\Services\Autopayments\OrganizationAutopaymentsRepository;
+use App\Services\Autopayments\AutopaymentRowFormatter;
 
 class OrganizationPaymentsController extends Controller
 {
@@ -37,7 +40,7 @@ class OrganizationPaymentsController extends Controller
     {
         $stats = $this->getPaymentStats($organization);
         $recentTransactions = InertiaResource::list(
-            $organization->donations()->with(['member', 'paymentTransaction'])->latest()->limit(10)->get(),
+            $organization->donations()->with(['donor', 'paymentTransaction'])->latest()->limit(10)->get(),
             OrganizationDonationResource::class
         );
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
@@ -56,7 +59,7 @@ class OrganizationPaymentsController extends Controller
     public function transactions(Request $request, Organization $organization): JsonResponse
     {
         $query = $organization->donations()
-            ->with(['member', 'paymentTransaction', 'project'])
+            ->with(['donor', 'paymentTransaction', 'project'])
             ->latest();
 
         // Фильтрация по статусу
@@ -67,7 +70,7 @@ class OrganizationPaymentsController extends Controller
         // Фильтрация по методу оплаты
         if ($request->filled('payment_method')) {
             $query->whereHas('paymentTransaction', function ($q) use ($request) {
-                $q->where('payment_method', $request->payment_method);
+                $q->where('payment_method_slug', $request->payment_method);
             });
         }
 
@@ -85,16 +88,26 @@ class OrganizationPaymentsController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('transaction_id', 'like', "%{$search}%")
-                    ->orWhereHas('member', function ($memberQuery) use ($search) {
-                        $memberQuery->where('name', 'like', "%{$search}%")
+                    ->orWhere('donor_name', 'like', "%{$search}%")
+                    ->orWhere('donor_phone', 'like', "%{$search}%")
+                    ->orWhereHas('donor', function ($donorQuery) use ($search) {
+                        $donorQuery->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%");
                     });
             });
         }
 
-        $transactions = $query->paginate(20);
+        $paginator = $query->paginate(20)->appends($request->query());
 
-        return response()->json($transactions);
+        return response()->json([
+            'data' => OrganizationDonationResource::collection($paginator->items()),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
     /**
@@ -316,7 +329,7 @@ class OrganizationPaymentsController extends Controller
     public function export(Request $request, Organization $organization)
     {
         $query = $organization->donations()
-            ->with(['member', 'paymentTransaction', 'project']);
+            ->with(['donor', 'paymentTransaction', 'project']);
 
         // Применяем те же фильтры, что и в transactions
         if ($request->filled('status')) {
@@ -470,6 +483,33 @@ class OrganizationPaymentsController extends Controller
     }
 
     /**
+     * Получить список автоплатежей организации
+     */
+    public function autopayments(Request $request, Organization $organization): JsonResponse
+    {
+        $page = max(1, (int) $request->get('page', 1));
+        $perPage = min(max(1, (int) $request->get('per_page', 20)), 100);
+
+        $filters = [];
+        if ($request->filled('recurring_period')) {
+            $filters['recurring_period'] = $request->get('recurring_period');
+        }
+
+        $service = new OrganizationAutopaymentsService(
+            new OrganizationAutopaymentsRepository(),
+            new AutopaymentRowFormatter()
+        );
+
+        $result = $service->listForOrganization($organization, $page, $perPage, $filters);
+
+        return response()->json([
+            'success' => true,
+            'data' => array_map(fn($dto) => $dto->toArray(), $result['data']),
+            'meta' => $result['meta'],
+        ]);
+    }
+
+    /**
      * Получить статистику платежей
      */
     private function getPaymentStats(Organization $organization): array
@@ -501,7 +541,7 @@ class OrganizationPaymentsController extends Controller
     {
         // Deprecated by Resource-based approach; kept for backward compatibility if used elsewhere.
         return InertiaResource::list(
-            $organization->donations()->with(['member', 'paymentTransaction'])->latest()->limit(10)->get(),
+            $organization->donations()->with(['donor', 'paymentTransaction'])->latest()->limit(10)->get(),
             OrganizationDonationResource::class
         );
     }

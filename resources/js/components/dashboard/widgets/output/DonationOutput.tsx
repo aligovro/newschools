@@ -33,6 +33,8 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
         parseId(config.organizationId) ?? organizationIdFromPage;
 
     const publicContext = useMemo(() => {
+        const siteId = parseId(propsAny?.site?.id);
+
         const safeNumber = (value: unknown): number => {
             if (
                 value &&
@@ -91,6 +93,7 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
                     organizationId: resolvedOrganizationId,
                     projectId: parseId(pageProject.id),
                     projectStageId: parseId(activeStage.id),
+                    ...(siteId !== undefined && { siteId }),
                     progress: {
                         targetAmount: stageTarget,
                         collectedAmount: stageCollected,
@@ -105,6 +108,7 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
                 return {
                     organizationId: resolvedOrganizationId,
                     projectId: parseId(pageProject.id),
+                    ...(siteId !== undefined && { siteId }),
                     progress: {
                         targetAmount: projectTarget,
                         collectedAmount: projectCollected,
@@ -118,6 +122,7 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
             return {
                 organizationId: resolvedOrganizationId,
                 projectId: parseId(pageProject.id),
+                ...(siteId !== undefined && { siteId }),
             };
         }
 
@@ -128,6 +133,7 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
             return {
                 organizationId:
                     resolvedOrganizationId ?? parseId(pageOrganization.id),
+                ...(siteId !== undefined && { siteId }),
                 progress:
                     needsTarget > 0
                         ? {
@@ -144,11 +150,12 @@ export const DonationOutput: React.FC<WidgetOutputProps> = ({
         if (resolvedOrganizationId) {
             return {
                 organizationId: resolvedOrganizationId,
+                ...(siteId !== undefined && { siteId }),
             };
         }
 
         return undefined;
-    }, [pageOrganization, pageProject, resolvedOrganizationId]);
+    }, [pageOrganization, pageProject, propsAny?.site, resolvedOrganizationId]);
 
     const mapped = {
         title: config.title,

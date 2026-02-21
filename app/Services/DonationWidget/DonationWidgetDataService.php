@@ -9,7 +9,10 @@ use App\Models\ProjectStage;
 use App\Models\PaymentMethod;
 use App\Models\Payments\YooKassaPartnerMerchant;
 use App\Services\BankRequisites\BankRequisitesResolver;
+use App\Services\MonthlyGoal\MonthlyGoalResolver;
+use App\Services\Autopayments\RecurringSubscriptionQuery;
 use App\Helpers\TerminologyHelper;
+use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -21,14 +24,15 @@ use Illuminate\Support\Str;
 class DonationWidgetDataService
 {
     public function __construct(
-        protected BankRequisitesResolver $bankRequisitesResolver
+        protected BankRequisitesResolver $bankRequisitesResolver,
+        protected MonthlyGoalResolver $monthlyGoalResolver
     ) {
     }
 
     /**
      * Получить данные виджета
      */
-    public function getWidgetData(Organization $organization, ?int $fundraiserId = null, ?int $projectId = null): array
+    public function getWidgetData(Organization $organization, ?int $fundraiserId = null, ?int $projectId = null, ?int $siteId = null): array
     {
         $organization->loadMissing('yookassaPartnerMerchant');
 
@@ -78,9 +82,55 @@ class DonationWidgetDataService
             $data['project'] = $this->getProjectData($organization, $projectId);
         }
 
-        $data['bank_requisites'] = $this->bankRequisitesResolver->resolve($organization, $projectId);
+        $data['bank_requisites'] = $this->bankRequisitesResolver->resolve($organization, $projectId, $siteId);
+
+        // Получаем цель на месяц с учетом иерархии
+        $monthlyGoal = $this->monthlyGoalResolver->resolve($organization, $projectId, $siteId);
+        if ($monthlyGoal !== null && $monthlyGoal > 0) {
+            $collectedOverride = $this->monthlyGoalResolver->resolveCollectedOverride($organization, $projectId, $siteId);
+            $monthlyCollected = $collectedOverride !== null
+                ? $collectedOverride
+                : $this->getMonthlyCollectedAmount($organization, $projectId);
+
+            $data['monthly_goal'] = [
+                'target' => \App\Support\Money::toArray($monthlyGoal),
+                'collected' => \App\Support\Money::toArray($monthlyCollected),
+                'progress_percentage' => $monthlyGoal > 0
+                    ? min(100, round(($monthlyCollected / $monthlyGoal) * 100, 2))
+                    : 0,
+            ];
+        }
 
         return $data;
+    }
+
+    /**
+     * Получить собранную сумму за текущий месяц (календарный месяц в таймзоне приложения).
+     *
+     * «Собрано» = сумма донатов, которые относятся к текущему месяцу по дате поступления:
+     * - по paid_at (дата фактической оплаты), если задана;
+     * - иначе по created_at (для миграции created_at = post_date donator в WP).
+     *
+     * @param Organization $organization
+     * @param int|null $projectId Если указан, считаем только для проекта
+     * @return int Сумма в копейках
+     */
+    protected function getMonthlyCollectedAmount(Organization $organization, ?int $projectId = null): int
+    {
+        $tz = config('app.timezone', 'Europe/Moscow');
+        $startOfMonth = now($tz)->startOfMonth();
+        $endOfMonth = now($tz)->endOfMonth();
+
+        $query = DB::table('donations')
+            ->where('organization_id', $organization->id)
+            ->where('status', 'completed')
+            ->whereBetween(DB::raw('COALESCE(paid_at, created_at)'), [$startOfMonth, $endOfMonth]);
+
+        if ($projectId) {
+            $query->where('project_id', $projectId);
+        }
+
+        return (int) $query->sum('amount');
     }
 
     /**
@@ -137,7 +187,9 @@ class DonationWidgetDataService
     }
 
     /**
-     * Получить количество подписчиков
+     * Получить количество подписчиков.
+     * Для мигрированных организаций — из organization_autopayments.
+     * Для остальных — из payment_transactions по saved_payment_method_id.
      */
     protected function getSubscribersCount(Organization $organization): int
     {
@@ -145,43 +197,12 @@ class DonationWidgetDataService
             "donation_widget_subscribers_count_{$organization->id}",
             now()->addMinutes(10),
             function () use ($organization) {
-                $recurringDonations = DB::table('donations')
-                    ->join('payment_transactions', 'donations.payment_transaction_id', '=', 'payment_transactions.id')
-                    ->where('donations.organization_id', $organization->id)
-                    ->where('donations.status', 'completed')
-                    ->where('payment_transactions.status', 'completed')
-                    ->where(function ($query) {
-                        $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring')) = 'true'")
-                            ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring') = 1")
-                            ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.is_recurring') = true")
-                            ->orWhereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.recurring_period') IS NOT NULL")
-                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(donations.payment_details, '$.is_recurring')) = 'true'")
-                            ->orWhereRaw("JSON_EXTRACT(donations.payment_details, '$.is_recurring') = 1")
-                            ->orWhereRaw("JSON_EXTRACT(donations.payment_details, '$.is_recurring') = true")
-                            ->orWhereRaw("JSON_EXTRACT(donations.payment_details, '$.recurring_period') IS NOT NULL")
-                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.gateway_response, '$.recurring')) = 'true'")
-                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.gateway_response, '$.is_recurring')) = 'true'");
-                    })
-                    ->select(
-                        'donations.donor_id',
-                        'donations.id as donation_id',
-                        DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.donor_email')) as donor_email"),
-                        DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.is_anonymous')) as is_anonymous")
-                    )
-                    ->get();
-
-                $uniqueSubscribers = [];
-                foreach ($recurringDonations as $donation) {
-                    $identifier = $donation->donor_id
-                        ?? $donation->donor_email
-                        ?? ('anonymous_' . $donation->donation_id);
-
-                    if ($identifier) {
-                        $uniqueSubscribers[$identifier] = true;
-                    }
+                if ($organization->is_legacy_migrated) {
+                    return (int) DB::table('organization_autopayments')
+                        ->where('organization_id', $organization->id)
+                        ->count();
                 }
-
-                return count($uniqueSubscribers);
+                return RecurringSubscriptionQuery::countUniqueSubscriptions($organization);
             }
         );
     }

@@ -35,6 +35,9 @@ class OrganizationController extends Controller
                 'donations as donations_count',
             ])
             ->withSum('donations', 'amount')
+            ->withSum([
+                'donations as donations_sum_completed' => fn ($q) => $q->where('status', 'completed'),
+            ], 'amount')
             ->select([
                 'id',
                 'name',
@@ -146,6 +149,10 @@ class OrganizationController extends Controller
             'projects as projects_count',
         ]);
         $organization->loadSum('donations', 'amount');
+        // Сумма только успешных донатов — для единообразия со страницей «Платежи»
+        $organization->donations_sum_completed = $organization->donations()
+            ->where('status', 'completed')
+            ->sum('amount');
 
         $organization->loadCount(['sites']);
 

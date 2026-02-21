@@ -7,6 +7,7 @@ import PaymentSettings from '../settings/payments/PaymentSettings';
 import { SeoSettings } from '../settings/SeoSettings';
 import TelegramSettings from '../settings/telegram/TelegramSettings';
 import { BankRequisitesSettings } from '@/components/dashboard/bank-requisites/BankRequisitesSettings';
+import { MonthlyGoalSettings } from '@/components/dashboard/monthly-goal/MonthlyGoalSettings';
 
 interface SettingsContentProps {
     site: {
@@ -181,14 +182,17 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                     />
 
                     {organization && (
-                        <BankRequisitesSettings
-                            entityId={site.id}
-                            entityType="site"
-                            initialRequisites={{
-                                // Структурированные поля
-                                recipient_name: (site.custom_settings as any)?.bank_requisites_structured?.recipient_name,
-                                bank_name: (site.custom_settings as any)?.bank_requisites_structured?.bank_name,
-                                inn: (site.custom_settings as any)?.bank_requisites_structured?.inn,
+                        <>
+                            <BankRequisitesSettings
+                                entityId={site.id}
+                                entityType="site"
+                                initialRequisites={{
+                                    // Структурированные поля
+                                    recipient_name: (site.custom_settings as any)?.bank_requisites_structured?.recipient_name,
+                                    organization_form: (site.custom_settings as any)?.bank_requisites_structured?.organization_form,
+                                    logo: (site.custom_settings as any)?.bank_requisites_structured?.logo,
+                                    bank_name: (site.custom_settings as any)?.bank_requisites_structured?.bank_name,
+                                    inn: (site.custom_settings as any)?.bank_requisites_structured?.inn,
                                 kpp: (site.custom_settings as any)?.bank_requisites_structured?.kpp,
                                 bik: (site.custom_settings as any)?.bank_requisites_structured?.bik,
                                 account: (site.custom_settings as any)?.bank_requisites_structured?.account,
@@ -204,6 +208,8 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                             }}
                             organizationRequisites={organization?.settings?.payment_settings ? {
                                 recipient_name: organization.settings.payment_settings.bank_requisites_structured?.recipient_name,
+                                organization_form: organization.settings.payment_settings.bank_requisites_structured?.organization_form,
+                                logo: organization.settings.payment_settings.bank_requisites_structured?.logo,
                                 bank_name: organization.settings.payment_settings.bank_requisites_structured?.bank_name,
                                 inn: organization.settings.payment_settings.bank_requisites_structured?.inn,
                                 kpp: organization.settings.payment_settings.bank_requisites_structured?.kpp,
@@ -220,6 +226,15 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                             } : null}
                             showInheritanceInfo={true}
                         />
+                        <MonthlyGoalSettings
+                            entityId={site.id}
+                            entityType="site"
+                            initialGoal={(site.custom_settings as any)?.monthly_goal ?? null}
+                            initialCollected={(site.custom_settings as any)?.monthly_collected ?? null}
+                            organizationGoal={organization.settings?.payment_settings?.monthly_goal ?? null}
+                            showInheritanceInfo={true}
+                        />
+                    </>
                     )}
                 </div>
             </div>

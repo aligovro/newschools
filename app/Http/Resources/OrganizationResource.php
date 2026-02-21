@@ -37,6 +37,8 @@ class OrganizationResource extends JsonResource
             'members_count' => $this->when(isset($this->members_count), $this->members_count ?? 0),
             'donations_count' => $this->when(isset($this->donations_count), $this->donations_count ?? 0),
             'donations_sum' => $this->when(isset($this->donations_sum_amount), is_numeric($this->donations_sum_amount) ? (float) $this->donations_sum_amount : null),
+            // Сумма только успешных донатов (в копейках) — совпадает со страницей «Платежи»
+            'donations_sum_completed' => $this->when(isset($this->donations_sum_completed), is_numeric($this->donations_sum_completed) ? (float) $this->donations_sum_completed : null),
 
             // Relations (minified)
             'region' => $this->whenLoaded('region', function () {

@@ -24,6 +24,7 @@ export interface PublicDonationContext {
     organizationId?: number;
     projectId?: number;
     projectStageId?: number;
+    siteId?: number;
     progress?: {
         targetAmount: number;
         collectedAmount: number;

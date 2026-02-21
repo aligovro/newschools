@@ -5,10 +5,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Loader2, Save, Building2 } from 'lucide-react';
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
+import LogoUploader from '@/components/ui/image-uploader/LogoUploader';
+import { uploadBankRequisitesLogo } from '@/utils/uploadFile';
 
 export interface BankRequisitesData {
     // Структурированные поля
     recipient_name?: string | null;
+    organization_form?: string | null;
+    logo?: string | null;
     bank_name?: string | null;
     inn?: string | null;
     kpp?: string | null;
@@ -60,6 +64,8 @@ export const BankRequisitesSettings: React.FC<BankRequisitesSettingsProps> = ({
         if (reqs.recipient_name || reqs.account || reqs.bik) {
             return {
                 recipient_name: reqs.recipient_name || null,
+                organization_form: reqs.organization_form || null,
+                logo: reqs.logo || null,
                 bank_name: reqs.bank_name || null,
                 inn: reqs.inn || null,
                 kpp: reqs.kpp || null,
@@ -90,6 +96,7 @@ export const BankRequisitesSettings: React.FC<BankRequisitesSettingsProps> = ({
             sber_card: reqs.sber_card || null,
             tinkoff_card: reqs.tinkoff_card || null,
             card_recipient: reqs.card_recipient || null,
+            logo: reqs.logo || null,
         };
     }, []);
 
@@ -116,6 +123,7 @@ export const BankRequisitesSettings: React.FC<BankRequisitesSettingsProps> = ({
             requisites.recipient_name ||
             requisites.account ||
             requisites.bik ||
+            requisites.logo ||
             requisites.bank_requisites ||
             requisites.sber_card ||
             requisites.tinkoff_card ||
@@ -153,6 +161,8 @@ export const BankRequisitesSettings: React.FC<BankRequisitesSettingsProps> = ({
                 body: JSON.stringify({
                     // Структурированные поля
                     recipient_name: requisites.recipient_name || null,
+                    organization_form: requisites.organization_form || null,
+                    logo: requisites.logo || null,
                     bank_name: requisites.bank_name || null,
                     inn: requisites.inn || null,
                     kpp: requisites.kpp || null,
@@ -245,6 +255,29 @@ export const BankRequisitesSettings: React.FC<BankRequisitesSettingsProps> = ({
                 )}
 
                 <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Логотип для PDF-счёта</Label>
+                        <LogoUploader
+                            value={requisites.logo ? `/storage/${requisites.logo}` : null}
+                            onChange={(file, previewUrl) => {
+                                if (file === null) {
+                                    updateField('logo', null);
+                                }
+                            }}
+                            maxSize={5 * 1024 * 1024}
+                            aspectRatio={null}
+                            showCropControls={true}
+                            onUpload={async (file) => {
+                                const { path, url } = await uploadBankRequisitesLogo(file);
+                                updateField('logo', path);
+                                return url;
+                            }}
+                        />
+                        <p className="text-xs text-gray-500">
+                            Отображается в шапке PDF-счёта. Если не указан, используется логотип организации.
+                        </p>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="recipient_name">
@@ -273,6 +306,21 @@ export const BankRequisitesSettings: React.FC<BankRequisitesSettingsProps> = ({
                                         disabled={isLoading}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="organization_form">Форма организации</Label>
+                                <Input
+                                    id="organization_form"
+                                    type="text"
+                                    value={requisites.organization_form || ''}
+                                    onChange={(e) => updateField('organization_form', e.target.value)}
+                                    placeholder="АВТОНОМНАЯ НЕКОММЕРЧЕСКАЯ БЛАГОТВОРИТЕЛЬНАЯ ОРГАНИЗАЦИЯ"
+                                    disabled={isLoading}
+                                />
+                                <p className="text-xs text-gray-500">
+                                    Подзаголовок в PDF-счёте (например: АНО, НКО)
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

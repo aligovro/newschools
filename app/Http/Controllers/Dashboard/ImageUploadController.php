@@ -19,6 +19,38 @@ class ImageUploadController extends Controller
     }
 
     /**
+     * Загрузить логотип для PDF банковских реквизитов
+     */
+    public function uploadBankRequisitesLogo(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'logo' => 'required|file|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $path = $request->file('logo')->store('bank_requisites/logos', 'public');
+            return response()->json([
+                'success' => true,
+                'path' => $path,
+                'url' => asset('storage/' . $path),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при загрузке: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Загрузить логотип организации
      */
     public function uploadOrganizationLogo(Request $request): JsonResponse

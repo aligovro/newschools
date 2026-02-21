@@ -167,3 +167,37 @@ export const uploadFile = async (
         throw err;
     }
 };
+
+/** Ответ загрузки логотипа для банковских реквизитов */
+export interface UploadBankRequisitesLogoResponse {
+    path: string;
+    url: string;
+}
+
+/**
+ * Загрузка логотипа для PDF банковских реквизитов
+ * Использует тот же паттерн CSRF/axios, что и uploadFile
+ */
+export const uploadBankRequisitesLogo = async (
+    file: File,
+): Promise<UploadBankRequisitesLogoResponse> => {
+    const csrfToken = Cookies.get('XSRF-TOKEN');
+    const headers: Record<string, string> = {
+        'X-Requested-With': 'XMLHttpRequest',
+    };
+    if (csrfToken) headers['X-XSRF-TOKEN'] = csrfToken;
+
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const { data } = await axios.post<{ success?: boolean; path?: string; url?: string; message?: string }>(
+        '/dashboard/api/upload/bank-requisites-logo',
+        formData,
+        { headers, withCredentials: true },
+    );
+
+    if (!data?.success || !data?.path) {
+        throw new Error(data?.message || 'Ошибка загрузки');
+    }
+    return { path: data.path, url: data.url || `/storage/${data.path}` };
+};
