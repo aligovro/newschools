@@ -70,7 +70,7 @@ return [
           'order' => 0,
           'config' => [
             'show_title' => false,
-            'htmlContent' => '', // заполняется BlagoqrMigratedSiteWidgetsService при наличии данных
+            'htmlContent' => '', // заполняется модулем импорта при наличии данных
             'enableScripts' => false,
             'enableStyles' => true,
           ],

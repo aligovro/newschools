@@ -364,18 +364,14 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
                 {previewUrl ? (
                     <div className="logo-uploader__preview-container">
                         <div className="logo-uploader__preview">
-                            {isSvgFile(value as File) ? (
-                                <div
-                                    className="logo-uploader__svg-preview"
-                                    dangerouslySetInnerHTML={{ __html: previewUrl }}
-                                />
-                            ) : (
-                                <img
-                                    src={previewUrl}
-                                    alt="Logo preview"
-                                    className="logo-uploader__image"
-                                />
-                            )}
+                            <img
+                                src={previewUrl}
+                                alt="Logo preview"
+                                className={cn(
+                                    'logo-uploader__image',
+                                    isSvgFile(value as File) && 'logo-uploader__svg-preview'
+                                )}
+                            />
 
                             {isUploading && (
                                 <div className="logo-uploader__loading-overlay">

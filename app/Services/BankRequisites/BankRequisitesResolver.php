@@ -89,6 +89,10 @@ class BankRequisitesResolver
                 : (string) $requisites;
         }
 
+        if ($structuredRequisites && is_array($structuredRequisites)) {
+            $result['structured'] = $structuredRequisites;
+        }
+
         if (! empty($sberCard)) {
             $result['sber_card'] = $sberCard;
         }

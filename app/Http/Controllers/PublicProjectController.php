@@ -123,7 +123,7 @@ class PublicProjectController extends Controller
     $project = Project::query()
       ->when($orgId !== null, fn ($q) => $q->where('organization_id', $orgId))
       ->where('slug', $slug)
-      ->where('status', 'active')
+      ->whereIn('status', ['active', 'completed'])
       ->with([
         'organization',
         'organization.region',

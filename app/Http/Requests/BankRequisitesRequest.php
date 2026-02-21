@@ -17,6 +17,8 @@ class BankRequisitesRequest extends FormRequest
         return [
             // Структурированные поля
             'recipient_name' => 'nullable|string|max:500',
+            'organization_form' => 'nullable|string|max:255',
+            'logo' => 'nullable|string|max:500',
             'bank_name' => 'nullable|string|max:255',
             'inn' => 'nullable|string|max:12',
             'kpp' => 'nullable|string|max:9',

@@ -4,6 +4,7 @@ export { adminApi } from './admin';
 export { formsApi } from './forms';
 export { newsApi } from './news';
 export { organizationsApi } from './organizations';
+export { organizationPaymentsApi } from './organizationPayments';
 export { projectsApi } from './projects';
 export { sitesApi } from './sites';
 export { widgetImagesApi } from './widget-images';

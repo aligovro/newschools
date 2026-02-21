@@ -1,6 +1,6 @@
 <?php
 
-namespace App\BlagoqrMigrated;
+namespace App\Migrated;
 
 use App\Enums\DonationStatus;
 use App\Models\Donation;
@@ -9,23 +9,21 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Пересчёт снапшота «Топ поддержавших выпусков» из донатов организации.
- * Вызывается после миграции платежей из blagoqr или по команде для blagoqr-организаций.
- * Группирует по нормализованной категории (Выпуск X г., Друзья лицея, Родители) и пишет в organization_blagoqr_top_one_time_snapshots.
+ * Вызывается после миграции платежей или по команде для legacy-организаций.
  */
-final class BlagoqrTopOneTimeSnapshotService
+final class MigratedTopOneTimeSnapshotService
 {
     public function __construct(
-        private BlagoqrMigratedOrgResolver $resolver,
-        private BlagoqrTopOneTimeSnapshotRepository $repository,
+        private MigratedOrgResolver $resolver,
+        private OrganizationTopOneTimeSnapshotRepository $repository,
     ) {}
 
     /**
      * Посчитать по донатам организации и сохранить снапшот.
-     * Берёт только Completed донаты, группирует по donor_name с нормализацией под выпуски/роли.
      */
     public function computeAndSaveForOrganization(int $organizationId): int
     {
-        if (!$this->resolver->isBlagoqrMigratedById($organizationId)) {
+        if (!$this->resolver->isLegacyMigratedById($organizationId)) {
             return 0;
         }
 

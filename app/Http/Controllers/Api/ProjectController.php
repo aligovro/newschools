@@ -85,6 +85,37 @@ class ProjectController extends Controller
     }
   }
 
+  // Цель на месяц проекта
+  public function saveMonthlyGoal(Request $request, $id): JsonResponse
+  {
+    try {
+      $request->validate([
+        'monthly_goal' => 'nullable|integer|min:0',
+        'monthly_collected' => 'nullable|integer|min:0',
+      ]);
+
+      $project = $this->getProject($id);
+      $monthlyGoalService = app(\App\Services\MonthlyGoal\MonthlyGoalService::class);
+      $monthlyGoalService->saveForProject(
+        $project,
+        $request->input('monthly_goal'),
+        $request->input('monthly_collected')
+      );
+      $project->refresh();
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Цель на месяц сохранена',
+        'payment_settings' => $project->payment_settings,
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
   private function getProject($id): Project
   {
     $user = Auth::user();

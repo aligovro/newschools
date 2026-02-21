@@ -26,13 +26,16 @@ class BankRequisitesService
     {
         $paymentSettings = $organization->settings?->payment_settings ?? [];
         
-        // Сохраняем структурированные поля
         if ($this->hasStructuredFields($data)) {
             $paymentSettings['bank_requisites_structured'] = $this->extractStructuredFields($data);
             $paymentSettings['bank_requisites'] = $this->formatter->formatFromStructured($paymentSettings['bank_requisites_structured']);
         } else {
-            // Сохраняем текстовое поле (старый способ)
             $paymentSettings['bank_requisites'] = $data['bank_requisites'] ?? null;
+            if (array_key_exists('logo', $data)) {
+                $structured = $paymentSettings['bank_requisites_structured'] ?? [];
+                $structured['logo'] = $data['logo'] ?? null;
+                $paymentSettings['bank_requisites_structured'] = $structured;
+            }
         }
         
         $paymentSettings['sber_card'] = $data['sber_card'] ?? null;
@@ -57,8 +60,12 @@ class BankRequisitesService
             $paymentSettings['bank_requisites_structured'] = $this->extractStructuredFields($data);
             $paymentSettings['bank_requisites'] = $this->formatter->formatFromStructured($paymentSettings['bank_requisites_structured']);
         } else {
-            // Сохраняем текстовое поле (старый способ)
             $paymentSettings['bank_requisites'] = $data['bank_requisites'] ?? null;
+            if (array_key_exists('logo', $data)) {
+                $structured = $paymentSettings['bank_requisites_structured'] ?? [];
+                $structured['logo'] = $data['logo'] ?? null;
+                $paymentSettings['bank_requisites_structured'] = $structured;
+            }
         }
         
         $paymentSettings['sber_card'] = $data['sber_card'] ?? null;
@@ -81,8 +88,12 @@ class BankRequisitesService
             $customSettings['bank_requisites_structured'] = $this->extractStructuredFields($data);
             $customSettings['bank_requisites'] = $this->formatter->formatFromStructured($customSettings['bank_requisites_structured']);
         } else {
-            // Сохраняем текстовое поле (старый способ)
             $customSettings['bank_requisites'] = $data['bank_requisites'] ?? null;
+            if (array_key_exists('logo', $data)) {
+                $structured = $customSettings['bank_requisites_structured'] ?? [];
+                $structured['logo'] = $data['logo'] ?? null;
+                $customSettings['bank_requisites_structured'] = $structured;
+            }
         }
         
         $customSettings['sber_card'] = $data['sber_card'] ?? null;
@@ -117,6 +128,8 @@ class BankRequisitesService
     {
         return [
             'recipient_name' => $data['recipient_name'] ?? null,
+            'organization_form' => $data['organization_form'] ?? null,
+            'logo' => $data['logo'] ?? null,
             'bank_name' => $data['bank_name'] ?? null,
             'inn' => $data['inn'] ?? null,
             'kpp' => $data['kpp'] ?? null,

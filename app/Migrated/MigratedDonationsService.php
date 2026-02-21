@@ -1,31 +1,29 @@
 <?php
 
-namespace App\BlagoqrMigrated;
+namespace App\Migrated;
 
 use App\Models\Organization;
 use App\Services\ProjectDonations\ProjectDonationsService;
 
 /**
- * Логика топов «Топ поддержавших выпусков» и «Топ регулярно-поддерживающих» только для организаций,
- * перенесённых из blagoqr. Данные берутся из снапшотов (organization_*_snapshots), без смешивания с основной логикой.
- * Платежи и донаты по-прежнему идут через основную систему — здесь только отдача уже посчитанных снапшотов.
+ * Логика топов «Топ поддержавших выпусков» и «Топ регулярно-поддерживающих» для организаций,
+ * перенесённых из внешней системы. Данные берутся из снапшотов (organization_*_snapshots).
  */
-final class BlagoqrMigratedDonationsService
+final class MigratedDonationsService
 {
     public function __construct(
-        private BlagoqrMigratedOrgResolver $resolver,
-        private BlagoqrTopRecurringSnapshotRepository $recurringRepo,
-        private BlagoqrTopOneTimeSnapshotRepository $oneTimeRepo,
+        private MigratedOrgResolver $resolver,
+        private OrganizationTopRecurringSnapshotRepository $recurringRepo,
+        private OrganizationTopOneTimeSnapshotRepository $oneTimeRepo,
     ) {}
 
     public function isForOrganization(Organization $organization): bool
     {
-        return $this->resolver->isBlagoqrMigrated($organization);
+        return $this->resolver->isLegacyMigrated($organization);
     }
 
     /**
      * Топ поддержавших выпусков (разовые платежи по категориям).
-     * Формат ответа как у ProjectDonationsService::topByDonorNameForOrganization — массив записей.
      *
      * @return array<int, array{donor_label: string, total_amount: int, total_amount_formatted: string, donations_count: int}>
      */
@@ -51,7 +49,7 @@ final class BlagoqrMigratedDonationsService
     }
 
     /**
-     * Топ регулярно-поддерживающих. Формат как у ProjectDonationsService::topRecurringByDonorNameForOrganization.
+     * Топ регулярно-поддерживающих.
      *
      * @return array{data: array, pagination: array{current_page: int, last_page: int, per_page: int, total: int}}
      */
@@ -85,7 +83,7 @@ final class BlagoqrMigratedDonationsService
     }
 
     /**
-     * Нормализация ключа из blagoqr (для импорта) — единая точка с ProjectDonationsService.
+     * Нормализация ключа категории донора — единая точка с ProjectDonationsService.
      */
     public static function normalizeCategoryKey(?string $key): ?string
     {

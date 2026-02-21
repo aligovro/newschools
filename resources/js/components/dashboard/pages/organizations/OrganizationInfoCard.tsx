@@ -77,15 +77,29 @@ export default function OrganizationInfoCard({
                     </div>
                     <div className="text-center">
                         <div className="block__title">
-                            {organization.donations_total &&
-                            typeof organization.donations_total === 'number'
-                                ? new Intl.NumberFormat('ru-RU').format(
-                                      organization.donations_total,
+                            {organization.donations_sum_completed != null &&
+                            typeof organization.donations_sum_completed ===
+                                'number'
+                                ? new Intl.NumberFormat('ru-RU', {
+                                      minimumFractionDigits: 2,
+                                  }).format(
+                                      organization.donations_sum_completed /
+                                          100,
                                   ) + ' ₽'
-                                : organization.donations_sum &&
+                                : organization.donations_collected != null &&
+                                    typeof organization.donations_collected ===
+                                        'number'
+                                  ? new Intl.NumberFormat('ru-RU', {
+                                        minimumFractionDigits: 2,
+                                    }).format(
+                                        organization.donations_collected / 100,
+                                    ) + ' ₽'
+                                  : organization.donations_sum != null &&
                                     typeof organization.donations_sum ===
                                         'number'
-                                  ? new Intl.NumberFormat('ru-RU').format(
+                                  ? new Intl.NumberFormat('ru-RU', {
+                                        minimumFractionDigits: 2,
+                                    }).format(
                                         organization.donations_sum / 100,
                                     ) + ' ₽'
                                   : '0 ₽'}

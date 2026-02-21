@@ -77,7 +77,7 @@ class OrganizationAdminController extends Controller
     public function payments(Organization $organization)
     {
         $donations = $organization->donations()
-            ->with(['member', 'paymentTransaction'])
+            ->with(['donor', 'paymentTransaction'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 

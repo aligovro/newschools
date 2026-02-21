@@ -45,6 +45,7 @@ class Organization extends Model
     'contacts',
     'type',
     'status',
+    'is_legacy_migrated',
     'is_public',
     'features',
     'needs_target_amount',
@@ -53,6 +54,7 @@ class Organization extends Model
   ];
 
   protected $casts = [
+    'is_legacy_migrated' => 'boolean',
     'images' => 'array',
     'contacts' => 'array',
     'features' => 'array',

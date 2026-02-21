@@ -5,6 +5,7 @@ import { PaymentSettingsSection } from '../ProjectForm/PaymentSettingsSection';
 import { ProjectDatesSection } from '../ProjectForm/ProjectDatesSection';
 import { SettingsSection } from '../ProjectForm/SettingsSection';
 import { BankRequisitesSettings } from '@/components/dashboard/bank-requisites/BankRequisitesSettings';
+import { MonthlyGoalSettings } from '@/components/dashboard/monthly-goal/MonthlyGoalSettings';
 import type {
     PaymentSettings,
     ProjectFormData,
@@ -66,6 +67,8 @@ export default function GeneralTab({
     const projectRequisites = projectId && paymentSettings ? {
         // Структурированные поля (если есть)
         recipient_name: (paymentSettings as any).bank_requisites_structured?.recipient_name || null,
+        organization_form: (paymentSettings as any).bank_requisites_structured?.organization_form || null,
+        logo: (paymentSettings as any).bank_requisites_structured?.logo || null,
         bank_name: (paymentSettings as any).bank_requisites_structured?.bank_name || null,
         inn: (paymentSettings as any).bank_requisites_structured?.inn || null,
         kpp: (paymentSettings as any).bank_requisites_structured?.kpp || null,
@@ -86,6 +89,8 @@ export default function GeneralTab({
     const organizationRequisites = organization?.settings?.payment_settings ? {
         // Структурированные поля
         recipient_name: organization.settings.payment_settings.bank_requisites_structured?.recipient_name,
+        organization_form: organization.settings.payment_settings.bank_requisites_structured?.organization_form,
+        logo: organization.settings.payment_settings.bank_requisites_structured?.logo,
         bank_name: organization.settings.payment_settings.bank_requisites_structured?.bank_name,
         inn: organization.settings.payment_settings.bank_requisites_structured?.inn,
         kpp: organization.settings.payment_settings.bank_requisites_structured?.kpp,
@@ -132,13 +137,23 @@ export default function GeneralTab({
                 />
 
                 {projectId && organization && (
-                    <BankRequisitesSettings
-                        entityId={projectId}
-                        entityType="project"
-                        initialRequisites={projectRequisites}
-                        organizationRequisites={organizationRequisites}
-                        showInheritanceInfo={true}
-                    />
+                    <>
+                        <BankRequisitesSettings
+                            entityId={projectId}
+                            entityType="project"
+                            initialRequisites={projectRequisites}
+                            organizationRequisites={organizationRequisites}
+                            showInheritanceInfo={true}
+                        />
+                        <MonthlyGoalSettings
+                            entityId={projectId}
+                            entityType="project"
+                            initialGoal={(paymentSettings as any)?.monthly_goal ?? null}
+                            initialCollected={(paymentSettings as any)?.monthly_collected ?? null}
+                            organizationGoal={organization.settings?.payment_settings?.monthly_goal ?? null}
+                            showInheritanceInfo={true}
+                        />
+                    </>
                 )}
 
                 <ProjectDatesSection

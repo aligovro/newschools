@@ -370,4 +370,36 @@ class OrganizationSettingsController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * API endpoint для обновления цели на месяц организации
+     */
+    public function updateMonthlyGoalApi(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
+
+        try {
+            $request->validate([
+                'monthly_goal' => 'nullable|integer|min:0',
+                'monthly_collected' => 'nullable|integer|min:0',
+            ]);
+
+            $monthlyGoalService = app(\App\Services\MonthlyGoal\MonthlyGoalService::class);
+            $monthlyGoalService->saveForOrganization(
+                $organization,
+                $request->input('monthly_goal'),
+                $request->input('monthly_collected')
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Цель на месяц успешно сохранена',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

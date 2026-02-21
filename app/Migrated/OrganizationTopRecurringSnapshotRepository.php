@@ -1,15 +1,15 @@
 <?php
 
-namespace App\BlagoqrMigrated;
+namespace App\Migrated;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Снапшот «Топ регулярно-поддерживающих» для организаций из blagoqr.
- * Читает/пишет только organization_top_recurring_snapshots (отдельно от основной логики топа по донатам).
+ * Снапшот «Топ регулярно-поддерживающих» для мигрированных организаций.
+ * Таблица organization_top_recurring_snapshots.
  */
-final class BlagoqrTopRecurringSnapshotRepository
+final class OrganizationTopRecurringSnapshotRepository
 {
     /**
      * @return Collection<int, object{donor_label: string, total_amount: int, donations_count: int}>

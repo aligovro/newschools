@@ -1261,4 +1261,33 @@ class SiteController extends Controller
             ], 500);
         }
     }
+
+    // Цель на месяц сайта
+    public function saveMonthlyGoal(Request $request, $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'monthly_goal' => 'nullable|integer|min:0',
+                'monthly_collected' => 'nullable|integer|min:0',
+            ]);
+
+            $site = $this->getSite($id);
+            $monthlyGoalService = app(\App\Services\MonthlyGoal\MonthlyGoalService::class);
+            $monthlyGoalService->saveForSite(
+                $site,
+                $request->input('monthly_goal'),
+                $request->input('monthly_collected')
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Цель на месяц сохранена',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

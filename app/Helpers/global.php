@@ -167,3 +167,13 @@ if (!function_exists('feature_enabled')) {
         return TerminologyHelper::isFeatureEnabled($feature);
     }
 }
+
+if (!function_exists('amount_to_words')) {
+    /**
+     * Сумма прописью на русском (рубли и копейки)
+     */
+    function amount_to_words(float $amount): string
+    {
+        return \App\Helpers\AmountToWordsHelper::format($amount);
+    }
+}

@@ -16,6 +16,7 @@ import { NeedsSection } from './sections/NeedsSection';
 import { PaymentSettingsSection } from './sections/PaymentSettingsSection';
 import { SettingsSection } from './sections/SettingsSection';
 import { BankRequisitesSettings } from '@/components/dashboard/bank-requisites/BankRequisitesSettings';
+import { MonthlyGoalSettings } from '@/components/dashboard/monthly-goal/MonthlyGoalSettings';
 
 export default function OrganizationForm({
     mode,
@@ -430,29 +431,40 @@ export default function OrganizationForm({
                     />
 
                     {organization?.id && (
-                        <BankRequisitesSettings
-                            entityId={organization.id}
-                            entityType="organization"
-                            initialRequisites={organizationSettings?.payment_settings ? {
-                                // Структурированные поля
-                                recipient_name: organizationSettings.payment_settings.bank_requisites_structured?.recipient_name,
-                                bank_name: organizationSettings.payment_settings.bank_requisites_structured?.bank_name,
-                                inn: organizationSettings.payment_settings.bank_requisites_structured?.inn,
-                                kpp: organizationSettings.payment_settings.bank_requisites_structured?.kpp,
-                                bik: organizationSettings.payment_settings.bank_requisites_structured?.bik,
-                                account: organizationSettings.payment_settings.bank_requisites_structured?.account,
-                                corr_account: organizationSettings.payment_settings.bank_requisites_structured?.corr_account,
-                                beneficiary_name: organizationSettings.payment_settings.bank_requisites_structured?.beneficiary_name,
-                                ogrn: organizationSettings.payment_settings.bank_requisites_structured?.ogrn,
-                                address: organizationSettings.payment_settings.bank_requisites_structured?.address,
-                                // Текстовое поле (для обратной совместимости)
-                                bank_requisites: organizationSettings.payment_settings.bank_requisites,
-                                sber_card: organizationSettings.payment_settings.sber_card,
-                                tinkoff_card: organizationSettings.payment_settings.tinkoff_card,
-                                card_recipient: organizationSettings.payment_settings.card_recipient,
-                            } : null}
-                            showInheritanceInfo={false}
-                        />
+                        <>
+                            <BankRequisitesSettings
+                                entityId={organization.id}
+                                entityType="organization"
+                                initialRequisites={organizationSettings?.payment_settings ? {
+                                    // Структурированные поля
+                                    recipient_name: organizationSettings.payment_settings.bank_requisites_structured?.recipient_name,
+                                    organization_form: organizationSettings.payment_settings.bank_requisites_structured?.organization_form,
+                                    logo: organizationSettings.payment_settings.bank_requisites_structured?.logo,
+                                    bank_name: organizationSettings.payment_settings.bank_requisites_structured?.bank_name,
+                                    inn: organizationSettings.payment_settings.bank_requisites_structured?.inn,
+                                    kpp: organizationSettings.payment_settings.bank_requisites_structured?.kpp,
+                                    bik: organizationSettings.payment_settings.bank_requisites_structured?.bik,
+                                    account: organizationSettings.payment_settings.bank_requisites_structured?.account,
+                                    corr_account: organizationSettings.payment_settings.bank_requisites_structured?.corr_account,
+                                    beneficiary_name: organizationSettings.payment_settings.bank_requisites_structured?.beneficiary_name,
+                                    ogrn: organizationSettings.payment_settings.bank_requisites_structured?.ogrn,
+                                    address: organizationSettings.payment_settings.bank_requisites_structured?.address,
+                                    // Текстовое поле (для обратной совместимости)
+                                    bank_requisites: organizationSettings.payment_settings.bank_requisites,
+                                    sber_card: organizationSettings.payment_settings.sber_card,
+                                    tinkoff_card: organizationSettings.payment_settings.tinkoff_card,
+                                    card_recipient: organizationSettings.payment_settings.card_recipient,
+                                } : null}
+                                showInheritanceInfo={false}
+                            />
+                            <MonthlyGoalSettings
+                                entityId={organization.id}
+                                entityType="organization"
+                                initialGoal={organizationSettings?.payment_settings?.monthly_goal ?? null}
+                                initialCollected={organizationSettings?.payment_settings?.monthly_collected ?? null}
+                                showInheritanceInfo={false}
+                            />
+                        </>
                     )}
                 </div>
 

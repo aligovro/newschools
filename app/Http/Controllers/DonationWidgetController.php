@@ -15,6 +15,7 @@ use App\Services\DonationWidget\DonationWidgetDataService;
 use App\Services\BankRequisites\BankRequisitesResolver;
 use App\Services\BankRequisites\BankRequisitesQrCodeGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Dompdf\Dompdf;
@@ -37,11 +38,13 @@ class DonationWidgetController extends Controller
     {
         $fundraiserId = $request->input('fundraiser_id');
         $projectId = $request->input('project_id');
+        $siteId = $request->input('site_id');
 
         $data = $this->widgetDataService->getWidgetData(
             $organization,
             $fundraiserId,
-            $projectId
+            $projectId,
+            $siteId
         );
 
         return response()->json($data);
@@ -360,29 +363,38 @@ class DonationWidgetController extends Controller
         }
 
         try {
-            // Генерируем PNG QR-код для PDF (отдельный метод для PDF)
-            $qrCodePngBase64 = $this->qrCodeGenerator->generatePngForPdf($requisites, $organization);
+            $amountFloat = is_numeric($amount) ? (float) $amount : 0;
+            $requisites['amount'] = $amountFloat;
+            $requisites['currency'] = $currency;
+            $qrImageSrc = $this->prepareQrImageForPdf($requisites, $organization);
+
+            $structured = $requisites['structured'] ?? null;
+            $amountWords = $amountFloat > 0 && $currency === 'RUB' ? amount_to_words($amountFloat) : null;
+
+            $logoDataUri = $this->resolveLogoDataUri($structured, $organization);
 
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $options->set('isHtml5ParserEnabled', true);
             $options->set('defaultFont', 'DejaVu Sans');
-            // Включаем поддержку UTF-8 для правильной обработки SVG с кириллицей
             $options->set('isPhpEnabled', true);
             $options->set('isFontSubsettingEnabled', true);
 
             $dompdf = new Dompdf($options);
 
-            // Формируем HTML для PDF
             $html = view('pdf.bank-requisites', [
                 'organization' => $organization,
                 'requisites' => $requisites,
+                'structured' => $structured,
                 'project' => $projectId ? Project::find($projectId) : null,
-                'qrCodePngBase64' => $qrCodePngBase64,
+                'qrImageSrc' => $qrImageSrc,
                 'amount' => $amount,
+                'amountFloat' => $amountFloat,
+                'amountWords' => $amountWords,
                 'currency' => $currency,
                 'donorName' => $donorName,
                 'donorEmail' => $donorEmail,
+                'logoDataUri' => $logoDataUri,
             ])->render();
 
             $dompdf->loadHtml($html, 'UTF-8');
@@ -419,4 +431,45 @@ class DonationWidgetController extends Controller
         }
     }
 
+    /**
+     * Логотип для PDF: приоритет — лого из реквизитов, иначе лого организации.
+     */
+    protected function resolveLogoDataUri(?array $structured, Organization $organization): ?string
+    {
+        $logoPath = $structured['logo'] ?? null;
+        if (empty($logoPath)) {
+            $logoPath = $organization->logo;
+        }
+        if (empty($logoPath) || !Storage::disk('public')->exists($logoPath)) {
+            return null;
+        }
+        $contents = Storage::disk('public')->get($logoPath);
+        $mime = match (strtolower(pathinfo($logoPath, PATHINFO_EXTENSION))) {
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => 'image/jpeg',
+        };
+        $b64 = preg_replace('/\s+/', '', base64_encode($contents));
+
+        return 'data:' . $mime . ';base64,' . $b64;
+    }
+
+    /**
+     * Подготовка изображения QR для PDF.
+     * Убирает пробелы из base64 — DomPDF может не отображать изображения с пробелами в data URI.
+     */
+    protected function prepareQrImageForPdf(array $requisites, Organization $organization): ?string
+    {
+        $dataUri = $this->qrCodeGenerator->generatePngForPdf($requisites, $organization);
+        if (!$dataUri || !str_contains($dataUri, 'base64,')) {
+            return $dataUri;
+        }
+
+        $prefix = substr($dataUri, 0, strpos($dataUri, 'base64,') + 7);
+        $base64 = substr($dataUri, strlen($prefix));
+        $base64 = preg_replace('/\s+/', '', $base64);
+
+        return $prefix . $base64;
+    }
 }

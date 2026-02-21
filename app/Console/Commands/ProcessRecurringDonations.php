@@ -115,13 +115,14 @@ class ProcessRecurringDonations extends Command
             })
             ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id'))"))
             ->where(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id'))"), '!=', '')
+            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id')) NOT LIKE 'legacy_%'")
             ->select('donations.*')
             ->with(['paymentTransaction', 'organization'])
             ->get()
             ->filter(function ($donation) {
-                // Фильтруем только те, у которых есть сохраненный способ оплаты
                 $paymentDetails = $donation->paymentTransaction->payment_details ?? [];
-                return isset($paymentDetails['saved_payment_method_id']) && !empty($paymentDetails['saved_payment_method_id']);
+                $savedId = $paymentDetails['saved_payment_method_id'] ?? '';
+                return $savedId !== '' && strpos($savedId, 'legacy_') !== 0;
             });
     }
 

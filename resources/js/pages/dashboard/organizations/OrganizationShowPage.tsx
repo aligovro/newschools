@@ -28,6 +28,7 @@ import {
     FileText,
     Globe,
     Plus,
+    Repeat,
     Settings,
     Target,
     Users,
@@ -212,6 +213,13 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
             color: 'bg-yellow-500',
         },
         {
+            title: 'Автоплатежи',
+            description: 'Регулярные подписки и автоплатежи',
+            href: `/dashboard/organizations/${organization.id}/payments?tab=autopayments`,
+            icon: Repeat,
+            color: 'bg-amber-500',
+        },
+        {
             title: 'Telegram бот',
             description: 'Настройка Telegram бота',
             href: `/dashboard/organizations/${organization.id}/telegram`,
@@ -379,6 +387,38 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                                             ) : null}
                                         </CardContent>
                                     </Card>
+                                );
+                            })}
+                        </div>
+
+                        {/* Быстрые действия: Платежи, Автоплатежи, Консоль и т.д. */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {adminMenuItems.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.title}
+                                        href={item.href}
+                                        className="block"
+                                    >
+                                        <Card className="transition-colors hover:bg-muted/50">
+                                            <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+                                                <div
+                                                    className={`rounded-lg p-2 ${item.color}`}
+                                                >
+                                                    <Icon className="h-5 w-5 text-white" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <CardTitle className="text-base">
+                                                        {item.title}
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {item.description}
+                                                    </p>
+                                                </div>
+                                            </CardHeader>
+                                        </Card>
+                                    </Link>
                                 );
                             })}
                         </div>
