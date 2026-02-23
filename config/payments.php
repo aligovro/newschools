@@ -408,6 +408,8 @@ return [
         'default_period' => env('PAYMENT_RECURRING_DEFAULT_PERIOD', 'monthly'),
         // Таймаут блокировки крона (минуты) — не запускать повторно, пока предыдущий не завершился
         'cron_lock_minutes' => env('PAYMENT_RECURRING_CRON_LOCK', 65),
+        // Тестовый автоплатеж: только для этого номера (раз в сутки или вручную). Пусто = отключено.
+        'autopayment_test_phone' => env('AUTOPAYMENT_TEST_PHONE', ''),
     ],
 
     /*

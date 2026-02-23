@@ -2,10 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Domain;
 use App\Models\Organization;
+use App\Services\SiteDomainService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Привязка кастомного домена (например поддомена на сервере) к сайту организации.
@@ -23,7 +22,7 @@ class BindCustomDomainToSite extends Command
 
     protected $description = 'Привязать кастомный домен к сайту организации (для поддомена на сервере и т.п.)';
 
-    public function handle(): int
+    public function handle(SiteDomainService $domainService): int
     {
         $organizationId = $this->option('organization-id');
         $siteId = $this->option('site-id');
@@ -34,8 +33,6 @@ class BindCustomDomainToSite extends Command
 
             return Command::FAILURE;
         }
-
-        $customDomain = strtolower(trim($customDomain));
 
         $organization = Organization::find($organizationId);
         if (! $organization) {
@@ -48,31 +45,21 @@ class BindCustomDomainToSite extends Command
             ? $organization->sites()->find($siteId)
             : $organization->sites()
                 ->where('site_type', 'organization')
-                ->whereNotNull('domain_id')
                 ->where('status', 'published')
                 ->first();
 
         if (! $site) {
-            $this->error('Сайт не найден. Укажите --site-id= или убедитесь, что у организации есть опубликованный сайт с привязанным доменом.');
+            $this->error('Сайт не найден. Укажите --site-id= или убедитесь, что у организации есть опубликованный сайт.');
 
             return Command::FAILURE;
         }
 
-        $domain = $site->domain;
-        if (! $domain) {
-            $this->error('У сайта нет привязанного домена. Сначала привяжите основной домен к сайту.');
+        try {
+            $domainService->setCustomDomain($site, $customDomain);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->error($e->validator->errors()->first());
 
             return Command::FAILURE;
-        }
-
-        $previousCustom = $domain->custom_domain;
-        $domain->custom_domain = $customDomain;
-        $domain->status = 'active';
-        $domain->save();
-
-        Cache::forget("site_by_domain_{$customDomain}");
-        if ($previousCustom) {
-            Cache::forget("site_by_domain_{$previousCustom}");
         }
 
         $this->info("Кастомный домен привязан: {$customDomain} → сайт #{$site->id} ({$site->name}), организация #{$organization->id}.");

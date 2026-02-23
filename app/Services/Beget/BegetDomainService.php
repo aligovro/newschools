@@ -26,26 +26,44 @@ class BegetDomainService
                 $config['base_url'],
                 $config['login'],
                 $config['password'],
-                $config['timeout'] ?? 30
+                $config['timeout'] ?? 30,
+                $config['verify_ssl'] ?? true
             ),
             $config['site_id'] ? (int) $config['site_id'] : null
         );
     }
 
     /**
-     * Проверка доступности Beget API.
+     * Проверка доступности Beget API по domain/getList.
+     * На хостинге доступны также site/getList и site/linkDomain; на VPS — только домены, привязка только в БД.
      */
     public function isAvailable(): bool
     {
-        if (empty($this->siteId) || ! config('beget.login') || ! config('beget.password')) {
+        if (! config('beget.login') || ! config('beget.password')) {
             return false;
         }
 
         try {
-            $this->client->getSiteList();
+            $this->client->getDomainList();
             return true;
         } catch (BegetApiException $e) {
             Log::warning('Beget API unavailable', ['message' => $e->getMessage()]);
+            return false;
+        }
+    }
+
+    /**
+     * Доступен ли режим хостинга (site/getList, site/linkDomain). На VPS — false.
+     */
+    public function isHostingMode(): bool
+    {
+        if (empty($this->siteId)) {
+            return false;
+        }
+        try {
+            $this->client->getSiteList();
+            return true;
+        } catch (BegetApiException $e) {
             return false;
         }
     }
@@ -73,16 +91,18 @@ class BegetDomainService
     /**
      * Привязать домен Beget к сайту Laravel.
      *
-     * 1. Вызывает site/linkDomain в Beget
-     * 2. Обновляет/создаёт запись Domain в БД
+     * На хостинге: вызывает site/linkDomain в Beget, затем сохраняет в БД.
+     * На VPS (без BEGET_SITE_ID или метод sites недоступен): только сохраняет в БД; nginx настраивается вручную.
      */
     public function bindDomainToSite(Site $site, int $begetDomainId, string $fqdn): Domain
     {
-        if ($this->siteId === null) {
-            throw new BegetApiException('BEGET_SITE_ID не настроен');
+        if ($this->siteId !== null) {
+            try {
+                $this->client->linkDomainToSite($this->siteId, $begetDomainId);
+            } catch (BegetApiException $e) {
+                throw $e;
+            }
         }
-
-        $this->client->linkDomainToSite($this->siteId, $begetDomainId);
 
         $domain = $site->domain;
 
