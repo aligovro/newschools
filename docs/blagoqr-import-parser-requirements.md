@@ -81,3 +81,8 @@ WP `get_rank_vipusk` связывает user → user_phone (usermeta) → donat
 Дубликаты не создаются: используется уникальный `transaction_id` вида `blagoqr_{mapping_id}_{wp_id}`.
 
 Синхронизация также заполняет снапшоты `organization_top_one_time_snapshots` и `organization_top_recurring_snapshots` из `blagoqr_import_payment_logs` + `blagoqr_import_donators` + `blagoqr_import_usermeta` (donor_label по post_title, postmeta или usermeta по телефону).
+
+**При использовании JSON-импорта** (new-payments.json вместо blagoqr_import_payment_logs) снапшоты не заполняются автоматически. После миграции необходимо выполнить:
+```bash
+php artisan migrated:compute-snapshots --organization-id=29
+```

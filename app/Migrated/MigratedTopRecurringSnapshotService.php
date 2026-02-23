@@ -30,59 +30,75 @@ final class MigratedTopRecurringSnapshotService
             return 0;
         }
 
-        // Диагностика: сколько recurring-транзакций и донатов
-        $recurringTxCount = DB::table('payment_transactions')
+        $autopayments = DB::table('organization_autopayments')
             ->where('organization_id', $organizationId)
-            ->where('status', 'completed')
-            ->where(function ($q) {
-                $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_details, '$.is_recurring')) = 'true'")
-                    ->orWhereRaw("JSON_EXTRACT(payment_details, '$.recurring_period') IS NOT NULL");
+            ->where(function ($query) {
+                $query->whereIn('status', ['publish', 'active', 'ACTIVE'])
+                    ->orWhereNull('status');
             })
-            ->count();
-        $recurringDonationsCount = Donation::query()
-            ->join('payment_transactions as pt', 'donations.payment_transaction_id', '=', 'pt.id')
-            ->where('donations.organization_id', $organizationId)
-            ->where('donations.status', DonationStatus::Completed->value)
-            ->where(function ($q) {
-                $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(pt.payment_details, '$.is_recurring')) = 'true'")
-                    ->orWhereRaw("JSON_EXTRACT(pt.payment_details, '$.recurring_period') IS NOT NULL");
-            })
-            ->count();
-        Log::debug('MigratedTopRecurringSnapshot: recurring stats', [
-            'org_id' => $organizationId,
-            'recurring_tx_count' => $recurringTxCount,
-            'recurring_donations_count' => $recurringDonationsCount,
-        ]);
-
-        // «Чел.» = уникальные подписки (saved_payment_method_id), не количество платежей
-        $rows = Donation::query()
-            ->join('payment_transactions as pt', 'donations.payment_transaction_id', '=', 'pt.id')
-            ->where('donations.organization_id', $organizationId)
-            ->where('donations.status', DonationStatus::Completed->value)
-            ->where(function ($q) {
-                $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(pt.payment_details, '$.is_recurring')) = 'true'")
-                    ->orWhereRaw("JSON_EXTRACT(pt.payment_details, '$.is_recurring') = 1")
-                    ->orWhereRaw("JSON_EXTRACT(pt.payment_details, '$.recurring_period') IS NOT NULL");
-            })
-            ->selectRaw('
-                COALESCE(NULLIF(TRIM(donations.donor_name), ""), "Анонимное пожертвование") as donor_label,
-                SUM(donations.amount) as total_amount,
-                COUNT(DISTINCT JSON_UNQUOTE(JSON_EXTRACT(pt.payment_details, "$.saved_payment_method_id"))) as unique_people_count
-            ')
-            ->groupBy(DB::raw('COALESCE(NULLIF(TRIM(donations.donor_name), ""), "Анонимное пожертвование")'))
             ->get();
 
         $normalized = [];
-        foreach ($rows as $row) {
-            $label = ProjectDonationsService::normalizeDonorLabelGraduateOnly($row->donor_label);
+
+        foreach ($autopayments as $ap) {
+            $donorLabel = null;
+
+            // 1. Связь через subscription_key = payment_details.saved_payment_method_id (НЕ id транзакции)
+            if ($ap->subscription_key) {
+                $latestDonation = DB::table('payment_transactions')
+                    ->join('donations', 'payment_transactions.id', '=', 'donations.payment_transaction_id')
+                    ->where('payment_transactions.organization_id', $organizationId)
+                    ->whereRaw(
+                        "JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id')) = ?",
+                        [$ap->subscription_key]
+                    )
+                    ->where('donations.donor_name', '!=', 'Анонимное пожертвование')
+                    ->whereNotNull('donations.donor_name')
+                    ->where('donations.donor_name', '!=', '')
+                    ->orderBy('donations.id', 'desc')
+                    ->select('donations.donor_name')
+                    ->first();
+
+                if ($latestDonation) {
+                    $donorLabel = $latestDonation->donor_name;
+                }
+            }
+            
+            // 2. Фолбэк на успешное пожертвование по телефону
+            if (!$donorLabel && $ap->phone_number) {
+                $latestByPhone = DB::table('donations')
+                    ->where('organization_id', $organizationId)
+                    ->where('donor_phone', $ap->phone_number)
+                    ->where('status', DonationStatus::Completed->value)
+                    ->where('donor_name', '!=', 'Анонимное пожертвование')
+                    ->whereNotNull('donor_name')
+                    ->where('donor_name', '!=', '')
+                    ->orderBy('id', 'desc')
+                    ->select('donor_name')
+                    ->first();
+                    
+                if ($latestByPhone) {
+                    $donorLabel = $latestByPhone->donor_name;
+                }
+            }
+            
+            $label = ProjectDonationsService::normalizeDonorLabelGraduateOnly($donorLabel ?? 'Анонимное пожертвование');
             if ($label === null) {
                 continue;
             }
+            
             if (!isset($normalized[$label])) {
-                $normalized[$label] = ['total_amount' => 0, 'donations_count' => 0];
+                $normalized[$label] = ['total_amount' => 0, 'donations_count' => 0, 'phones' => []];
             }
-            $normalized[$label]['total_amount'] += (int) $row->total_amount;
-            $normalized[$label]['donations_count'] += (int) $row->unique_people_count;
+            
+            $normalized[$label]['total_amount'] += (int) $ap->amount;
+            
+            // Считаем уникальных людей по номеру телефона (эмуляция уникального user_id из WP)
+            $uniqueId = $ap->phone_number ?: 'id_' . $ap->id;
+            if (!in_array($uniqueId, $normalized[$label]['phones'], true)) {
+                $normalized[$label]['phones'][] = $uniqueId;
+                $normalized[$label]['donations_count'] += 1;
+            }
         }
 
         uasort($normalized, fn ($a, $b) => $b['total_amount'] <=> $a['total_amount']);
@@ -95,9 +111,8 @@ final class MigratedTopRecurringSnapshotService
             ];
         }
 
-        Log::debug('MigratedTopRecurringSnapshot: computed', [
+        Log::debug('MigratedTopRecurringSnapshot: computed via active autopayments', [
             'org_id' => $organizationId,
-            'rows_before_normalize' => $rows->count(),
             'rows_after_normalize' => count($toSave),
             'labels' => array_column($toSave, 'donor_label'),
         ]);
