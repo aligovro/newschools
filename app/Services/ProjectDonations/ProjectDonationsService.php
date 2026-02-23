@@ -41,10 +41,19 @@ class ProjectDonationsService
         if (preg_match('/^' . preg_quote(self::LABEL_FRIENDS, '/') . '$/ui', $s)) {
             return self::LABEL_FRIENDS;
         }
+        if (preg_match('/^Друг\s+лицея$/ui', $s)) {
+            return self::LABEL_FRIENDS;
+        }
         if (preg_match('/^' . preg_quote(self::LABEL_PARENTS, '/') . '$/ui', $s)) {
             return self::LABEL_PARENTS;
         }
+        if (preg_match('/^Родитель$/ui', $s)) {
+            return self::LABEL_PARENTS;
+        }
         if (preg_match('/^Выпуск\s+(\d{4})\s*г?\.?$/ui', $s, $m)) {
+            return 'Выпуск ' . $m[1] . ' г.';
+        }
+        if (preg_match('/^Выпускник\s+(\d{4})\s*г?\.?$/ui', $s, $m)) {
             return 'Выпуск ' . $m[1] . ' г.';
         }
         if (preg_match('/^(\d{4})$/u', $s)) {
@@ -65,10 +74,10 @@ class ProjectDonationsService
         }
         $key = trim($key);
         $lower = mb_strtolower($key);
-        if (in_array($lower, ['friend', 'friends'], true) || mb_strpos($lower, 'друзья') !== false) {
+        if (in_array($lower, ['friend', 'friends'], true) || mb_strpos($lower, 'друзья') !== false || mb_strpos($lower, 'друг лицея') !== false) {
             return self::LABEL_FRIENDS;
         }
-        if (in_array($lower, ['parent', 'parents'], true)) {
+        if (in_array($lower, ['parent', 'parents'], true) || mb_strpos($lower, 'родитель') !== false) {
             return self::LABEL_PARENTS;
         }
         if (preg_match('/^\d{4}$/', $key)) {
