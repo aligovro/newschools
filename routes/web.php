@@ -147,7 +147,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/{site}/archive', [OrganizationSiteController::class, 'archive'])->name('archive');
             Route::patch('/{site}/enable-maintenance', [OrganizationSiteController::class, 'enableMaintenanceMode'])->name('enable-maintenance');
             Route::patch('/{site}/disable-maintenance', [OrganizationSiteController::class, 'disableMaintenanceMode'])->name('disable-maintenance');
-            // Beget: привязка доменов
+            // Управление доменом сайта (статус + кастомный домен + Beget)
+            Route::get('/{site}/domain', [BegetDomainController::class, 'status'])->name('domain.status');
+            Route::post('/{site}/domain/custom', [BegetDomainController::class, 'setCustomDomain'])->name('domain.custom');
             Route::get('/{site}/beget/domains', [BegetDomainController::class, 'domains'])->name('beget.domains');
             Route::post('/{site}/beget/bind', [BegetDomainController::class, 'bind'])->name('beget.bind');
             Route::delete('/{site}/beget/unbind', [BegetDomainController::class, 'unbind'])->name('beget.unbind');
@@ -322,8 +324,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/sites', [SiteController::class, 'index'])->name('sites.index');
         Route::get('/sites/{site}', [SiteController::class, 'show'])->name('sites.show');
         Route::post('/sites', [SiteController::class, 'store'])->name('sites.store');
-        Route::put('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
-        Route::patch('/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
+        Route::match(['put', 'patch'], '/sites/{site}', [SiteController::class, 'update'])->name('sites.update');
         Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 
         // Site pages management
@@ -401,23 +402,23 @@ Route::prefix('api/sites/{id}')->middleware('auth')->group(function () {
     Route::post('/settings/custom-styles', [ApiSiteController::class, 'saveCustomStyles'])
         ->name('sites.save-custom-styles');
 
-    // Виджеты
+    // Виджеты (имена api.sites.* — дубли с dashboard/sites/{site} не конфликтуют)
     Route::post('/widgets', [ApiSiteController::class, 'addWidget'])
-        ->name('sites.add-widget');
+        ->name('api.sites.add-widget');
     Route::put('/widgets/{widgetId}', [ApiSiteController::class, 'updateWidget'])
-        ->name('sites.update-widget');
+        ->name('api.sites.update-widget');
     Route::delete('/widgets/{widgetId}', [ApiSiteController::class, 'deleteWidget'])
-        ->name('sites.delete-widget');
+        ->name('api.sites.delete-widget');
     Route::post('/widgets/{widgetId}/move', [ApiSiteController::class, 'moveWidget'])
-        ->name('sites.move-widget');
+        ->name('api.sites.move-widget');
 
     // Конфигурация
     Route::get('/config', [ApiSiteController::class, 'getConfig'])
-        ->name('sites.get-config');
+        ->name('api.sites.get-config');
 
-    // Превью
+    // Превью (API по id сайта; публичное превью по slug — route sites.preview)
     Route::get('/preview', [ApiSiteController::class, 'preview'])
-        ->name('sites.preview');
+        ->name('api.sites.preview');
 });
 
 // Project configuration routes

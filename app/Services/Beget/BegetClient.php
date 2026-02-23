@@ -12,7 +12,8 @@ class BegetClient
         private readonly string $baseUrl,
         private readonly string $login,
         private readonly string $password,
-        private readonly int $timeout = 30
+        private readonly int $timeout = 30,
+        private readonly bool $verifySsl = true
     ) {}
 
     /**
@@ -163,6 +164,10 @@ class BegetClient
 
     private function client(): PendingRequest
     {
-        return Http::timeout($this->timeout);
+        $request = Http::timeout($this->timeout);
+        if (! $this->verifySsl) {
+            $request = $request->withOptions(['verify' => false]);
+        }
+        return $request;
     }
 }
