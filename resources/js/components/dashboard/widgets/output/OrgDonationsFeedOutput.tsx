@@ -1,4 +1,6 @@
+import { usePage } from '@inertiajs/react';
 import React, { useCallback, useEffect, useState } from 'react';
+import { OrgDonationsFeedSchoolSlot } from '../orgDonationsFeed/OrgDonationsFeedSchoolSlot';
 import type {
     OrgDonationsFeedOutputConfig,
     WidgetOutputProps,
@@ -46,6 +48,10 @@ export const OrgDonationsFeedOutput: React.FC<WidgetOutputProps> = ({
     const slug = projectSlug ?? organizationSlug;
     const isProject = Boolean(projectSlug);
 
+    const inertiaPage = usePage();
+    const siteTemplate = ((inertiaPage?.props as Record<string, unknown>)?.site as Record<string, unknown>)?.template as string | undefined;
+    const isSchool = siteTemplate === 'school';
+
     const [page, setPage] = useState(1);
     const [items, setItems] = useState<DonationRow[]>([]);
     const [pagination, setPagination] = useState({
@@ -69,7 +75,7 @@ export const OrgDonationsFeedOutput: React.FC<WidgetOutputProps> = ({
             const base = isProject
                 ? `/project/${encodeURIComponent(slug)}/donations`
                 : `/organization/${encodeURIComponent(slug)}/donations`;
-            fetch(`${base}?page=${pageNum}&per_page=${per_page}&mask_donors=1`)
+            fetch(`${base}?page=${pageNum}&per_page=${per_page}`)
                 .then((r) => r.json())
                 .then((json) => {
                     if (json.success && Array.isArray(json.data)) {
@@ -103,6 +109,22 @@ export const OrgDonationsFeedOutput: React.FC<WidgetOutputProps> = ({
                 <div className="rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
                     Данные загрузятся на сайте
                 </div>
+            </div>
+        );
+    }
+
+    if (isSchool) {
+        return (
+            <div
+                className={`org-donations-feed-output ${className || ''}`}
+                style={style}
+            >
+                <OrgDonationsFeedSchoolSlot
+                    slug={slug}
+                    isProject={isProject}
+                    perPage={per_page}
+                    title={title}
+                />
             </div>
         );
     }

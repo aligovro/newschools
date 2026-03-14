@@ -18,7 +18,7 @@ class ProjectStage extends Model
     'gallery',
     'target_amount',
     'collected_amount',
-    'order',
+    'sort_order',
     'status',
     'start_date',
     'end_date',
@@ -28,7 +28,7 @@ class ProjectStage extends Model
     'gallery' => 'array',
     'target_amount' => 'integer',
     'collected_amount' => 'integer',
-    'order' => 'integer',
+    'sort_order' => 'integer',
     'start_date' => 'date',
     'end_date' => 'date',
   ];

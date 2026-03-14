@@ -11,6 +11,9 @@ use App\Http\Controllers\Api\WidgetController;
 use App\Http\Controllers\Api\WidgetImageController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\ProjectsController;
+use App\Http\Controllers\Api\OrganizationStaffController;
+use App\Http\Controllers\Api\OrganizationClubsController;
+use App\Http\Controllers\Api\OrganizationVideoLessonsController;
 use App\Http\Controllers\Api\AlumniStatsController;
 use App\Http\Controllers\OrganizationMenuController;
 use App\Http\Controllers\RegionRatingController;
@@ -317,6 +320,15 @@ Route::prefix('public')->group(function () {
 
     // Последние проекты (публично)
     Route::get('/projects/latest', [ProjectsController::class, 'latest']);
+
+    // Сотрудники организации (преподаватели и др., публично)
+    Route::get('/staff', [OrganizationStaffController::class, 'index']);
+
+    // Кружки и секции организации (публично)
+    Route::get('/clubs', [OrganizationClubsController::class, 'index']);
+
+    // Видео уроки организации
+    Route::get('/video-lessons', [OrganizationVideoLessonsController::class, 'index']);
 
     // Статистика выпускников (публичный доступ)
     Route::get('/alumni-stats', [AlumniStatsController::class, 'index']);

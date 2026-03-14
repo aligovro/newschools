@@ -1,4 +1,6 @@
-.projects-slider-widget {
+// Общие стили навигации для слайдеров (projects, teachers)
+.projects-slider-widget,
+.teachers-slider-widget {
     position: relative;
     overflow: visible;
 
@@ -54,6 +56,8 @@
 }
 
 section:has(.projects-slider-widget),
-.container:has(.projects-slider-widget) {
+section:has(.teachers-slider-widget),
+.container:has(.projects-slider-widget),
+.container:has(.teachers-slider-widget) {
     overflow: visible;
 }

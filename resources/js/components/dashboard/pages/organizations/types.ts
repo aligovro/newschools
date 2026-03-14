@@ -66,6 +66,25 @@ export interface OrganizationStaffMember {
     address?: string;
 }
 
+export interface ClubSchedule {
+    mon?: string | null;
+    tue?: string | null;
+    wed?: string | null;
+    thu?: string | null;
+    fri?: string | null;
+    sat?: string | null;
+    sun?: string | null;
+}
+
+export interface OrganizationClubMember {
+    id: number;
+    name: string;
+    description?: string | null;
+    image?: string | null;
+    sort_order?: number;
+    schedule?: ClubSchedule;
+}
+
 export interface OrganizationShow {
     id: number;
     name: string;
@@ -89,6 +108,9 @@ export interface OrganizationShow {
     };
     members_count?: number;
     donations_count?: number;
+    staff_count?: number;
+    clubs_count?: number;
+    video_lessons_count?: number;
     donations_total?: number | null;
     donations_sum?: number | null;
     needs?: {
@@ -98,6 +120,8 @@ export interface OrganizationShow {
     } | null;
     director?: OrganizationDirector;
     staff?: OrganizationStaffMember[];
+    clubs?: OrganizationClubMember[];
+    video_lessons?: OrganizationVideoLessonMember[];
     primary_site?: {
         id: number;
     } | null;
@@ -124,6 +148,32 @@ export interface OrganizationFormProps {
     referenceData: ReferenceData;
     organizationSettings?: { payment_settings?: unknown };
     defaultPaymentSettings?: PaymentGatewaysSettingsValue;
+}
+
+export interface VideoLessonFormData {
+    title: string;
+    description: string;
+    video_url: string;
+    thumbnail: File | string | null;
+    sort_order: number;
+}
+
+export interface OrganizationVideoLessonMember {
+    id: number;
+    title: string;
+    description?: string | null;
+    video_url: string;
+    embed_url?: string | null;
+    thumbnail?: string | null;
+    sort_order?: number;
+}
+
+export interface ClubFormData {
+    name: string;
+    description: string;
+    image: File | string | null;
+    sort_order: number;
+    schedule?: ClubSchedule;
 }
 
 export interface StaffFormData {

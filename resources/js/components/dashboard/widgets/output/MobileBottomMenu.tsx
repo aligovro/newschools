@@ -40,9 +40,8 @@ export const MobileBottomMenu: React.FC<MobileBottomMenuProps> = ({
     // Сортируем элементы меню для стабильного порядка при сборке
     const sortedItems = useMemo(() => {
         return [...items].sort((a, b) => {
-            // Приоритет 1: сортировка по полю order или sort_order (если есть)
-            const aOrder = (a as any).order ?? (a as any).sort_order;
-            const bOrder = (b as any).order ?? (b as any).sort_order;
+            const aOrder = (a as any).sort_order;
+            const bOrder = (b as any).sort_order;
             if (aOrder !== undefined && bOrder !== undefined) {
                 return Number(aOrder) - Number(bOrder);
             }

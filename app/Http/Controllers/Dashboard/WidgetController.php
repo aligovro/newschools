@@ -97,7 +97,7 @@ class WidgetController extends Controller
             'name' => 'required|string|max:255',
             'config' => 'nullable|array',
             'settings' => 'nullable|array',
-            'order' => 'nullable|integer|min:0',
+            'sort_order' => 'nullable|integer|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -111,9 +111,12 @@ class WidgetController extends Controller
             $widget = Widget::findOrFail($request->widget_id);
 
             // Проверяем, разрешен ли виджет в данной позиции
-            $position = WidgetPosition::where('template_id', $site->template)
-                ->where('slug', $request->position_name)
-                ->first();
+            $template = SiteTemplate::where('slug', $site->template)->first();
+            $position = $template
+                ? WidgetPosition::where('template_id', $template->id)
+                    ->where('slug', $request->position_name)
+                    ->first()
+                : null;
 
             if ($position && !$position->isWidgetAllowed($widget->slug)) {
                 return response()->json([
@@ -128,7 +131,7 @@ class WidgetController extends Controller
                 'position_name' => $request->position_name,
                 'config' => $request->config ?? [],
                 'settings' => $request->settings ?? [],
-                'order' => $request->order ?? 0,
+                'sort_order' => $request->sort_order ?? 0,
             ]);
 
             return response()->json([
@@ -151,7 +154,7 @@ class WidgetController extends Controller
             'name' => 'nullable|string|max:255',
             'config' => 'nullable|array',
             'settings' => 'nullable|array',
-            'order' => 'nullable|integer|min:0',
+            'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'nullable|boolean',
             'is_visible' => 'nullable|boolean',
         ]);
@@ -175,7 +178,7 @@ class WidgetController extends Controller
                 'name',
                 'config',
                 'settings',
-                'order',
+                'sort_order',
                 'is_active',
                 'is_visible'
             ]), fn($value) => $value !== null);
@@ -226,7 +229,7 @@ class WidgetController extends Controller
         $validator = Validator::make($request->all(), [
             'widgets' => 'required|array',
             'widgets.*.id' => 'required|exists:site_widgets,id',
-            'widgets.*.order' => 'required|integer|min:0',
+            'widgets.*.sort_order' => 'required|integer|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -240,7 +243,7 @@ class WidgetController extends Controller
             foreach ($request->widgets as $widgetData) {
                 $siteWidget = $site->widgets()->find($widgetData['id']);
                 if ($siteWidget) {
-                    $siteWidget->update(['order' => $widgetData['order']]);
+                    $siteWidget->update(['sort_order' => $widgetData['sort_order']]);
                 }
             }
 

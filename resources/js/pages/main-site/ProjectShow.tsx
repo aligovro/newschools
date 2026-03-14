@@ -50,7 +50,7 @@ interface ProjectStage {
     is_pending: boolean;
     start_date?: string;
     end_date?: string;
-    order: number;
+    sort_order: number;
 }
 
 interface Project {

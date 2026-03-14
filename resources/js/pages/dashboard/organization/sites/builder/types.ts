@@ -35,7 +35,6 @@ export interface SiteWidget {
     config: Record<string, unknown>;
     settings: Record<string, unknown>;
     sort_order: number;
-    order: number;
     is_active: boolean;
     is_visible: boolean;
     position_name: string;

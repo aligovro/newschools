@@ -1,4 +1,6 @@
+import { usePage } from '@inertiajs/react';
 import React, { useMemo } from 'react';
+import { ProjectsSliderSchoolWidget } from '../projects/ProjectsSliderSchoolWidget';
 import { ProjectsSliderWidget } from '../ProjectsSliderWidget';
 import { WidgetOutputProps } from './types';
 
@@ -44,9 +46,17 @@ export const ProjectsSliderOutput: React.FC<WidgetOutputProps> = ({
         };
     }, [widget]);
 
+    const page = usePage();
+    const siteTemplate = ((page?.props as Record<string, unknown>)?.site as Record<string, unknown>)?.template as string | undefined;
+    const isSchool = siteTemplate === 'school';
+
     return (
         <div className={className} style={style}>
-            <ProjectsSliderWidget config={config} />
+            {isSchool ? (
+                <ProjectsSliderSchoolWidget config={{ ...config, title: config.title === 'Проекты' ? 'Проекты школы' : config.title }} />
+            ) : (
+                <ProjectsSliderWidget config={config} />
+            )}
         </div>
     );
 };

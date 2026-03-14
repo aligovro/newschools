@@ -124,7 +124,7 @@ export const SiteBuilder: React.FC<SiteBuilderProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            <div className="h-full overflow-y-auto p-6">
+                            <div className={`h-full overflow-y-auto p-6 site-preview site-template--${typeof template === 'string' ? template : (template?.slug || 'default')}`}>
                                 <PositionsRenderer
                                     positions={positions}
                                     widgets={widgets}

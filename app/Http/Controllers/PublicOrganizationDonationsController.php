@@ -65,15 +65,20 @@ class PublicOrganizationDonationsController extends Controller
         $maskDonors = $request->boolean('mask_donors');
 
         $paginator = $this->donationsService->allDonationsForOrganization($organization, $page, $perPage);
+        $paginator->getCollection()->load('project');
 
         $items = $paginator->getCollection()->map(function ($donation) use ($maskDonors) {
             $dt = $donation->paid_at ?? $donation->created_at;
             $dateLabel = $dt ? $this->formatDateLabel($dt) : '';
             $timeLabel = $dt ? $dt->format('H:i') : '';
+            $datetimeFormatted = $dt ? $this->formatDateTimeForFeed($dt) : '';
 
             $donorName = $maskDonors
                 ? 'Анонимное пожертвование'
                 : ($donation->is_anonymous ? 'Анонимное пожертвование' : ($donation->donor_name ?? 'Анонимное пожертвование'));
+
+            $projectTitle = $donation->project?->title
+                ?? 'Сбор на регулярные расходы по содержанию школы';
 
             return [
                 'id' => $donation->id,
@@ -84,6 +89,8 @@ class PublicOrganizationDonationsController extends Controller
                 'payment_method_label' => ProjectDonationsService::paymentMethodLabel($donation->payment_method),
                 'paid_at' => $timeLabel,
                 'date_label' => $dateLabel,
+                'datetime_formatted' => $datetimeFormatted,
+                'project_title' => $projectTitle,
                 'created_at' => $donation->created_at->toIso8601String(),
             ];
         });
@@ -98,6 +105,13 @@ class PublicOrganizationDonationsController extends Controller
                 'total' => $paginator->total(),
             ],
         ]);
+    }
+
+    private function formatDateTimeForFeed(\DateTimeInterface $dt): string
+    {
+        $carbon = Carbon::parse($dt)->locale('ru');
+
+        return $carbon->translatedFormat('j M Y') . ' · ' . $carbon->format('H:i');
     }
 
     private function formatDateLabel(\DateTimeInterface $dt): string

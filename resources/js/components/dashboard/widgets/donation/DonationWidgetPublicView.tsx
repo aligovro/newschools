@@ -63,7 +63,9 @@ interface DonationFormProps {
     error: string | null;
     success: string | null;
     onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-    onGenerateBankRequisitesPdf?: (event: React.FormEvent<HTMLFormElement>) => void;
+    onGenerateBankRequisitesPdf?: (
+        event: React.FormEvent<HTMLFormElement>,
+    ) => void;
 }
 
 interface DonationPaymentMethodsState {
@@ -90,9 +92,7 @@ interface DonationWidgetPublicViewProps {
     paymentMethods: DonationPaymentMethodsState;
     subscribersCount?: number | null;
     bankRequisites?: BankRequisites | null;
-    organizationId?: number | null;
-    projectId?: number | null;
-    siteId?: number | null;
+    averageDonation?: number;
 }
 
 export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
@@ -112,9 +112,6 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
             showTitle,
             subscribersCount,
             title,
-            organizationId,
-            projectId,
-            siteId,
         }) => {
             const hasCards = !!(
                 bankRequisites?.sber_card || bankRequisites?.tinkoff_card
@@ -207,15 +204,15 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                             card_recipient:
                                                 bankRequisites.card_recipient,
                                         }}
-                                        organizationId={organizationId || undefined}
-                                        projectId={projectId || undefined}
-                                        siteId={siteId || undefined}
                                     />
                                 )}
 
                             <form
                                 onSubmit={(e) => {
-                                    if (activeTab === 'bank_requisites' && form.onGenerateBankRequisitesPdf) {
+                                    if (
+                                        activeTab === 'bank_requisites' &&
+                                        form.onGenerateBankRequisitesPdf
+                                    ) {
                                         form.onGenerateBankRequisitesPdf(e);
                                     } else {
                                         form.onSubmit(e);
@@ -572,7 +569,8 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                     type="submit"
                                     disabled={
                                         form.isProcessing ||
-                                        (activeTab === 'online' && !form.isSelectedMethodAvailable)
+                                        (activeTab === 'online' &&
+                                            !form.isSelectedMethodAvailable)
                                     }
                                     className={`btn-accent w-full px-6 py-3 ${borderRadiusClass} flex items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${buttonStyleClass || ''}`}
                                 >
@@ -584,7 +582,9 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                     ) : (
                                         <>
                                             <Heart className="h-5 w-5" />
-                                            {activeTab === 'bank_requisites' ? 'Создать счет' : buttonText}
+                                            {activeTab === 'bank_requisites'
+                                                ? 'Создать счет'
+                                                : buttonText}
                                         </>
                                     )}
                                 </button>

@@ -124,7 +124,7 @@ class DonationWidgetController extends Controller
             if ($project && !$projectStage && $project->has_stages) {
                 $activeStage = $project->stages()
                     ->where('status', 'active')
-                    ->orderBy('order')
+                    ->orderBy('sort_order')
                     ->first();
 
                 if ($activeStage) {

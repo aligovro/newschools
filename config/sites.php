@@ -281,12 +281,16 @@ return [
     | Default Settings
     |--------------------------------------------------------------------------
     |
-    | Default settings for new sites.
+    | Default settings for new sites. template_for_main — шаблон главного сайта
+    | (site_type = main). template_for_organization — шаблон по умолчанию для
+    | сайтов организаций (site_type = organization). Без хардкода в коде.
     |
     */
 
     'defaults' => [
         'template' => 'default',
+        'template_for_main' => 'default',
+        'template_for_organization' => 'school',
         'status' => 'draft',
         'is_public' => false,
         'is_maintenance_mode' => false,
@@ -338,5 +342,7 @@ return [
 
     'styles' => [
         'dir' => 'site-styles',
+        // Шаблонные SCSS (school.scss и др.) компилируются Vite через app.scss.
+        // Per-site кастомный SCSS компилируется PHP ScssPhp на лету (без npm run build).
     ],
 ];

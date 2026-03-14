@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Site;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
@@ -29,10 +30,12 @@ class ClearSiteCache extends Command
         $siteId = $this->argument('site_id');
 
         if ($siteId) {
-            // Очищаем кеш для конкретного сайта
+            $site = Site::find($siteId);
             Cache::forget("site_widgets_config_{$siteId}");
             Cache::forget("site_widget_settings_{$siteId}");
-            Cache::forget("site_positions_{$siteId}");
+            if ($site?->template) {
+                Cache::forget("site_positions_{$site->template}");
+            }
             Cache::forget("site_position_settings_{$siteId}");
 
             // Очищаем кеш страниц сайта

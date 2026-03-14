@@ -38,7 +38,7 @@ trait GetsSiteWidgetsData
                     'slug' => $p->slug,
                     'description' => $p->description,
                     'area' => $p->area,
-                    'order' => $p->order ?? $p->sort_order ?? 0,
+                    'sort_order' => $p->sort_order ?? 0,
                     'allowed_widgets' => $p->allowed_widgets ?? [],
                     'layout_config' => $p->layout_config ?? [],
                     'is_required' => $p->is_required ?? false,
@@ -59,6 +59,8 @@ trait GetsSiteWidgetsData
             ])
         );
 
+        $site->loadMissing('organization:id,slug');
+
         $custom = $site->custom_settings ?? [];
         $stylesService = app(SiteStylesService::class);
         return [
@@ -71,6 +73,10 @@ trait GetsSiteWidgetsData
                 'template' => $site->template,
                 'site_type' => $site->site_type,
                 'organization_id' => $site->organization_id,
+                'organization' => $site->organization ? [
+                    'id' => $site->organization->id,
+                    'slug' => $site->organization->slug,
+                ] : null,
                 'widgets_config' => $widgetsConfig,
                 'seo_config' => $site->formatted_seo_config ?? [],
                 'layout_config' => $site->layout_config ?? [],

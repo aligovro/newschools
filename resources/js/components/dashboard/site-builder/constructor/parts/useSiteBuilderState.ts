@@ -263,12 +263,11 @@ export const useSiteBuilderState = ({
             console.log('onMoveWidget called:', { widgetId, positionSlug });
             const widgetsInTarget = widgets
                 .filter((w) => w.position_slug === positionSlug)
-                .sort((a, b) => a.order - b.order);
-            const newOrder = widgetsInTarget.length + 1;
-            console.log('Moving widget to order:', newOrder);
+                .sort((a, b) => a.sort_order - b.sort_order);
+            const newSortOrder = widgetsInTarget.length + 1;
             await sitesApi.moveWidget(siteId, parseInt(widgetId), {
                 position_slug: positionSlug,
-                order: newOrder,
+                sort_order: newSortOrder,
             });
             const idx = widgets.findIndex((w) => w.id === widgetId);
             if (idx !== -1) {
@@ -276,7 +275,7 @@ export const useSiteBuilderState = ({
                 copy[idx] = {
                     ...copy[idx],
                     position_slug: positionSlug,
-                    order: newOrder,
+                    sort_order: newSortOrder,
                 } as WidgetData;
                 onWidgetsChange?.(copy, isLoading);
             }
@@ -285,9 +284,9 @@ export const useSiteBuilderState = ({
     );
 
     const onMoveWidgetOrder = useCallback(
-        async (widgetId: string, positionSlug: string, order: number) => {
+        async (widgetId: string, positionSlug: string, sortOrder: number) => {
             try {
-                await moveWidget(widgetId, positionSlug, order);
+                await moveWidget(widgetId, positionSlug, sortOrder);
                 // Не вызываем refreshWidgets, так как moveWidget уже обновляет локальное состояние
             } catch (error) {
                 console.error('Error moving widget order:', error);

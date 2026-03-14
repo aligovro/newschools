@@ -17,7 +17,7 @@ class WidgetPosition extends Model
     'slug',
     'description',
     'area',
-    'order',
+    'sort_order',
     'allowed_widgets',
     'layout_config',
     'is_required',
@@ -55,7 +55,7 @@ class WidgetPosition extends Model
 
   public function scopeOrdered($query)
   {
-    return $query->orderBy('order');
+    return $query->orderBy('sort_order');
   }
 
   public function scopeRequired($query)

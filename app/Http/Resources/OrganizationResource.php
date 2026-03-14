@@ -36,6 +36,9 @@ class OrganizationResource extends JsonResource
             // Aggregates when available
             'members_count' => $this->when(isset($this->members_count), $this->members_count ?? 0),
             'donations_count' => $this->when(isset($this->donations_count), $this->donations_count ?? 0),
+            'staff_count' => $this->when(isset($this->staff_count), (int) ($this->staff_count ?? 0)),
+            'clubs_count' => $this->when(isset($this->clubs_count), (int) ($this->clubs_count ?? 0)),
+            'video_lessons_count' => $this->when(isset($this->video_lessons_count), (int) ($this->video_lessons_count ?? 0)),
             'donations_sum' => $this->when(isset($this->donations_sum_amount), is_numeric($this->donations_sum_amount) ? (float) $this->donations_sum_amount : null),
             // Сумма только успешных донатов (в копейках) — совпадает со страницей «Платежи»
             'donations_sum_completed' => $this->when(isset($this->donations_sum_completed), is_numeric($this->donations_sum_completed) ? (float) $this->donations_sum_completed : null),
@@ -83,6 +86,18 @@ class OrganizationResource extends JsonResource
             'staff' => $this->whenLoaded('staff', function () {
                 return $this->staff && $this->staff->isNotEmpty()
                     ? OrganizationStaffResource::collection($this->staff)->resolve()
+                    : [];
+            }),
+
+            'clubs' => $this->whenLoaded('clubs', function () {
+                return $this->clubs && $this->clubs->isNotEmpty()
+                    ? OrganizationClubResource::collection($this->clubs)->resolve()
+                    : [];
+            }),
+
+            'video_lessons' => $this->whenLoaded('videoLessons', function () {
+                return $this->videoLessons && $this->videoLessons->isNotEmpty()
+                    ? OrganizationVideoLessonResource::collection($this->videoLessons)->resolve()
                     : [];
             }),
 

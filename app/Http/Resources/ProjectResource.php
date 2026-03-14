@@ -137,7 +137,7 @@ class ProjectResource extends JsonResource
             'is_pending' => $stage->is_pending,
             'start_date' => $stage->start_date?->format('Y-m-d'),
             'end_date' => $stage->end_date?->format('Y-m-d'),
-            'order' => $stage->order,
+            'sort_order' => $stage->sort_order,
           ];
         });
       }),

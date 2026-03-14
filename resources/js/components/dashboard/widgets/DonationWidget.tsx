@@ -8,6 +8,7 @@ import { usePage } from '@inertiajs/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DonationWidgetEditor } from './donation/DonationWidgetEditor';
 import { DonationWidgetPublicView } from './donation/DonationWidgetPublicView';
+import { DonationWidgetSchoolView } from './donation/DonationWidgetSchoolView';
 import type {
     BankRequisites,
     DonationProgressData,
@@ -43,11 +44,13 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     organizationId,
     publicContext,
 }) => {
-    const { auth } = usePage<{
+    const { auth, site } = usePage<{
         auth?: { user?: { phone?: string | null; name?: string | null } };
+        site?: { template?: string };
     }>().props;
     const userPhone = auth?.user?.phone?.trim() || undefined;
     const userName = auth?.user?.name?.trim() || undefined;
+    const siteTemplate = site?.template || 'default';
 
     const [isSettingsExpanded, setIsSettingsExpanded] =
         useState(autoExpandSettings);
@@ -69,6 +72,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
     const [subscribersCount, setSubscribersCount] = useState<number | null>(
         null,
     );
+    const [averageDonation, setAverageDonation] = useState<number | undefined>(undefined);
     const [bankRequisites, setBankRequisites] =
         useState<BankRequisites | null>(null);
     const [monthlyGoal, setMonthlyGoal] = useState<{
@@ -152,6 +156,7 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
 
             setMerchant(widgetData.merchant ?? null);
             setSubscribersCount(widgetData.subscribers_count ?? null);
+            setAverageDonation(widgetData.average_donation);
             setBankRequisites(widgetData.bank_requisites ?? null);
             setMonthlyGoal(
                 (widgetData.monthly_goal as {
@@ -809,71 +814,73 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
         setIsSettingsExpanded((prev) => !prev);
     }, [setIsSettingsExpanded]);
 
-    const renderPublic = () => (
-        <DonationWidgetPublicView
-            config={localConfig}
-            title={title}
-            description={description}
-            showTitle={localConfig.show_title ?? true}
-            progressData={progressData}
-            borderRadiusClass={borderRadiusClass}
-            shadowClass={shadowClass}
-            buttonStyleClass={buttonStyleClass || ''}
-            buttonText={button_text}
-            paymentModal={paymentModal}
-            form={{
-                amount,
-                onAmountInputChange: handleAmountInputChange,
-                onPresetAmountSelect: handlePresetAmountSelect,
-                presetAmounts: preset_amounts,
-                minAmount: localConfig.min_amount || 1,
-                maxAmount: localConfig.max_amount || 0,
-                currency,
-                allowRecurring: allow_recurring,
-                recurringPeriods: recurring_periods,
-                isRecurring,
-                onRecurringChange: handleRecurringChange,
-                recurringPeriod,
-                onRecurringPeriodChange: handleRecurringPeriodChange,
-                agreedToRecurring,
-                onAgreedToRecurringChange: handleAgreedToRecurringChange,
-                donorName,
-                onDonorNameChange: handleDonorNameChange,
-                donorEmail,
-                onDonorEmailChange: handleDonorEmailChange,
-                donorPhone,
-                onDonorPhoneChange: handleDonorPhoneChange,
-                donorPhoneFromProfile: userPhone,
-                donorMessage,
-                onDonorMessageChange: handleDonorMessageChange,
-                isAnonymous,
-                onAnonymousChange: handleAnonymousChange,
-                agreedToPolicy,
-                onAgreedToPolicyChange: handleAgreedToPolicyChange,
-                requireName: require_name,
-                requireEmail: require_email,
-                allowAnonymous: allow_anonymous,
-                showMessageField: show_message_field,
-                isProcessing,
-                isSelectedMethodAvailable,
-                error,
-                success,
-                onSubmit: handleSubmit,
-                onGenerateBankRequisitesPdf: handleGenerateBankRequisitesPdf,
-            }}
-            paymentMethods={{
-                items: paymentMethods,
-                selectedMethod: selectedPaymentMethod,
-                onSelect: handlePaymentMethodSelect,
-                isMerchantActive,
-            }}
-            subscribersCount={subscribersCount}
-            bankRequisites={bankRequisites}
-            organizationId={resolvedOrganizationId}
-            projectId={derivedProjectId}
-            siteId={undefined}
-        />
-    );
+    const renderPublic = () => {
+        const ViewComponent = siteTemplate === 'school' ? DonationWidgetSchoolView : DonationWidgetPublicView;
+
+        return (
+            <ViewComponent
+                config={localConfig}
+                title={title}
+                description={description}
+                showTitle={localConfig.show_title ?? true}
+                progressData={progressData}
+                borderRadiusClass={borderRadiusClass}
+                shadowClass={shadowClass}
+                buttonStyleClass={buttonStyleClass || ''}
+                buttonText={button_text}
+                paymentModal={paymentModal}
+                form={{
+                    amount,
+                    onAmountInputChange: handleAmountInputChange,
+                    onPresetAmountSelect: handlePresetAmountSelect,
+                    presetAmounts: preset_amounts,
+                    minAmount: localConfig.min_amount || 1,
+                    maxAmount: localConfig.max_amount || 0,
+                    currency,
+                    allowRecurring: allow_recurring,
+                    recurringPeriods: recurring_periods,
+                    isRecurring,
+                    onRecurringChange: handleRecurringChange,
+                    recurringPeriod,
+                    onRecurringPeriodChange: handleRecurringPeriodChange,
+                    agreedToRecurring,
+                    onAgreedToRecurringChange: handleAgreedToRecurringChange,
+                    donorName,
+                    onDonorNameChange: handleDonorNameChange,
+                    donorEmail,
+                    onDonorEmailChange: handleDonorEmailChange,
+                    donorPhone,
+                    onDonorPhoneChange: handleDonorPhoneChange,
+                    donorPhoneFromProfile: userPhone,
+                    donorMessage,
+                    onDonorMessageChange: handleDonorMessageChange,
+                    isAnonymous,
+                    onAnonymousChange: handleAnonymousChange,
+                    agreedToPolicy,
+                    onAgreedToPolicyChange: handleAgreedToPolicyChange,
+                    requireName: require_name,
+                    requireEmail: require_email,
+                    allowAnonymous: allow_anonymous,
+                    showMessageField: show_message_field,
+                    isProcessing,
+                    isSelectedMethodAvailable,
+                    error,
+                    success,
+                    onSubmit: handleSubmit,
+                    onGenerateBankRequisitesPdf: handleGenerateBankRequisitesPdf,
+                }}
+                paymentMethods={{
+                    items: paymentMethods,
+                    selectedMethod: selectedPaymentMethod,
+                    onSelect: handlePaymentMethodSelect,
+                    isMerchantActive,
+                }}
+                subscribersCount={subscribersCount}
+                bankRequisites={bankRequisites}
+                averageDonation={averageDonation}
+            />
+        );
+    };
 
     if (isEditable) {
         return (

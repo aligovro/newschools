@@ -404,7 +404,7 @@ class ProjectController extends Controller
                     ->where('type', 'image');
             },
             'stages' => function ($query) {
-                $query->orderBy('order');
+                $query->orderBy('sort_order');
             },
             'categories'
         ]);
@@ -448,7 +448,7 @@ class ProjectController extends Controller
         // Загружаем этапы проекта и категории
         $project->load([
             'stages' => function ($query) {
-                $query->orderBy('order');
+                $query->orderBy('sort_order');
             },
             'categories'
         ]);
@@ -661,7 +661,7 @@ class ProjectController extends Controller
             return;
         }
 
-        $stages = $project->stages->sortBy('order');
+        $stages = $project->stages->sortBy('sort_order');
         $hasActiveStage = false;
 
         foreach ($stages as $index => $stage) {

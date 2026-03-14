@@ -49,6 +49,32 @@ class AllWidgetsSeeder extends Seeder
                 'sort_order' => 2,
             ],
 
+            // ШКОЛЬНЫЙ БАННЕР (School Hero)
+            [
+                'name' => 'Школьный баннер',
+                'widget_slug' => 'school_hero',
+                'description' => 'Главный баннер для школ с прогрессом сборов и целью на месяц',
+                'icon' => '🏫',
+                'category' => 'hero',
+                'component_name' => 'SchoolHeroWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 2,
+            ],
+
+            // ВИДЖЕТ ПОДПИСКИ ДЛЯ ШКОЛЫ
+            [
+                'name' => 'Виджет подписки школы',
+                'widget_slug' => 'school_subscribe',
+                'description' => 'Виджет подписки на регулярную помощь школе с топом спонсоров',
+                'icon' => '💖',
+                'category' => 'payment',
+                'component_name' => 'SchoolSubscribeWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 31,
+            ],
+
             // УНИВЕРСАЛЬНЫЙ СЛАЙДЕР
             [
                 'name' => 'Слайдер',
@@ -91,6 +117,50 @@ class AllWidgetsSeeder extends Seeder
                 'component_name' => 'ProjectsWidget',
                 'is_active' => true,
                 'sort_order' => 11,
+            ],
+            [
+                'name' => 'Слайдер преподавателей',
+                'widget_slug' => 'teachers_slider',
+                'description' => 'Слайдер преподавателей/сотрудников организации',
+                'icon' => '👩‍🏫',
+                'category' => 'content',
+                'component_name' => 'TeachersSliderWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 15,
+            ],
+            [
+                'name' => 'Кружки и секции',
+                'widget_slug' => 'clubs',
+                'description' => 'Сетка кружков и секций организации',
+                'icon' => '🏀',
+                'category' => 'content',
+                'component_name' => 'ClubsWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 16,
+            ],
+            [
+                'name' => 'Расписание кружков',
+                'widget_slug' => 'club_schedule',
+                'description' => 'Таблица расписания кружков по дням недели',
+                'icon' => '📅',
+                'category' => 'content',
+                'component_name' => 'ClubScheduleWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 17,
+            ],
+            [
+                'name' => 'Видео уроки',
+                'widget_slug' => 'video_lessons',
+                'description' => 'Сетка видео уроков с YouTube/Vimeo',
+                'icon' => '🎬',
+                'category' => 'content',
+                'component_name' => 'VideoLessonsWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization'],
+                'sort_order' => 18,
             ],
             [
                 'name' => 'Статистика',

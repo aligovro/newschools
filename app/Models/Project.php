@@ -87,7 +87,7 @@ class Project extends Model
 
     public function stages(): HasMany
     {
-        return $this->hasMany(ProjectStage::class)->orderBy('order');
+        return $this->hasMany(ProjectStage::class)->orderBy('sort_order');
     }
 
     public function reports(): HasMany

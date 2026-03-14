@@ -72,6 +72,7 @@ class DonationWidgetDataService
                 'is_test_mode' => (bool) data_get($merchant->settings, 'is_test_mode', false),
             ] : null,
             'subscribers_count' => $this->getSubscribersCount($organization),
+            'average_donation' => $this->getAverageDonation($organization),
         ];
 
         if ($fundraiserId) {
@@ -208,6 +209,20 @@ class DonationWidgetDataService
     }
 
     /**
+     * Получить среднюю сумму пожертвования (в копейках)
+     */
+    protected function getAverageDonation(Organization $organization): int
+    {
+        return Cache::remember(
+            "donation_widget_average_{$organization->id}",
+            now()->addHours(1),
+            function () use ($organization) {
+                return (int) $organization->donations()->completed()->avg('amount');
+            }
+        );
+    }
+
+    /**
      * Получить данные сбора средств
      */
     protected function getFundraiserData(Organization $organization, int $fundraiserId): array
@@ -245,7 +260,7 @@ class DonationWidgetDataService
 
         $activeStage = $project->stages()
             ->where('status', 'active')
-            ->orderBy('order')
+            ->orderBy('sort_order')
             ->first();
 
         $projectFunding = $project->funding;
@@ -278,7 +293,7 @@ class DonationWidgetDataService
                 'collected_amount_rubles' => $stageFunding['collected']['value'],
                 'progress_percentage' => $stageFunding['progress_percentage'],
                 'status' => $activeStage->status,
-                'order' => $activeStage->order,
+                'sort_order' => $activeStage->sort_order,
             ];
         }
 

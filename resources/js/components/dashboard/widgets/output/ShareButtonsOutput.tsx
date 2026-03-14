@@ -1,4 +1,6 @@
+import { usePage } from '@inertiajs/react';
 import React from 'react';
+import { ShareButtonsSchoolWidget } from '../shareButtons/ShareButtonsSchoolWidget';
 import { WidgetOutputProps } from './types';
 
 interface ShareNetwork {
@@ -63,6 +65,14 @@ const NETWORKS: Record<string, ShareNetwork> = {
         buildUrl: (url, _text) =>
             `https://vk.com/share.php?url=${encodeURIComponent(url)}&noparse=true`,
     },
+    max: {
+        id: 'max',
+        label: 'Max',
+        color: '#0088cc',
+        icon: <TelegramIcon />, // Max visually similar; replace with MaxIcon if needed
+        buildUrl: (url, text) =>
+            `https://share.max.ru?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+    },
 };
 
 export const ShareButtonsOutput: React.FC<WidgetOutputProps> = ({
@@ -76,13 +86,33 @@ export const ShareButtonsOutput: React.FC<WidgetOutputProps> = ({
         show_title = true,
         share_url,
         share_text = '',
-        networks = ['whatsapp', 'telegram', 'vk'],
+        networks = ['whatsapp', 'telegram', 'vk', 'max'],
         show_counts = true,
         counts = {},
     } = config;
 
     const resolvedUrl =
         share_url || (typeof window !== 'undefined' ? window.location.href : '');
+
+    const inertiaPage = usePage();
+    const siteTemplate = ((inertiaPage?.props as Record<string, unknown>)?.site as Record<string, unknown>)?.template as string | undefined;
+    const isSchool = siteTemplate === 'school';
+
+    if (isSchool) {
+        return (
+            <div
+                className={`share-buttons-output share-buttons-output--school ${className || ''}`}
+                style={style}
+            >
+                <ShareButtonsSchoolWidget
+                    shareUrl={resolvedUrl}
+                    shareText={share_text}
+                    networks={networks}
+                    counts={counts}
+                />
+            </div>
+        );
+    }
 
     const handleShare = (network: ShareNetwork) => {
         const url = network.buildUrl(resolvedUrl, share_text);

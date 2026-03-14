@@ -54,12 +54,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const [scale, setScale] = useState(1);
     const [rotate, setRotate] = useState(0);
-    const [lockAspect, setLockAspect] = useState<boolean>(!!aspectRatio);
+    const [lockAspect, setLockAspect] = useState<boolean>(false);
     const [showCropModal, setShowCropModal] = useState(false);
     const [_hasCroppedImage, setHasCroppedImage] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>('');
+    const [fileType, setFileType] = useState<string>('image/jpeg');
     const imgRef = useRef<HTMLImageElement | null>(null);
 
     // Предотвращаем скроллинг body когда модальное окно открыто
@@ -99,6 +100,19 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             setImgSrc(existingImageUrl);
             setHasCroppedImage(true);
             setPreviewUrl(existingImageUrl);
+            
+            // Пытаемся определить тип файла по расширению для сохранения прозрачности
+            const urlLower = existingImageUrl.toLowerCase();
+            if (urlLower.endsWith('.png')) {
+                setFileType('image/png');
+            } else if (urlLower.endsWith('.webp')) {
+                setFileType('image/webp');
+            } else if (urlLower.endsWith('.gif')) {
+                setFileType('image/gif');
+            } else {
+                setFileType('image/jpeg');
+            }
+
             if (DEBUG_CROP) {
                 console.groupCollapsed('[Uploader] existingImageUrl');
                 console.log('url:', existingImageUrl);
@@ -138,6 +152,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 setCrop(undefined);
                 setCompletedCrop(undefined);
                 setUploadError(null);
+                setFileType(file.type);
                 if (DEBUG_CROP) {
                     console.groupCollapsed('[Uploader] onDrop');
                     console.log('file:', {
@@ -343,6 +358,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         canvas.height = outHeight;
         ctx.imageSmoothingQuality = 'high';
 
+        // Очищаем канвас для сохранения прозрачности (важно для PNG/WEBP)
+        ctx.clearRect(0, 0, outWidth, outHeight);
+
         const radians = (rotateDeg * Math.PI) / 180;
         const effScale = scaleVal;
 
@@ -379,10 +397,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         }
 
         return new Promise((resolve) => {
-            // Используем более высокое качество для больших изображений
-            // Для изображений больше 1920px используем качество 0.98, иначе 0.95
-            const isLargeImage = outWidth > 1920 || outHeight > 1920;
-            const quality = isLargeImage ? 0.98 : 0.95;
+            // Используем максимальное качество без потерь
+            const quality = 1.0;
+            
+            // Если исходник поддерживает прозрачность, сохраняем в PNG, иначе в JPEG
+            const exportType = (fileType === 'image/png' || fileType === 'image/webp' || fileType === 'image/gif') 
+                ? 'image/png' 
+                : 'image/jpeg';
 
             canvas.toBlob(
                 (blob) => {
@@ -393,7 +414,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                         );
                     resolve(blob);
                 },
-                'image/jpeg',
+                exportType,
                 quality,
             );
         });
@@ -441,8 +462,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     setIsUploading(true);
                     try {
                         // Создаем File из Blob
-                        const file = new File([blob], 'cropped-image.jpg', {
-                            type: 'image/jpeg',
+                        const extension = blob.type === 'image/png' ? 'png' : 'jpg';
+                        const file = new File([blob], `cropped-image.${extension}`, {
+                            type: blob.type,
                         });
 
                         if (DEBUG_CROP) {

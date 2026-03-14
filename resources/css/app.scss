@@ -20,6 +20,7 @@
 @import './widgets/alumni-stats-widget.scss';
 @import './widgets/organizations-slider-widget.scss';
 @import './widgets/donation-widget.scss';
+@import './widgets/school-subscribe-widget.scss';
 @import './widgets/city-supporters-output.scss';
 @import './widgets/organizations-slider-widget.scss';
 @import './widgets/projects-slider-widget.scss';
@@ -139,6 +140,9 @@
 
 /* Site preview base styles (для страниц предпросмотра и публичного сайта) */
 @import 'site-preview.scss';
+
+/* Шаблоны организаций (школы и др.) — Vite HMR в dev, без дубля в prod */
+@import 'templates/school.scss';
 
 /* Media queries - адаптивность (должны быть в самом конце, чтобы переопределять базовые стили) */
 @import '_media';

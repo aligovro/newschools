@@ -125,53 +125,63 @@ SCSS;
     }
 
     /**
-     * URL для подключения CSS с cache-busting по mtime (обычное F5 обновляет стили)
+     * URL для подключения per-site кастомного CSS.
+     * Возвращает URL только если файл существует и содержит реальный CSS
+     * (не только комментарии/пустые строки).
+     * Шаблонный CSS (school.scss и др.) компилируется Vite — дублировать не нужно.
      */
     public function getStylesCssUrl(int $siteId): ?string
     {
         $path = $this->getStylesPath($siteId);
 
-        if (!File::exists($path)) {
+        if (!File::exists($path) || !$this->fileHasContent($path)) {
             return null;
         }
 
-        $mtime = File::lastModified($path);
-
-        return route('site-css.show', $siteId) . '?v=' . $mtime;
+        return route('site-css.show', $siteId) . '?v=' . File::lastModified($path);
     }
 
     /**
-     * Скомпилировать SCSS в CSS (с кешированием по mtime файла)
+     * Скомпилировать per-site кастомный SCSS в CSS.
+     * Компилирует только файл конкретного сайта — шаблонные стили (school.scss и др.)
+     * уже собраны Vite и грузятся через app.css, дублировать их не нужно.
+     * Кастомный SCSS оборачивается в html body { } для повышенной специфичности.
      */
     public function getCompiledCss(int $siteId): ?string
     {
         $path = $this->getStylesPath($siteId);
 
-        if (!File::exists($path)) {
+        if (!File::exists($path) || !$this->fileHasContent($path)) {
             return null;
         }
 
-        $mtime = File::lastModified($path);
-        $cacheKey = "site_styles_compiled_v2_{$siteId}_{$mtime}";
+        $mtime    = File::lastModified($path);
+        $cacheKey = "site_styles_compiled_v4_{$siteId}_{$mtime}";
 
         return Cache::remember($cacheKey, 86400, function () use ($path) {
-            $content = File::get($path);
-
-            if (trim($content) === '') {
-                return '';
-            }
+            $content = trim(File::get($path));
+            $source  = "html body {\n{$content}\n}";
 
             try {
                 $compiler = new Compiler();
-                // html body — повышает специфичность без поломки селекторов .site-type--organization
-                // (корневой div имеет site-preview и site-type--organization на одном элементе)
-                $wrapped = "html body {\n" . $content . "\n}";
-
-                return $compiler->compileString($wrapped)->getCss();
+                $compiler->setImportPaths([resource_path('css')]);
+                return $compiler->compileString($source)->getCss();
             } catch (\Throwable $e) {
-                return "/* SCSS compilation error: " . $e->getMessage() . " */";
+                return '/* SCSS compilation error: ' . $e->getMessage() . ' */';
             }
         });
+    }
+
+    /**
+     * Проверяет, содержит ли файл реальный CSS (не только комментарии и пустые строки).
+     */
+    private function fileHasContent(string $path): bool
+    {
+        $content = File::get($path);
+        // Убираем однострочные комментарии, блочные комментарии и пробелы
+        $stripped = preg_replace('/\/\/[^\n]*/m', '', $content);
+        $stripped = preg_replace('/\/\*.*?\*\//s', '', $stripped);
+        return trim($stripped) !== '';
     }
 
 }

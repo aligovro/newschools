@@ -22,1272 +22,1292 @@ use Illuminate\Support\Facades\DB;
 
 class SiteController extends Controller
 {
-    private WidgetService $widgetService;
-    private SiteSeoService $siteSeoService;
+  private WidgetService $widgetService;
+  private SiteSeoService $siteSeoService;
 
-    public function __construct(WidgetService $widgetService, SiteSeoService $siteSeoService)
-    {
-        $this->widgetService = $widgetService;
-        $this->siteSeoService = $siteSeoService;
+  public function __construct(WidgetService $widgetService, SiteSeoService $siteSeoService)
+  {
+    $this->widgetService = $widgetService;
+    $this->siteSeoService = $siteSeoService;
+  }
+  // Основные настройки сайта
+  public function saveBasicSettings(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'name' => 'required|string|max:255',
+      'description' => 'nullable|string|max:1000',
+      'favicon' => 'nullable|string|max:500',
+    ]);
+
+    try {
+      $site = $this->getSite($id);
+
+      $updateData = [
+        'name' => $request->name,
+        'description' => $request->description,
+      ];
+
+      // Добавляем favicon если он был передан (извлекаем путь без домена)
+      if ($request->has('favicon')) {
+        $updateData['favicon'] = SiteWidget::extractImagePathFromUrl($request->favicon);
+      }
+
+      $site->update($updateData);
+
+      // Автогенерация SEO, если ранее не заполнено — через сервис
+      $this->siteSeoService->ensureSeoDefaults($site);
+
+      // Сбрасываем кеш виджетов после изменения настроек
+      Cache::forget("site_widgets_config_{$site->id}");
+
+      // Если это главный сайт и была изменена фавиконка, очищаем кеш фавиконки
+      if ($request->has('favicon') && $site->site_type === 'main') {
+        Cache::forget('main_site_favicon');
+      }
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Основные настройки сохранены',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
     }
-    // Основные настройки сайта
-    public function saveBasicSettings(Request $request, $id): JsonResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'favicon' => 'nullable|string|max:500',
+  }
+
+  // Выбор шаблона сайта
+  public function saveTemplateSettings(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'template' => 'required|string|exists:site_templates,slug',
+    ]);
+
+    try {
+      $site = $this->getSite($id);
+
+      $site->update(['template' => $request->template]);
+
+      Cache::forget("site_widgets_config_{$site->id}");
+      Cache::forget("site_positions_{$site->template}");
+      Cache::forget("site_position_settings_{$site->id}");
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Шаблон сохранён',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  // SEO настройки
+  public function saveSeoSettings(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'seo_title' => 'nullable|string|max:60',
+      'seo_description' => 'nullable|string|max:160',
+      'seo_keywords' => 'nullable|string|max:255',
+      'og_title' => 'nullable|string|max:100',
+      'og_description' => 'nullable|string|max:200',
+      'og_type' => 'nullable|string|max:50',
+      'og_image' => 'nullable|string|max:500',
+      'twitter_card' => 'nullable|string|max:50',
+      'twitter_title' => 'nullable|string|max:100',
+      'twitter_description' => 'nullable|string|max:200',
+      'twitter_image' => 'nullable|string|max:500',
+    ]);
+
+    try {
+      $site = $this->getSite($id);
+
+      $incoming = $request->only([
+        'seo_title',
+        'seo_description',
+        'seo_keywords',
+        'og_title',
+        'og_description',
+        'og_type',
+        'og_image',
+        'twitter_card',
+        'twitter_title',
+        'twitter_description',
+        'twitter_image',
+      ]);
+
+      // Извлекаем пути изображений без домена
+      if (isset($incoming['og_image']) && !empty($incoming['og_image'])) {
+        $incoming['og_image'] = SiteWidget::extractImagePathFromUrl($incoming['og_image']);
+      }
+      if (isset($incoming['twitter_image']) && !empty($incoming['twitter_image'])) {
+        $incoming['twitter_image'] = SiteWidget::extractImagePathFromUrl($incoming['twitter_image']);
+      }
+
+      $seoConfig = $this->siteSeoService->applyDefaultsToIncoming($site, $incoming);
+
+      $site->update(['seo_config' => $seoConfig]);
+
+      // Очищаем кеш виджетов и позиций, так как они могут зависеть от SEO данных
+      Cache::forget("site_widgets_config_{$site->id}");
+      Cache::forget("site_positions_{$site->template}");
+      Cache::forget("site_position_settings_{$site->id}");
+
+      // Возвращаем отформатированные данные с правильными URL изображений
+      $formattedSeoConfig = $seoConfig;
+      if (isset($formattedSeoConfig['og_image']) && !empty($formattedSeoConfig['og_image'])) {
+        $formattedSeoConfig['og_image'] = SiteWidget::formatImageUrl($formattedSeoConfig['og_image']);
+      }
+      if (isset($formattedSeoConfig['twitter_image']) && !empty($formattedSeoConfig['twitter_image'])) {
+        $formattedSeoConfig['twitter_image'] = SiteWidget::formatImageUrl($formattedSeoConfig['twitter_image']);
+      }
+
+      return response()->json([
+        'success' => true,
+        'message' => 'SEO настройки сохранены',
+        'data' => $formattedSeoConfig,
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  // Layout настройки (позиция сайдбара и др.)
+  public function saveLayoutSettings(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'sidebar_position' => 'nullable|in:left,right',
+    ]);
+
+    try {
+      $site = $this->getSite($id);
+
+      $layout = $site->layout_config ?? [];
+      $layout = array_merge($layout, $request->only(['sidebar_position']));
+
+      $site->update(['layout_config' => $layout]);
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Настройки макета сохранены',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  /**
+   * Дополнительные стили сайта (custom_css).
+   * Подключаются к страницам этого сайта поверх стилей виджетов. Пустая строка = без доп. стилей.
+   */
+  public function saveCustomStyles(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'custom_css' => 'nullable|string|max:50000',
+    ]);
+
+    try {
+      $site = $this->getSite($id);
+
+      $custom = $site->custom_settings ?? [];
+      $custom['custom_css'] = $request->input('custom_css', '');
+      $site->update(['custom_settings' => $custom]);
+
+      Cache::forget("site_widgets_config_{$site->id}");
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Дополнительные стили сохранены',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  // Telegram настройки сайта
+  public function saveTelegramSettings(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'enabled' => 'nullable|boolean',
+      'bot_token' => 'nullable|string|max:255',
+      'chat_id' => 'nullable|string|max:255',
+      'notifications' => 'nullable|array',
+      'note' => 'nullable|string|max:500',
+    ]);
+
+    try {
+      $site = $this->getSite($id);
+
+      $custom = $site->custom_settings ?? [];
+      $custom['telegram'] = array_merge($custom['telegram'] ?? [], $request->only([
+        'enabled',
+        'bot_token',
+        'chat_id',
+        'notifications',
+        'note',
+      ]));
+
+      $site->update(['custom_settings' => $custom]);
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Настройки Telegram сохранены',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  // Платежные настройки сайта
+  public function savePaymentSettings(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'gateway' => 'nullable|string|in:sbp,yookassa,tinkoff',
+      'enabled_gateways' => 'nullable|array',
+      'enabled_gateways.*' => 'in:sbp,yookassa,tinkoff',
+      'credentials' => 'nullable|array',
+      'options' => 'nullable|array',
+      'donation_min_amount' => 'nullable|integer|min:0',
+      'donation_max_amount' => 'nullable|integer|min:0',
+      'currency' => 'nullable|string|size:3',
+      'test_mode' => 'nullable|boolean',
+    ]);
+
+    try {
+      $site = $this->getSite($id);
+
+      // Собираем входящие данные и нормализуем к новому формату
+      $incoming = $request->only([
+        'gateway',
+        'enabled_gateways',
+        'credentials',
+        'options',
+        'donation_min_amount',
+        'donation_max_amount',
+        'currency',
+        'test_mode',
+      ]);
+
+      // Если enabled_gateways не передан, но есть одиночный gateway — приводим к массиву
+      if (empty($incoming['enabled_gateways']) && !empty($incoming['gateway'])) {
+        $incoming['enabled_gateways'] = [$incoming['gateway']];
+      }
+
+      // Сохраняем напрямую в колонку payment_settings, не в custom_settings
+      $current = is_array($site->payment_settings) ? $site->payment_settings : [];
+      $next = array_merge($current, $incoming);
+      $site->update(['payment_settings' => $next]);
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Платежные настройки сохранены',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  // Добавление виджета
+  public function addWidget(Request $request, $site): JsonResponse
+  {
+    $request->validate([
+      'widget_slug' => 'required|string|exists:widgets,widget_slug',
+      'position_slug' => 'required|string|exists:widget_positions,slug',
+      'config' => 'nullable|array',
+      'settings' => 'nullable|array',
+    ]);
+
+    try {
+      $site = $this->getSite($site);
+      $widget = Widget::where('widget_slug', $request->widget_slug)->firstOrFail();
+
+      // Проверяем доступность виджета для типа сайта
+      if (!$widget->isAvailableForSiteType($site->site_type)) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Виджет недоступен для данного типа сайта',
+        ], 403);
+      }
+
+      $position = WidgetPosition::where('slug', $request->position_slug)->firstOrFail();
+
+      // Валидируем конфигурацию виджета
+      $validationErrors = $this->widgetService->validateWidgetConfig(
+        $request->config ?? [],
+        $request->widget_slug
+      );
+
+      if (!empty($validationErrors)) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Ошибки валидации конфигурации',
+          'errors' => $validationErrors,
+        ], 422);
+      }
+
+      // Обрабатываем изображения в конфигурации
+      $processedConfig = $this->widgetService->processWidgetImages(
+        $request->config ?? [],
+        $request->widget_slug
+      );
+
+      // Создаем новый виджет в нормализованных таблицах
+      $order = SiteWidget::where('site_id', $site->id)
+        ->where('position_slug', $position->slug)
+        ->count() + 1;
+
+      $siteWidget = SiteWidget::create([
+        'site_id' => $site->id,
+        'widget_id' => $widget->id,
+        'position_id' => $position->id,
+        'name' => $widget->name,
+        'position_name' => $position->name,
+        'position_slug' => $position->slug,
+        'widget_slug' => $widget->widget_slug,
+        'sort_order' => $order,
+        'is_active' => true,
+        'is_visible' => true,
+      ]);
+
+      // Сохраняем конфигурацию в отдельной таблице
+      if (!empty($processedConfig)) {
+        $siteWidget->syncConfig($processedConfig);
+      }
+
+      // Данные уже мигрированы в syncConfig выше
+
+      // Сбрасываем кеш виджетов после добавления
+      Cache::forget("site_widgets_config_{$site->id}");
+
+      // Загружаем связанные данные для корректного ответа
+      $siteWidget->load([
+        'configs',
+        'heroSlides',
+        'formFields',
+        'menuItems',
+        'galleryImages',
+        'donationSettings',
+        'regionRatingSettings',
+        'donationsListSettings',
+        'referralLeaderboardSettings',
+        'imageSettings',
+        'topDonorsSettings.project',
+        'topRecurringDonorsSettings.project',
+      ]);
+
+      return response()->json([
+        'success' => true,
+        'widget' => new SiteWidgetResource($siteWidget),
+        'message' => 'Виджет успешно добавлен',
+      ]);
+    } catch (\Exception $e) {
+      Log::error('Error adding widget', [
+        'site_id' => $site,
+        'widget_slug' => $request->widget_slug,
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString(),
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при добавлении виджета: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  // Обновление виджета
+  public function updateWidget(Request $request, $site, $widgetId): JsonResponse
+  {
+    $request->validate([
+      'config' => 'nullable|array',
+      'settings' => 'nullable|array',
+      'is_active' => 'nullable|boolean',
+      'is_visible' => 'nullable|boolean',
+      'wrapper_class' => 'nullable|string|max:255',
+    ]);
+
+    try {
+      $site = $this->getSite($site);
+
+      // Находим виджет в нормализованных таблицах
+      $siteWidget = SiteWidget::where('site_id', $site->id)
+        ->where('id', $widgetId)
+        ->first();
+
+      if (!$siteWidget) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Виджет не найден',
+        ], 404);
+      }
+
+      $oldConfig = $siteWidget->getNormalizedConfig();
+
+      // Валидируем конфигурацию виджета
+      if ($request->has('config')) {
+        $validationErrors = $this->widgetService->validateWidgetConfig(
+          $request->config,
+          $siteWidget->widget_slug
+        );
+
+        if (!empty($validationErrors)) {
+          return response()->json([
+            'success' => false,
+            'message' => 'Ошибки валидации конфигурации',
+            'errors' => $validationErrors,
+          ], 422);
+        }
+
+        // Обрабатываем изображения в конфигурации
+        $processedConfig = $this->widgetService->processWidgetImages(
+          $request->config,
+          $siteWidget->widget_slug
+        );
+
+        // Очищаем старые изображения
+        $this->widgetService->cleanupOldImages($oldConfig, $processedConfig, $siteWidget->widget_slug);
+
+        // Синхронизируем конфигурацию с нормализованными данными
+        $siteWidget->syncConfig($processedConfig);
+      }
+
+      // Обновляем виджет в нормализованных таблицах
+      $updateData = [];
+      if ($request->has('is_active')) {
+        $updateData['is_active'] = $request->is_active;
+      }
+      if ($request->has('is_visible')) {
+        $updateData['is_visible'] = $request->is_visible;
+      }
+      if ($request->has('wrapper_class')) {
+        $updateData['wrapper_class'] = $request->wrapper_class;
+      }
+      if ($request->has('name')) {
+        $updateData['name'] = $request->name;
+      }
+
+      if (!empty($updateData)) {
+        $siteWidget->update($updateData);
+      }
+
+      // Данные уже мигрированы в syncConfig выше
+
+      // Загружаем связанные данные для корректного ответа
+      $siteWidget->load([
+        'configs',
+        'heroSlides',
+        'formFields',
+        'menuItems',
+        'galleryImages',
+        'donationSettings',
+        'regionRatingSettings',
+        'donationsListSettings',
+        'referralLeaderboardSettings',
+        'imageSettings',
+        'topDonorsSettings.project',
+        'topRecurringDonorsSettings.project',
+      ]);
+
+      return response()->json([
+        'success' => true,
+        'widget' => new SiteWidgetResource($siteWidget),
+        'message' => 'Виджет успешно обновлен',
+      ]);
+    } catch (\Exception $e) {
+      Log::error('Error updating widget', [
+        'site_id' => $site,
+        'widget_id' => $widgetId,
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString(),
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при обновлении виджета: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  // Удаление виджета
+  public function deleteWidget(Request $request, $site, $widgetId)
+  {
+    try {
+      $site = $this->getSite($site);
+
+      // Находим виджет в нормализованных таблицах
+      $siteWidget = SiteWidget::where('site_id', $site->id)
+        ->where('id', $widgetId)
+        ->first();
+
+      if (!$siteWidget) {
+        return back()->withErrors(['error' => 'Виджет не найден']);
+      }
+
+      // Удаляем все связанные данные
+      $this->deleteWidgetRelatedData($siteWidget);
+
+      // Удаляем сам виджет
+      $siteWidget->delete();
+
+      // Сбрасываем кеш виджетов после удаления
+      Cache::forget("site_widgets_config_{$site->id}");
+
+      return back()->with('success', 'Виджет успешно удален');
+    } catch (\Exception $e) {
+      Log::error('Error deleting widget', [
+        'site_id' => $site,
+        'widget_id' => $widgetId,
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString(),
+      ]);
+
+      return back()->withErrors(['error' => 'Ошибка при удалении виджета: ' . $e->getMessage()]);
+    }
+  }
+
+  // Перемещение виджета (с пересортировкой соседей)
+  public function moveWidget(Request $request, $site, $widgetId)
+  {
+    $request->validate([
+      'position_slug' => 'required|string|exists:widget_positions,slug',
+      'sort_order' => 'required|integer|min:1',
+    ]);
+
+    try {
+      $site = $this->getSite($site);
+
+      // Находим виджет
+      $siteWidget = SiteWidget::where('site_id', $site->id)
+        ->where('id', $widgetId)
+        ->first();
+
+      if (!$siteWidget) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Виджет не найден',
+        ], 404);
+      }
+
+      $targetPosition = WidgetPosition::where('slug', $request->position_slug)->firstOrFail();
+
+      $oldPositionSlug = $siteWidget->position_slug;
+      $oldOrder = (int) $siteWidget->sort_order;
+      $newPositionSlug = $targetPosition->slug;
+      $requestedOrder = (int) $request->sort_order;
+
+      DB::transaction(function () use (
+        $site,
+        $siteWidget,
+        $targetPosition,
+        $oldPositionSlug,
+        $oldOrder,
+        $newPositionSlug,
+        $requestedOrder
+      ) {
+        // Подсчитываем количество виджетов в целевой позиции
+        $siblingsCount = SiteWidget::where('site_id', $site->id)
+          ->where('position_slug', $newPositionSlug)
+          ->when($oldPositionSlug === $newPositionSlug, function ($q) use ($siteWidget) {
+            // При перемещении внутри той же позиции исключаем сам виджет из подсчета
+            $q->where('id', '!=', $siteWidget->id);
+          })
+          ->count();
+
+        // Нормализуем требуемый порядок
+        $newOrder = max(1, min($requestedOrder, $siblingsCount + 1));
+
+        if ($oldPositionSlug === $newPositionSlug) {
+          // Перемещение внутри одной позиции:
+          // вверх -> сдвигаем диапазон вверх (+1), вниз -> сдвигаем диапазон вниз (-1)
+          if ($newOrder < $oldOrder) {
+            SiteWidget::where('site_id', $site->id)
+              ->where('position_slug', $newPositionSlug)
+              ->where('id', '!=', $siteWidget->id)
+              ->where('sort_order', '>=', $newOrder)
+              ->where('sort_order', '<', $oldOrder)
+              ->increment('sort_order');
+          } elseif ($newOrder > $oldOrder) {
+            SiteWidget::where('site_id', $site->id)
+              ->where('position_slug', $newPositionSlug)
+              ->where('id', '!=', $siteWidget->id)
+              ->where('sort_order', '>', $oldOrder)
+              ->where('sort_order', '<=', $newOrder)
+              ->decrement('sort_order');
+          }
+        } else {
+          // Закрываем "дыру" в старой позиции
+          SiteWidget::where('site_id', $site->id)
+            ->where('position_slug', $oldPositionSlug)
+            ->where('sort_order', '>', $oldOrder)
+            ->decrement('sort_order');
+
+          // Освобождаем место в целевой позиции
+          SiteWidget::where('site_id', $site->id)
+            ->where('position_slug', $newPositionSlug)
+            ->where('sort_order', '>=', $newOrder)
+            ->increment('sort_order');
+        }
+
+        // Обновляем сам виджет
+        $siteWidget->update([
+          'position_slug' => $targetPosition->slug,
+          'position_name' => $targetPosition->name,
+          'position_id' => $targetPosition->id,
+          'sort_order' => $newOrder,
         ]);
 
-        try {
-            $site = $this->getSite($id);
-
-            $updateData = [
-                'name' => $request->name,
-                'description' => $request->description,
-            ];
-
-            // Добавляем favicon если он был передан (извлекаем путь без домена)
-            if ($request->has('favicon')) {
-                $updateData['favicon'] = SiteWidget::extractImagePathFromUrl($request->favicon);
-            }
-
-            $site->update($updateData);
-
-            // Автогенерация SEO, если ранее не заполнено — через сервис
-            $this->siteSeoService->ensureSeoDefaults($site);
-
-            // Сбрасываем кеш виджетов после изменения настроек
-            Cache::forget("site_widgets_config_{$site->id}");
-
-            // Если это главный сайт и была изменена фавиконка, очищаем кеш фавиконки
-            if ($request->has('favicon') && $site->site_type === 'main') {
-                Cache::forget('main_site_favicon');
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Основные настройки сохранены',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
-            ], 500);
+        // Страхуемся от накопленных ранее дубликатов/дыр в order
+        $this->normalizeWidgetOrdersForPosition($site->id, $newPositionSlug);
+        if ($oldPositionSlug !== $newPositionSlug) {
+          $this->normalizeWidgetOrdersForPosition($site->id, $oldPositionSlug);
         }
+      });
+
+      // Сбрасываем кеш виджетов после перемещения
+      Cache::forget("site_widgets_config_{$site->id}");
+
+      // Грузим связи и отдаем JSON
+      $siteWidget->load([
+        'configs',
+        'heroSlides',
+        'formFields',
+        'menuItems',
+        'galleryImages',
+        'donationSettings',
+        'regionRatingSettings',
+        'donationsListSettings',
+        'referralLeaderboardSettings',
+        'imageSettings',
+        'topDonorsSettings.project',
+        'topRecurringDonorsSettings.project',
+      ]);
+
+      return response()->json([
+        'success' => true,
+        'widget' => new SiteWidgetResource($siteWidget),
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при перемещении виджета: ' . $e->getMessage(),
+      ], 500);
     }
+  }
 
-    // Настройки дизайна
-    public function saveDesignSettings(Request $request, $id): JsonResponse
-    {
-        $request->validate([
-            'color_scheme' => 'nullable|string|in:blue,green,red,purple,orange',
-            'font_family' => 'nullable|string|in:inter,roboto,open-sans,lato',
-            'font_size' => 'nullable|string|in:small,medium,large',
-            'layout' => 'nullable|string|in:wide,boxed,full-width',
-            'header_style' => 'nullable|string|in:default,classic,modern',
-            'footer_style' => 'nullable|string|in:default,classic,modern',
-        ]);
+  // Превью сайта
+  public function preview($id): JsonResponse
+  {
+    try {
+      $site = $this->getSite($id);
+      $previewUrl = route('sites.preview', ['slug' => $site->slug]);
 
-        try {
-            $site = $this->getSite($id);
-
-            $themeConfig = $site->theme_config ?? [];
-            $themeConfig = array_merge($themeConfig, $request->only([
-                'color_scheme',
-                'font_family',
-                'font_size',
-                'layout',
-                'header_style',
-                'footer_style'
-            ]));
-
-            $site->update(['theme_config' => $themeConfig]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Настройки дизайна сохранены',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
-            ], 500);
-        }
+      return response()->json([
+        'success' => true,
+        'data' => ['preview_url' => $previewUrl],
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при получении превью: ' . $e->getMessage(),
+      ], 500);
     }
+  }
 
-    // SEO настройки
-    public function saveSeoSettings(Request $request, $id): JsonResponse
-    {
-        $request->validate([
-            'seo_title' => 'nullable|string|max:60',
-            'seo_description' => 'nullable|string|max:160',
-            'seo_keywords' => 'nullable|string|max:255',
-            'og_title' => 'nullable|string|max:100',
-            'og_description' => 'nullable|string|max:200',
-            'og_type' => 'nullable|string|max:50',
-            'og_image' => 'nullable|string|max:500',
-            'twitter_card' => 'nullable|string|max:50',
-            'twitter_title' => 'nullable|string|max:100',
-            'twitter_description' => 'nullable|string|max:200',
-            'twitter_image' => 'nullable|string|max:500',
-        ]);
+  /**
+   * Получить настройки позиции для сайта
+   */
+  public function getPositionSettings(Request $request, $site, string $positionSlug): JsonResponse
+  {
+    try {
+      $siteModel = $this->getSite($site);
 
-        try {
-            $site = $this->getSite($id);
+      $position = WidgetPosition::where('slug', $positionSlug)->first();
 
-            $incoming = $request->only([
-                'seo_title',
-                'seo_description',
-                'seo_keywords',
-                'og_title',
-                'og_description',
-                'og_type',
-                'og_image',
-                'twitter_card',
-                'twitter_title',
-                'twitter_description',
-                'twitter_image',
-            ]);
+      $settings = SitePositionSetting::where('site_id', $siteModel->id)
+        ->where('position_slug', $positionSlug)
+        ->first();
 
-            // Извлекаем пути изображений без домена
-            if (isset($incoming['og_image']) && !empty($incoming['og_image'])) {
-                $incoming['og_image'] = SiteWidget::extractImagePathFromUrl($incoming['og_image']);
-            }
-            if (isset($incoming['twitter_image']) && !empty($incoming['twitter_image'])) {
-                $incoming['twitter_image'] = SiteWidget::extractImagePathFromUrl($incoming['twitter_image']);
-            }
-
-            $seoConfig = $this->siteSeoService->applyDefaultsToIncoming($site, $incoming);
-
-            $site->update(['seo_config' => $seoConfig]);
-
-            // Очищаем кеш виджетов и позиций, так как они могут зависеть от SEO данных
-            Cache::forget("site_widgets_config_{$site->id}");
-            Cache::forget("site_positions_{$site->template}");
-            Cache::forget("site_position_settings_{$site->id}");
-
-            // Возвращаем отформатированные данные с правильными URL изображений
-            $formattedSeoConfig = $seoConfig;
-            if (isset($formattedSeoConfig['og_image']) && !empty($formattedSeoConfig['og_image'])) {
-                $formattedSeoConfig['og_image'] = SiteWidget::formatImageUrl($formattedSeoConfig['og_image']);
-            }
-            if (isset($formattedSeoConfig['twitter_image']) && !empty($formattedSeoConfig['twitter_image'])) {
-                $formattedSeoConfig['twitter_image'] = SiteWidget::formatImageUrl($formattedSeoConfig['twitter_image']);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'SEO настройки сохранены',
-                'data' => $formattedSeoConfig,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
-            ], 500);
-        }
+      return response()->json([
+        'success' => true,
+        'data' => [
+          'position' => $position,
+          'settings' => $settings,
+        ],
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при получении настроек позиции: ' . $e->getMessage(),
+      ], 500);
     }
+  }
 
-    // Layout настройки (позиция сайдбара и др.)
-    public function saveLayoutSettings(Request $request, $id): JsonResponse
-    {
-        $request->validate([
-            'sidebar_position' => 'nullable|in:left,right',
-        ]);
+  /**
+   * Сохранить настройки позиции для сайта
+   */
+  public function savePositionSettings(Request $request, $site, string $positionSlug): JsonResponse
+  {
+    $request->validate([
+      'visibility' => 'nullable|array',
+      'layout' => 'nullable|array',
+    ]);
 
-        try {
-            $site = $this->getSite($id);
+    try {
+      $siteModel = $this->getSite($site);
 
-            $layout = $site->layout_config ?? [];
-            $layout = array_merge($layout, $request->only(['sidebar_position']));
+      $position = WidgetPosition::where('slug', $positionSlug)->first();
 
-            $site->update(['layout_config' => $layout]);
+      $settings = SitePositionSetting::updateOrCreate(
+        [
+          'site_id' => $siteModel->id,
+          'position_slug' => $positionSlug,
+        ],
+        [
+          'position_id' => $position?->id,
+          'visibility_rules' => $request->input('visibility', []),
+          'layout_overrides' => $request->input('layout', []),
+        ]
+      );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Настройки макета сохранены',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
-            ], 500);
-        }
+      // Сбрасываем кеш вывода для этого сайта/шаблона
+      Cache::forget("site_widgets_config_{$siteModel->id}");
+      Cache::forget("site_positions_{$siteModel->template}");
+      Cache::forget("site_position_settings_{$siteModel->id}");
+
+      return response()->json([
+        'success' => true,
+        'data' => $settings,
+        'message' => 'Настройки позиции сохранены',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении настроек позиции: ' . $e->getMessage(),
+      ], 500);
     }
+  }
 
-    /**
-     * Дополнительные стили сайта (custom_css).
-     * Подключаются к страницам этого сайта поверх стилей виджетов. Пустая строка = без доп. стилей.
-     */
-    public function saveCustomStyles(Request $request, $id): JsonResponse
-    {
-        $request->validate([
-            'custom_css' => 'nullable|string|max:50000',
-        ]);
+  /**
+   * Доступные публичные маршруты основного сайта (для выбора видимости)
+   */
+  public function getAvailablePublicRoutes(Request $request, $site): JsonResponse
+  {
+    try {
+      // Можно адаптировать по типу сайта, пока фиксированный список для главного сайта
+      $routes = [
+        ['key' => 'home', 'label' => 'Главная', 'pattern' => '/'],
+        ['key' => 'organizations', 'label' => 'Школы (список)', 'pattern' => '/organizations'],
+        ['key' => 'organization_show', 'label' => 'Школа (страница)', 'pattern' => '/organization/*'],
+        ['key' => 'projects', 'label' => 'Проекты (список)', 'pattern' => '/projects'],
+        ['key' => 'project_show', 'label' => 'Проект (страница)', 'pattern' => '/project/*'],
+      ];
 
-        try {
-            $site = $this->getSite($id);
-
-            $custom = $site->custom_settings ?? [];
-            $custom['custom_css'] = $request->input('custom_css', '');
-            $site->update(['custom_settings' => $custom]);
-
-            Cache::forget("site_widgets_config_{$site->id}");
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Дополнительные стили сохранены',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
-            ], 500);
-        }
+      return response()->json([
+        'success' => true,
+        'data' => $routes,
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при получении маршрутов: ' . $e->getMessage(),
+      ], 500);
     }
+  }
 
-    // Telegram настройки сайта
-    public function saveTelegramSettings(Request $request, $id): JsonResponse
-    {
-        $request->validate([
-            'enabled' => 'nullable|boolean',
-            'bot_token' => 'nullable|string|max:255',
-            'chat_id' => 'nullable|string|max:255',
-            'notifications' => 'nullable|array',
-            'note' => 'nullable|string|max:500',
-        ]);
+  /**
+   * Сохранить настройки видимости виджета
+   */
+  public function saveWidgetSettings(Request $request, $site, int $widgetId): JsonResponse
+  {
+    $request->validate([
+      'visibility' => 'nullable|array',
+    ]);
 
-        try {
-            $site = $this->getSite($id);
+    try {
+      $siteModel = $this->getSite($site);
+      $widget = SiteWidget::where('id', $widgetId)
+        ->where('site_id', $siteModel->id)
+        ->firstOrFail();
 
-            $custom = $site->custom_settings ?? [];
-            $custom['telegram'] = array_merge($custom['telegram'] ?? [], $request->only([
-                'enabled',
-                'bot_token',
-                'chat_id',
-                'notifications',
-                'note',
-            ]));
+      $settings = SiteWidgetSetting::updateOrCreate(
+        [
+          'site_id' => $siteModel->id,
+          'widget_id' => $widgetId,
+        ],
+        [
+          'visibility_rules' => $request->input('visibility', []),
+        ]
+      );
 
-            $site->update(['custom_settings' => $custom]);
+      // Сбрасываем кеш виджетов и настроек для этого сайта
+      Cache::forget("site_widgets_config_{$siteModel->id}");
+      Cache::forget("site_widget_settings_{$siteModel->id}");
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Настройки Telegram сохранены',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
-            ], 500);
-        }
+      return response()->json([
+        'success' => true,
+        'data' => $settings,
+        'message' => 'Настройки виджета сохранены',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении настроек виджета: ' . $e->getMessage(),
+      ], 500);
     }
+  }
 
-    // Платежные настройки сайта
-    public function savePaymentSettings(Request $request, $id): JsonResponse
-    {
-        $request->validate([
-            'gateway' => 'nullable|string|in:sbp,yookassa,tinkoff',
-            'enabled_gateways' => 'nullable|array',
-            'enabled_gateways.*' => 'in:sbp,yookassa,tinkoff',
-            'credentials' => 'nullable|array',
-            'options' => 'nullable|array',
-            'donation_min_amount' => 'nullable|integer|min:0',
-            'donation_max_amount' => 'nullable|integer|min:0',
-            'currency' => 'nullable|string|size:3',
-            'test_mode' => 'nullable|boolean',
-        ]);
+  /**
+   * Получить настройки видимости виджета
+   */
+  public function getWidgetSettings(Request $request, $site, int $widgetId): JsonResponse
+  {
+    try {
+      $siteModel = $this->getSite($site);
+      $widget = SiteWidget::where('id', $widgetId)
+        ->where('site_id', $siteModel->id)
+        ->firstOrFail();
 
-        try {
-            $site = $this->getSite($id);
+      $settings = SiteWidgetSetting::where('site_id', $siteModel->id)
+        ->where('widget_id', $widgetId)
+        ->first();
 
-            // Собираем входящие данные и нормализуем к новому формату
-            $incoming = $request->only([
-                'gateway',
-                'enabled_gateways',
-                'credentials',
-                'options',
-                'donation_min_amount',
-                'donation_max_amount',
-                'currency',
-                'test_mode',
-            ]);
+      return response()->json([
+        'success' => true,
+        'data' => [
+          'widget' => $widget,
+          'settings' => $settings,
+        ],
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при получении настроек виджета: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
 
-            // Если enabled_gateways не передан, но есть одиночный gateway — приводим к массиву
-            if (empty($incoming['enabled_gateways']) && !empty($incoming['gateway'])) {
-                $incoming['enabled_gateways'] = [$incoming['gateway']];
+  /**
+   * Опубликованные страницы сайта
+   */
+  public function getSitePages(Request $request, $site): JsonResponse
+  {
+    try {
+      $siteModel = $this->getSite($site);
+      $pages = $siteModel->publishedPages()
+        ->orderBy('sort_order')
+        ->get(['id', 'title', 'slug']);
+
+      return response()->json([
+        'success' => true,
+        'data' => $pages,
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при получении страниц: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  // Получение конфигурации сайта
+  public function getConfig($site)
+  {
+    try {
+      $site = $this->getSite($site);
+
+      // Централизованный вывод через ресурс, чтобы включать специализированные данные
+      $widgets = SiteWidget::with([
+        'configs',
+        'heroSlides',
+        'sliderSlides',
+        'formFields',
+        'menuItems',
+        'galleryImages',
+        'donationSettings',
+        'regionRatingSettings',
+        'donationsListSettings',
+        'referralLeaderboardSettings',
+        'imageSettings',
+        'widget',
+        'position',
+      ])
+        ->where('site_id', $site->id)
+        ->active()
+        ->visible()
+        ->ordered()
+        ->get();
+
+      return response()->json([
+        'success' => true,
+        'data' => SiteWidgetResource::collection($widgets)->toArray(request()),
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при получении конфигурации: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  private function normalizeWidgetOrdersForPosition(int $siteId, string $positionSlug): void
+  {
+    $widgets = SiteWidget::where('site_id', $siteId)
+      ->where('position_slug', $positionSlug)
+      ->orderBy('sort_order')
+      ->orderBy('id')
+      ->get(['id']);
+
+    foreach ($widgets as $index => $widget) {
+      SiteWidget::where('id', $widget->id)->update([
+        'sort_order' => $index + 1,
+      ]);
+    }
+  }
+
+  // Сохранение конфигурации сайта (массовое)
+  public function saveConfig(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'widgets' => 'required|array',
+    ]);
+
+    try {
+      $site = $this->getSite($id);
+      $widgets = $request->widgets;
+
+      foreach ($widgets as $w) {
+        if (empty($w['id'])) {
+          continue;
+        }
+        $siteWidget = SiteWidget::where('site_id', $site->id)
+          ->where('id', $w['id'])
+          ->first();
+        if (!$siteWidget) {
+          continue;
+        }
+
+        $update = [];
+        if (array_key_exists('is_active', $w)) {
+          $update['is_active'] = (bool) $w['is_active'];
+        }
+        if (array_key_exists('is_visible', $w)) {
+          $update['is_visible'] = (bool) $w['is_visible'];
+        }
+        $orderValue = $w['sort_order'] ?? $w['order'] ?? null;
+        if ($orderValue !== null) {
+          $update['sort_order'] = (int) $orderValue;
+        }
+        if (array_key_exists('position_slug', $w)) {
+          $pos = WidgetPosition::where('slug', $w['position_slug'])->first();
+          if ($pos) {
+            $update['position_slug'] = $pos->slug;
+            $update['position_name'] = $pos->name;
+            $update['position_id'] = $pos->id;
+          }
+        }
+        if (!empty($update)) {
+          $siteWidget->update($update);
+        }
+
+        // Если есть конфиг, синхронизируем его (ожидаем ключ configs или config)
+        if (!empty($w['config']) && is_array($w['config'])) {
+          $siteWidget->syncConfig($w['config']);
+        } elseif (!empty($w['configs']) && is_array($w['configs'])) {
+          // Если пришли нормализованные configs (ключ/значение/тип) — преобразуем в плоский вид
+          $flat = [];
+          foreach ($w['configs'] as $c) {
+            if (!empty($c['config_key'])) {
+              $flat[$c['config_key']] = $c['config_value'];
             }
-
-            // Сохраняем напрямую в колонку payment_settings, не в custom_settings
-            $current = is_array($site->payment_settings) ? $site->payment_settings : [];
-            $next = array_merge($current, $incoming);
-            $site->update(['payment_settings' => $next]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Платежные настройки сохранены',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
-            ], 500);
+          }
+          if (!empty($flat)) {
+            $siteWidget->syncConfig($flat);
+          }
         }
+      }
+
+      // Очищаем кеш виджетов сайта после сохранения
+      Cache::forget("site_widgets_config_{$site->id}");
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Конфигурация сохранена',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении конфигурации: ' . $e->getMessage(),
+      ], 500);
     }
-
-    // Добавление виджета
-    public function addWidget(Request $request, $site): JsonResponse
-    {
-        $request->validate([
-            'widget_slug' => 'required|string|exists:widgets,widget_slug',
-            'position_slug' => 'required|string|exists:widget_positions,slug',
-            'config' => 'nullable|array',
-            'settings' => 'nullable|array',
-        ]);
-
-        try {
-            $site = $this->getSite($site);
-            $widget = Widget::where('widget_slug', $request->widget_slug)->firstOrFail();
-
-            // Проверяем доступность виджета для типа сайта
-            if (!$widget->isAvailableForSiteType($site->site_type)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Виджет недоступен для данного типа сайта',
-                ], 403);
-            }
-
-            $position = WidgetPosition::where('slug', $request->position_slug)->firstOrFail();
-
-            // Валидируем конфигурацию виджета
-            $validationErrors = $this->widgetService->validateWidgetConfig(
-                $request->config ?? [],
-                $request->widget_slug
-            );
-
-            if (!empty($validationErrors)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ошибки валидации конфигурации',
-                    'errors' => $validationErrors,
-                ], 422);
-            }
-
-            // Обрабатываем изображения в конфигурации
-            $processedConfig = $this->widgetService->processWidgetImages(
-                $request->config ?? [],
-                $request->widget_slug
-            );
-
-            // Создаем новый виджет в нормализованных таблицах
-            $order = SiteWidget::where('site_id', $site->id)
-                ->where('position_slug', $position->slug)
-                ->count() + 1;
-
-            $siteWidget = SiteWidget::create([
-                'site_id' => $site->id,
-                'widget_id' => $widget->id,
-                'position_id' => $position->id,
-                'name' => $widget->name,
-                'position_name' => $position->name,
-                'position_slug' => $position->slug,
-                'widget_slug' => $widget->widget_slug,
-                'order' => $order,
-                'sort_order' => $order,
-                'is_active' => true,
-                'is_visible' => true,
-            ]);
-
-            // Сохраняем конфигурацию в отдельной таблице
-            if (!empty($processedConfig)) {
-                $siteWidget->syncConfig($processedConfig);
-            }
-
-            // Данные уже мигрированы в syncConfig выше
-
-            // Сбрасываем кеш виджетов после добавления
-            Cache::forget("site_widgets_config_{$site->id}");
-
-            // Загружаем связанные данные для корректного ответа
-            $siteWidget->load([
-                'configs',
-                'heroSlides',
-                'formFields',
-                'menuItems',
-                'galleryImages',
-                'donationSettings',
-                'regionRatingSettings',
-                'donationsListSettings',
-                'referralLeaderboardSettings',
-                'imageSettings',
-                'topDonorsSettings.project',
-                'topRecurringDonorsSettings.project',
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'widget' => new SiteWidgetResource($siteWidget),
-                'message' => 'Виджет успешно добавлен',
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error adding widget', [
-                'site_id' => $site,
-                'widget_slug' => $request->widget_slug,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при добавлении виджета: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    // Обновление виджета
-    public function updateWidget(Request $request, $site, $widgetId): JsonResponse
-    {
-        $request->validate([
-            'config' => 'nullable|array',
-            'settings' => 'nullable|array',
-            'is_active' => 'nullable|boolean',
-            'is_visible' => 'nullable|boolean',
-            'wrapper_class' => 'nullable|string|max:255',
-        ]);
-
-        try {
-            $site = $this->getSite($site);
-
-            // Находим виджет в нормализованных таблицах
-            $siteWidget = SiteWidget::where('site_id', $site->id)
-                ->where('id', $widgetId)
-                ->first();
-
-            if (!$siteWidget) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Виджет не найден',
-                ], 404);
-            }
-
-            $oldConfig = $siteWidget->getNormalizedConfig();
-
-            // Валидируем конфигурацию виджета
-            if ($request->has('config')) {
-                $validationErrors = $this->widgetService->validateWidgetConfig(
-                    $request->config,
-                    $siteWidget->widget_slug
-                );
-
-                if (!empty($validationErrors)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Ошибки валидации конфигурации',
-                        'errors' => $validationErrors,
-                    ], 422);
-                }
-
-                // Обрабатываем изображения в конфигурации
-                $processedConfig = $this->widgetService->processWidgetImages(
-                    $request->config,
-                    $siteWidget->widget_slug
-                );
-
-                // Очищаем старые изображения
-                $this->widgetService->cleanupOldImages($oldConfig, $processedConfig, $siteWidget->widget_slug);
-
-                // Синхронизируем конфигурацию с нормализованными данными
-                $siteWidget->syncConfig($processedConfig);
-            }
-
-            // Обновляем виджет в нормализованных таблицах
-            $updateData = [];
-            if ($request->has('is_active')) {
-                $updateData['is_active'] = $request->is_active;
-            }
-            if ($request->has('is_visible')) {
-                $updateData['is_visible'] = $request->is_visible;
-            }
-            if ($request->has('wrapper_class')) {
-                $updateData['wrapper_class'] = $request->wrapper_class;
-            }
-            if ($request->has('name')) {
-                $updateData['name'] = $request->name;
-            }
-
-            if (!empty($updateData)) {
-                $siteWidget->update($updateData);
-            }
-
-            // Данные уже мигрированы в syncConfig выше
-
-            // Загружаем связанные данные для корректного ответа
-            $siteWidget->load([
-                'configs',
-                'heroSlides',
-                'formFields',
-                'menuItems',
-                'galleryImages',
-                'donationSettings',
-                'regionRatingSettings',
-                'donationsListSettings',
-                'referralLeaderboardSettings',
-                'imageSettings',
-                'topDonorsSettings.project',
-                'topRecurringDonorsSettings.project',
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'widget' => new SiteWidgetResource($siteWidget),
-                'message' => 'Виджет успешно обновлен',
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error updating widget', [
-                'site_id' => $site,
-                'widget_id' => $widgetId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при обновлении виджета: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    // Удаление виджета
-    public function deleteWidget(Request $request, $site, $widgetId)
-    {
-        try {
-            $site = $this->getSite($site);
-
-            // Находим виджет в нормализованных таблицах
-            $siteWidget = SiteWidget::where('site_id', $site->id)
-                ->where('id', $widgetId)
-                ->first();
-
-            if (!$siteWidget) {
-                return back()->withErrors(['error' => 'Виджет не найден']);
-            }
-
-            // Удаляем все связанные данные
-            $this->deleteWidgetRelatedData($siteWidget);
-
-            // Удаляем сам виджет
-            $siteWidget->delete();
-
-            // Сбрасываем кеш виджетов после удаления
-            Cache::forget("site_widgets_config_{$site->id}");
-
-            return back()->with('success', 'Виджет успешно удален');
-        } catch (\Exception $e) {
-            Log::error('Error deleting widget', [
-                'site_id' => $site,
-                'widget_id' => $widgetId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return back()->withErrors(['error' => 'Ошибка при удалении виджета: ' . $e->getMessage()]);
-        }
-    }
-
-    // Перемещение виджета (с пересортировкой соседей)
-    public function moveWidget(Request $request, $site, $widgetId)
-    {
-        $request->validate([
-            'position_slug' => 'required|string|exists:widget_positions,slug',
-            'order' => 'required|integer|min:1',
-        ]);
-
-        try {
-            $site = $this->getSite($site);
-
-            // Находим виджет
-            $siteWidget = SiteWidget::where('site_id', $site->id)
-                ->where('id', $widgetId)
-                ->first();
-
-            if (!$siteWidget) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Виджет не найден',
-                ], 404);
-            }
-
-            $targetPosition = WidgetPosition::where('slug', $request->position_slug)->firstOrFail();
-
-            $oldPositionSlug = $siteWidget->position_slug;
-            $oldOrder = (int) $siteWidget->order;
-            $newPositionSlug = $targetPosition->slug;
-            $requestedOrder = (int) $request->order;
-
-            DB::transaction(function () use (
-                $site,
-                $siteWidget,
-                $targetPosition,
-                $oldPositionSlug,
-                $oldOrder,
-                $newPositionSlug,
-                $requestedOrder
-            ) {
-                // Закрываем "дыру" в старой позиции, если позиция меняется
-                if ($oldPositionSlug !== $newPositionSlug) {
-                    SiteWidget::where('site_id', $site->id)
-                        ->where('position_slug', $oldPositionSlug)
-                        ->where('order', '>', $oldOrder)
-                        ->decrement('order');
-                }
-
-                // Подсчитываем количество виджетов в целевой позиции
-                $siblingsCount = SiteWidget::where('site_id', $site->id)
-                    ->where('position_slug', $newPositionSlug)
-                    ->when($oldPositionSlug === $newPositionSlug, function ($q) use ($siteWidget) {
-                        // При перемещении внутри той же позиции исключаем сам виджет из подсчета
-                        $q->where('id', '!=', $siteWidget->id);
-                    })
-                    ->count();
-
-                // Нормализуем требуемый порядок
-                $newOrder = max(1, min($requestedOrder, $siblingsCount + 1));
-
-                // Сдвигаем соседей в целевой позиции, освобождая место под newOrder
-                SiteWidget::where('site_id', $site->id)
-                    ->where('position_slug', $newPositionSlug)
-                    ->when($oldPositionSlug === $newPositionSlug, function ($q) use ($siteWidget) {
-                        $q->where('id', '!=', $siteWidget->id);
-                    })
-                    ->where('order', '>=', $newOrder)
-                    ->increment('order');
-
-                // Обновляем сам виджет
-                $siteWidget->update([
-                    'position_slug' => $targetPosition->slug,
-                    'position_name' => $targetPosition->name,
-                    'position_id' => $targetPosition->id,
-                    'order' => $newOrder,
-                    'sort_order' => $newOrder,
-                ]);
-            });
-
-            // Сбрасываем кеш виджетов после перемещения
-            Cache::forget("site_widgets_config_{$site->id}");
-
-            // Грузим связи и отдаем JSON
-            $siteWidget->load([
-                'configs',
-                'heroSlides',
-                'formFields',
-                'menuItems',
-                'galleryImages',
-                'donationSettings',
-                'regionRatingSettings',
-                'donationsListSettings',
-                'referralLeaderboardSettings',
-                'imageSettings',
-                'topDonorsSettings.project',
-                'topRecurringDonorsSettings.project',
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'widget' => new SiteWidgetResource($siteWidget),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при перемещении виджета: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    // Превью сайта
-    public function preview($id): JsonResponse
-    {
-        try {
-            $site = $this->getSite($id);
-            $previewUrl = route('sites.preview', ['slug' => $site->slug]);
-
-            return response()->json([
-                'success' => true,
-                'data' => ['preview_url' => $previewUrl],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при получении превью: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Получить настройки позиции для сайта
-     */
-    public function getPositionSettings(Request $request, $site, string $positionSlug): JsonResponse
-    {
-        try {
-            $siteModel = $this->getSite($site);
-
-            $position = WidgetPosition::where('slug', $positionSlug)->first();
-
-            $settings = SitePositionSetting::where('site_id', $siteModel->id)
-                ->where('position_slug', $positionSlug)
-                ->first();
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'position' => $position,
-                    'settings' => $settings,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при получении настроек позиции: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Сохранить настройки позиции для сайта
-     */
-    public function savePositionSettings(Request $request, $site, string $positionSlug): JsonResponse
-    {
-        $request->validate([
-            'visibility' => 'nullable|array',
-            'layout' => 'nullable|array',
-        ]);
-
-        try {
-            $siteModel = $this->getSite($site);
-
-            $position = WidgetPosition::where('slug', $positionSlug)->first();
-
-            $settings = SitePositionSetting::updateOrCreate(
-                [
-                    'site_id' => $siteModel->id,
-                    'position_slug' => $positionSlug,
-                ],
-                [
-                    'position_id' => $position?->id,
-                    'visibility_rules' => $request->input('visibility', []),
-                    'layout_overrides' => $request->input('layout', []),
-                ]
-            );
-
-            // Сбрасываем кеш вывода для этого сайта/шаблона
-            Cache::forget("site_widgets_config_{$siteModel->id}");
-            if (!empty($siteModel->template)) {
-                Cache::forget("site_positions_{$siteModel->template}");
-            }
-            Cache::forget("site_position_settings_{$siteModel->id}");
-
-            return response()->json([
-                'success' => true,
-                'data' => $settings,
-                'message' => 'Настройки позиции сохранены',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении настроек позиции: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Доступные публичные маршруты основного сайта (для выбора видимости)
-     */
-    public function getAvailablePublicRoutes(Request $request, $site): JsonResponse
-    {
-        try {
-            // Можно адаптировать по типу сайта, пока фиксированный список для главного сайта
-            $routes = [
-                ['key' => 'home', 'label' => 'Главная', 'pattern' => '/'],
-                ['key' => 'organizations', 'label' => 'Школы (список)', 'pattern' => '/organizations'],
-                ['key' => 'organization_show', 'label' => 'Школа (страница)', 'pattern' => '/organization/*'],
-                ['key' => 'projects', 'label' => 'Проекты (список)', 'pattern' => '/projects'],
-                ['key' => 'project_show', 'label' => 'Проект (страница)', 'pattern' => '/project/*'],
-            ];
-
-            return response()->json([
-                'success' => true,
-                'data' => $routes,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при получении маршрутов: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Сохранить настройки видимости виджета
-     */
-    public function saveWidgetSettings(Request $request, $site, int $widgetId): JsonResponse
-    {
-        $request->validate([
-            'visibility' => 'nullable|array',
-        ]);
-
-        try {
-            $siteModel = $this->getSite($site);
-            $widget = SiteWidget::where('id', $widgetId)
-                ->where('site_id', $siteModel->id)
-                ->firstOrFail();
-
-            $settings = SiteWidgetSetting::updateOrCreate(
-                [
-                    'site_id' => $siteModel->id,
-                    'widget_id' => $widgetId,
-                ],
-                [
-                    'visibility_rules' => $request->input('visibility', []),
-                ]
-            );
-
-            // Сбрасываем кеш виджетов и настроек для этого сайта
-            Cache::forget("site_widgets_config_{$siteModel->id}");
-            Cache::forget("site_widget_settings_{$siteModel->id}");
-
-            return response()->json([
-                'success' => true,
-                'data' => $settings,
-                'message' => 'Настройки виджета сохранены',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении настроек виджета: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Получить настройки видимости виджета
-     */
-    public function getWidgetSettings(Request $request, $site, int $widgetId): JsonResponse
-    {
-        try {
-            $siteModel = $this->getSite($site);
-            $widget = SiteWidget::where('id', $widgetId)
-                ->where('site_id', $siteModel->id)
-                ->firstOrFail();
-
-            $settings = SiteWidgetSetting::where('site_id', $siteModel->id)
-                ->where('widget_id', $widgetId)
-                ->first();
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'widget' => $widget,
-                    'settings' => $settings,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при получении настроек виджета: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Опубликованные страницы сайта
-     */
-    public function getSitePages(Request $request, $site): JsonResponse
-    {
-        try {
-            $siteModel = $this->getSite($site);
-            $pages = $siteModel->publishedPages()
-                ->orderBy('sort_order')
-                ->get(['id', 'title', 'slug']);
-
-            return response()->json([
-                'success' => true,
-                'data' => $pages,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при получении страниц: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    // Получение конфигурации сайта
-    public function getConfig($site)
-    {
-        try {
-            $site = $this->getSite($site);
-
-            // Централизованный вывод через ресурс, чтобы включать специализированные данные
-            $widgets = SiteWidget::with([
-                'configs',
-                'heroSlides',
-                'sliderSlides',
-                'formFields',
-                'menuItems',
-                'galleryImages',
-                'donationSettings',
-                'regionRatingSettings',
-                'donationsListSettings',
-                'referralLeaderboardSettings',
-                'imageSettings',
-                'widget',
-                'position',
-            ])
-                ->where('site_id', $site->id)
-                ->active()
-                ->visible()
-                ->ordered()
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => SiteWidgetResource::collection($widgets)->toArray(request()),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при получении конфигурации: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    // Сохранение конфигурации сайта (массовое)
-    public function saveConfig(Request $request, $id): JsonResponse
-    {
-        $request->validate([
-            'widgets' => 'required|array',
-        ]);
-
-        try {
-            $site = $this->getSite($id);
-            $widgets = $request->widgets;
-
-            foreach ($widgets as $w) {
-                if (empty($w['id'])) {
-                    continue;
-                }
-                $siteWidget = SiteWidget::where('site_id', $site->id)
-                    ->where('id', $w['id'])
-                    ->first();
-                if (!$siteWidget) {
-                    continue;
-                }
-
-                $update = [];
-                if (array_key_exists('is_active', $w)) {
-                    $update['is_active'] = (bool) $w['is_active'];
-                }
-                if (array_key_exists('is_visible', $w)) {
-                    $update['is_visible'] = (bool) $w['is_visible'];
-                }
-                if (array_key_exists('order', $w)) {
-                    $update['order'] = (int) $w['order'];
-                    $update['sort_order'] = (int) $w['order'];
-                }
-                if (array_key_exists('position_slug', $w)) {
-                    $pos = WidgetPosition::where('slug', $w['position_slug'])->first();
-                    if ($pos) {
-                        $update['position_slug'] = $pos->slug;
-                        $update['position_name'] = $pos->name;
-                        $update['position_id'] = $pos->id;
-                    }
-                }
-                if (!empty($update)) {
-                    $siteWidget->update($update);
-                }
-
-                // Если есть конфиг, синхронизируем его (ожидаем ключ configs или config)
-                if (!empty($w['config']) && is_array($w['config'])) {
-                    $siteWidget->syncConfig($w['config']);
-                } elseif (!empty($w['configs']) && is_array($w['configs'])) {
-                    // Если пришли нормализованные configs (ключ/значение/тип) — преобразуем в плоский вид
-                    $flat = [];
-                    foreach ($w['configs'] as $c) {
-                        if (!empty($c['config_key'])) {
-                            $flat[$c['config_key']] = $c['config_value'];
-                        }
-                    }
-                    if (!empty($flat)) {
-                        $siteWidget->syncConfig($flat);
-                    }
-                }
-            }
-
-            // Очищаем кеш виджетов сайта после сохранения
-            Cache::forget("site_widgets_config_{$site->id}");
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Конфигурация сохранена',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении конфигурации: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    // Создание дефолтных виджетов при создании сайта
-    public function createDefaultWidgets($siteId): void
-    {
-        $site = Site::findOrFail($siteId);
-        $positions = WidgetPosition::where('template_id', $site->template_id)->get();
-
-        $defaultWidgets = [];
-
-        foreach ($positions as $position) {
-            $widget = $this->getDefaultWidgetForPosition($position->slug);
-            if ($widget) {
-                $defaultWidgets[] = [
-                    'id' => time() . rand(1000, 9999),
-                    'widget_id' => $widget->id,
-                    'name' => $widget->name,
-                    'widget_slug' => $widget->widget_slug,
-                    'position_name' => $position->name,
-                    'position_slug' => $position->slug,
-                    'order' => 1,
-                    'config' => $this->getDefaultConfigForWidget($widget->widget_slug),
-                    'settings' => [],
-                    'is_active' => true,
-                    'is_visible' => true,
-                    'created_at' => now()->toISOString(),
-                ];
-            }
-        }
-
-        // Создаем дефолтные виджеты в нормализованных таблицах
-        $widgetDataService = app(WidgetDataService::class);
-
-        foreach ($defaultWidgets as $widgetData) {
-            // Создаем SiteWidget
-            $siteWidget = SiteWidget::create([
-                'site_id' => $site->id,
-                'widget_id' => $widgetData['widget_id'],
-                'position_id' => WidgetPosition::where('slug', $widgetData['position_slug'])->first()->id,
-                'name' => $widgetData['name'],
-                'position_name' => $widgetData['position_name'],
-                'position_slug' => $widgetData['position_slug'],
-                'widget_slug' => $widgetData['widget_slug'],
-                'order' => $widgetData['order'],
-                'sort_order' => $widgetData['order'],
-                'is_active' => $widgetData['is_active'],
-                'is_visible' => $widgetData['is_visible'],
-            ]);
-
-            // Сохраняем конфигурацию в отдельной таблице
-            if (!empty($widgetData['config'])) {
-                $siteWidget->syncConfig($widgetData['config']);
-            }
-
-            // Мигрируем данные в нормализованные таблицы
-            $widgetDataService->migrateWidgetData($siteWidget);
-        }
-    }
-
-    // Получение дефолтного виджета для позиции
-    private function getDefaultWidgetForPosition(string $positionSlug): ?Widget
-    {
-        $defaultWidgets = [
-            'header' => 'header-menu',
-            'hero' => 'hero-slider',
-            'footer' => 'footer-contacts',
+  }
+
+  // Создание дефолтных виджетов при создании сайта
+  public function createDefaultWidgets($siteId): void
+  {
+    $site = Site::findOrFail($siteId);
+    $positions = WidgetPosition::where('template_id', $site->template_id)->get();
+
+    $defaultWidgets = [];
+
+    foreach ($positions as $position) {
+      $widget = $this->getDefaultWidgetForPosition($position->slug);
+      if ($widget) {
+        $defaultWidgets[] = [
+          'id' => time() . rand(1000, 9999),
+          'widget_id' => $widget->id,
+          'name' => $widget->name,
+          'widget_slug' => $widget->widget_slug,
+          'position_name' => $position->name,
+          'position_slug' => $position->slug,
+          'sort_order' => 1,
+          'config' => $this->getDefaultConfigForWidget($widget->widget_slug),
+          'settings' => [],
+          'is_active' => true,
+          'is_visible' => true,
+          'created_at' => now()->toISOString(),
         ];
-
-        $widgetSlug = $defaultWidgets[$positionSlug] ?? null;
-        return $widgetSlug ? Widget::where('widget_slug', $widgetSlug)->first() : null;
+      }
     }
 
-    // Получение дефолтной конфигурации для виджета
-    private function getDefaultConfigForWidget(string $widgetSlug): array
-    {
-        $defaultConfigs = [
-            'header-menu' => [
-                'logo' => '',
-                'menu_items' => [
-                    ['title' => 'Главная', 'url' => '/'],
-                    ['title' => 'О нас', 'url' => '/about'],
-                    ['title' => 'Контакты', 'url' => '/contacts'],
-                ],
-            ],
-            'hero-slider' => [
-                'type' => 'slider',
-                'slides' => [
-                    [
-                        'title' => 'Добро пожаловать',
-                        'description' => 'Мы рады приветствовать вас на нашем сайте',
-                        'button_text' => 'Узнать больше',
-                        'button_url' => '/about',
-                        'background_image' => '',
-                    ],
-                    [
-                        'title' => 'Наши услуги',
-                        'description' => 'Мы предлагаем широкий спектр качественных услуг',
-                        'button_text' => 'Смотреть услуги',
-                        'button_url' => '/services',
-                        'background_image' => '',
-                    ],
-                    [
-                        'title' => 'Свяжитесь с нами',
-                        'description' => 'Мы всегда готовы ответить на ваши вопросы',
-                        'button_text' => 'Связаться',
-                        'button_url' => '/contacts',
-                        'background_image' => '',
-                    ],
-                ],
-                'autoplay' => true,
-                'autoplay_delay' => 5000,
-            ],
-            'footer-contacts' => [
-                'phone' => '+7 (XXX) XXX-XX-XX',
-                'email' => 'info@example.com',
-                'address' => 'Ваш адрес',
-                'social_links' => [
-                    ['platform' => 'facebook', 'url' => '#'],
-                    ['platform' => 'instagram', 'url' => '#'],
-                    ['platform' => 'telegram', 'url' => '#'],
-                ],
-            ],
-        ];
+    // Создаем дефолтные виджеты в нормализованных таблицах
+    $widgetDataService = app(WidgetDataService::class);
 
-        return $defaultConfigs[$widgetSlug] ?? [];
+    foreach ($defaultWidgets as $widgetData) {
+      // Создаем SiteWidget
+      $siteWidget = SiteWidget::create([
+        'site_id' => $site->id,
+        'widget_id' => $widgetData['widget_id'],
+        'position_id' => WidgetPosition::where('slug', $widgetData['position_slug'])->first()->id,
+        'name' => $widgetData['name'],
+        'position_name' => $widgetData['position_name'],
+        'position_slug' => $widgetData['position_slug'],
+        'widget_slug' => $widgetData['widget_slug'],
+        'sort_order' => $widgetData['sort_order'] ?? 1,
+        'is_active' => $widgetData['is_active'],
+        'is_visible' => $widgetData['is_visible'],
+      ]);
+
+      // Сохраняем конфигурацию в отдельной таблице
+      if (!empty($widgetData['config'])) {
+        $siteWidget->syncConfig($widgetData['config']);
+      }
+
+      // Мигрируем данные в нормализованные таблицы
+      $widgetDataService->migrateWidgetData($siteWidget);
+    }
+  }
+
+  // Получение дефолтного виджета для позиции
+  private function getDefaultWidgetForPosition(string $positionSlug): ?Widget
+  {
+    $defaultWidgets = [
+      'header' => 'header-menu',
+      'hero' => 'hero-slider',
+      'footer' => 'footer-contacts',
+    ];
+
+    $widgetSlug = $defaultWidgets[$positionSlug] ?? null;
+    return $widgetSlug ? Widget::where('widget_slug', $widgetSlug)->first() : null;
+  }
+
+  // Получение дефолтной конфигурации для виджета
+  private function getDefaultConfigForWidget(string $widgetSlug): array
+  {
+    $defaultConfigs = [
+      'header-menu' => [
+        'logo' => '',
+        'menu_items' => [
+          ['title' => 'Главная', 'url' => '/'],
+          ['title' => 'О нас', 'url' => '/about'],
+          ['title' => 'Контакты', 'url' => '/contacts'],
+        ],
+      ],
+      'hero-slider' => [
+        'type' => 'slider',
+        'slides' => [
+          [
+            'title' => 'Добро пожаловать',
+            'description' => 'Мы рады приветствовать вас на нашем сайте',
+            'button_text' => 'Узнать больше',
+            'button_url' => '/about',
+            'background_image' => '',
+          ],
+          [
+            'title' => 'Наши услуги',
+            'description' => 'Мы предлагаем широкий спектр качественных услуг',
+            'button_text' => 'Смотреть услуги',
+            'button_url' => '/services',
+            'background_image' => '',
+          ],
+          [
+            'title' => 'Свяжитесь с нами',
+            'description' => 'Мы всегда готовы ответить на ваши вопросы',
+            'button_text' => 'Связаться',
+            'button_url' => '/contacts',
+            'background_image' => '',
+          ],
+        ],
+        'autoplay' => true,
+        'autoplay_delay' => 5000,
+      ],
+      'footer-contacts' => [
+        'phone' => '+7 (XXX) XXX-XX-XX',
+        'email' => 'info@example.com',
+        'address' => 'Ваш адрес',
+        'social_links' => [
+          ['platform' => 'facebook', 'url' => '#'],
+          ['platform' => 'instagram', 'url' => '#'],
+          ['platform' => 'telegram', 'url' => '#'],
+        ],
+      ],
+    ];
+
+    return $defaultConfigs[$widgetSlug] ?? [];
+  }
+
+  // Удаление всех связанных данных виджета
+  private function deleteWidgetRelatedData(SiteWidget $siteWidget): void
+  {
+    // Удаляем конфигурации виджета
+    $siteWidget->configs()->delete();
+
+    // Удаляем данные в зависимости от типа виджета
+    switch ($siteWidget->widget_slug) {
+      case 'hero':
+        $siteWidget->heroSlides()->delete();
+        break;
+      case 'form':
+        $siteWidget->formFields()->delete();
+        break;
+      case 'menu':
+        $siteWidget->menuItems()->delete();
+        break;
+      case 'gallery':
+        $siteWidget->galleryImages()->delete();
+        break;
+      case 'donation':
+        $siteWidget->donationSettings()->delete();
+        break;
+      case 'region-rating':
+        $siteWidget->regionRatingSettings()->delete();
+        break;
+      case 'donations-list':
+        $siteWidget->donationsListSettings()->delete();
+        break;
+      case 'referral-leaderboard':
+        $siteWidget->referralLeaderboardSettings()->delete();
+        break;
+      case 'top_donors':
+        $siteWidget->topDonorsSettings()->delete();
+        break;
+      case 'top_recurring_donors':
+        $siteWidget->topRecurringDonorsSettings()->delete();
+        break;
+      case 'image':
+        $siteWidget->imageSettings()->delete();
+        break;
+    }
+  }
+
+  // Получение сайта с проверкой прав
+  private function getSite($id): Site
+  {
+    $user = Auth::user();
+
+    if (!$user) {
+      throw new \Exception('Пользователь не авторизован');
     }
 
-    // Удаление всех связанных данных виджета
-    private function deleteWidgetRelatedData(SiteWidget $siteWidget): void
-    {
-        // Удаляем конфигурации виджета
-        $siteWidget->configs()->delete();
-
-        // Удаляем данные в зависимости от типа виджета
-        switch ($siteWidget->widget_slug) {
-            case 'hero':
-                $siteWidget->heroSlides()->delete();
-                break;
-            case 'form':
-                $siteWidget->formFields()->delete();
-                break;
-            case 'menu':
-                $siteWidget->menuItems()->delete();
-                break;
-            case 'gallery':
-                $siteWidget->galleryImages()->delete();
-                break;
-            case 'donation':
-                $siteWidget->donationSettings()->delete();
-                break;
-            case 'region-rating':
-                $siteWidget->regionRatingSettings()->delete();
-                break;
-            case 'donations-list':
-                $siteWidget->donationsListSettings()->delete();
-                break;
-            case 'referral-leaderboard':
-                $siteWidget->referralLeaderboardSettings()->delete();
-                break;
-            case 'top_donors':
-                $siteWidget->topDonorsSettings()->delete();
-                break;
-            case 'top_recurring_donors':
-                $siteWidget->topRecurringDonorsSettings()->delete();
-                break;
-            case 'image':
-                $siteWidget->imageSettings()->delete();
-                break;
-        }
-    }
-
-    // Получение сайта с проверкой прав
-    private function getSite($id): Site
-    {
-        $user = Auth::user();
-
-        if (!$user) {
-            throw new \Exception('Пользователь не авторизован');
-        }
-
-        // Пользователь с ролью super_admin — доступ ко всем сайтам
+    // Пользователь с ролью super_admin — доступ ко всем сайтам
+    $isSuperAdmin = false;
+    $hasRoleCallable = [$user, 'hasRole'];
+    if (is_callable($hasRoleCallable)) {
+      try {
+        $isSuperAdmin = (bool) call_user_func($hasRoleCallable, 'super_admin');
+      } catch (\Throwable $e) {
         $isSuperAdmin = false;
-        $hasRoleCallable = [$user, 'hasRole'];
-        if (is_callable($hasRoleCallable)) {
-            try {
-                $isSuperAdmin = (bool) call_user_func($hasRoleCallable, 'super_admin');
-            } catch (\Throwable $e) {
-                $isSuperAdmin = false;
-            }
-        }
-
-        if ($isSuperAdmin) {
-            return Site::findOrFail($id);
-        }
-
-        // Если пользователь привязан к организации — ограничиваем доступ этой организацией
-        if (!empty($user->organization_id)) {
-            return Site::where('id', $id)
-                ->where('organization_id', $user->organization_id)
-                ->firstOrFail();
-        }
-
-        // Иначе — запрещаем доступ
-        throw new \Exception('Пользователь не привязан к организации');
+      }
     }
 
-    // Банковские реквизиты сайта
-    public function saveBankRequisites(\App\Http\Requests\BankRequisitesRequest $request, $id): JsonResponse
-    {
-        try {
-            $site = $this->getSite($id);
-            $bankRequisitesService = app(\App\Services\BankRequisites\BankRequisitesService::class);
-            $bankRequisitesService->saveForSite($site, $request->validated());
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Банковские реквизиты сохранены',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
-            ], 500);
-        }
+    if ($isSuperAdmin) {
+      return Site::findOrFail($id);
     }
 
-    // Цель на месяц сайта
-    public function saveMonthlyGoal(Request $request, $id): JsonResponse
-    {
-        try {
-            $request->validate([
-                'monthly_goal' => 'nullable|integer|min:0',
-                'monthly_collected' => 'nullable|integer|min:0',
-            ]);
-
-            $site = $this->getSite($id);
-            $monthlyGoalService = app(\App\Services\MonthlyGoal\MonthlyGoalService::class);
-            $monthlyGoalService->saveForSite(
-                $site,
-                $request->input('monthly_goal'),
-                $request->input('monthly_collected')
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Цель на месяц сохранена',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
-            ], 500);
-        }
+    // Если пользователь привязан к организации — ограничиваем доступ этой организацией
+    if (!empty($user->organization_id)) {
+      return Site::where('id', $id)
+        ->where('organization_id', $user->organization_id)
+        ->firstOrFail();
     }
+
+    // Иначе — запрещаем доступ
+    throw new \Exception('Пользователь не привязан к организации');
+  }
+
+  // Банковские реквизиты сайта
+  public function saveBankRequisites(\App\Http\Requests\BankRequisitesRequest $request, $id): JsonResponse
+  {
+    try {
+      $site = $this->getSite($id);
+      $bankRequisitesService = app(\App\Services\BankRequisites\BankRequisitesService::class);
+      $bankRequisitesService->saveForSite($site, $request->validated());
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Банковские реквизиты сохранены',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
+
+  // Цель на месяц сайта
+  public function saveMonthlyGoal(Request $request, $id): JsonResponse
+  {
+    try {
+      $request->validate([
+        'monthly_goal' => 'nullable|integer|min:0',
+        'monthly_collected' => 'nullable|integer|min:0',
+      ]);
+
+      $site = $this->getSite($id);
+      $monthlyGoalService = app(\App\Services\MonthlyGoal\MonthlyGoalService::class);
+      $monthlyGoalService->saveForSite(
+        $site,
+        $request->input('monthly_goal'),
+        $request->input('monthly_collected')
+      );
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Цель на месяц сохранена',
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Ошибка при сохранении: ' . $e->getMessage(),
+      ], 500);
+    }
+  }
 }

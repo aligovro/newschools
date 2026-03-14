@@ -27,7 +27,7 @@ interface Props {
     onMoveWidgetOrder?: (
         widgetId: string,
         positionSlug: string,
-        order: number,
+        sortOrder: number,
     ) => Promise<void>;
     onEditPosition: () => void;
 }
@@ -73,22 +73,42 @@ export const PositionDropZone: React.FC<Props> = ({
         }),
     });
 
+    const getSortOrder = (widget: WidgetData): number => {
+        const val = Number(widget.sort_order);
+        return Number.isFinite(val) && val > 0 ? val : Number.MAX_SAFE_INTEGER;
+    };
+
     const positionWidgets = widgets
         .filter((widget) => widget.position_slug === position.slug)
-        .sort((a, b) => a.order - b.order);
+        .sort((a, b) => {
+            const orderDiff = getSortOrder(a) - getSortOrder(b);
+            if (orderDiff !== 0) return orderDiff;
+
+            const aId = Number(a.id);
+            const bId = Number(b.id);
+            if (Number.isFinite(aId) && Number.isFinite(bId)) {
+                return aId - bId;
+            }
+
+            return String(a.id).localeCompare(String(b.id));
+        });
 
     const isHeaderOrFooter =
         position.slug === 'header' || position.slug === 'footer';
 
     // Получаем css_class из настроек позиции
-    const layoutOverrides = positionSettings?.layout_overrides as Record<string, any> | undefined;
+    const layoutOverrides = positionSettings?.layout_overrides as
+        | Record<string, any>
+        | undefined;
     const cssClass = layoutOverrides?.css_class as string | undefined;
-    const positionClass = cssClass ? `position-${position.slug}-${cssClass}` : '';
+    const positionClass = cssClass
+        ? `position-${position.slug}-${cssClass}`
+        : '';
 
     return (
         <div
             ref={drop as unknown as React.RefObject<HTMLDivElement>}
-            className={`widget-position widget-position-${position.slug} ${positionClass} rounded-lg border-2 border-dashed p-4 transition-colors ${
+            className={`widget-position widget-position-${position.slug} site-position site-position--${position.slug} ${positionClass} rounded-lg border-2 border-dashed p-4 transition-colors ${
                 isOver && canDrop ? 'drag-over' : ''
             }`}
         >
@@ -184,7 +204,7 @@ export const PositionDropZone: React.FC<Props> = ({
                 </div>
             )}
 
-            <div className="min-h-[100px] space-y-4">
+            <div className={`min-h-[100px] space-y-4 ${position.slug}-wrapper`}>
                 {positionWidgets.map((widget, index) => (
                     <DraggableWidget
                         key={widget.id}

@@ -339,7 +339,7 @@ class OrganizationCreationService
         'name' => $siteData['name'] ?? $organization->name,
         'slug' => $siteData['slug'] ?? $organization->slug,
         'description' => $siteData['description'] ?? $organization->description,
-        'template' => $siteData['template'] ?? 'default',
+        'template' => $siteData['template'] ?? config('sites.defaults.template_for_organization', config('sites.defaults.template', 'default')),
         'site_type' => 'organization',
         'layout_config' => $this->getDefaultLayoutConfig(),
         'theme_config' => $this->getDefaultThemeConfig(),

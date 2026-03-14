@@ -8,11 +8,17 @@ import { AuthMenuWidget } from '../AuthMenuWidget';
 import { FormWidget } from '../FormWidget';
 import { GalleryWidget } from '../GalleryWidget';
 import { HeroWidget } from '../HeroWidget';
+import { SchoolHeroWidget } from '../SchoolHeroWidget';
+import { SchoolSubscribeWidget } from '../SchoolSubscribeWidget';
 import { HtmlWidget } from '../HtmlWidget';
 import { ImageWidget } from '../ImageWidget';
 import { MenuWidget } from '../MenuWidget';
 import { ProjectsWidget } from '../ProjectsWidget';
 import { ProjectsSliderOutput } from '../output/ProjectsSliderOutput';
+import { TeachersOutput } from '../output/TeachersOutput';
+import { ClubsOutput } from '../output/ClubsOutput';
+import { ClubScheduleOutput } from '../output/ClubScheduleOutput';
+import { VideoLessonsOutput } from '../output/VideoLessonsOutput';
 import { ReferralLeaderboardWidget } from '../ReferralLeaderboardWidget';
 import { StatsWidget } from '../StatsWidget';
 import { SliderWidget } from '../slider';
@@ -272,6 +278,32 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     },
 
     // HTML виджет
+    school_hero: ({ widget, isEditable, onConfigChange }) => {
+        const config =
+            widget.config || convertConfigsToConfig(widget.configs || []);
+
+        return (
+            <SchoolHeroWidget
+                config={config}
+                isEditable={isEditable}
+                onConfigChange={onConfigChange}
+                css_class={widget.css_class}
+                styling={widget.styling as React.CSSProperties}
+            />
+        );
+    },
+    school_subscribe: ({ widget, isEditable, onConfigChange }) => {
+        const config =
+            widget.config || convertConfigsToConfig(widget.configs || []);
+
+        return (
+            <SchoolSubscribeWidget
+                config={config}
+                isEditable={isEditable}
+                onConfigChange={onConfigChange}
+            />
+        );
+    },
     html: ({ widget }) => {
         const cfg = widget.configs
             ? convertConfigsToConfig(widget.configs)
@@ -457,7 +489,7 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
             actions: (cfg.actions as unknown[]) || [],
             is_active: widget.is_active,
             is_visible: widget.is_visible,
-            sort_order: widget.order,
+            sort_order: widget.sort_order,
             fields: (cfg.fields as unknown[]) || [],
             created_at: widget.created_at,
             updated_at: widget.updated_at,
@@ -564,6 +596,26 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     // Слайдер проектов
     projects_slider: ({ widget }) => (
         <ProjectsSliderOutput widget={widget} className="" style={{}} />
+    ),
+
+    // Слайдер преподавателей
+    teachers_slider: ({ widget }) => (
+        <TeachersOutput widget={widget} className="" style={{}} />
+    ),
+
+    // Кружки и секции
+    clubs: ({ widget }) => (
+        <ClubsOutput widget={widget} className="" style={{}} />
+    ),
+
+    // Расписание кружков
+    club_schedule: ({ widget }) => (
+        <ClubScheduleOutput widget={widget} className="" style={{}} />
+    ),
+
+    // Видео уроки
+    video_lessons: ({ widget }) => (
+        <VideoLessonsOutput widget={widget} className="" style={{}} />
     ),
 
     // Блок подписки на школы (только для главного сайта) — в конструкторе показываем плейсхолдер

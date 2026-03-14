@@ -91,6 +91,69 @@ export async function fetchLatestProjects(
     return res.json();
 }
 
+export async function fetchOrganizationStaff(
+    params: Record<string, string | number | undefined> = {},
+    options: RequestInit = {},
+) {
+    const url = new URL('/api/public/staff', window.location.origin);
+    Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '')
+            url.searchParams.set(k, String(v));
+    });
+    const res = await fetch(url.toString(), {
+        headers: {
+            Accept: 'application/json',
+            ...(options.headers ?? {}),
+        },
+        credentials: 'same-origin',
+        ...options,
+    });
+    if (!res.ok) throw new Error('Failed to load staff');
+    return res.json();
+}
+
+export async function fetchOrganizationClubs(
+    params: Record<string, string | number | undefined> = {},
+    options: RequestInit = {},
+) {
+    const url = new URL('/api/public/clubs', window.location.origin);
+    Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '')
+            url.searchParams.set(k, String(v));
+    });
+    const res = await fetch(url.toString(), {
+        headers: {
+            Accept: 'application/json',
+            ...(options.headers ?? {}),
+        },
+        credentials: 'same-origin',
+        ...options,
+    });
+    if (!res.ok) throw new Error('Failed to load clubs');
+    return res.json();
+}
+
+export async function fetchOrganizationVideoLessons(
+    params: Record<string, string | number | undefined> = {},
+    options: RequestInit = {},
+) {
+    const url = new URL('/api/public/video-lessons', window.location.origin);
+    Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '')
+            url.searchParams.set(k, String(v));
+    });
+    const res = await fetch(url.toString(), {
+        headers: {
+            Accept: 'application/json',
+            ...(options.headers ?? {}),
+        },
+        credentials: 'same-origin',
+        ...options,
+    });
+    if (!res.ok) throw new Error('Failed to load video lessons');
+    return res.json();
+}
+
 export interface PublicCity {
     id: number;
     name: string;

@@ -57,7 +57,7 @@ class MigrateWidgetData extends Command
                 $widget->update([
                     'widget_slug' => $widget->widget->slug ?? 'unknown',
                     'position_slug' => $widget->position->slug ?? 'unknown',
-                    'sort_order' => $widget->order ?? 0,
+                    'sort_order' => $widget->sort_order ?? 0,
                 ]);
 
                 // Мигрируем данные

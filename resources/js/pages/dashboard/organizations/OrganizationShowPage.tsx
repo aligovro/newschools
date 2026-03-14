@@ -1,8 +1,6 @@
 import OrganizationContactCard from '@/components/dashboard/pages/organizations/OrganizationContactCard';
 import OrganizationDirectorCard from '@/components/dashboard/pages/organizations/OrganizationDirectorCard';
 import OrganizationInfoCard from '@/components/dashboard/pages/organizations/OrganizationInfoCard';
-import OrganizationStaffList from '@/components/dashboard/pages/organizations/OrganizationStaffList';
-import OrganizationStaffModal from '@/components/dashboard/pages/organizations/OrganizationStaffModal';
 import { StatusBadge } from '@/components/dashboard/pages/organizations/StatusBadge';
 import type { OrganizationShow } from '@/components/dashboard/pages/organizations/types';
 import {
@@ -12,15 +10,16 @@ import {
 import YooKassaOAuthBlock from '@/components/dashboard/pages/organizations/YooKassaOAuthBlock';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useOrganizationStaff } from '@/hooks/useOrganizationStaff';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import {
     ArrowLeft,
+    ArrowRight,
     BarChart3,
+    BookOpen,
     CreditCard,
     DollarSign,
     Edit,
@@ -32,14 +31,10 @@ import {
     Settings,
     Target,
     Users,
+    Video,
 } from 'lucide-react';
-import { useState } from 'react';
 
-type StatsCardAction = {
-    label: string;
-    href: string;
-};
-
+type StatsCardAction = { label: string; href: string };
 type StatsCard = {
     title: string;
     value: number;
@@ -69,81 +64,10 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
     } = useOrganizationTerms();
 
     const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Админ панель',
-            href: dashboard().url,
-        },
-        {
-            title: organizationPluralNominative,
-            href: '/dashboard/organizations',
-        },
-        {
-            title: 'Просмотр',
-            href: '#',
-        },
+        { title: 'Админ панель', href: dashboard().url },
+        { title: organizationPluralNominative, href: '/dashboard/organizations' },
+        { title: 'Просмотр', href: '#' },
     ];
-
-    const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
-    const [editingStaffId, setEditingStaffId] = useState<number | null>(null);
-
-    const {
-        staffList,
-        hasMoreStaff,
-        staffForm,
-        resetForm,
-        fetchStaffMember,
-        submitStaff,
-        deleteStaff,
-        loadMoreStaff,
-    } = useOrganizationStaff({
-        organizationId: organization.id,
-        initialStaff: Array.isArray(organization.staff)
-            ? organization.staff
-            : [],
-    });
-
-    const handleCreateStaff = () => {
-        setEditingStaffId(null);
-        resetForm();
-        setIsStaffModalOpen(true);
-    };
-
-    const handleEditStaff = async (staffId: number) => {
-        const staffMember = await fetchStaffMember(staffId);
-        if (staffMember) {
-            setEditingStaffId(staffId);
-            const nameParts = staffMember.full_name.split(' ');
-            staffForm.setData({
-                last_name: nameParts[0] || '',
-                first_name: nameParts[1] || '',
-                middle_name: nameParts.slice(2).join(' ') || '',
-                position:
-                    staffMember.position === 'Директор'
-                        ? ''
-                        : staffMember.position,
-                is_director: staffMember.position === 'Директор',
-                email: staffMember.email || '',
-                address: staffMember.address || '',
-                photo: staffMember.photo || null,
-            });
-            setIsStaffModalOpen(true);
-        }
-    };
-
-    const handleSubmitStaff = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const success = await submitStaff(staffForm.data, editingStaffId);
-        if (success) {
-            setIsStaffModalOpen(false);
-        }
-    };
-
-    const handleDeleteStaff = async (staffId: number) => {
-        if (!confirm('Вы уверены, что хотите удалить этого сотрудника?')) {
-            return;
-        }
-        await deleteStaff(staffId);
-    };
 
     const statsCards: StatsCard[] = [
         {
@@ -259,20 +183,33 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
         },
     ];
 
-    const peopleMenuItems = [
+    const entityCards = [
         {
-            title: 'Пользователи',
-            description: 'Управление пользователями',
-            href: `/dashboard/organizations/${organization.id}/users`,
+            title: 'Персонал',
+            count: organization.staff_count ?? 0,
             icon: Users,
             color: 'bg-slate-500',
+            href: `/dashboard/organizations/${organization.id}/staff`,
+            addHref: `/dashboard/organizations/${organization.id}/staff`,
+            label: (n: number) => `${n} сотрудник${n === 1 ? '' : n >= 2 && n <= 4 ? 'а' : 'ов'}`,
         },
         {
-            title: 'Галерея',
-            description: 'Управление медиафайлами',
-            href: `/dashboard/organizations/${organization.id}/gallery`,
-            icon: Eye,
+            title: 'Кружки и секции',
+            count: organization.clubs_count ?? 0,
+            icon: BookOpen,
             color: 'bg-rose-500',
+            href: `/dashboard/organizations/${organization.id}/clubs`,
+            addHref: `/dashboard/organizations/${organization.id}/clubs`,
+            label: (n: number) => `${n} кружок${n === 1 ? '' : n >= 2 && n <= 4 ? 'а' : 'ов'}`,
+        },
+        {
+            title: 'Видео уроки',
+            count: organization.video_lessons_count ?? 0,
+            icon: Video,
+            color: 'bg-purple-500',
+            href: `/dashboard/organizations/${organization.id}/video-lessons`,
+            addHref: `/dashboard/organizations/${organization.id}/video-lessons`,
+            label: (n: number) => `${n} урок${n === 1 ? '' : n >= 2 && n <= 4 ? 'а' : 'ов'}`,
         },
     ];
 
@@ -291,60 +228,47 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                         </Link>
                         <div className="flex flex-col gap-2">
                             <div className="flex flex-wrap items-center gap-3">
-                                <h1 className="block__title">
-                                    {organization.name}
-                                </h1>
+                                <h1 className="block__title">{organization.name}</h1>
                                 <StatusBadge status={organization.status} />
                             </div>
                             <p className="text-gray-600">
                                 {getTypeLabel(organization.type)}
-                                {organization.region?.name &&
-                                    ` • ${organization.region.name}`}
+                                {organization.region?.name && ` • ${organization.region.name}`}
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2">
-                            {organization.primary_site ||
-                            (organization.sites &&
-                                organization.sites.length > 0) ? (
-                                <Link
-                                    href={`/dashboard/organizations/${organization.id}/sites/${
-                                        organization.primary_site?.id ||
-                                        organization.sites?.[0]?.id
-                                    }/builder`}
-                                >
-                                    <Button variant="default" size="sm">
-                                        <Globe className="mr-2 h-4 w-4" />
-                                        Конструктор сайта
-                                    </Button>
-                                </Link>
-                            ) : (
-                                <Link
-                                    href={`/dashboard/organizations/${organization.id}/sites/create`}
-                                >
-                                    <Button variant="default" size="sm">
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Создать сайт
-                                    </Button>
-                                </Link>
-                            )}
+                        {organization.primary_site ||
+                        (organization.sites && organization.sites.length > 0) ? (
                             <Link
-                                href={`/dashboard/organizations/${organization.id}/reports`}
+                                href={`/dashboard/organizations/${organization.id}/sites/${
+                                    organization.primary_site?.id || organization.sites?.[0]?.id
+                                }/builder`}
                             >
-                                <Button variant="outline" size="sm">
-                                    <BarChart3 className="mr-2 h-4 w-4" />
-                                    Отчеты
+                                <Button variant="default" size="sm">
+                                    <Globe className="mr-2 h-4 w-4" />
+                                    Конструктор сайта
                                 </Button>
                             </Link>
-                            <Link
-                                href={`/dashboard/organizations/${organization.id}/edit`}
-                            >
-                                <Button variant="outline" size="sm">
-                                    <Edit className="h-4 w-4" />
+                        ) : (
+                            <Link href={`/dashboard/organizations/${organization.id}/sites/create`}>
+                                <Button variant="default" size="sm">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Создать сайт
                                 </Button>
                             </Link>
-                        </div>
+                        )}
+                        <Link href={`/dashboard/organizations/${organization.id}/reports`}>
+                            <Button variant="outline" size="sm">
+                                <BarChart3 className="mr-2 h-4 w-4" />
+                                Отчеты
+                            </Button>
+                        </Link>
+                        <Link href={`/dashboard/organizations/${organization.id}/edit`}>
+                            <Button variant="outline" size="sm">
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                        </Link>
                     </div>
                 </div>
 
@@ -352,6 +276,7 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                     {/* Основная информация */}
                     <div className="space-y-6 lg:col-span-2">
                         <OrganizationInfoCard organization={organization} />
+
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                             {statsCards.map((card) => {
@@ -365,47 +290,63 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                                             <Icon className="h-4 w-4 text-muted-foreground" />
                                         </CardHeader>
                                         <CardContent className="space-y-3">
-                                            <div className="text-2xl font-bold">
-                                                {card.value}
-                                            </div>
+                                            <div className="text-2xl font-bold">{card.value}</div>
                                             <p className="text-xs text-muted-foreground">
                                                 {card.helperText}
                                             </p>
-                                            {card.action ? (
+                                            {card.action && (
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
                                                     className="w-full justify-center"
                                                     asChild
                                                 >
-                                                    <Link
-                                                        href={card.action.href}
-                                                    >
+                                                    <Link href={card.action.href}>
                                                         {card.action.label}
                                                     </Link>
                                                 </Button>
-                                            ) : null}
+                                            )}
                                         </CardContent>
                                     </Card>
                                 );
                             })}
                         </div>
 
-                        {/* Быстрые действия: Платежи, Автоплатежи, Консоль и т.д. */}
+                        {/* Admin menu */}
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             {adminMenuItems.map((item) => {
                                 const Icon = item.icon;
                                 return (
-                                    <Link
-                                        key={item.title}
-                                        href={item.href}
-                                        className="block"
-                                    >
+                                    <Link key={item.title} href={item.href} className="block">
                                         <Card className="transition-colors hover:bg-muted/50">
                                             <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
-                                                <div
-                                                    className={`rounded-lg p-2 ${item.color}`}
-                                                >
+                                                <div className={`rounded-lg p-2 ${item.color}`}>
+                                                    <Icon className="h-5 w-5 text-white" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <CardTitle className="text-base">
+                                                        {item.title}
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {item.description}
+                                                    </p>
+                                                </div>
+                                            </CardHeader>
+                                        </Card>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+
+                        {/* Content menu */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            {contentMenuItems.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link key={item.title} href={item.href} className="block">
+                                        <Card className="transition-colors hover:bg-muted/50">
+                                            <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+                                                <div className={`rounded-lg p-2 ${item.color}`}>
                                                     <Icon className="h-5 w-5 text-white" />
                                                 </div>
                                                 <div className="space-y-1">
@@ -424,47 +365,58 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
                         </div>
                     </div>
 
-                    {/* Контактная информация и персонал */}
+                    {/* Правая колонка */}
                     <div className="space-y-6">
                         <OrganizationContactCard organization={organization} />
 
-                        {/* YooKassa OAuth блок */}
                         <YooKassaOAuthBlock organizationId={organization.id} />
 
-                        {/* Директор */}
                         {organization.director && organization.director.id && (
                             <OrganizationDirectorCard
                                 director={organization.director}
-                                onEdit={handleEditStaff}
+                                onEdit={() =>
+                                    router.visit(`/dashboard/organizations/${organization.id}/staff`)
+                                }
                             />
                         )}
 
-                        {/* Персонал */}
-                        <OrganizationStaffList
-                            staff={staffList}
-                            hasMore={hasMoreStaff}
-                            onAdd={handleCreateStaff}
-                            onEdit={handleEditStaff}
-                            onDelete={handleDeleteStaff}
-                            onLoadMore={loadMoreStaff}
-                        />
+                        {/* Сущности организации — компактные карточки-ссылки */}
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                                    Контент
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-1 pt-0">
+                                {entityCards.map((item) => {
+                                    const Icon = item.icon;
+                                    return (
+                                        <Link
+                                            key={item.title}
+                                            href={item.href}
+                                            className="flex items-center justify-between rounded-md px-2 py-2 transition-colors hover:bg-muted/60"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`rounded p-1.5 ${item.color}`}>
+                                                    <Icon className="h-3.5 w-3.5 text-white" />
+                                                </div>
+                                                <span className="text-sm font-medium">
+                                                    {item.title}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm text-muted-foreground">
+                                                    {item.label(item.count)}
+                                                </span>
+                                                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </CardContent>
+                        </Card>
                     </div>
                 </div>
-
-                {/* Модальное окно для создания/редактирования персонала */}
-                <OrganizationStaffModal
-                    open={isStaffModalOpen}
-                    onOpenChange={setIsStaffModalOpen}
-                    formData={staffForm.data}
-                    onFormDataChange={(key, value) => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        (staffForm.setData as any)(key, value);
-                    }}
-                    onSubmit={handleSubmitStaff}
-                    isEditing={editingStaffId !== null}
-                    organizationId={organization.id}
-                    director={organization.director}
-                />
             </div>
         </AppLayout>
     );
