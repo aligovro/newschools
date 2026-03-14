@@ -28,6 +28,12 @@ import { OrgDonationsFeedOutput } from './OrgDonationsFeedOutput';
 import { CityOrganizationsOutput } from './CityOrganizationsOutput';
 import { ProjectsSliderOutput } from './ProjectsSliderOutput';
 import { ShareButtonsOutput } from './ShareButtonsOutput';
+import { TeachersOutput } from './TeachersOutput';
+import { ClubsOutput } from './ClubsOutput';
+import { ClubScheduleOutput } from './ClubScheduleOutput';
+import { VideoLessonsOutput } from './VideoLessonsOutput';
+import { SchoolHeroOutput } from './SchoolHeroOutput';
+import { SchoolSubscribeOutput } from './SchoolSubscribeOutput';
 
 // Registry of output components
 const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
@@ -49,6 +55,10 @@ const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
     referral_leaderboard: ReferralLeaderboardOutput,
     city_organizations: CityOrganizationsOutput,
     projects_slider: ProjectsSliderOutput,
+    teachers_slider: TeachersOutput,
+    clubs: ClubsOutput,
+    club_schedule: ClubScheduleOutput,
+    video_lessons: VideoLessonsOutput,
     subscribe_block: SubscribeBlockOutput,
     add_organization_block: AddOrganizationBlockOutput,
     organization_search: OrganizationSearchOutput,
@@ -58,6 +68,8 @@ const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
     org_top_recurring_donors: TopRecurringDonorsOutput,
     org_donations_feed: OrgDonationsFeedOutput,
     share_buttons: ShareButtonsOutput,
+    school_hero: SchoolHeroOutput,
+    school_subscribe: SchoolSubscribeOutput,
     html: HtmlOutput,
 };
 

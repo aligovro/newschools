@@ -9,7 +9,7 @@ interface WidgetData {
     widget_slug: string;
     position_name: string;
     position_slug: string;
-    order: number;
+    sort_order: number;
     config: Record<string, unknown>;
     configs: Array<{
         config_key: string;
@@ -41,7 +41,7 @@ interface UseWidgetsReturn {
     moveWidget: (
         widgetId: string,
         positionSlug: string,
-        order: number,
+        sortOrder: number,
     ) => Promise<void>;
     refreshWidgets: () => Promise<void>;
 }
@@ -203,7 +203,7 @@ export const useWidgets = (
     );
 
     const moveWidget = useCallback(
-        async (widgetId: string, positionSlug: string, order: number) => {
+        async (widgetId: string, positionSlug: string, sortOrder: number) => {
             setIsLoading(true);
             setErrors([]);
 
@@ -213,7 +213,7 @@ export const useWidgets = (
                     parseInt(widgetId),
                     {
                         position_slug: positionSlug,
-                        order,
+                        sort_order: sortOrder,
                     },
                 );
 
@@ -246,11 +246,11 @@ export const useWidgets = (
                         // Сортируем виджеты в целевой позиции по порядку
                         const sortedTargetWidgets =
                             widgetsInTargetPosition.sort(
-                                (a, b) => a.order - b.order,
+                                (a, b) => a.sort_order - b.sort_order,
                             );
 
                         // Вставляем перемещаемый виджет в нужную позицию
-                        sortedTargetWidgets.splice(order - 1, 0, {
+                        sortedTargetWidgets.splice(sortOrder - 1, 0, {
                             ...movingWidget,
                             position_slug: positionSlug,
                         });
@@ -259,7 +259,7 @@ export const useWidgets = (
                         const updatedTargetWidgets = sortedTargetWidgets.map(
                             (w, index) => ({
                                 ...w,
-                                order: index + 1,
+                                sort_order: index + 1,
                             }),
                         );
 

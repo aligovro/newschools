@@ -8,11 +8,12 @@ use App\Models\OrganizationStaff;
 use App\Http\Requests\Organization\StoreOrganizationStaffRequest;
 use App\Http\Requests\Organization\UpdateOrganizationStaffRequest;
 use App\Http\Resources\OrganizationStaffResource;
-use App\Support\InertiaResource;
 use App\Services\ImageProcessingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class OrganizationStaffController extends Controller
 {
@@ -23,31 +24,54 @@ class OrganizationStaffController extends Controller
   /**
    * Display a listing of the resource.
    */
-  public function index(Request $request, Organization $organization)
+  public function index(Request $request, Organization $organization): JsonResponse|InertiaResponse
   {
-    $query = $organization->staff()->orderBy('position')->orderBy('last_name');
+    if ($request->wantsJson()) {
+      $query = $organization->staff()->orderBy('position')->orderBy('last_name');
 
-    // Фильтрация по должности
-    if ($request->filled('position')) {
-      $query->where('position', $request->position);
+      if ($request->filled('position')) {
+        $query->where('position', $request->position);
+      }
+
+      if ($request->boolean('exclude_director', true)) {
+        $query->where('position', '!=', OrganizationStaff::POSITION_DIRECTOR);
+      }
+
+      $perPage = min($request->get('per_page', 15), 100);
+      $staff = $query->paginate($perPage);
+
+      return response()->json([
+        'data' => OrganizationStaffResource::collection($staff->items()),
+        'pagination' => [
+          'current_page' => $staff->currentPage(),
+          'last_page' => $staff->lastPage(),
+          'per_page' => $staff->perPage(),
+          'total' => $staff->total(),
+        ],
+      ]);
     }
 
-    // Исключаем директора из общего списка (он выводится отдельно)
-    if ($request->boolean('exclude_director', true)) {
-      $query->where('position', '!=', OrganizationStaff::POSITION_DIRECTOR);
-    }
+    $organization->load(['region:id,name', 'director' => fn ($q) => $q->whereNull('deleted_at')]);
+    $staff = $organization->staff()
+      ->where('position', '!=', OrganizationStaff::POSITION_DIRECTOR)
+      ->whereNull('deleted_at')
+      ->orderBy('position')
+      ->orderBy('last_name')
+      ->paginate(15);
 
-    $perPage = min($request->get('per_page', 15), 100);
-    $staff = $query->paginate($perPage);
-
-    return response()->json([
-      'data' => OrganizationStaffResource::collection($staff->items()),
-      'pagination' => [
-        'current_page' => $staff->currentPage(),
-        'last_page' => $staff->lastPage(),
-        'per_page' => $staff->perPage(),
-        'total' => $staff->total(),
+    return Inertia::render('dashboard/organizations/OrganizationStaffPage', [
+      'organization' => [
+        'id' => $organization->id,
+        'name' => $organization->name,
+        'type' => $organization->type,
+        'status' => $organization->status,
+        'region' => $organization->region ? ['name' => $organization->region->name] : null,
+        'director' => $organization->director
+          ? (new OrganizationStaffResource($organization->director))->resolve()
+          : null,
       ],
+      'initialStaff' => OrganizationStaffResource::collection($staff->items())->resolve(),
+      'hasMore' => $staff->currentPage() < $staff->lastPage(),
     ]);
   }
 

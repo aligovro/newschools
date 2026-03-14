@@ -221,6 +221,16 @@ class Organization extends Model
     return $this->hasMany(OrganizationStaff::class);
   }
 
+  public function clubs(): HasMany
+  {
+    return $this->hasMany(OrganizationClub::class)->orderBy('sort_order')->orderBy('name');
+  }
+
+  public function videoLessons(): HasMany
+  {
+    return $this->hasMany(OrganizationVideoLesson::class)->orderBy('sort_order')->orderBy('title');
+  }
+
   public function director(): HasOne
   {
     return $this->hasOne(OrganizationStaff::class)

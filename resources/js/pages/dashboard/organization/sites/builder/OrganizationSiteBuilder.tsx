@@ -13,9 +13,16 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import * as yup from 'yup';
 import type { Organization, OrganizationSite, SiteWidget } from './types';
 
+interface TemplateOption {
+    slug: string;
+    name: string;
+}
+
 interface Props {
     organization: Organization;
     site: OrganizationSite;
+    templates?: TemplateOption[];
+    defaultTemplate?: string;
     mode?: 'create' | 'edit';
 }
 
@@ -63,6 +70,8 @@ const TabsHeader = memo(function TabsHeader({
 export default function OrganizationSiteBuilder({
     organization,
     site,
+    templates = [],
+    defaultTemplate = 'default',
     mode,
 }: Props) {
     const isCreateMode = !site?.id || mode === 'create';
@@ -127,7 +136,7 @@ export default function OrganizationSiteBuilder({
                     config: yup.object().default({}),
                     settings: yup.object().default({}),
                     position_name: yup.string().required(),
-                    order: yup.number().required(),
+                    sort_order: yup.number().required(),
                     is_active: yup.boolean().default(true),
                     is_visible: yup.boolean().default(true),
                 })
@@ -144,9 +153,9 @@ export default function OrganizationSiteBuilder({
                         if (!v.position_name || v.position_name.trim() === '')
                             errors.push(`Виджет ${v.id}: Позиция обязательна`);
                         if (
-                            v.order === undefined ||
-                            v.order === null ||
-                            v.order < 0
+                            v.sort_order === undefined ||
+                            v.sort_order === null ||
+                            v.sort_order < 0
                         )
                             errors.push(`Виджет ${v.id}: Порядок обязателен`);
                     }
@@ -259,7 +268,7 @@ export default function OrganizationSiteBuilder({
         name: '',
         slug: '',
         description: '',
-        template: 'default',
+        template: defaultTemplate,
     });
 
     const handleCreateSubmit = useCallback(
@@ -501,6 +510,7 @@ export default function OrganizationSiteBuilder({
                                 <SettingsContent
                                     site={site as any}
                                     organization={organization}
+                                    templates={templates}
                                 />
                             )}
                         </>

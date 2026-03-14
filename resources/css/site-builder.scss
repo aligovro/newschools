@@ -13,6 +13,22 @@
     background-color: #f9fafb;
 }
 
+/* Hero position: баннер и donation в одну линию с отступами */
+.widget-position.site-position--hero .hero-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    column-gap: 16px;
+    row-gap: 8px;
+    align-items: flex-start;
+    padding: 0;
+    min-height: auto !important;
+    /* сбрасываем space-y-4 для flex-layout */
+    & > * {
+        margin-top: 0 !important;
+    }
+}
+
 /* Position-specific styles based on slugs */
 .widget-position.header {
     /* Header specific styles */

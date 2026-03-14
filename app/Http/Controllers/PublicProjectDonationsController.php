@@ -66,10 +66,11 @@ class PublicProjectDonationsController extends Controller
 
         $paginator = $this->donationsService->allDonations($project, $page, $perPage);
 
-        $items = $paginator->getCollection()->map(function ($donation) use ($maskDonors) {
+        $items = $paginator->getCollection()->map(function ($donation) use ($maskDonors, $project) {
             $dt = $donation->paid_at ?? $donation->created_at;
             $dateLabel = $dt ? $this->formatDateLabel($dt) : '';
             $timeLabel = $dt ? $dt->format('H:i') : '';
+            $datetimeFormatted = $dt ? $this->formatDateTimeForFeed($dt) : '';
 
             $donorName = $maskDonors
                 ? 'Анонимное пожертвование'
@@ -84,6 +85,8 @@ class PublicProjectDonationsController extends Controller
                 'payment_method_label' => ProjectDonationsService::paymentMethodLabel($donation->payment_method),
                 'paid_at' => $timeLabel,
                 'date_label' => $dateLabel,
+                'datetime_formatted' => $datetimeFormatted,
+                'project_title' => $project->title ?? '',
                 'created_at' => $donation->created_at->toIso8601String(),
             ];
         });
@@ -98,6 +101,13 @@ class PublicProjectDonationsController extends Controller
                 'total' => $paginator->total(),
             ],
         ]);
+    }
+
+    private function formatDateTimeForFeed(\DateTimeInterface $dt): string
+    {
+        $carbon = Carbon::parse($dt)->locale('ru');
+
+        return $carbon->translatedFormat('j M Y') . ' · ' . $carbon->format('H:i');
     }
 
     private function formatDateLabel(\DateTimeInterface $dt): string

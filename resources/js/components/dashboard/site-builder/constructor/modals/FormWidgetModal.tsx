@@ -88,7 +88,7 @@ export const FormWidgetModal: React.FC<FormWidgetModalProps> = ({
             actions: (config.actions || []) as any[],
             css_class: (config.css_class as string) || '',
             is_active: widget.is_active ?? true,
-            sort_order: widget.order || 0,
+            sort_order: widget.sort_order ?? 0,
             created_at: widget.created_at || '',
             updated_at: widget.updated_at || '',
         };

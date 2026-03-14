@@ -104,7 +104,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
         Object.keys(map).forEach((slug) => {
             map[slug] = map[slug]
                 .filter((w) => w.is_active && w.is_visible)
-                .sort((a, b) => a.order - b.order);
+                .sort((a, b) => a.sort_order - b.sort_order);
         });
         return map;
     }, [site.widgets_config]);
@@ -152,7 +152,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
             >
                 <div className="container mx-auto">
                     {positionWidgets.length > 0 && (
-                        <div className="space-y-4">
+                        <div className={`${position.slug}-wrapper`}>
                             {positionWidgets.map((widget) => (
                                 <div
                                     key={widget.id}
@@ -245,7 +245,13 @@ const SitePreview: React.FC<SitePreviewProps> = ({
             </Head>
 
             <div
-                className={`site-preview${site.site_type ? ` site-type--${site.site_type}` : ''}`}
+                className={[
+                    'site-preview',
+                    site.site_type ? `site-type--${site.site_type}` : '',
+                    site.template ? `site-template--${site.template}` : '',
+                ]
+                    .filter(Boolean)
+                    .join(' ')}
             >
                 {/* Header: четыре колонки (header-col-1..4) сверху и полная ширина 'header' снизу */}
                 <header className="site-header">

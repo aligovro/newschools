@@ -28,6 +28,8 @@ export const isCustomWidget = (slug: string): boolean => {
         'text',
         'menu',
         'hero',
+        'school_hero',
+        'school_subscribe',
         'slider',
         'form',
         'auth_menu',
@@ -41,6 +43,10 @@ export const isCustomWidget = (slug: string): boolean => {
         'html',
         'city_organizations',
         'projects_slider',
+        'teachers_slider',
+        'clubs',
+        'club_schedule',
+        'video_lessons',
         'subscribe_block',
         'add_organization_block',
         'organization_search',
@@ -49,6 +55,7 @@ export const isCustomWidget = (slug: string): boolean => {
         'org_top_donors',
         'org_top_recurring_donors',
         'org_donations_feed',
+        'share_buttons',
     ];
     return customWidgets.includes(slug);
 };
@@ -58,6 +65,8 @@ export const isCustomWidget = (slug: string): boolean => {
  */
 export type WidgetSlug =
     | 'hero'
+    | 'school_hero'
+    | 'school_subscribe'
     | 'text'
     | 'gallery'
     | 'stats'
@@ -73,8 +82,13 @@ export type WidgetSlug =
     | 'html'
     | 'city_organizations'
     | 'projects_slider'
+    | 'teachers_slider'
+    | 'clubs'
+    | 'club_schedule'
+    | 'video_lessons'
     | 'top_donors'
     | 'top_recurring_donors'
     | 'org_top_donors'
     | 'org_top_recurring_donors'
-    | 'org_donations_feed';
+    | 'org_donations_feed'
+    | 'share_buttons';

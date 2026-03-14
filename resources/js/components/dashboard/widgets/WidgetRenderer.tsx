@@ -19,7 +19,7 @@ interface WidgetData {
     settings: Record<string, unknown>;
     is_active: boolean;
     is_visible: boolean;
-    order: number;
+    sort_order: number;
     position_name: string;
     position_slug: string;
     created_at: string;
@@ -197,14 +197,31 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
                 );
             }
 
-            // Специальный превью для Projects Slider виджета - показываем простой плейсхолдер
-            if (previewMode && widget.widget_slug === 'projects_slider') {
+            // Специальный превью для слайдеров — показываем простой плейсхолдер
+            if (
+                previewMode &&
+                (widget.widget_slug === 'projects_slider' ||
+                    widget.widget_slug === 'teachers_slider' ||
+                    widget.widget_slug === 'clubs' ||
+                    widget.widget_slug === 'club_schedule' ||
+                    widget.widget_slug === 'video_lessons')
+            ) {
                 const cfg = parseWidgetConfig(
                     widget.configs,
                     widget.config || {},
                 );
+                const defaultTitle =
+                    widget.widget_slug === 'teachers_slider'
+                        ? 'Преподаватели'
+                        : widget.widget_slug === 'club_schedule'
+                          ? 'Расписание кружков'
+                          : widget.widget_slug === 'video_lessons'
+                            ? 'Видео уроки'
+                            : widget.widget_slug === 'clubs'
+                              ? 'Кружки и секции'
+                              : 'Слайдер проектов';
                 const title =
-                    (cfg.title as string) || widget.name || 'Слайдер проектов';
+                    (cfg.title as string) || widget.name || defaultTitle;
 
                 return (
                     <div className="rounded-lg border border-gray-300 bg-gray-50 p-6 text-center">

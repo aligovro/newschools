@@ -5,7 +5,7 @@ export interface WidgetPosition {
     slug: string;
     description?: string;
     area: string;
-    order: number;
+    sort_order: number;
     allowed_widgets?: string[];
     layout_config?: Record<string, unknown>;
     is_required?: boolean;
@@ -23,7 +23,7 @@ export interface WidgetData {
     settings: Record<string, unknown>;
     is_active: boolean;
     is_visible: boolean;
-    order: number;
+    sort_order: number;
     position_name: string;
     position_slug: string;
     wrapper_class?: string;

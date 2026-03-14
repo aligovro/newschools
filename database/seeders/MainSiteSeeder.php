@@ -74,7 +74,7 @@ class MainSiteSeeder extends Seeder
             'name' => 'Главный сайт',
             'slug' => 'main-site-' . time(),
             'description' => 'Главный сайт системы управления образовательными организациями',
-            'template' => 'main-template-default',
+            'template' => config('sites.defaults.template_for_main', 'default'),
             'site_type' => 'main',
             'layout_config' => json_encode([
                 'header' => [

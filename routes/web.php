@@ -37,6 +37,8 @@ use App\Http\Controllers\Dashboard\OrganizationPaymentsController;
 use App\Http\Controllers\Dashboard\OrganizationTelegramController;
 use App\Http\Controllers\Dashboard\WidgetController;
 use App\Http\Controllers\Dashboard\OrganizationStaffController;
+use App\Http\Controllers\Dashboard\OrganizationClubController;
+use App\Http\Controllers\Dashboard\OrganizationVideoLessonController;
 use App\Http\Controllers\Dashboard\OrganizationReportsController;
 use App\Http\Controllers\Dashboard\YooKassa\OAuthController as YooKassaOAuthController;
 use App\Http\Controllers\Api\SiteController as ApiSiteController;
@@ -163,6 +165,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/{staff:id}', [OrganizationStaffController::class, 'show'])->name('show');
             Route::put('/{staff:id}', [OrganizationStaffController::class, 'update'])->name('update');
             Route::delete('/{staff:id}', [OrganizationStaffController::class, 'destroy'])->name('destroy');
+        });
+
+        // Organization clubs (кружки и секции)
+        Route::prefix('organizations/{organization}/clubs')->name('organizations.clubs.')->group(function () {
+            Route::get('/', [OrganizationClubController::class, 'index'])->name('index');
+            Route::post('/', [OrganizationClubController::class, 'store'])->name('store');
+            Route::get('/{club:id}', [OrganizationClubController::class, 'show'])->name('show');
+            Route::put('/{club:id}', [OrganizationClubController::class, 'update'])->name('update');
+            Route::delete('/{club:id}', [OrganizationClubController::class, 'destroy'])->name('destroy');
+        });
+
+        // Organization video lessons
+        Route::prefix('organizations/{organization}/video-lessons')->name('organizations.video_lessons.')->group(function () {
+            Route::get('/', [OrganizationVideoLessonController::class, 'index'])->name('index');
+            Route::post('/', [OrganizationVideoLessonController::class, 'store'])->name('store');
+            Route::get('/{videoLesson:id}', [OrganizationVideoLessonController::class, 'show'])->name('show');
+            Route::put('/{videoLesson:id}', [OrganizationVideoLessonController::class, 'update'])->name('update');
+            Route::delete('/{videoLesson:id}', [OrganizationVideoLessonController::class, 'destroy'])->name('destroy');
         });
 
         // Projects management (all projects for super admin)
@@ -375,8 +395,8 @@ Route::prefix('api/sites/{id}')->middleware('auth')->group(function () {
     // Основные настройки сайта
     Route::post('/settings/basic', [ApiSiteController::class, 'saveBasicSettings'])
         ->name('sites.save-basic-settings');
-    Route::post('/settings/design', [ApiSiteController::class, 'saveDesignSettings'])
-        ->name('sites.save-design-settings');
+    Route::post('/settings/template', [ApiSiteController::class, 'saveTemplateSettings'])
+        ->name('sites.save-template-settings');
     Route::post('/settings/seo', [ApiSiteController::class, 'saveSeoSettings'])
         ->name('sites.save-seo-settings');
 

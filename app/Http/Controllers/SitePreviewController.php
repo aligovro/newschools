@@ -64,6 +64,7 @@ class SitePreviewController extends Controller
                     'description' => $site->description,
                     'template' => $site->template,
                     'site_type' => $site->site_type ?? 'organization',
+                    'organization_id' => $site->organization_id,
                     'widgets_config' => $widgetsConfig,
                     'seo_config' => $site->formatted_seo_config ?? [],
                     'styles_file_path' => $stylesService->getStylesRelativePath($site->id),
@@ -133,12 +134,11 @@ class SitePreviewController extends Controller
                 'description' => $site->description,
                 'template' => $site->template,
                 'site_type' => $site->site_type ?? 'organization',
+                'organization_id' => $site->organization_id,
                 'widgets_config' => $widgetsConfig,
                 'seo_config' => $site->formatted_seo_config ?? [],
                 'styles_file_path' => $stylesService->getStylesRelativePath($site->id),
-                'styles_css_url' => $stylesService->hasStylesFile($site->id)
-                    ? route('site-css.show', $site->id)
-                    : null,
+                'styles_css_url' => $stylesService->getStylesCssUrl($site->id),
             ],
             'positions' => $positions,
             'position_settings' => $positionSettings,

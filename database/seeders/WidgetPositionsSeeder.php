@@ -34,7 +34,7 @@ class WidgetPositionsSeeder extends Seeder
         'slug' => 'header',
         'description' => 'Верхняя часть сайта (меню, логотип, навигация)',
         'area' => 'header',
-        'order' => 1,
+        'sort_order' => 1,
         'allowed_widgets' => [], // Все виджеты разрешены
         'layout_config' => [
           'width' => 'full',
@@ -50,7 +50,7 @@ class WidgetPositionsSeeder extends Seeder
         'slug' => 'hero',
         'description' => 'Главный баннер или слайдер (hero секция)',
         'area' => 'hero',
-        'order' => 2,
+        'sort_order' => 2,
         'allowed_widgets' => [], // Все виджеты разрешены
         'layout_config' => [
           'width' => 'full',
@@ -66,7 +66,7 @@ class WidgetPositionsSeeder extends Seeder
         'slug' => 'content',
         'description' => 'Основная область контента сайта',
         'area' => 'content',
-        'order' => 3,
+        'sort_order' => 3,
         'allowed_widgets' => [], // Все виджеты разрешены
         'layout_config' => [
           'width' => 'full',
@@ -82,7 +82,7 @@ class WidgetPositionsSeeder extends Seeder
         'slug' => 'sidebar',
         'description' => 'Боковая панель (виджеты, дополнительная информация)',
         'area' => 'sidebar',
-        'order' => 4,
+        'sort_order' => 4,
         'allowed_widgets' => [], // Все виджеты разрешены
         'layout_config' => [
           'width' => '350px',
@@ -98,7 +98,7 @@ class WidgetPositionsSeeder extends Seeder
         'slug' => 'footer',
         'description' => 'Нижняя часть сайта (контакты, информация, меню)',
         'area' => 'footer',
-        'order' => 5,
+        'sort_order' => 5,
         'allowed_widgets' => [], // Все виджеты разрешены
         'layout_config' => [
           'width' => 'full',

@@ -35,6 +35,7 @@ export function useOrganizationStaff({
             try {
                 const response = await fetch(
                     `/dashboard/organizations/${organizationId}/staff?page=${page}&per_page=15&exclude_director=true`,
+                    { headers: { Accept: 'application/json' } },
                 );
                 const data = await response.json();
                 if (page === 1) {
@@ -76,6 +77,7 @@ export function useOrganizationStaff({
             try {
                 const response = await fetch(
                     `/dashboard/organizations/${organizationId}/staff/${staffId}`,
+                    { headers: { Accept: 'application/json' } },
                 );
                 const data = await response.json();
                 return data.data || null;

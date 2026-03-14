@@ -19,7 +19,7 @@ interface DraggableWidgetProps {
     onMoveWidgetOrder?: (
         widgetId: string,
         positionSlug: string,
-        order: number,
+        sortOrder: number,
     ) => Promise<void>;
     isPreviewMode: boolean;
     newlyAddedWidgetId?: string | null;
@@ -45,7 +45,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         item: {
             id: widget.id,
             position_slug: widget.position_slug,
-            order: widget.order,
+            sort_order: widget.sort_order,
         },
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),

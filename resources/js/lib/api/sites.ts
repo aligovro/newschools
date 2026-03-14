@@ -42,23 +42,16 @@ export const sitesApi = {
             }>(`/sites/${siteId}/settings/seo`, settings)
             .then((response) => response.data),
 
-    // Сохранение настроек дизайна
-    saveDesignSettings: (
+    // Выбор шаблона сайта
+    saveTemplateSettings: (
         siteId: number,
-        settings: {
-            color_scheme?: string;
-            font_family?: string;
-            font_size?: string;
-            layout?: string;
-            header_style?: string;
-            footer_style?: string;
-        },
+        template: string,
     ): Promise<{ success: boolean; message?: string }> =>
         apiClient
             .post<{
                 success: boolean;
                 message?: string;
-            }>(`/sites/${siteId}/settings/design`, settings)
+            }>(`/sites/${siteId}/settings/template`, { template })
             .then((response) => response.data),
     // Сохранение настроек макета сайта
     saveLayoutSettings: (
@@ -75,10 +68,10 @@ export const sitesApi = {
         payload: { custom_css: string },
     ): Promise<{ success: boolean; message?: string }> =>
         apiClient
-            .post<{ success: boolean; message?: string }>(
-                `/sites/${siteId}/settings/custom-styles`,
-                payload,
-            )
+            .post<{
+                success: boolean;
+                message?: string;
+            }>(`/sites/${siteId}/settings/custom-styles`, payload)
             .then((response) => response.data),
 
     // Перемещение виджета
@@ -87,7 +80,7 @@ export const sitesApi = {
         widgetId: number,
         updates: {
             position_slug: string;
-            order: number;
+            sort_order: number;
         },
     ): Promise<{ success: boolean; message?: string }> =>
         apiClient

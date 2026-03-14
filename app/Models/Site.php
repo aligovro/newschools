@@ -80,7 +80,9 @@ class Site extends Model
 
     public function widgets(): HasMany
     {
-        return $this->hasMany(SiteWidget::class, 'site_id');
+        return $this->hasMany(SiteWidget::class, 'site_id')
+            ->orderBy('position_slug')
+            ->orderBy('sort_order');
     }
 
     public function activeWidgets(): HasMany

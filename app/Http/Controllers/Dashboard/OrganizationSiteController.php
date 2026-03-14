@@ -46,6 +46,8 @@ class OrganizationSiteController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $defaultTemplate = config('sites.defaults.template_for_organization', config('sites.defaults.template', 'default'));
+
         // Для создания сайта используем тот же конструктор, передавая пустой site и список шаблонов
         return Inertia::render('dashboard/organization/sites/builder/OrganizationSiteBuilder', [
             'organization' => (new OrganizationResource($organization))->toArray(request()),
@@ -63,6 +65,7 @@ class OrganizationSiteController extends Controller
                 'seo_config' => new \stdClass(),
             ],
             'templates' => $templates,
+            'defaultTemplate' => $defaultTemplate,
             'mode' => 'create',
         ]);
     }
@@ -207,8 +210,12 @@ class OrganizationSiteController extends Controller
         ]);
 
 
-        // Преобразуем виджеты для фронтенда используя ресурс
-        $widgets = SiteWidgetResource::collection($site->widgets)->toArray(request());
+        // Преобразуем виджеты для фронтенда используя ресурс (сортировка по позиции и sort_order)
+        $sortedWidgets = $site->widgets->sortBy([
+            ['position_slug', 'asc'],
+            ['sort_order', 'asc'],
+        ])->values();
+        $widgets = SiteWidgetResource::collection($sortedWidgets)->toArray(request());
 
         // Исправляем hero_slides и slider_slides для правильного отображения картинок
         foreach ($widgets as &$widget) {
@@ -249,8 +256,16 @@ class OrganizationSiteController extends Controller
             ];
         }
 
+        $templates = SiteTemplate::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get(['id', 'slug', 'name'])
+            ->map(fn ($t) => ['slug' => $t->slug, 'name' => $t->name])
+            ->values()
+            ->all();
+
         return Inertia::render('dashboard/organization/sites/builder/OrganizationSiteBuilder', [
             'organization' => $organizationData,
+            'templates' => $templates,
             'site' => [
                 'id' => $site->id,
                 'name' => $site->name,
@@ -504,7 +519,7 @@ class OrganizationSiteController extends Controller
                     'widget_slug' => $widget->widget_slug,
                     'position_name' => $position->name,
                     'position_slug' => $position->slug,
-                    'order' => 1,
+                    'sort_order' => 1,
                     'config' => $this->getDefaultConfigForWidget($widget->widget_slug),
                     'settings' => [],
                     'is_active' => true,
@@ -545,8 +560,7 @@ class OrganizationSiteController extends Controller
                 'widget_slug' => $widgetData['slug'],
                 'config' => $widgetData['config'] ?? [],
                 'settings' => $widgetData['settings'] ?? [],
-                'order' => $widgetData['order'] ?? 0,
-                'sort_order' => $widgetData['order'] ?? 0,
+                'sort_order' => $widgetData['sort_order'] ?? 0,
                 'is_active' => $widgetData['is_active'] ?? true,
                 'is_visible' => $widgetData['is_visible'] ?? true,
             ]);

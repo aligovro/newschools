@@ -5,6 +5,11 @@ import path from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    server: {
+        cors: {
+            origin: /https?:\/\/(localhost|[\w-]+\.loc)(:\d+)?$/,
+        },
+    },
     plugins: [
         laravel({
             input: ['resources/css/app.scss', 'resources/js/app.tsx'],

@@ -217,7 +217,7 @@ class OrganizationReportsController extends Controller
 
         $stages = $project->stages()
             ->select('id', 'title', 'status', 'start_date', 'end_date')
-            ->orderBy('order')
+            ->orderBy('sort_order')
             ->get();
 
         return response()->json([

@@ -180,7 +180,7 @@ class OrganizationCreationController extends Controller
                     'slug' => $organization->slug,
                     'is_primary' => true,
                     'is_published' => false,
-                    'template' => $request->get('site_template', 'default'),
+                    'template' => $request->get('site_template', config('sites.defaults.template_for_organization', config('sites.defaults.template', 'default'))),
                 ];
 
                 $this->creationService->createOrganizationSite($organization, $siteData);
@@ -222,13 +222,16 @@ class OrganizationCreationController extends Controller
         }
 
         $templates = Cache::remember('site_templates', 3600, function () {
-            return [
-                'default' => [
-                    'name' => 'Стандартный',
-                    'description' => 'Классический макет с баннером и статистикой',
-                    'preview' => '/images/templates/default.jpg',
-                ]
-            ];
+            return \App\Models\SiteTemplate::where('is_active', true)
+                ->orderBy('sort_order')
+                ->get()
+                ->keyBy('slug')
+                ->map(fn ($t) => [
+                    'name' => $t->name,
+                    'description' => $t->description ?? '',
+                    'preview' => $t->preview_image ? asset('storage/' . $t->preview_image) : '/images/templates/default.jpg',
+                ])
+                ->toArray();
         });
 
         return Inertia::render('dashboard/organizations/CreateSite', [
@@ -247,7 +250,7 @@ class OrganizationCreationController extends Controller
             'slug' => 'nullable|string|max:255',
             'description' => 'nullable|string|max:1000',
             'domain' => 'nullable|string|max:255',
-            'template' => 'required|string|in:default,modern,classic',
+            'template' => 'required|string|exists:site_templates,slug',
         ]);
 
         if ($validator->fails()) {

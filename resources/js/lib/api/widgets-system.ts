@@ -28,7 +28,7 @@ export interface WidgetPosition {
     slug: string;
     description: string;
     area: string;
-    order: number;
+    sort_order: number;
     allowed_widgets: string[];
     layout_config: Record<string, unknown>;
     is_required: boolean;
@@ -89,6 +89,7 @@ export interface PaymentMethod {
 
 export interface DonationWidgetData {
     terminology: Record<string, string>;
+    average_donation?: number;
     merchant?: {
         id: number;
         status: string;

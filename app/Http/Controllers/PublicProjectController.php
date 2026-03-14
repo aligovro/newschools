@@ -130,7 +130,7 @@ class PublicProjectController extends Controller
         'organization.locality',
         'categories',
         'stages' => function ($query) {
-          $query->orderBy('order', 'asc');
+          $query->orderBy('sort_order', 'asc');
         }
       ])
       ->firstOrFail();
@@ -151,7 +151,7 @@ class PublicProjectController extends Controller
 
         return [
           'id' => $stage->id,
-          'stage_number' => $stage->order,
+          'stage_number' => $stage->sort_order,
           'title' => $stage->title,
           'description' => $stage->description,
           'image' => $stage->image ? '/storage/' . ltrim($stage->image, '/') : null,
@@ -165,10 +165,10 @@ class PublicProjectController extends Controller
           'is_completed' => $stage->is_completed ?? false,
           'is_active' => $stage->is_active ?? false,
           'is_pending' => $stage->is_pending ?? false,
-          'order' => $stage->order,
+          'sort_order' => $stage->sort_order,
           'project_url' => '/project/' . $project->slug,
         ];
-      })->sortByDesc('order')->values()->toArray();
+      })->sortByDesc('sort_order')->values()->toArray();
     }
 
     // Подготавливаем данные проекта для отображения

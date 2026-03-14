@@ -95,8 +95,7 @@ class MigrateAllWidgetsToTables extends Command
                     $siteWidget->widget_slug = $widgetData['slug'];
                     $siteWidget->config = $config;
                     $siteWidget->settings = $settings;
-                    $siteWidget->order = $widgetData['order'] ?? 0;
-                    $siteWidget->sort_order = $widgetData['order'] ?? 0;
+                    $siteWidget->sort_order = $widgetData['sort_order'] ?? $widgetData['order'] ?? 0;
                     $siteWidget->is_active = $widgetData['is_active'] ?? true;
                     $siteWidget->is_visible = $widgetData['is_visible'] ?? true;
                     $siteWidget->save();

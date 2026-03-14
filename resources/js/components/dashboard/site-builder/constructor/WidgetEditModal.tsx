@@ -38,6 +38,10 @@ import { AlumniStatsWidgetModal } from './modals/AlumniStatsWidgetModal';
 import { AuthMenuWidgetModal } from './modals/AuthMenuWidgetModal';
 import { CityOrganizationsWidgetModal } from './modals/CityOrganizationsWidgetModal';
 import { ProjectsSliderWidgetModal } from './modals/ProjectsSliderWidgetModal';
+import { TeachersSliderWidgetModal } from './modals/TeachersSliderWidgetModal';
+import { ClubsWidgetModal } from './modals/ClubsWidgetModal';
+import { ClubScheduleWidgetModal } from './modals/ClubScheduleWidgetModal';
+import { VideoLessonsWidgetModal } from './modals/VideoLessonsWidgetModal';
 import { CitySupportersWidgetModal } from './modals/CitySupportersWidgetModal';
 import { DonationWidgetModal } from './modals/DonationWidgetModal';
 import { DonationsListWidgetModal } from './modals/DonationsListWidgetModal';
@@ -57,6 +61,9 @@ import { TopRecurringDonorsWidgetModal } from './modals/TopRecurringDonorsWidget
 import { OrgTopDonorsWidgetModal } from './modals/OrgTopDonorsWidgetModal';
 import { OrgTopRecurringDonorsWidgetModal } from './modals/OrgTopRecurringDonorsWidgetModal';
 import { OrgDonationsFeedWidgetModal } from './modals/OrgDonationsFeedWidgetModal';
+import { SchoolHeroWidgetModal } from './modals/SchoolHeroWidgetModal';
+import { SchoolSubscribeWidgetModal } from './modals/SchoolSubscribeWidgetModal';
+import { ShareButtonsWidgetModal } from './modals/ShareButtonsWidgetModal';
 
 interface WidgetEditModalProps {
     widget: WidgetData | null;
@@ -456,6 +463,66 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
                 );
             }
 
+            case 'teachers_slider': {
+                return (
+                    <TeachersSliderWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'clubs': {
+                return (
+                    <ClubsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'club_schedule': {
+                return (
+                    <ClubScheduleWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'video_lessons': {
+                return (
+                    <VideoLessonsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'school_hero': {
+                return (
+                    <SchoolHeroWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'school_subscribe': {
+                return (
+                    <SchoolSubscribeWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
             case 'top_donors': {
                 return (
                     <TopDonorsWidgetModal
@@ -499,6 +566,16 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             case 'org_donations_feed': {
                 return (
                     <OrgDonationsFeedWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'share_buttons': {
+                return (
+                    <ShareButtonsWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
                         onConfigUpdate={handleSetPendingConfig}

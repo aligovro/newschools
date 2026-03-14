@@ -185,7 +185,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         Object.keys(map).forEach((slug) => {
             map[slug] = map[slug]
                 .filter((w) => w.is_active && w.is_visible)
-                .sort((a, b) => a.order - b.order);
+                .sort((a, b) => a.sort_order - b.sort_order);
         });
         return map;
     }, [site.widgets_config]);

@@ -38,7 +38,7 @@ interface SiteWidget {
     position_name: string;
     config: WidgetConfig;
     settings: WidgetSettings;
-    order: number;
+    sort_order: number;
     is_active: boolean;
     is_visible: boolean;
     widget: Widget;

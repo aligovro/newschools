@@ -809,9 +809,9 @@ class ProjectDonationsService
     public static function paymentMethodLabel(?string $slug): string
     {
         return match ($slug) {
-            'sbp' => 'СБП',
-            'bankcard', 'bank_card', 'card' => 'Онлайн',
-            'sberbank', 'sberpay' => 'SberPay',
+            'sbp' => 'СПБ по QR',
+            'bankcard', 'bank_card', 'card' => 'Картой',
+            'sberbank', 'sberpay' => 'Сбер Pay',
             'tinkoff_bank', 'tpay' => 'T-Pay',
             default => $slug ? ucfirst($slug) : '—',
         };

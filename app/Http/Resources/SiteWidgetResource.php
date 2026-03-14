@@ -238,7 +238,6 @@ class SiteWidgetResource extends JsonResource
             'widget_slug' => $this->widget_slug,
             'position_name' => $this->position_name,
             'position_slug' => $this->position_slug,
-            'order' => $this->order,
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,
             'is_visible' => $this->is_visible,

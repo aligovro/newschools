@@ -8,7 +8,6 @@ use App\Http\Requests\Organization\StoreOrganizationRequest;
 use App\Http\Requests\Organization\UpdateOrganizationRequest;
 use App\Http\Resources\OrganizationResource;
 use App\Models\Organization;
-use App\Models\OrganizationStaff;
 use App\Models\Region;
 use App\Models\Locality;
 use App\Models\SitePage;
@@ -131,12 +130,6 @@ class OrganizationController extends Controller
             'director' => function ($query) {
                 $query->whereNull('deleted_at');
             },
-            'staff' => function ($query) {
-                $query->where('position', '!=', OrganizationStaff::POSITION_DIRECTOR)
-                    ->whereNull('deleted_at')
-                    ->orderBy('position')
-                    ->orderBy('last_name');
-            },
             'projects' => function ($query) {
                 $query->select('id', 'organization_id', 'target_amount', 'collected_amount');
             }
@@ -147,6 +140,9 @@ class OrganizationController extends Controller
             'members as members_count',
             'donations as donations_count',
             'projects as projects_count',
+            'staff as staff_count',
+            'clubs as clubs_count',
+            'videoLessons as video_lessons_count',
         ]);
         $organization->loadSum('donations', 'amount');
         // Сумма только успешных донатов — для единообразия со страницей «Платежи»

@@ -1,7 +1,7 @@
 import React from 'react';
 import { BasicSettings } from '../settings/BasicSettings';
 import { CustomStylesSettings } from '../settings/CustomStylesSettings';
-import { DesignSettings } from '../settings/DesignSettings';
+import { TemplateSettings } from '../settings/TemplateSettings';
 import { DomainSettings } from '../settings/DomainSettings';
 import PaymentSettings from '../settings/payments/PaymentSettings';
 import { SeoSettings } from '../settings/SeoSettings';
@@ -9,14 +9,19 @@ import TelegramSettings from '../settings/telegram/TelegramSettings';
 import { BankRequisitesSettings } from '@/components/dashboard/bank-requisites/BankRequisitesSettings';
 import { MonthlyGoalSettings } from '@/components/dashboard/monthly-goal/MonthlyGoalSettings';
 
+interface TemplateOption {
+    slug: string;
+    name: string;
+}
+
 interface SettingsContentProps {
     site: {
         id: number;
         name: string;
         slug: string;
+        template?: string;
         description?: string;
         favicon?: string;
-        theme_config?: Record<string, unknown>;
         seo_config?: Record<string, unknown>;
         custom_settings?: Record<string, unknown>;
         domain?: {
@@ -26,6 +31,7 @@ interface SettingsContentProps {
             beget_domain_id?: number;
         } | null;
     };
+    templates?: TemplateOption[];
     organization?: { 
         id: number;
         settings?: { payment_settings?: any };
@@ -33,7 +39,7 @@ interface SettingsContentProps {
 }
 
 export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
-    ({ site, organization }) => {
+    ({ site, organization, templates = [] }) => {
         return (
             <div className="h-full overflow-y-auto p-6">
                 <div className="space-y-6 pb-20">
@@ -86,21 +92,13 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                         }}
                     />
 
-                    <DesignSettings
-                        siteId={site.id}
-                        initialSettings={{
-                            color_scheme: (site.theme_config as any)
-                                ?.color_scheme,
-                            font_family: (site.theme_config as any)
-                                ?.font_family,
-                            font_size: (site.theme_config as any)?.font_size,
-                            layout: (site.theme_config as any)?.layout,
-                            header_style: (site.theme_config as any)
-                                ?.header_style,
-                            footer_style: (site.theme_config as any)
-                                ?.footer_style,
-                        }}
-                    />
+                    {templates.length > 0 && (
+                        <TemplateSettings
+                            siteId={site.id}
+                            currentTemplate={site.template || 'default'}
+                            templates={templates}
+                        />
+                    )}
 
                     <CustomStylesSettings
                         siteId={site.id}
