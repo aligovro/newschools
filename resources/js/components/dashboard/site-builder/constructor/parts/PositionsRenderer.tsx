@@ -79,10 +79,17 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
                     'header-col-3',
                     'header-col-4',
                 ];
-                const headerCols = positions.filter(
-                    (p) =>
-                        p.area === 'header' && headerColSlugs.includes(p.slug),
-                );
+                const headerCols = positions
+                    .filter(
+                        (p) =>
+                            p.area === 'header' &&
+                            headerColSlugs.includes(p.slug),
+                    )
+                    .sort(
+                        (a, b) =>
+                            headerColSlugs.indexOf(a.slug) -
+                            headerColSlugs.indexOf(b.slug),
+                    );
                 const headerFull = positions.find(
                     (p) => p.area === 'header' && p.slug === 'header',
                 );
@@ -160,10 +167,17 @@ export const PositionsRenderer: React.FC<PositionsRendererProps> = ({
                     'footer-col-3',
                     'footer-col-4',
                 ];
-                const footerCols = positions.filter(
-                    (p) =>
-                        p.area === 'footer' && footerColSlugs.includes(p.slug),
-                );
+                const footerCols = positions
+                    .filter(
+                        (p) =>
+                            p.area === 'footer' &&
+                            footerColSlugs.includes(p.slug),
+                    )
+                    .sort(
+                        (a, b) =>
+                            footerColSlugs.indexOf(a.slug) -
+                            footerColSlugs.indexOf(b.slug),
+                    );
                 // Все прочие позиции футера, кроме content-bottom (она уже отрендерена выше)
                 const otherFooter = positions.filter(
                     (p) =>

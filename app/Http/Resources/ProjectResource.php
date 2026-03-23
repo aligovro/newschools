@@ -81,6 +81,7 @@ class ProjectResource extends JsonResource
       // Статистика
       'views_count' => $this->views_count,
       'donations_count' => $this->donations_count,
+      'autopayments_count' => (int) ($this->autopayments_count ?? 0),
 
       // URL проекта
       'url' => $this->url,

@@ -61,8 +61,8 @@ class AutopaymentRowFormatter
             ? Carbon::parse($transaction->paid_at)->format('d.m.Y H:i')
             : ($transaction->created_at ? Carbon::parse($transaction->created_at)->format('d.m.Y H:i') : null);
 
-        // Замаскированный ключ подписки
-        $subscriptionKeyMasked = SubscriptionKeyMasker::mask($subscriptionData->subscription_key);
+        $subscriptionKey = $subscriptionData->subscription_key;
+        $subscriptionKeyMasked = SubscriptionKeyMasker::mask($subscriptionKey);
 
         return new AutopaymentRowDto(
             title: $title,
@@ -73,6 +73,7 @@ class AutopaymentRowFormatter
             payment_method_slug: $transaction->payment_method_slug,
             payments: $payments,
             first_payment_at: $firstPaymentAt,
+            subscription_key: $subscriptionKey,
             subscription_key_masked: $subscriptionKeyMasked,
         );
     }

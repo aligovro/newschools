@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Donation;
 use App\Services\Recurring\RecurringPaymentProcessor;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -24,7 +25,24 @@ class ProcessRecurringDonations extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
+    {
+        $lock = Cache::lock('process-recurring-donations', 600);
+
+        if (!$lock->get()) {
+            $this->warn('Команда уже выполняется в другом процессе. Пропускаем.');
+            Log::info('donations:process-recurring пропущен: параллельный запуск заблокирован.');
+            return Command::SUCCESS;
+        }
+
+        try {
+            return $this->process();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function process(): int
     {
         $dryRun = $this->option('dry-run');
         if ($dryRun) {
@@ -83,9 +101,6 @@ class ProcessRecurringDonations extends Command
         return Command::SUCCESS;
     }
 
-    /**
-     * Получить активные регулярные пожертвования
-     */
     private function getActiveRecurringDonations()
     {
         return Donation::query()
@@ -101,13 +116,16 @@ class ProcessRecurringDonations extends Command
             ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id'))"))
             ->where(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id'))"), '!=', '')
             ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payment_transactions.payment_details, '$.saved_payment_method_id')) NOT LIKE 'legacy_%'")
+            ->whereRaw("JSON_EXTRACT(payment_transactions.payment_details, '$.recurring_cancelled_at') IS NULL")
             ->select('donations.*')
             ->with(['paymentTransaction', 'organization'])
             ->get()
             ->filter(function ($donation) {
                 $paymentDetails = $donation->paymentTransaction->payment_details ?? [];
                 $savedId = $paymentDetails['saved_payment_method_id'] ?? '';
-                return $savedId !== '' && strpos($savedId, 'legacy_') !== 0;
+                return $savedId !== ''
+                    && !str_starts_with($savedId, 'legacy_')
+                    && empty($paymentDetails['recurring_cancelled_at']);
             });
     }
 }

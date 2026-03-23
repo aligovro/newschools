@@ -24,6 +24,7 @@ use App\Support\InertiaResource;
 use App\Services\Autopayments\OrganizationAutopaymentsService;
 use App\Services\Autopayments\OrganizationAutopaymentsRepository;
 use App\Services\Autopayments\AutopaymentRowFormatter;
+use App\Services\Recurring\RecurringPaymentProcessor;
 
 class OrganizationPaymentsController extends Controller
 {
@@ -507,6 +508,23 @@ class OrganizationPaymentsController extends Controller
             'data' => array_map(fn($dto) => $dto->toArray(), $result['data']),
             'meta' => $result['meta'],
         ]);
+    }
+
+    /**
+     * Отменить подписку на автоплатёж по ключу сохранённого метода оплаты.
+     */
+    public function cancelAutopayment(Request $request, Organization $organization): JsonResponse
+    {
+        $subscriptionKey = (string) $request->input('subscription_key', '');
+
+        if ($subscriptionKey === '') {
+            return response()->json(['message' => 'subscription_key обязателен.'], 422);
+        }
+
+        $processor = app(RecurringPaymentProcessor::class);
+        $processor->cancelSubscription($subscriptionKey, $organization->id);
+
+        return response()->json(['message' => 'Подписка успешно отменена.']);
     }
 
     /**

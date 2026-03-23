@@ -1,0 +1,140 @@
+// ─── Футер шаблона school ─────────────────────────────────────────────────────
+// Scoped: .site-preview.site-template--school
+// Приводит стили к макету Figma без хардкода и без влияния на другие шаблоны.
+
+.site-preview.site-template--school {
+    // ── Контейнер: скруглённость 50px как в Figma ─────────────────────────────
+    .footer-container {
+        border-radius: 50px;
+    }
+
+    // ── Сетка колонок: точные пропорции из Figma ─────────────────────────────
+    // Figma inner 1242px / gap-6×3=72 → 1170px под колонки.
+    // Col-1: 356px=1.22fr  Col-2: 346px=1.18fr  Col-3: 227px=0.78fr  Col-4: 241px=0.82fr
+    // Перебиваем site-preview.scss (0.9fr 1.1fr 0.75fr 1.25fr — col-1 узкий, col-4 широкий).
+    @media (min-width: 1024px) {
+        .footer-container > .grid {
+            grid-template-columns: 1.22fr 1.18fr 0.78fr 0.82fr;
+        }
+    }
+
+    // ── Col-2: два меню рядом — ТОЛЬКО в публичном футере ────────────────────
+    // Figma: x=440 «Проекты» | x=630 «Школа» — рядом.
+    // Конструктор (.site-footer отсутствует) → виджеты стопкой (колонка).
+    // Публичный сайт (.site-footer) → 2-колоночная сетка.
+    .site-footer .footer-col-2-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    // ── Col-1: контактный блок ────────────────────────────────────────────────
+    .footer-col-1-wrapper {
+        // Телефон — 30px bold (Figma: 30px/700, Tailwind text-2xl → overrides)
+        .text-output h2 {
+            font-size: 30px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--school-text);
+        }
+
+        // Подписи под данными — 10px muted
+        .text-small {
+            font-size: 10px;
+            font-weight: 500;
+            line-height: 1.2;
+            color: var(--school-muted);
+        }
+    }
+
+    // ── Col-2 & Col-3: навигационные меню ────────────────────────────────────
+    // menu-widget рендерит nav.menu-output > h2 с Tailwind-классами;
+    // перебиваем градиентным заголовком из Figma.
+    .footer-col-2-wrapper,
+    .footer-col-3-wrapper {
+        nav.menu-output {
+            h2 {
+                font-size: 23px;
+                font-weight: 700;
+                line-height: 1.2;
+                letter-spacing: -0.01em;
+                background: var(--school-gradient);
+                background-clip: text;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 16px;
+            }
+
+            .menu-link {
+                font-size: 12px;
+                font-weight: 500;
+                line-height: 1.2;
+                color: var(--school-text);
+                padding: 5px 0;
+            }
+        }
+    }
+
+    // ── Виджет "Скачать реквизиты" ───────────────────────────────────────────
+    // Figma: bg #F5F6F8, border-radius 22px, padding 12px 16px,
+    //        icon 16×16, label 10px/600, gap 10px
+    .org-requisites-download__btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        height: 32px;
+        padding: 0 16px;
+        background: var(--school-bg, #f5f6f8);
+        border-radius: 22px;
+        text-decoration: none;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 12px;
+        color: var(--school-text, #1a1a1a);
+        cursor: pointer;
+        border: none;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+            opacity: 0.75;
+        }
+    }
+
+    .org-requisites-download__icon {
+        flex-shrink: 0;
+        display: block;
+    }
+
+    // ── Col-4: контент стопкой (колонка) ─────────────────────────────────────
+    // site-preview.scss задаёт .footer-col-4-wrapper { display: flex; align-items: center }
+    // для общих шаблонов. В school-шаблоне контент идёт сверху вниз: политики + кнопка реквизитов.
+    .site-footer .footer-col-4-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        height: auto;
+        gap: 16px;
+    }
+
+    .footer-col-4-wrapper {
+        .footer-policy {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            a {
+                font-size: 10px;
+                font-weight: 500;
+                line-height: 1.4;
+                color: var(--school-muted);
+                text-decoration: none;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+    }
+}

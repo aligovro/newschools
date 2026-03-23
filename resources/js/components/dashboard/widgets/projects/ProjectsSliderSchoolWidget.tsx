@@ -116,45 +116,47 @@ export const ProjectsSliderSchoolWidget: React.FC<Props> = ({ config = {} }) => 
                 {!loading && !error && hasData && (
                     <>
                         <div className="projects-slider-school__slider">
-                            <Swiper
-                                modules={shouldShowArrows ? [Navigation] : []}
-                                navigation={
-                                    shouldShowArrows
-                                        ? {
-                                              prevEl: navPrevRef.current,
-                                              nextEl: navNextRef.current,
-                                          }
-                                        : false
-                                }
-                                spaceBetween={24}
-                                slidesPerView={1}
-                                breakpoints={{
-                                    768: { slidesPerView: 2 },
-                                    1024: { slidesPerView: 3 },
-                                }}
-                                onSwiper={(s) => {
-                                    swiperRef.current = s;
-                                }}
-                                onBeforeInit={(swiper) => {
-                                    if (!shouldShowArrows) return;
-                                    if (!navPrevRef.current || !navNextRef.current) return;
-                                    const nav = swiper.params.navigation;
-                                    if (nav && typeof nav !== 'boolean') {
-                                        nav.prevEl = navPrevRef.current;
-                                        nav.nextEl = navNextRef.current;
+                            <div className="projects-slider-school__swiper-wrap">
+                                <Swiper
+                                    modules={shouldShowArrows ? [Navigation] : []}
+                                    navigation={
+                                        shouldShowArrows
+                                            ? {
+                                                  prevEl: navPrevRef.current,
+                                                  nextEl: navNextRef.current,
+                                              }
+                                            : false
                                     }
-                                }}
-                            >
-                                {projects.map((p) => (
-                                    <SwiperSlide key={p.id}>
-                                        <div className="h-full">
-                                            <ProjectsSliderSchoolCard
-                                                project={p}
-                                            />
-                                        </div>
-                                    </SwiperSlide>
-                                ))}
-                            </Swiper>
+                                    spaceBetween={24}
+                                    slidesPerView={1}
+                                    breakpoints={{
+                                        768: { slidesPerView: 2 },
+                                        1024: { slidesPerView: 3 },
+                                    }}
+                                    onSwiper={(s) => {
+                                        swiperRef.current = s;
+                                    }}
+                                    onBeforeInit={(swiper) => {
+                                        if (!shouldShowArrows) return;
+                                        if (!navPrevRef.current || !navNextRef.current) return;
+                                        const nav = swiper.params.navigation;
+                                        if (nav && typeof nav !== 'boolean') {
+                                            nav.prevEl = navPrevRef.current;
+                                            nav.nextEl = navNextRef.current;
+                                        }
+                                    }}
+                                >
+                                    {projects.map((p) => (
+                                        <SwiperSlide key={p.id}>
+                                            <div className="h-full">
+                                                <ProjectsSliderSchoolCard
+                                                    project={p}
+                                                />
+                                            </div>
+                                        </SwiperSlide>
+                                    ))}
+                                </Swiper>
+                            </div>
                             {shouldShowArrows && (
                                 <>
                                     <button

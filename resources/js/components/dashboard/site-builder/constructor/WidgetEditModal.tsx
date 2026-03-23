@@ -63,6 +63,7 @@ import { OrgTopRecurringDonorsWidgetModal } from './modals/OrgTopRecurringDonors
 import { OrgDonationsFeedWidgetModal } from './modals/OrgDonationsFeedWidgetModal';
 import { SchoolHeroWidgetModal } from './modals/SchoolHeroWidgetModal';
 import { SchoolSubscribeWidgetModal } from './modals/SchoolSubscribeWidgetModal';
+import { OrgRequisitesDownloadWidgetModal } from './modals/OrgRequisitesDownloadWidgetModal';
 import { ShareButtonsWidgetModal } from './modals/ShareButtonsWidgetModal';
 
 interface WidgetEditModalProps {
@@ -576,6 +577,16 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             case 'share_buttons': {
                 return (
                     <ShareButtonsWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'org_requisites_download': {
+                return (
+                    <OrgRequisitesDownloadWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
                         onConfigUpdate={handleSetPendingConfig}

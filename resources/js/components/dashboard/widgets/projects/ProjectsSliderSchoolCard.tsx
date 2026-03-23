@@ -1,5 +1,4 @@
 import { router } from '@inertiajs/react';
-import { Share2, Users } from 'lucide-react';
 import React from 'react';
 import type { ProjectForSchool } from './useProjectsSliderSchool';
 
@@ -10,6 +9,10 @@ function stripHtml(html: string): string {
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
     return (tmp.textContent ?? tmp.innerText ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function formatCount(n: number): string {
+    return new Intl.NumberFormat('ru-RU').format(n);
 }
 
 interface Props {
@@ -32,6 +35,18 @@ export const ProjectsSliderSchoolCard: React.FC<Props> = ({ project }) => {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
     }).format(remaining);
+
+    const donationsCount = project.donations_count ?? 0;
+    const autopaymentsCount = project.autopayments_count ?? 0;
+
+    const handleShare = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (navigator.share) {
+            navigator.share({ title: project.title, url: window.location.origin + projectUrl }).catch(() => {});
+        } else {
+            navigator.clipboard?.writeText(window.location.origin + projectUrl).catch(() => {});
+        }
+    };
 
     return (
         <article
@@ -62,28 +77,18 @@ export const ProjectsSliderSchoolCard: React.FC<Props> = ({ project }) => {
                     )}
                     <div className="projects-slider-school__card-image-overlay" />
                     <div className="projects-slider-school__card-progress">
-                        <div className="projects-slider-school__card-progress-bar-wrap">
-                            <div className="projects-slider-school__card-progress-bar">
-                                <div
-                                    className="projects-slider-school__card-progress-fill"
-                                    style={{
-                                        width: `${Math.min(100, project.progress_percentage)}%`,
-                                    }}
-                                />
-                            </div>
+                        <div className="projects-slider-school__card-progress-bar">
                             <div
-                                className="projects-slider-school__card-progress-pct"
-                                title={`${Math.round(project.progress_percentage)}%`}
-                            >
-                                {Math.round(project.progress_percentage)}%
-                            </div>
+                                className="projects-slider-school__card-progress-fill"
+                                style={{ width: `${Math.min(100, project.progress_percentage)}%` }}
+                            />
                         </div>
                         <div className="projects-slider-school__card-progress-amounts">
                             <div className="projects-slider-school__card-progress-collected">
                                 {project.formatted_collected_amount}
                             </div>
-                            <div className="projects-slider-school__card-progress-remaining">
-                                Осталось {remainingFormatted}
+                            <div className="projects-slider-school__card-progress-pct">
+                                {Math.round(project.progress_percentage)}%
                             </div>
                             <div className="projects-slider-school__card-progress-target">
                                 {project.formatted_target_amount}
@@ -91,53 +96,78 @@ export const ProjectsSliderSchoolCard: React.FC<Props> = ({ project }) => {
                         </div>
                         <div className="projects-slider-school__card-progress-labels">
                             <span>Собрали</span>
-                            <span />
+                            <span className="projects-slider-school__card-progress-remaining">
+                                Осталось {remainingFormatted}
+                            </span>
                             <span>Необходимо</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="projects-slider-school__card-body">
-                    <h3 className="projects-slider-school__card-title">
-                        {project.title}
-                    </h3>
+                    <h3 className="projects-slider-school__card-title">{project.title}</h3>
                     {displayDesc && (
-                        <p className="projects-slider-school__card-desc">
-                            {displayDesc}
-                        </p>
+                        <p className="projects-slider-school__card-desc">{displayDesc}</p>
                     )}
+
                     <div className="projects-slider-school__card-stats">
+                        {/* Доноров */}
                         <div className="projects-slider-school__card-stat">
-                            <Users size={22} strokeWidth={1.5} />
+                            <img
+                                src="/icons/school-template/heart-blue.svg"
+                                alt=""
+                                width={22}
+                                height={22}
+                                aria-hidden="true"
+                            />
                             <div>
                                 <span className="projects-slider-school__card-stat-value">
-                                    {project.donations_count ?? 0}
+                                    {formatCount(donationsCount)}
                                 </span>
                                 <span className="projects-slider-school__card-stat-label">
-                                    Помощей
+                                    Доноров
                                 </span>
                             </div>
                         </div>
+
+                        {/* Автоплатежей */}
+                        {autopaymentsCount > 0 && (
+                            <div className="projects-slider-school__card-stat">
+                                <img
+                                    src="/icons/school-template/flash-circle-blue.svg"
+                                    alt=""
+                                    width={22}
+                                    height={22}
+                                    aria-hidden="true"
+                                />
+                                <div>
+                                    <span className="projects-slider-school__card-stat-value">
+                                        {formatCount(autopaymentsCount)}
+                                    </span>
+                                    <span className="projects-slider-school__card-stat-label">
+                                        Автоплатежей
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Поделиться */}
                         <button
                             type="button"
                             className="projects-slider-school__card-share"
                             aria-label="Поделиться"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (navigator.share) {
-                                    navigator
-                                        .share({
-                                            title: project.title,
-                                            url: window.location.origin + projectUrl,
-                                        })
-                                        .catch(() => {});
-                                }
-                            }}
+                            onClick={handleShare}
                         >
-                            <Share2 size={20} />
-                            <span>Поделиться</span>
+                            <img
+                                src="/icons/school-template/share-dark.svg"
+                                alt=""
+                                width={20}
+                                height={20}
+                                aria-hidden="true"
+                            />
                         </button>
                     </div>
+
                     <button
                         type="button"
                         className="projects-slider-school__card-help"

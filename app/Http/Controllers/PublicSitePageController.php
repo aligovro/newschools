@@ -126,10 +126,13 @@ class PublicSitePageController extends Controller
             abort(404, 'Сайт не найден');
         }
 
-        $page = empty($slug) || $slug === '/'
-            ? $site->pages()->homepage()->published()->first()
-                ?? $site->pages()->where('status', 'published')->where('is_public', true)->orderBy('sort_order')->first()
-            : SitePage::where('site_id', $site->id)
+        $isHomepageRequest = empty($slug) || $slug === '/';
+
+        if ($isHomepageRequest) {
+            // Ищем только страницу с галочкой is_homepage — без fallback на первую попавшуюся
+            $page = $site->pages()->homepage()->published()->first();
+        } else {
+            $page = SitePage::where('site_id', $site->id)
                 ->where('slug', $slug)
                 ->where(function ($query) {
                     $query->where('status', 'published')->orWhere('is_public', true);
@@ -139,19 +142,24 @@ class PublicSitePageController extends Controller
                 })
                 ->first();
 
-        if (!$page) {
-            abort(404, 'Страница не найдена');
+            if (!$page) {
+                abort(404, 'Страница не найдена');
+            }
         }
 
-        // Загружаем связи
-        $page->load(['parent', 'children', 'site']);
+        // Загружаем связи для найденной страницы
+        $page?->load(['parent', 'children', 'site']);
 
         // Получаем данные сайта для виджетов
         $siteData = $this->getSiteWidgetsAndPositionsFor($site);
 
+        $seo = $page
+            ? $this->seoPresenter->forSitePage($site, $page, request()->fullUrl())
+            : $this->seoPresenter->forMainSite($site, [], request()->fullUrl());
+
         return Inertia::render('site/PageShow', array_merge($siteData, [
-            'page' => (new SitePageResource($page))->toArray(request()),
-            'seo' => $this->seoPresenter->forSitePage($site, $page, request()->fullUrl()),
+            'page' => $page ? (new SitePageResource($page))->toArray(request()) : null,
+            'seo' => $seo,
         ]));
     }
 

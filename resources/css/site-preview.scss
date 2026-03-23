@@ -171,14 +171,15 @@
     margin-top: auto;
 }
 
-.site-position--footer-col-4 {
+/* Только в публичном футере — не в конструкторе */
+.site-footer .site-position--footer-col-4 {
     height: 100%;
     > div {
         height: 100%;
     }
 }
 
-.site-position--footer {
+.site-footer .site-position--footer {
     > div {
         padding: 0;
     }
@@ -196,7 +197,8 @@
         gap: 6px;
     }
 }
-.footer-col-4-wrapper {
+/* Только в публичном футере — не в конструкторе */
+.site-footer .footer-col-4-wrapper {
     display: flex;
     align-items: center;
     height: 100%;

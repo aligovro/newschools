@@ -1,0 +1,392 @@
+// ─── Кружки и секции (слайдер по макету Figma) ────────────────────────────────
+
+.site-preview.site-template--school {
+    .clubs-output {
+        padding: 0;
+    }
+
+    .clubs-slider-widget {
+        &__container {
+            max-width: 1242px;
+            padding: 0;
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+
+        &__title {
+            font-size: 40px;
+            font-weight: 700;
+            line-height: 48px;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            margin: 0 0 24px;
+        }
+
+        &__placeholder,
+        &__error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            border-radius: 21px;
+            background: var(--school-bg);
+            border: 2px dashed var(--school-border);
+        }
+
+        &__placeholder-text {
+            color: var(--school-muted);
+        }
+
+        &__error {
+            border-color: rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+        }
+
+        &__slider {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        // Карточка
+        &__card {
+            height: 100%;
+        }
+
+        &__card-inner {
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            min-height: 350px;
+            background: var(--school-bg);
+            border-radius: 42px;
+            overflow: hidden;
+            transition:
+                transform 0.3s ease,
+                box-shadow 0.3s ease;
+
+            &:hover {
+                transform: translateY(-4px);
+            }
+        }
+
+        &__card-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 20px 30px 20px 30px;
+        }
+
+        &__card-title {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 34px;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            margin: 0 0 10px;
+        }
+
+        &__badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        &__badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 11px;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 12px;
+            letter-spacing: 0.01em;
+            border-radius: 24px;
+            white-space: nowrap;
+
+            &--time {
+                background: #fff;
+                color: var(--school-text);
+            }
+
+            &--appointment {
+                background: var(--school-text);
+                color: #fff;
+            }
+        }
+
+        &__card-desc {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            letter-spacing: 0.01em;
+            color: var(--school-muted);
+            margin: 0 0 20px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        &__actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        &__btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 17px;
+            letter-spacing: 0.01em;
+            border-radius: 24px;
+            border: none;
+            cursor: pointer;
+            transition:
+                background 0.2s,
+                border-color 0.2s;
+
+            &--outline {
+                background: transparent;
+                color: var(--school-text);
+                border: 1px solid var(--school-accent);
+            }
+
+            &--icon {
+                width: 46px;
+                height: 46px;
+                padding: 0;
+                background: var(--school-gradient);
+                color: #fff;
+            }
+        }
+
+        &__card-image-wrap {
+            flex-shrink: 0;
+            width: 240px;
+            min-height: 330px;
+            padding: 10px;
+        }
+
+        &__card-image {
+            width: 100%;
+            height: 100%;
+            min-height: 330px;
+            object-fit: cover;
+            border-radius: 30px;
+        }
+
+        &__card-image-placeholder {
+            width: 100%;
+            min-height: 330px;
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 30px;
+        }
+
+        // Кнопка «Все кружки и секции»
+        &__all-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--school-bg);
+            border-radius: 32px;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 19px;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            text-decoration: none;
+            transition: background 0.2s;
+
+            &:hover {
+                background: var(--school-border);
+            }
+        }
+
+        // Навигация слайдера
+        &__nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--school-bg);
+            border: none;
+            border-radius: 20px;
+            color: var(--school-text);
+            cursor: pointer;
+            transition:
+                background 0.2s,
+                color 0.2s;
+
+            &:hover {
+                background: var(--school-gradient);
+                color: #fff;
+            }
+
+            &--prev {
+                left: -66px;
+            }
+
+            &--next {
+                right: -66px;
+            }
+
+            &.swiper-button-disabled {
+                opacity: 0.3;
+                pointer-events: none;
+            }
+        }
+    }
+}
+
+// ─── Публичная страница секции (/club/{id}) ──────────────────────────────────
+
+.site-preview.site-template--school {
+    .club-show {
+        max-width: 900px;
+        margin: 0 auto;
+
+        &__image-wrap {
+            width: 100%;
+            margin-bottom: 32px;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        &__image {
+            width: 100%;
+            max-height: 420px;
+            object-fit: cover;
+            display: block;
+        }
+
+        &__body {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        &__header {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        &__title {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--school-text);
+            margin: 0;
+        }
+
+        &__org {
+            font-size: 15px;
+            color: var(--school-muted);
+            margin: 0;
+        }
+
+        &__section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--school-text);
+            margin: 0 0 12px;
+        }
+
+        &__schedule {
+            background: var(--school-bg);
+            border-radius: 16px;
+            padding: 20px 24px;
+        }
+
+        &__schedule-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        &__schedule-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        &__schedule-day {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--school-text);
+            min-width: 28px;
+        }
+
+        &__schedule-time {
+            font-size: 14px;
+            color: var(--school-muted);
+        }
+
+        &__description {
+            font-size: 16px;
+            line-height: 1.65;
+            color: var(--school-text);
+
+            p {
+                margin: 0;
+            }
+        }
+
+        &__phone {
+            font-size: 15px;
+            color: var(--school-muted);
+            margin: 0;
+        }
+
+        &__phone-link {
+            color: var(--school-text);
+            font-weight: 600;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+
+        &__signup-btn {
+            align-self: flex-start;
+            display: inline-flex;
+            align-items: center;
+            padding: 14px 28px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: 0.01em;
+            color: #fff;
+            background: var(--school-gradient);
+            border: none;
+            border-radius: 32px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+
+            &:hover {
+                opacity: 0.88;
+            }
+        }
+    }
+}

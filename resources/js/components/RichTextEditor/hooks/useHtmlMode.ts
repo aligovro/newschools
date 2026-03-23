@@ -1,130 +1,93 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { cleanAndValidateHtml } from '@/utils/htmlSanitizer';
+import { cleanAndValidateHtml, sanitizeHtml } from '@/utils/htmlSanitizer';
 import { formatHtml } from '../utils/htmlFormatter';
 
 interface UseHtmlModeProps {
-  editorRef: React.RefObject<HTMLDivElement | null>;
-  isActive: boolean;
-  isAdmin: boolean;
-  onContentChange: () => void;
-  createResizeHandlesRef: React.RefObject<((img: HTMLImageElement) => void) | null>;
-  handleImageResizeRef: React.RefObject<((img: HTMLImageElement) => () => void) | null>;
+    editorRef: React.RefObject<HTMLDivElement | null>;
+    isActive: boolean;
+    isAdmin: boolean;
+    onContentChange: () => void;
+    createImageEditButtonRef: React.RefObject<((img: HTMLImageElement) => void) | null>;
 }
 
 export interface UseHtmlModeReturn {
-  isHtmlMode: boolean;
-  setIsHtmlMode: (mode: boolean) => void;
-  toggleHtmlMode: () => void;
+    isHtmlMode: boolean;
+    setIsHtmlMode: (mode: boolean) => void;
+    toggleHtmlMode: () => void;
 }
 
 /**
- * Хук для управления переключением между HTML и WYSIWYG режимами
- * Сохраняет маркеры ресайза изображений при переключении
+ * Хук для управления переключением между HTML и WYSIWYG режимами.
+ * При переходе из HTML → WYSIWYG восстанавливает кнопки редактирования изображений.
  */
 export const useHtmlMode = ({
-  editorRef,
-  isActive,
-  isAdmin,
-  onContentChange,
-  createResizeHandlesRef,
-  handleImageResizeRef,
+    editorRef,
+    isActive,
+    isAdmin,
+    onContentChange,
+    createImageEditButtonRef,
 }: UseHtmlModeProps): UseHtmlModeReturn => {
-  const [isHtmlMode, setIsHtmlMode] = useState(false);
-  const isActiveRef = useRef(isActive);
-  const isAdminRef = useRef(isAdmin);
+    const [isHtmlMode, setIsHtmlMode] = useState(false);
+    const isActiveRef = useRef(isActive);
+    const isAdminRef = useRef(isAdmin);
 
-  // Обновляем refs
-  useEffect(() => {
-    isActiveRef.current = isActive;
-  }, [isActive]);
+    useEffect(() => { isActiveRef.current = isActive; }, [isActive]);
+    useEffect(() => { isAdminRef.current = isAdmin; }, [isAdmin]);
 
-  useEffect(() => {
-    isAdminRef.current = isAdmin;
-  }, [isAdmin]);
+    const toggleHtmlMode = useCallback(() => {
+        if (!isActiveRef.current) return;
 
-  const toggleHtmlMode = useCallback(() => {
-    if (!isActiveRef.current) return;
+        if (isHtmlMode) {
+            // HTML → WYSIWYG: читаем источник, санитизируем и ставим как innerHTML.
+            // Санитизация обязательна — пользователь мог вписать inline-обработчики вручную.
+            if (editorRef.current) {
+                const htmlContent = editorRef.current.innerText;
+                const sanitized = sanitizeHtml(htmlContent, isAdminRef.current);
+                editorRef.current.innerHTML = sanitized;
+            }
+        } else {
+            // WYSIWYG → HTML: санитизируем и форматируем
+            if (editorRef.current) {
+                const wysiwygContent = editorRef.current.innerHTML;
 
-    if (isHtmlMode) {
-      // Переход из HTML в WYSIWYG
-      if (editorRef.current) {
-        const htmlContent = editorRef.current.innerText;
-        editorRef.current.innerHTML = htmlContent;
-      }
-    } else {
-      // Переход из WYSIWYG в HTML - санитизируем контент
-      if (editorRef.current) {
-        const wysiwygContent = editorRef.current.innerHTML;
+                const { cleaned, isValid, errors } = cleanAndValidateHtml(
+                    wysiwygContent,
+                    isAdminRef.current,
+                );
 
-        // Санитизируем HTML перед переключением в HTML режим
-        const { cleaned, isValid, errors } = cleanAndValidateHtml(
-          wysiwygContent,
-          isAdminRef.current,
-        );
+                if (!isValid) {
+                    alert(`HTML содержит ошибки: ${errors.join(', ')}. Контент будет очищен.`);
+                }
 
-        if (!isValid) {
-          alert(`HTML содержит ошибки: ${errors.join(', ')}. Контент будет очищен.`);
+                editorRef.current.innerText = formatHtml(cleaned);
+            }
         }
 
-        // Форматируем HTML с отступами
-        const formattedHtml = formatHtml(cleaned);
-        editorRef.current.innerText = formattedHtml;
-      }
-    }
+        // После перехода обратно в WYSIWYG восстанавливаем кнопки редактирования
+        if (isHtmlMode) {
+            setTimeout(() => {
+                if (!editorRef.current || !createImageEditButtonRef.current) return;
 
-    // Восстанавливаем маркеры ресайза для всех изображений после переключения режима
-    setTimeout(() => {
-      if (editorRef.current) {
-        const images = editorRef.current.querySelectorAll('img');
-        images.forEach((img) => {
-          const imgElement = img as HTMLImageElement;
-          
-          // Проверяем, является ли изображение SVG - для SVG не применяем ресайз
-          if (imgElement.src) {
-            const urlPath = imgElement.src.split('?')[0];
-            const isSvg = urlPath.toLowerCase().endsWith('.svg') || 
-                         imgElement.src.toLowerCase().startsWith('data:image/svg+xml');
-            if (isSvg) {
-              // Удаляем класс resizable у SVG, если он был добавлен по ошибке
-              imgElement.classList.remove('resizable');
-              return; // Пропускаем SVG
-            }
-          }
+                editorRef.current.querySelectorAll('img').forEach((img) => {
+                    const imgElement = img as HTMLImageElement;
+                    const container = imgElement.parentElement as HTMLElement;
+                    if (!container?.classList.contains('rte-image')) return;
 
-          if (img.classList.contains('resizable')) {
-            // Проверяем, есть ли уже маркеры и кнопка настроек
-            const container = (img.parentElement as HTMLElement) || img;
-            const existingHandles = container.querySelectorAll(
-              '.resize-handle, .corner-handle, .image-settings-button',
-            );
+                    // Если кнопки нет — создаём
+                    if (!container.querySelector('.image-settings-button')) {
+                        createImageEditButtonRef.current!(imgElement);
+                    }
+                });
+            }, 100);
+        }
 
-            // Если маркеров нет или нет кнопки настроек, создаем их
-            if (existingHandles.length < 9) {
-              // Создаем маркеры ресайза
-              if (createResizeHandlesRef.current) {
-                createResizeHandlesRef.current(imgElement);
-              }
+        setIsHtmlMode(!isHtmlMode);
+        onContentChange();
+    }, [isHtmlMode, onContentChange, editorRef, createImageEditButtonRef]);
 
-              // Добавляем обработчики ресайза
-              setTimeout(() => {
-                if (!(img as any).__cleanupResize && handleImageResizeRef.current) {
-                  const cleanupResize = handleImageResizeRef.current(imgElement);
-                  (img as any).__cleanupResize = cleanupResize;
-                }
-              }, 100);
-            }
-          }
-        });
-      }
-    }, 100);
-
-    setIsHtmlMode(!isHtmlMode);
-    onContentChange();
-  }, [isHtmlMode, onContentChange, editorRef, createResizeHandlesRef, handleImageResizeRef]);
-
-  return {
-    isHtmlMode,
-    setIsHtmlMode,
-    toggleHtmlMode,
-  };
+    return {
+        isHtmlMode,
+        setIsHtmlMode,
+        toggleHtmlMode,
+    };
 };

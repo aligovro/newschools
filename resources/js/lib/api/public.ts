@@ -133,6 +133,31 @@ export async function fetchOrganizationClubs(
     return res.json();
 }
 
+export interface ClubApplicationPayload {
+    club_id?: number;
+    organization_id?: number;
+    club_name: string;
+    name: string;
+    phone: string;
+    comment?: string;
+}
+
+export async function submitClubApplication(payload: ClubApplicationPayload): Promise<void> {
+    const res = await fetch('/api/public/clubs/applications', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { message?: string }).message ?? 'Не удалось отправить заявку');
+    }
+}
+
 export async function fetchOrganizationVideoLessons(
     params: Record<string, string | number | undefined> = {},
     options: RequestInit = {},

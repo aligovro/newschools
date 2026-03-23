@@ -1,0 +1,178 @@
+// ─── Преподаватели (слайдер для шаблона school) ───────────────────────────────
+
+.site-preview.site-template--school {
+    .teachers-output {
+        padding: 0;
+    }
+
+    .teachers-slider-school {
+        &__container {
+            max-width: 1242px;
+            padding: 0;
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+
+        &__header {
+            margin-bottom: 24px;
+        }
+
+        &__title {
+            font-size: 40px;
+            font-weight: 700;
+            line-height: 48px;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            margin: 0 0 16px;
+        }
+
+        &__filters-wrap {
+            margin-top: 10px;
+        }
+
+        &__filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        &__filter-tab {
+            padding: 12px 16px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 17px;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            background: var(--school-bg);
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            transition:
+                background 0.2s,
+                color 0.2s;
+
+            &--active {
+                background: var(--school-text);
+                color: #fff;
+            }
+
+            &:hover:not(&--active) {
+                background: var(--school-border);
+            }
+        }
+
+        &__placeholder,
+        &__error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            border-radius: 21px;
+            background: var(--school-bg);
+            border: 2px dashed var(--school-border);
+            color: var(--school-muted);
+        }
+
+        &__error {
+            border-color: rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+        }
+
+        &__slider {
+            position: relative;
+        }
+
+        &__card {
+            height: 100%;
+        }
+
+        &__card-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        &__card-image-wrap {
+            width: 100%;
+            aspect-ratio: 1;
+            max-width: 224px;
+            margin-inline: auto;
+            background: var(--school-bg);
+            border-radius: 42px;
+            overflow: hidden;
+        }
+
+        &__card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        &__card-image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--school-bg);
+            color: var(--school-muted);
+        }
+
+        &__card-name {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 22px;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            margin: 10px 0 4px;
+        }
+
+        &__card-position {
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 14px;
+            letter-spacing: 0.01em;
+            color: var(--school-accent);
+            margin: 0;
+        }
+
+        &__nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--school-bg);
+            border: none;
+            border-radius: 20px;
+            color: var(--school-text);
+            cursor: pointer;
+            transition:
+                background 0.2s,
+                color 0.2s;
+
+            &:hover {
+                background: var(--school-gradient);
+                color: #fff;
+            }
+
+            &--prev {
+                left: -66px;
+            }
+
+            &--next {
+                right: -66px;
+            }
+
+            &.swiper-button-disabled {
+                opacity: 0.3;
+                pointer-events: none;
+            }
+        }
+    }
+}

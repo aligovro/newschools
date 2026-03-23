@@ -34,6 +34,7 @@ import { ClubScheduleOutput } from './ClubScheduleOutput';
 import { VideoLessonsOutput } from './VideoLessonsOutput';
 import { SchoolHeroOutput } from './SchoolHeroOutput';
 import { SchoolSubscribeOutput } from './SchoolSubscribeOutput';
+import { OrgRequisitesDownloadOutput } from './OrgRequisitesDownloadOutput';
 
 // Registry of output components
 const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
@@ -70,6 +71,7 @@ const outputRegistry: Record<string, React.ComponentType<WidgetOutputProps>> = {
     share_buttons: ShareButtonsOutput,
     school_hero: SchoolHeroOutput,
     school_subscribe: SchoolSubscribeOutput,
+    org_requisites_download: OrgRequisitesDownloadOutput,
     html: HtmlOutput,
 };
 

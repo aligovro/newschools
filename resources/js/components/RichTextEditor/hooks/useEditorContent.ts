@@ -76,13 +76,11 @@ export const useEditorContent = ({
     if (!isHtmlMode && content) {
       const sanitizedContent = sanitizeHtml(content, isAdminRef.current);
       if (content !== sanitizedContent) {
-        // Не перезаписываем DOM, если есть изображения с маркерами ресайза
-        const hasImagesWithHandles =
-          (editorRef.current?.querySelectorAll(
-            '.resize-handle, .corner-handle, .image-settings-button',
-          ).length || 0) > 0;
+        // Не перезаписываем DOM, если открыт диалог или есть кнопки редактирования изображений
+        const hasEditButtons =
+          (editorRef.current?.querySelectorAll('.image-settings-button').length || 0) > 0;
 
-        if (!imageEditDialogOpen && !hasImagesWithHandles) {
+        if (!imageEditDialogOpen && !hasEditButtons) {
           editorRef.current.innerHTML = sanitizedContent;
           content = sanitizedContent;
         } else {
@@ -198,12 +196,10 @@ export const useEditorContent = ({
       lastContentRef.current = currentValue;
 
       if (editorRef.current) {
-        const hasImagesWithHandles =
-          (editorRef.current.querySelectorAll(
-            '.resize-handle, .corner-handle, .image-settings-button',
-          ).length || 0) > 0;
+        const hasEditButtons =
+          (editorRef.current.querySelectorAll('.image-settings-button').length || 0) > 0;
 
-        if (!hasImagesWithHandles) {
+        if (!hasEditButtons) {
           if (isHtmlMode) {
             editorRef.current.innerText = currentValue;
           } else {

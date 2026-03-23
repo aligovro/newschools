@@ -7,7 +7,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 interface OrgMeta {
@@ -96,10 +96,18 @@ export default function OrganizationClubsPage({ organization, initialClubs }: Pr
                             <p className="text-sm text-gray-600">{organization.name}</p>
                         </div>
                     </div>
-                    <Button size="sm" onClick={handleCreate}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Добавить
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Link href={`/dashboard/organizations/${organization.id}/club-applications`}>
+                            <Button variant="outline" size="sm">
+                                <ClipboardList className="mr-2 h-4 w-4" />
+                                Заявки
+                            </Button>
+                        </Link>
+                        <Button size="sm" onClick={handleCreate}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Добавить
+                        </Button>
+                    </div>
                 </div>
 
                 <OrganizationClubsList

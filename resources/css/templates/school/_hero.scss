@@ -1,0 +1,1029 @@
+// ─── Hero: виджет + баннер + форма пожертвования + статистика ─────────────────
+
+.site-preview.site-template--school {
+    // ─ Hero layout: двухколоночная сетка ─
+    .site-position--hero .hero-wrapper {
+        --hero-height: 480px;          // высота hero-изображения из макета
+        --hero-donation-z-index: 10;   // выше school-hero (z-index: 1)
+        --hero-padding: 60px;          // внутренний отступ hero и donation-формы
+
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: var(--hero-height) auto; // строка hero + строка под ней
+        align-items: start;
+        max-width: 1362px;
+        margin-inline: auto;
+        position: relative;
+        padding: 0;
+        background: transparent;
+
+        // Прямые потомки (widget-container или draggable-widget)
+        > * {
+            // Фоновый виджет: занимает всю строку hero
+            &:has(.school-hero-widget) {
+                grid-column: 1 / -1;
+                grid-row: 1;
+                align-self: start;
+                width: 100%;
+                height: 100%;
+            }
+
+            // Форма пожертвования: правая колонка, выступает ниже hero
+            &:has(.donation-widget),
+            &:has(.donation-output),
+            &:has(.donation-form-card) {
+                grid-column: 2;
+                grid-row: 1;
+                margin-top: var(--hero-padding);
+                margin-right: var(--hero-padding);
+                z-index: var(--hero-donation-z-index);
+                width: 460px;
+            }
+
+            // Кнопки "поделиться": прижаты к нижнему левому краю hero
+            &:has(.share-buttons-output),
+            &:has(.share-buttons-widget) {
+                grid-column: 1;
+                grid-row: 1;
+                align-self: end;
+                padding: 0 var(--hero-padding) var(--hero-padding) var(--hero-padding);
+                z-index: 2;
+            }
+
+            // Статистика выпускников: на всю ширину под hero (колонка 2 в строке 2 пуста)
+            &:has(.alumni-stats-output),
+            &:has(.alumni-stats-widget) {
+                grid-column: 1 / -1;
+                grid-row: 2;
+            }
+        }
+    }
+
+    // В конструкторе виджеты обёрнуты в .draggable-widget — убираем фиксированную высоту строки
+    .site-position--hero .hero-wrapper:has(> .draggable-widget) {
+        grid-template-rows: auto auto;
+    }
+
+    // widget-container внутри hero не добавляет лишний отступ
+    .site-position--hero .widget-container {
+        min-width: 0;
+        margin-bottom: 0;
+        position: static;
+    }
+
+    // ─ School Hero Widget (баннер + фон) ─
+    // Смёрджено из двух исходных блоков, дубль .school-hero-content убран
+    .site-position--hero .school-hero-widget {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        min-height: var(--hero-height, 480px);
+        color: #fff;
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: none;
+        padding: var(--hero-padding, 60px);
+
+        .school-hero-bg-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            pointer-events: none;
+            border-radius: 50px;
+        }
+
+        .school-hero-bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                91deg,
+                rgba(26, 26, 26, 0.8) 28.96%,
+                rgba(26, 26, 26, 0.01) 63.49%
+            );
+            z-index: 0;
+            pointer-events: none;
+            border-radius: 50px;
+        }
+
+        .school-hero-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+            max-width: calc(100% - 460px - 40px); // место для формы справа
+        }
+
+        .school-hero-title {
+            font-size: 50px;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+        }
+
+        .school-hero-subtitle {
+            font-size: 18px;
+            font-weight: 500;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+            margin-bottom: 16px;
+        }
+
+        // Блок "Цель на месяц" — pill-бар по Figma
+        .school-hero-monthly {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            height: 48px;
+            padding: 7px 20px 7px 7px;
+            background: rgba(26, 26, 26, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            backdrop-filter: blur(7px);
+            align-self: flex-start;
+
+            &__goal-block {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex: 1;
+                min-width: 0;
+                margin: -7px 17px -7px -9px;
+                padding: 0 17px 0 7px;
+                height: 48px;
+                border: 1px solid var(--school-accent);
+                border-radius: 24px;
+                box-sizing: border-box;
+            }
+
+            &__label {
+                display: inline-flex;
+                align-items: center;
+                padding: 12px 16px;
+                background: var(--school-gradient);
+                border-radius: 24px;
+                font-size: 12px;
+                font-weight: 600;
+                line-height: 1.2;
+                flex-shrink: 0;
+            }
+
+            &__goal {
+                flex: 1;
+                text-align: center;
+                font-size: 22px;
+                font-weight: 500;
+                line-height: 1.2;
+            }
+
+            &__collected {
+                font-size: 22px;
+                font-weight: 700;
+                line-height: 1.2;
+                color: var(--school-accent);
+                flex-shrink: 0;
+                margin-right: 10px;
+            }
+
+            &__text {
+                font-size: 12px;
+                font-weight: 500;
+                line-height: 1;
+                flex-shrink: 0;
+            }
+        }
+
+        // Общий прогресс — pill-бар + статистика по Figma
+        .school-hero-progress {
+            margin-top: 16px;
+
+            &__bar-container {
+                position: relative;
+                height: 14px;
+                background: #fff;
+                border-radius: 8px;
+                margin-bottom: 16px;
+                overflow: hidden;
+            }
+
+            &__bar-fill {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                height: 10px;
+                background: var(--school-gradient);
+                border-radius: 6px;
+                transition: width 0.5s ease;
+            }
+
+            &__percent {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 3px 20px;
+                background: var(--school-gradient);
+                border-radius: 24px;
+                font-size: 14px;
+                font-weight: 600;
+                line-height: 1.2;
+                flex-shrink: 0;
+            }
+
+            &__stats {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 16px;
+            }
+
+            &__stat-col {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                flex: 1;
+                min-width: 0;
+
+                &--center {
+                    align-items: center;
+                }
+
+                &--right {
+                    align-items: flex-end;
+                }
+            }
+
+            &__stat-value {
+                font-size: 28px;
+                font-weight: 700;
+                line-height: 1.2;
+                letter-spacing: 0.01em;
+
+                &--collected {
+                    color: var(--school-accent);
+                }
+            }
+
+            &__stat-label {
+                font-size: 14px;
+                font-weight: 500;
+                line-height: 1.3;
+            }
+
+            &__stat-remaining {
+                font-size: 14px;
+                font-weight: 700;
+                text-align: center;
+            }
+        }
+    }
+
+    // ─ Статистика выпускников (alumni-stats) ─
+    // Позиция-независимые стили (работает в hero и в других позициях)
+    .alumni-stats-output {
+        // Переопределяем Tailwind-грид на flex-ряд
+        .grid {
+            display: flex;
+            gap: 60px;
+            flex-wrap: wrap;
+        }
+
+        // Снимаем white-card вид с каждого элемента (bg-white + rounded-lg)
+        .grid > * {
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+        }
+
+        // Иконки SVG и кастомные img — единый размер и цвет акцента
+        .text-blue-600 {
+            color: var(--school-accent);
+        }
+
+        svg,
+        img {
+            width: 66px;
+            height: 66px;
+        }
+
+        &__subtitle {
+            max-width: none;
+        }
+    }
+
+    // Позиционирование под hero + отступы
+    .site-position--hero .alumni-stats-output {
+        padding: 40px var(--hero-padding, 60px);
+
+        .wrapper__block {
+            padding: 0;
+        }
+    }
+
+    // ─ Баннер ─
+    .hero-banner {
+        position: relative;
+        border-radius: 50px;
+        overflow: hidden;
+        min-height: 480px;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(
+            135deg,
+            #1a3aad 0%,
+            var(--school-primary) 60%,
+            #0f2280 100%
+        );
+
+        &__image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        &__overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                40deg,
+                rgba(26, 26, 26, 0.8) 0%,
+                rgba(26, 26, 26, 0.01) 100%
+            );
+        }
+
+        &__content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 16px;
+            height: 100%;
+            min-height: 480px;
+            padding: 60px;
+        }
+
+        &__title {
+            font-size: 50px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #fff;
+            letter-spacing: 0.01em;
+        }
+
+        &__subtitle {
+            font-size: 18px;
+            font-weight: 500;
+            line-height: 1.2;
+            color: #fff;
+            letter-spacing: 0.01em;
+        }
+
+        // Переключатель «Цель на месяц» / значение
+        &__period-tabs {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(26, 26, 26, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 24px;
+            backdrop-filter: blur(7px);
+            overflow: hidden;
+            align-self: flex-start;
+        }
+
+        &__period-tab {
+            padding: 12px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            border-radius: 24px;
+            transition: background 0.2s;
+
+            &--active {
+                background: var(--school-gradient);
+            }
+        }
+
+        &__period-value {
+            font-size: 22px;
+            font-weight: 500;
+            color: #fff;
+            padding-inline: 16px;
+        }
+
+        &__period-remainder {
+            font-size: 12px;
+            font-weight: 500;
+            color: #fff;
+            padding-inline: 12px;
+        }
+
+        // Прогресс-бар
+        &__progress-bar {
+            height: 14px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        &__progress-fill {
+            height: 10px;
+            margin: 2px;
+            background: var(--school-gradient);
+            border-radius: 6px;
+        }
+
+        // Суммы (собрано / необходимо)
+        &__amounts {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        &__amount-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        &__amount-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--school-accent);
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+        }
+
+        &__amount-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        &__amount-remainder {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+        }
+
+        // Бейдж процента
+        &__percent {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 16px;
+            background: var(--school-gradient);
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        // Счётчики соцсетей
+        &__social-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        &__social-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 7px 12px;
+            background: #fff;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--school-text);
+        }
+
+        &__social-desc {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.2;
+            color: #fff;
+        }
+    }
+
+    // ─ Форма пожертвования (базовые стили шаблона) ─
+    .donation-form-card {
+        border: none;
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 20px 34px 0 rgba(26, 26, 26, 0.06);
+        padding: 32px;
+
+        &__title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--school-text);
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        // Единоразово / Автоплатёж
+        &__type-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        &__type-tab {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 16px;
+            height: 42px;
+            border-radius: 22px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition:
+                background 0.2s,
+                color 0.2s;
+
+            &--active {
+                background: var(--school-text);
+                color: #fff;
+            }
+
+            &--inactive {
+                background: var(--school-bg);
+                color: var(--school-text);
+            }
+
+            &:has(.donation-form-card__type-badge) {
+                padding-right: 14px;
+            }
+        }
+
+        &__type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 12px;
+            height: 22px;
+            background: var(--school-gradient);
+            border-radius: 22px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+
+            &-icon {
+                width: 12px;
+                height: 12px;
+                flex-shrink: 0;
+            }
+        }
+
+        // Ежемесячно / еженедельно / ежедневно
+        &__frequency {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        &__frequency-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--school-text);
+            cursor: pointer;
+        }
+
+        // Поле суммы и пресеты
+        &__amount-wrapper {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        &__amount-input {
+            width: 100%;
+            height: 44px;
+            padding: 0 22px;
+            border: 1px solid var(--school-border);
+            border-radius: 22px;
+            font-family: var(--font-family, 'Montserrat', sans-serif);
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--school-text);
+            outline: none;
+            transition: border-color 0.2s;
+
+            &:focus {
+                border-color: var(--school-accent);
+            }
+        }
+
+        // Быстрые суммы внутри поля
+        &__presets {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 6px;
+        }
+
+        &__preset {
+            height: 34px;
+            padding: 0 16px;
+            background: var(--school-bg);
+            border: none;
+            border-radius: 24px;
+            font-family: var(--font-family, 'Montserrat', sans-serif);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--school-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition:
+                background 0.2s,
+                color 0.2s;
+
+            &:hover,
+            &--active {
+                background: var(--school-gradient);
+                color: #fff;
+            }
+        }
+
+        // Методы оплаты (2 × 2)
+        &__payment-methods {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        &__payment-method {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            height: 30px;
+            background: var(--school-bg);
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--school-text);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition:
+                border-color 0.2s,
+                background 0.2s;
+
+            &--active {
+                background: #fff;
+                border-color: var(--school-accent);
+            }
+        }
+
+        // Поля имени и телефона
+        &__input {
+            width: 100%;
+            height: 44px;
+            padding: 0 22px;
+            border: 1px solid var(--school-border);
+            border-radius: 22px;
+            font-family: var(--font-family, 'Montserrat', sans-serif);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--school-text);
+            outline: none;
+            transition: border-color 0.2s;
+
+            &:focus {
+                border-color: var(--school-accent);
+            }
+        }
+
+        // Кнопка «Поддержать школу»
+        &__submit {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 64px;
+            padding: 0 16px;
+            background: var(--school-gradient);
+            color: #fff;
+            border: none;
+            border-radius: 32px;
+            font-family: var(--font-family, 'Montserrat', sans-serif);
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.016em;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 12px;
+
+            &:hover {
+                opacity: 0.9;
+            }
+        }
+
+        &__legal {
+            font-size: 9px;
+            font-weight: 500;
+            color: var(--school-muted);
+            text-align: center;
+            margin-top: 10px;
+            line-height: 1.4;
+
+            a {
+                text-decoration: underline;
+                color: var(--school-muted);
+            }
+        }
+
+        &__hint {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--school-accent);
+            line-height: 1.3;
+            text-align: right;
+
+            strong {
+                font-weight: 700;
+            }
+        }
+
+        .phone-input__prefix {
+            padding-left: 0;
+        }
+
+        .donation-form-card__legal {
+            margin-top: 0;
+        }
+    }
+
+    // ─ Donation Widget (обёртка в позиции hero) ─
+    .site-position--hero .donation-widget,
+    .site-position--hero .donation-output {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+        position: relative;
+        z-index: var(--hero-donation-z-index, 10);
+
+        .donation-form-card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0px 20px 34px rgba(26, 26, 26, 0.06);
+            padding: 32px;
+
+            &__title {
+                font-size: 28px;
+                font-weight: 700;
+                line-height: 1.2;
+                letter-spacing: 0.28px;
+                color: #1a1a1a;
+            }
+
+            &__type-tabs {
+                display: flex;
+                gap: 16px;
+                margin-bottom: 24px;
+            }
+
+            &__type-tab {
+                flex: 1;
+                padding: 12px 16px;
+                border-radius: 22px;
+                font-size: 12px;
+                font-weight: 500;
+                line-height: 1.2;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 16px;
+
+                &--active {
+                    background: #1a1a1a;
+                    color: #fff;
+                }
+
+                &--inactive {
+                    background: #f5f6f8;
+                    color: #1a1a1a;
+                }
+            }
+
+            &__type-badge {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 12px;
+                background: var(--school-gradient);
+                border-radius: 22px;
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                color: #fff;
+                line-height: 1.2;
+
+                &-icon {
+                    width: 12px;
+                    height: 12px;
+                }
+            }
+
+            &__amount-wrapper {
+                position: relative;
+                margin-bottom: 24px;
+            }
+
+            &__amount-input {
+                width: 100%;
+                height: 44px;
+                padding: 0 20px;
+                border: 1px solid #e8ecf3;
+                border-radius: 22px;
+                font-size: 22px;
+                font-weight: 500;
+                color: #1a1a1a;
+                outline: none;
+                transition: border-color 0.2s;
+
+                &:focus {
+                    border-color: var(--school-primary);
+                }
+            }
+
+            &__presets {
+                position: absolute;
+                right: 5px;
+                display: flex;
+                gap: 6px;
+            }
+
+            &__preset {
+                padding: 8px 16px;
+                background: #f5f6f8;
+                border-radius: 24px;
+                font-size: 14px;
+                font-weight: 500;
+                color: #1a1a1a;
+                border: none;
+                cursor: pointer;
+                transition: all 0.2s;
+
+                &:hover {
+                    background: #e8ecf3;
+                }
+
+                &--active {
+                    background: var(--school-primary);
+                    color: #fff;
+                }
+            }
+
+            &__payment-methods {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                margin-bottom: 24px;
+            }
+
+            &__payment-method {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 16px;
+                background: #f5f6f8;
+                border-radius: 15px;
+                border: 1px solid transparent;
+                font-size: 10px;
+                font-weight: 600;
+                color: #1a1a1a;
+                cursor: pointer;
+                transition: all 0.2s;
+
+                &--active {
+                    background: #fff;
+                    border-color: var(--school-accent);
+                }
+
+                &:hover:not(&--active) {
+                    background: #e8ecf3;
+                }
+            }
+
+            &__input {
+                width: 100%;
+                height: 44px;
+                padding: 0 20px;
+                border: 1px solid #e8ecf3;
+                border-radius: 22px;
+                font-size: 14px;
+                font-weight: 500;
+                color: #1a1a1a;
+                outline: none;
+                transition: border-color 0.2s;
+                background: #fff;
+
+                &::placeholder {
+                    color: #b5b9c3;
+                }
+
+                &:focus {
+                    border-color: var(--school-primary);
+                }
+            }
+
+            &__submit {
+                width: 100%;
+                height: 64px;
+                background: var(--school-gradient);
+                border-radius: 32px;
+                border: none;
+                color: #fff;
+                font-size: 16px;
+                font-weight: 600;
+                letter-spacing: 0.16px;
+                cursor: pointer;
+                transition: opacity 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                &:hover {
+                    opacity: 0.9;
+                }
+
+                &:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+            }
+        }
+    }
+
+    // ─ Статистика под баннером ─
+    .hero-stats {
+        display: flex;
+        align-items: flex-start;
+        gap: 60px;
+        padding: 40px 60px;
+        max-width: 1362px;
+        margin-inline: auto;
+    }
+
+    .hero-stats__item {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .hero-stats__icon {
+        flex-shrink: 0;
+        width: 66px;
+        height: 66px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--school-accent);
+    }
+
+    .hero-stats__value {
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+    }
+
+    .hero-stats__label {
+        font-size: 18px;
+        font-weight: 500;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+        margin-top: 4px;
+    }
+}

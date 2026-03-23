@@ -22,6 +22,7 @@ export interface ProjectForSchool {
     organization?: { id: number; name: string; slug?: string | null } | null;
     category?: string | null;
     donations_count?: number;
+    autopayments_count?: number;
 }
 
 export interface ProjectsSliderSchoolMeta {

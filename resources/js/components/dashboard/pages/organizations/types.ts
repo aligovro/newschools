@@ -110,6 +110,7 @@ export interface OrganizationShow {
     donations_count?: number;
     staff_count?: number;
     clubs_count?: number;
+    club_applications_count?: number;
     video_lessons_count?: number;
     donations_total?: number | null;
     donations_sum?: number | null;

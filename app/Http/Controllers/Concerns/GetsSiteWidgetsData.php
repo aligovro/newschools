@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Models\Organization;
 use App\Models\Site;
 use App\Models\SitePositionSetting;
 use App\Models\SiteTemplate;
 use App\Models\WidgetPosition;
+use App\Services\BankRequisites\BankRequisitesResolver;
 use App\Services\SiteStylesService;
 use App\Services\WidgetDataService;
 use Illuminate\Support\Facades\Cache;
@@ -61,6 +63,29 @@ trait GetsSiteWidgetsData
 
         $site->loadMissing('organization:id,slug');
 
+        // Проверяем наличие реквизитов для виджета org_requisites_download.
+        // Кешируем отдельно — не портим общий widgets-кеш данными конкретной org.
+        $hasRequisites = false;
+        $bankRequisitesPdfUrl = null;
+        if ($site->organization_id) {
+            $hasRequisites = Cache::remember(
+                "site_has_requisites_{$site->id}",
+                300,
+                function () use ($site): bool {
+                    $org = Organization::with('settings')->find($site->organization_id);
+                    if (! $org) {
+                        return false;
+                    }
+                    return app(BankRequisitesResolver::class)
+                        ->resolve($org, null, $site->id) !== null;
+                }
+            );
+
+            if ($hasRequisites && $site->organization) {
+                $bankRequisitesPdfUrl = "/api/organizations/{$site->organization->id}/donation-widget/bank-requisites/pdf?site_id={$site->id}";
+            }
+        }
+
         $custom = $site->custom_settings ?? [];
         $stylesService = app(SiteStylesService::class);
         return [
@@ -77,6 +102,8 @@ trait GetsSiteWidgetsData
                     'id' => $site->organization->id,
                     'slug' => $site->organization->slug,
                 ] : null,
+                'has_bank_requisites'    => $hasRequisites,
+                'bank_requisites_pdf_url' => $bankRequisitesPdfUrl,
                 'widgets_config' => $widgetsConfig,
                 'seo_config' => $site->formatted_seo_config ?? [],
                 'layout_config' => $site->layout_config ?? [],
