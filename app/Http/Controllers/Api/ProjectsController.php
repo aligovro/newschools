@@ -26,6 +26,18 @@ class ProjectsController extends Controller
 
         $query = Project::query()
             ->with(['organization', 'categories'])
+            ->addSelect([
+                'projects.*',
+                'autopayments_count' => \DB::table('payment_transactions as apt')
+                    ->selectRaw("COUNT(DISTINCT JSON_UNQUOTE(JSON_EXTRACT(apt.payment_details, '$.saved_payment_method_id')))")
+                    ->whereColumn('apt.organization_id', 'projects.organization_id')
+                    ->where('apt.status', 'completed')
+                    ->whereRaw("JSON_EXTRACT(apt.payment_details, '$.recurring_period') IS NOT NULL")
+                    ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(apt.payment_details, '$.saved_payment_method_id')) IS NOT NULL")
+                    ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(apt.payment_details, '$.saved_payment_method_id')) != ''")
+                    ->whereRaw("JSON_EXTRACT(apt.payment_details, '$.recurring_cancelled_at') IS NULL")
+                    ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(apt.payment_details, '$.saved_payment_method_id')) NOT LIKE 'legacy_%'"),
+            ])
             ->where('status', 'active')
             ->when($organizationId > 0, fn ($q) => $q->where('organization_id', $organizationId))
             ->when($excludeSlug, fn ($q) => $q->where('slug', '!=', $excludeSlug))

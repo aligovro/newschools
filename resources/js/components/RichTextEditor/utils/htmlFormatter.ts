@@ -10,38 +10,46 @@ import { sanitizeHtml } from '@/utils/htmlSanitizer';
  * @param html - HTML строка для форматирования
  * @returns Отформатированная HTML строка
  */
+// HTML void-элементы — не имеют закрывающего тега, не увеличивают отступ
+const VOID_ELEMENTS = new Set([
+    'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+    'link', 'meta', 'param', 'source', 'track', 'wbr',
+]);
+
 export const formatHtml = (html: string): string => {
-    let formatted = html;
     let indent = 0;
     const indentSize = 2;
 
-    formatted = formatted
-        .replace(/></g, '>\n<') // Переносы между тегами
-        .replace(/\n\s*\n/g, '\n') // Убираем пустые строки
+    const formatted = html
+        .replace(/></g, '>\n<')       // разрывы между тегами
+        .replace(/\n\s*\n/g, '\n')    // убираем лишние пустые строки
         .split('\n')
         .map((line) => {
             const trimmed = line.trim();
             if (!trimmed) return '';
 
-            // Уменьшаем отступ для закрывающих тегов
-            if (trimmed.startsWith('</')) {
+            // Извлекаем имя тега: <tagName ... > или </tagName>
+            const tagMatch = trimmed.match(/^<\/?([a-zA-Z][a-zA-Z0-9]*)/);
+            const tagName = tagMatch ? tagMatch[1].toLowerCase() : '';
+            const isClosing = trimmed.startsWith('</');
+            const isSelfClosing = trimmed.endsWith('/>');
+            const isVoid = VOID_ELEMENTS.has(tagName);
+
+            // Закрывающий тег — уменьшаем отступ ДО форматирования строки
+            if (isClosing) {
                 indent = Math.max(0, indent - indentSize);
             }
 
             const indentedLine = ' '.repeat(indent) + trimmed;
 
-            // Увеличиваем отступ для открывающих тегов (кроме самозакрывающихся)
-            if (
-                trimmed.startsWith('<') &&
-                !trimmed.startsWith('</') &&
-                !trimmed.endsWith('/>')
-            ) {
+            // Открывающий тег контейнерного элемента — увеличиваем отступ ПОСЛЕ
+            if (tagName && !isClosing && !isSelfClosing && !isVoid) {
                 indent += indentSize;
             }
 
             return indentedLine;
         })
-        .filter((line) => line.trim() !== '') // Убираем пустые строки
+        .filter((line) => line.trim() !== '')
         .join('\n');
 
     return formatted;
@@ -62,11 +70,8 @@ export const cleanContentForOutput = (
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
 
-    // 1. Удаляем все элементы ресайза и иконку редактирования
-    const elementsToRemove = tempDiv.querySelectorAll(
-        '.resize-handle, .corner-handle, .image-settings-button',
-    );
-    elementsToRemove.forEach((element) => element.remove());
+    // 1. Удаляем кнопки редактирования изображений (служебные элементы редактора)
+    tempDiv.querySelectorAll('.image-settings-button').forEach((el) => el.remove());
 
     // 2. Обрабатываем обертки rte-image - извлекаем изображения и удаляем обертки
     // ВАЖНО: Делаем это ДО обработки .image-edit-area, чтобы сохранить соседние элементы
@@ -379,15 +384,11 @@ export const cleanContentForOutput = (
         });
     }
 
-    // 6. Очищаем служебные классы и атрибуты у всех оставшихся изображений
+    // 6. Очищаем служебные атрибуты у всех оставшихся изображений
     const allImages = tempDiv.querySelectorAll('img');
     allImages.forEach((element) => {
         const img = element as HTMLImageElement;
 
-        // Удаляем служебные классы
-        img.classList.remove('resizable');
-
-        // Удаляем служебные атрибуты
         img.removeAttribute('draggable');
 
         // Очищаем служебные стили, сохраняя важные
@@ -454,34 +455,14 @@ export const removeImageCompletely = (
         ? container
         : container?.closest('.rte-image') || null;
 
-    // 3. Удаляем все элементы ресайза и настройки
-    // Сначала из контейнера изображения
-    if (container) {
-        const elementsToRemove = container.querySelectorAll(
-            '.resize-handle, .corner-handle, .image-settings-button',
-        );
-        elementsToRemove.forEach((element) => {
-            try {
-                element.remove();
-            } catch {
-                // Игнорируем ошибки
-            }
+    // 3. Удаляем кнопки редактирования из контейнера изображения
+    const removeEditButtons = (el: HTMLElement) => {
+        el.querySelectorAll('.image-settings-button').forEach((btn) => {
+            try { btn.remove(); } catch { /* ignore */ }
         });
-    }
-
-    // Также удаляем из обертки .rte-image, если она есть
-    if (rteImageWrapper && rteImageWrapper !== container) {
-        const elementsToRemove = rteImageWrapper.querySelectorAll(
-            '.resize-handle, .corner-handle, .image-settings-button',
-        );
-        elementsToRemove.forEach((element) => {
-            try {
-                element.remove();
-            } catch {
-                // Игнорируем ошибки
-            }
-        });
-    }
+    };
+    if (container) removeEditButtons(container);
+    if (rteImageWrapper && rteImageWrapper !== container) removeEditButtons(rteImageWrapper);
 
     // 4. Находим и удаляем соседние .image-edit-area элементы
     const elementToRemove = rteImageWrapper || container || img;

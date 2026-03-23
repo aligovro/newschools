@@ -61,7 +61,7 @@ interface PageSeo {
 
 interface PageShowProps {
     site: Site;
-    page: Page;
+    page: Page | null;
     positions?: WidgetPosition[];
     position_settings?: Array<{
         position_slug: string;
@@ -97,24 +97,10 @@ const SitePageShow: React.FC<PageShowProps> = ({
     pageSeo = {},
     seo,
 }) => {
-    // Мемоизируем рендер контента
+    // Мемоизируем рендер контента страницы
     const renderedContent = useMemo(() => {
-        if (!page.content) {
-            return (
-                <div className="py-12 text-center">
-                    <div className="text-muted-foreground">
-                        <p className="mb-2 text-lg">
-                            Содержимое страницы отсутствует
-                        </p>
-                        <p className="text-sm">
-                            Эта страница еще не содержит контента.
-                        </p>
-                    </div>
-                </div>
-            );
-        }
+        if (!page?.content) return null;
 
-        // Если контент содержит HTML, рендерим его
         if (page.content.includes('<')) {
             return (
                 <div
@@ -124,7 +110,6 @@ const SitePageShow: React.FC<PageShowProps> = ({
             );
         }
 
-        // Иначе рендерим как текст с переносами строк
         return (
             <div className="prose prose-gray max-w-none">
                 {page.content.split('\n').map((paragraph, index) => (
@@ -134,13 +119,11 @@ const SitePageShow: React.FC<PageShowProps> = ({
                 ))}
             </div>
         );
-    }, [page.content]);
+    }, [page?.content]);
 
     // Мемоизируем дополнительные изображения
     const renderedImages = useMemo(() => {
-        if (!page.images || page.images.length === 0) {
-            return null;
-        }
+        if (!page?.images || page.images.length === 0) return null;
 
         return (
             <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -155,13 +138,11 @@ const SitePageShow: React.FC<PageShowProps> = ({
                 ))}
             </div>
         );
-    }, [page.images, page.title]);
+    }, [page?.images, page?.title]);
 
     // Мемоизируем дочерние страницы
     const renderedChildren = useMemo(() => {
-        if (!page.children || page.children.length === 0) {
-            return null;
-        }
+        if (!page?.children || page.children.length === 0) return null;
 
         return (
             <div className="mt-8">
@@ -181,61 +162,37 @@ const SitePageShow: React.FC<PageShowProps> = ({
                 </div>
             </div>
         );
-    }, [page.children]);
+    }, [page?.children]);
 
+    // Для главной страницы и отсутствующей страницы хлебных крошек нет
     const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
-        const items: BreadcrumbItem[] = [
-            { title: 'Главная', href: '/' },
-        ];
+        if (!page || page.is_homepage) return [];
+
+        const items: BreadcrumbItem[] = [{ title: 'Главная', href: '/' }];
 
         if (page.parent) {
-            items.push(
-                { title: page.parent.title, href: `/${page.parent.slug}` },
-            );
+            items.push({ title: page.parent.title, href: `/${page.parent.slug}` });
         }
 
         items.push({ title: page.title, href: '' });
 
         return items;
-    }, [page.parent, page.title]);
+    }, [page]);
 
-    // Формируем SEO заголовок/описание:
-    // 1) Если сервер уже посчитал seo.title/description — берем их.
-    // 2) Иначе fallback на локальные правила.
+    // SEO: приоритет серверным данным, иначе fallback
     const seoTitle = useMemo(() => {
         if (seo?.title) return seo.title;
-        if (page.is_homepage) {
-            const siteName =
-                (site.seo_config?.site_name as string) || site.name;
-            return pageSeo.title || siteName;
+        if (!page || page.is_homepage) {
+            return pageSeo.title || (site.seo_config?.site_name as string) || site.name;
         }
         return pageSeo.title || `${page.title} - ${site.name}`;
-    }, [
-        seo?.title,
-        page.is_homepage,
-        page.title,
-        pageSeo.title,
-        site.name,
-        site.seo_config,
-    ]);
+    }, [seo?.title, page, pageSeo.title, site.name, site.seo_config]);
 
     const seoDescription = useMemo(() => {
         if (seo?.description) return seo.description;
         const seoDesc = (site.seo_config?.seo_description as string) || '';
-        return (
-            pageSeo.description ||
-            page.excerpt ||
-            seoDesc ||
-            site.description ||
-            ''
-        );
-    }, [
-        seo?.description,
-        pageSeo.description,
-        page.excerpt,
-        site.seo_config,
-        site.description,
-    ]);
+        return pageSeo.description || page?.excerpt || seoDesc || site.description || '';
+    }, [seo?.description, pageSeo.description, page?.excerpt, site.seo_config, site.description]);
 
     return (
         <MainLayout
@@ -247,40 +204,49 @@ const SitePageShow: React.FC<PageShowProps> = ({
             pageDescription={seoDescription}
             breadcrumbs={breadcrumbs}
         >
-            <article className="w-full">
-                {/* Main Image */}
-                {page.image && (
-                    <div className="mb-8">
-                        <img
-                            src={page.image}
-                            alt={page.title}
-                            className="h-64 w-full rounded-lg object-cover shadow-md md:h-96"
-                            loading="eager"
-                        />
-                    </div>
-                )}
-
-                {/* Page Header */}
-                <header className="mb-8">
-                    <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-                        {page.title}
-                    </h1>
-                    {page.excerpt && (
-                        <p className="text-xl leading-relaxed text-muted-foreground">
-                            {page.excerpt}
-                        </p>
+            {/* Нет страницы или страница с is_homepage: только виджеты, без article/header */}
+            {page && !page.is_homepage && (
+                <article className="w-full">
+                    {page.image && (
+                        <div className="mb-8">
+                            <img
+                                src={page.image}
+                                alt={page.title}
+                                className="h-64 w-full rounded-lg object-cover shadow-md md:h-96"
+                                loading="eager"
+                            />
+                        </div>
                     )}
-                </header>
 
-                {/* Page Content */}
-                <div className="mb-8">{renderedContent}</div>
+                    <header className="mb-8">
+                        <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
+                            {page.title}
+                        </h1>
+                        {page.excerpt && (
+                            <p className="text-xl leading-relaxed text-muted-foreground">
+                                {page.excerpt}
+                            </p>
+                        )}
+                    </header>
 
-                {/* Additional Images */}
-                {renderedImages}
+                    <div className="mb-8">
+                        {renderedContent ?? (
+                            <div className="py-12 text-center">
+                                <div className="text-muted-foreground">
+                                    <p className="mb-2 text-lg">Содержимое страницы отсутствует</p>
+                                    <p className="text-sm">Эта страница еще не содержит контента.</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
-                {/* Children Pages */}
-                {renderedChildren}
-            </article>
+                    {renderedImages}
+                    {renderedChildren}
+                </article>
+            )}
+
+            {/* Главная страница с is_homepage: только HTML-контент, без article/header */}
+            {page?.is_homepage && renderedContent}
         </MainLayout>
     );
 };

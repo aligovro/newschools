@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\ProjectsController;
 use App\Http\Controllers\Api\OrganizationStaffController;
 use App\Http\Controllers\Api\OrganizationClubsController;
+use App\Http\Controllers\Api\ClubApplicationController;
 use App\Http\Controllers\Api\OrganizationVideoLessonsController;
 use App\Http\Controllers\Api\AlumniStatsController;
 use App\Http\Controllers\OrganizationMenuController;
@@ -326,6 +327,9 @@ Route::prefix('public')->group(function () {
 
     // Кружки и секции организации (публично)
     Route::get('/clubs', [OrganizationClubsController::class, 'index']);
+
+    // Заявки на запись в секции (публично)
+    Route::post('/clubs/applications', [ClubApplicationController::class, 'store']);
 
     // Видео уроки организации
     Route::get('/video-lessons', [OrganizationVideoLessonsController::class, 'index']);

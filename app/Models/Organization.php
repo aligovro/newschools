@@ -226,6 +226,11 @@ class Organization extends Model
     return $this->hasMany(OrganizationClub::class)->orderBy('sort_order')->orderBy('name');
   }
 
+  public function clubApplications(): HasMany
+  {
+    return $this->hasMany(ClubApplication::class);
+  }
+
   public function videoLessons(): HasMany
   {
     return $this->hasMany(OrganizationVideoLesson::class)->orderBy('sort_order')->orderBy('title');

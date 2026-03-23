@@ -1,0 +1,197 @@
+// ─── Адаптив шаблона school ────────────────────────────────────────────────────
+// Все @media-запросы шаблона собраны здесь.
+// Компоненты (hero, projects, clubs…) — без @media, только десктопные стили.
+
+// ─── 1199px ───────────────────────────────────────────────────────────────────
+
+@media (max-width: 1199px) {
+    .site-preview.site-template--school {
+        // Hero: форма пожертвования сужается
+        .site-position--hero .hero-wrapper {
+            > *:has(.donation-widget),
+            > *:has(.donation-output),
+            > *:has(.donation-form-card) {
+                width: 360px;
+                margin-right: 40px;
+            }
+        }
+
+        // Hero: контент оставляет место для формы
+        .site-position--hero .school-hero-widget .school-hero-content {
+            max-width: calc(100% - 360px - 24px);
+        }
+    }
+}
+
+// ─── 1023px (планшет) ─────────────────────────────────────────────────────────
+
+@media (max-width: 1023px) {
+    .site-preview.site-template--school {
+        // Общее: контейнер с отступами
+        .container {
+            padding-inline: 22px;
+        }
+
+        // Hero: одна колонка
+        .site-position--hero .hero-wrapper {
+            grid-template-columns: 1fr;
+            gap: 24px;
+
+            > *:has(.donation-widget),
+            > *:has(.donation-output),
+            > *:has(.donation-form-card) {
+                grid-column: 1;
+                grid-row: auto;
+                margin-top: 0;
+                margin-right: 0;
+                width: 100%;
+            }
+        }
+
+        // Hero: виджет и его внутренние элементы
+        .site-position--hero .school-hero-widget {
+            padding: 32px 22px;
+
+            .school-hero-bg-image,
+            .school-hero-bg-overlay {
+                border-radius: 30px;
+            }
+
+            .school-hero-content {
+                max-width: 100%;
+            }
+        }
+
+        // Hero: статистика под баннером
+        .hero-stats {
+            padding: 32px 22px;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        // Projects: внутренние отступы
+        .projects-output {
+            padding: 60px 22px;
+        }
+
+        // Donations feed: внутренние отступы
+        .org-donations-feed-school__container {
+            padding: 60px 22px;
+        }
+    }
+}
+
+// ─── 767px (мобильный) ────────────────────────────────────────────────────────
+
+@media (max-width: 767px) {
+    .site-preview.site-template--school {
+        // Общие блоки
+        .wrapper__block {
+            padding: 48px 0;
+        }
+
+        .block__title {
+            font-size: 28px;
+        }
+
+        // Горизонтальные отступы для виджетов
+        .clubs-output,
+        .video-lessons-output,
+        .video-lessons-slider-school,
+        .org-donations-feed-school,
+        .club-schedule-output,
+        .projects-output,
+        .projects-slider-school,
+        .teachers-slider-school {
+            padding-inline: 16px;
+        }
+
+        // Hero: размер заголовка
+        .site-position--hero .school-hero-widget .school-hero-title {
+            font-size: 32px;
+        }
+
+        // Hero: баннер
+        .hero-banner__content {
+            padding: 32px;
+            min-height: 360px;
+        }
+
+        .hero-banner__title {
+            font-size: 32px;
+        }
+
+        // Hero: форма пожертвования
+        .donation-form-card {
+            padding: 24px;
+        }
+
+        // Projects slider
+        .projects-slider-school__title {
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        // Clubs
+        .clubs-slider-widget__title {
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .clubs-slider-widget__card-title {
+            font-size: 22px;
+            line-height: 1.25;
+        }
+
+        // Teachers
+        .teachers-slider-school__title {
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        // Donations feed
+        .org-donations-feed-school__title {
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .org-donations-feed-school__table {
+            margin-inline: -16px;
+            padding-inline: 16px;
+        }
+
+        // Video lessons
+        .video-lessons-slider-school__title {
+            font-size: 28px;
+            line-height: 1.2;
+        }
+    }
+}
+
+// ─── 639px (маленький мобильный) ──────────────────────────────────────────────
+
+@media (max-width: 639px) {
+    .site-preview.site-template--school {
+        // Clubs: карточки переходят в вертикальный макет
+        .clubs-slider-widget__card-inner {
+            flex-direction: column;
+            min-height: auto;
+        }
+
+        .clubs-slider-widget__card-image-wrap {
+            width: 100%;
+            min-height: 200px;
+            order: -1;
+        }
+
+        .clubs-slider-widget__card-image {
+            min-height: 200px;
+            border-radius: 30px 30px 0 0;
+        }
+
+        .clubs-slider-widget__card-image-placeholder {
+            min-height: 200px;
+            border-radius: 30px 30px 0 0;
+        }
+    }
+}

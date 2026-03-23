@@ -56,6 +56,7 @@ export const isCustomWidget = (slug: string): boolean => {
         'org_top_recurring_donors',
         'org_donations_feed',
         'share_buttons',
+        'org_requisites_download',
     ];
     return customWidgets.includes(slug);
 };
@@ -91,4 +92,5 @@ export type WidgetSlug =
     | 'org_top_donors'
     | 'org_top_recurring_donors'
     | 'org_donations_feed'
-    | 'share_buttons';
+    | 'share_buttons'
+    | 'org_requisites_download';

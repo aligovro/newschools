@@ -4,119 +4,117 @@
 
 .site-type--organization {
     .menu-widget {
-    font-family: inherit;
-    line-height: 1.6;
+        font-family: inherit;
+        line-height: 1.6;
 
-    &.widget-output {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-    }
-
-    // Контейнер навигации
-    nav.menu-output {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-        width: 100%;
-    }
-
-    // Список пунктов — горизонтальный (display задаётся Tailwind: hidden / md:flex)
-    nav ul.flex-row {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 12px 20px;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-
-    // Список пунктов — вертикальный
-    nav ul.flex-col {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-
-        &.space-y-2 > * + * {
-            margin-top: 0.5rem;
+        &.widget-output {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
         }
-    }
 
-    // Пункт меню
-    .menu-item {
-        list-style: none;
-        margin: 0;
-    }
+        // Контейнер навигации
+        nav.menu-output {
+            width: 100%;
+        }
 
-    // Ссылка — базовые стили по умолчанию
-    .menu-link {
-        display: inline-block;
-        color: #1a1a1a;
-        text-decoration: none;
-        font-size: 15px;
-        font-weight: 500;
-        padding: 6px 0;
-        transition: opacity 0.2s ease, color 0.2s ease;
+        // Список пунктов — горизонтальный (display задаётся Tailwind: hidden / md:flex)
+        nav ul.flex-row {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 20px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
 
-        &:hover {
-            opacity: 0.85;
+        // Список пунктов — вертикальный
+        nav ul.flex-col {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+
+            &.space-y-2 > * + * {
+                margin-top: 0.5rem;
+            }
+        }
+
+        // Пункт меню
+        .menu-item {
+            list-style: none;
+            margin: 0;
+        }
+
+        // Ссылка — базовые стили по умолчанию
+        .menu-link {
+            display: inline-block;
+            color: #1a1a1a;
             text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 6px 0;
+            transition:
+                opacity 0.2s ease,
+                color 0.2s ease;
+
+            &:hover {
+                opacity: 0.85;
+                text-decoration: none;
+            }
+
+            &.active {
+                font-weight: 600;
+            }
         }
 
-        &.active {
+        // Горизонтальное меню — ссылки в ряд с отступом
+        nav .flex-row .menu-link {
+            padding: 8px 4px;
+        }
+
+        // Заголовок блока меню (если есть)
+        .menu-widget__title,
+        nav h2 {
             font-weight: 600;
+            margin: 0 16px 0 0;
+            font-size: 1rem;
         }
-    }
 
-    // Горизонтальное меню — ссылки в ряд с отступом
-    nav .flex-row .menu-link {
-        padding: 8px 4px;
-    }
+        // Варианты оформления (классы из конфига)
+        .menu-default .menu-link {
+            color: #374151;
+        }
 
-    // Заголовок блока меню (если есть)
-    .menu-widget__title,
-    nav h2 {
-        font-weight: 600;
-        margin: 0 16px 0 0;
-        font-size: 1rem;
-    }
+        .menu-minimal .menu-link {
+            font-weight: 400;
+            color: #6b7280;
+        }
 
-    // Варианты оформления (классы из конфига)
-    .menu-default .menu-link {
-        color: #374151;
-    }
+        .menu-modern .menu-link {
+            font-weight: 500;
+            color: #1f2937;
+        }
 
-    .menu-minimal .menu-link {
-        font-weight: 400;
-        color: #6b7280;
-    }
+        // Выравнивание контейнера
+        &.justify-start nav {
+            justify-content: flex-start;
+        }
 
-    .menu-modern .menu-link {
-        font-weight: 500;
-        color: #1f2937;
-    }
+        &.justify-center nav {
+            justify-content: center;
+        }
 
-    // Выравнивание контейнера
-    &.justify-start nav {
-        justify-content: flex-start;
-    }
+        &.justify-end nav {
+            justify-content: flex-end;
+        }
 
-    &.justify-center nav {
-        justify-content: center;
-    }
-
-    &.justify-end nav {
-        justify-content: flex-end;
-    }
-
-    &.justify-between nav {
-        justify-content: space-between;
-    }
+        &.justify-between nav {
+            justify-content: space-between;
+        }
     }
 
     // Варианты по позиции (только для сайтов организаций)
@@ -164,4 +162,3 @@
         min-height: 400px;
     }
 }
-

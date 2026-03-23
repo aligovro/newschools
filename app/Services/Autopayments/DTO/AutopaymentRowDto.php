@@ -16,21 +16,23 @@ class AutopaymentRowDto
         public readonly ?string $payment_method_slug,
         public readonly array $payments, // [{date: string, label: string}, ...]
         public readonly ?string $first_payment_at,
-        public readonly string $subscription_key_masked,
+        public readonly string $subscription_key,        // реальный ключ (для отмены)
+        public readonly string $subscription_key_masked, // маскированный (для отображения)
     ) {
     }
 
     public function toArray(): array
     {
         return [
-            'title' => $this->title,
-            'amount' => $this->amount,
-            'amount_formatted' => $this->amount_formatted,
-            'recurring_period' => $this->recurring_period,
+            'title'                  => $this->title,
+            'amount'                 => $this->amount,
+            'amount_formatted'       => $this->amount_formatted,
+            'recurring_period'       => $this->recurring_period,
             'recurring_period_label' => $this->recurring_period_label,
-            'payment_method_slug' => $this->payment_method_slug,
-            'payments' => $this->payments,
-            'first_payment_at' => $this->first_payment_at,
+            'payment_method_slug'    => $this->payment_method_slug,
+            'payments'               => $this->payments,
+            'first_payment_at'       => $this->first_payment_at,
+            'subscription_key'       => $this->subscription_key,
             'subscription_key_masked' => $this->subscription_key_masked,
         ];
     }

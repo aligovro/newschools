@@ -32,6 +32,7 @@ export const SchoolHeroOutput: React.FC<WidgetOutputProps> = ({
         subtitle = 'Поддерживай свою школу — поддержи будущее поколение',
         backgroundImage,
         showMonthlyGoal = true,
+        monthlyGoalTarget,
         showTotalProgress = true,
     } = config;
 
@@ -112,8 +113,14 @@ export const SchoolHeroOutput: React.FC<WidgetOutputProps> = ({
     const totalRemaining = Math.max(0, totalGoal - totalCollected);
     const totalPercent =
         totalGoal > 0 ? Math.round((totalCollected / totalGoal) * 100) : 0;
+    // Ширина бара ограничена 100% (визуально), реальный % показывается в тексте
+    const totalBarWidth = Math.min(totalPercent, 100);
 
-    const monthlyTarget = monthlyGoalData?.target?.value ?? 0;
+    // Приоритет: цель из настроек виджета → цель из API → не показываем
+    const monthlyTarget =
+        (monthlyGoalTarget && monthlyGoalTarget > 0)
+            ? monthlyGoalTarget
+            : (monthlyGoalData?.target?.value ?? 0);
     const monthlyCollected = monthlyGoalData?.collected?.value ?? 0;
     const monthlyRemaining = Math.max(0, monthlyTarget - monthlyCollected);
 
@@ -165,7 +172,7 @@ export const SchoolHeroOutput: React.FC<WidgetOutputProps> = ({
                             <div className="school-hero-progress__bar-bg"></div>
                             <div
                                 className="school-hero-progress__bar-fill"
-                                style={{ width: `${totalPercent}%` }}
+                                style={{ width: `${totalBarWidth}%` }}
                             ></div>
                         </div>
 

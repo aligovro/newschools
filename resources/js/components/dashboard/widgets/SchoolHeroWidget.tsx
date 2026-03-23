@@ -10,6 +10,7 @@ export interface SchoolHeroConfig {
     backgroundImage?: string;
     overlayOpacity?: number;
     showMonthlyGoal?: boolean;
+    monthlyGoalTarget?: number;
     showTotalProgress?: boolean;
     organizationId?: number;
 }
@@ -33,6 +34,7 @@ export const SchoolHeroWidget: React.FC<SchoolHeroWidgetProps> = ({
         backgroundImage: config.backgroundImage || '',
         overlayOpacity: config.overlayOpacity ?? 80,
         showMonthlyGoal: config.showMonthlyGoal ?? true,
+        monthlyGoalTarget: config.monthlyGoalTarget,
         showTotalProgress: config.showTotalProgress ?? true,
         organizationId: config.organizationId,
     });
@@ -82,12 +84,19 @@ export const SchoolHeroWidget: React.FC<SchoolHeroWidgetProps> = ({
                         existingImageUrl={localConfig.backgroundImage}
                         onImageUpload={(file, serverUrl) => {
                             if (serverUrl && !serverUrl.startsWith('blob:')) {
-                                handleChange('backgroundImage', serverUrl);
+                                // Сохраняем только путь без домена (/storage/...)
+                                const path = serverUrl.startsWith('http')
+                                    ? serverUrl.replace(/^https?:\/\/[^/]+/, '')
+                                    : serverUrl;
+                                handleChange('backgroundImage', path);
                             }
                         }}
                         onImageCrop={(url) => {
                             if (!url.startsWith('blob:')) {
-                                handleChange('backgroundImage', url);
+                                const path = url.startsWith('http')
+                                    ? url.replace(/^https?:\/\/[^/]+/, '')
+                                    : url;
+                                handleChange('backgroundImage', path);
                             }
                         }}
                         onImageDelete={() => handleChange('backgroundImage', '')}
@@ -126,6 +135,24 @@ export const SchoolHeroWidget: React.FC<SchoolHeroWidgetProps> = ({
                         }
                     />
                 </div>
+
+                {localConfig.showMonthlyGoal && (
+                    <div className="space-y-2">
+                        <Label>Цель на месяц (₽) — переопределяет значение из API</Label>
+                        <Input
+                            type="number"
+                            min={0}
+                            value={localConfig.monthlyGoalTarget ?? ''}
+                            onChange={(e) =>
+                                handleChange(
+                                    'monthlyGoalTarget',
+                                    e.target.value ? Number(e.target.value) : undefined,
+                                )
+                            }
+                            placeholder="Оставьте пустым — значение из системы"
+                        />
+                    </div>
+                )}
 
                 <div className="flex items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">

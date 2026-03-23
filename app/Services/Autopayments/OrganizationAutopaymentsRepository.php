@@ -77,7 +77,8 @@ class OrganizationAutopaymentsRepository
                     ->orWhereRaw("JSON_EXTRACT(payment_details, '$.recurring_period') IS NOT NULL");
             })
             ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_details, '$.saved_payment_method_id'))"))
-            ->where(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_details, '$.saved_payment_method_id'))"), '!=', '');
+            ->where(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(payment_details, '$.saved_payment_method_id'))"), '!=', '')
+            ->whereRaw("JSON_EXTRACT(payment_details, '$.recurring_cancelled_at') IS NULL");
 
         // Фильтр по периоду подписки (если нужен)
         if (!empty($filters['recurring_period'])) {

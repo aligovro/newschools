@@ -26,6 +26,7 @@ use App\Http\Controllers\PublicSponsorController;
 use App\Http\Controllers\PublicProjectDonationsController;
 use App\Http\Controllers\PublicOrganizationDonationsController;
 use App\Http\Controllers\PublicAlumniController;
+use App\Http\Controllers\PublicClubController;
 use App\Http\Controllers\PublicOrganizationController;
 use App\Http\Controllers\SitePreviewController;
 use App\Http\Controllers\Settings\ProfileController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\Dashboard\OrganizationTelegramController;
 use App\Http\Controllers\Dashboard\WidgetController;
 use App\Http\Controllers\Dashboard\OrganizationStaffController;
 use App\Http\Controllers\Dashboard\OrganizationClubController;
+use App\Http\Controllers\Dashboard\ClubApplicationController;
 use App\Http\Controllers\Dashboard\OrganizationVideoLessonController;
 use App\Http\Controllers\Dashboard\OrganizationReportsController;
 use App\Http\Controllers\Dashboard\YooKassa\OAuthController as YooKassaOAuthController;
@@ -57,6 +59,7 @@ Route::get('/organizations', [MainSiteController::class, 'organizations'])->name
 Route::get('/organization/{slug}', [MainSiteController::class, 'organization'])->name('main-site.organization');
 Route::get('/projects', [PublicProjectController::class, 'index'])->name('main-site.projects');
 Route::get('/project/{slug}', [PublicProjectController::class, 'show'])->name('main-site.project');
+Route::get('/club/{club}', [PublicClubController::class, 'show'])->name('public.club.show')->whereNumber('club');
 Route::get('/news', [MainSiteController::class, 'news'])->name('main-site.news');
 Route::get('/news/{slug}', [MainSiteController::class, 'showNews'])->name('main-site.news.show');
 Route::get('/project/{project:slug}/sponsors', [PublicSponsorController::class, 'projectSponsors'])->name('main-site.project.sponsors');
@@ -176,6 +179,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/{club:id}', [OrganizationClubController::class, 'destroy'])->name('destroy');
         });
 
+        // Заявки на запись в кружки и секции (управление в дашборде)
+        Route::prefix('organizations/{organization}/club-applications')->name('organizations.club_applications.')->group(function () {
+            Route::get('/', [ClubApplicationController::class, 'index'])->name('index');
+            Route::patch('/{application:id}', [ClubApplicationController::class, 'update'])->name('update');
+        });
+
         // Organization video lessons
         Route::prefix('organizations/{organization}/video-lessons')->name('organizations.video_lessons.')->group(function () {
             Route::get('/', [OrganizationVideoLessonController::class, 'index'])->name('index');
@@ -275,6 +284,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/', [OrganizationPaymentsController::class, 'index'])->name('index');
                 Route::get('/transactions', [OrganizationPaymentsController::class, 'transactions'])->name('transactions');
                 Route::get('/autopayments', [OrganizationPaymentsController::class, 'autopayments'])->name('autopayments');
+                Route::delete('/autopayments/cancel', [OrganizationPaymentsController::class, 'cancelAutopayment'])->name('autopayments.cancel');
                 Route::post('/create', [OrganizationPaymentsController::class, 'createPayment'])->name('create');
                 Route::post('/webhook/yookassa', [OrganizationPaymentsController::class, 'yookassaWebhook'])->name('yookassa-webhook');
                 Route::post('/refund/{donation}', [OrganizationPaymentsController::class, 'refund'])->name('refund');
@@ -472,5 +482,5 @@ Route::get('/payment/return', [PaymentReturnController::class, 'return'])->name(
 // Публичные страницы сайтов (должен быть последним, чтобы не конфликтовать с другими роутами)
 // /{slug} — главный сайт или сайт организации (по домену)
 Route::get('/{slug}', [PublicSitePageController::class, 'showHomeOrPage'])
-    ->where('slug', '^(?!api|dashboard|organizations|organization|projects|project|tailwind-test|sites|login|register|password|email|verify).+')
+    ->where('slug', '^(?!api|dashboard|organizations|organization|projects|project|club|tailwind-test|sites|login|register|password|email|verify).+')
     ->name('public.page.show');

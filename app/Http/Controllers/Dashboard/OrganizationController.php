@@ -142,6 +142,7 @@ class OrganizationController extends Controller
             'projects as projects_count',
             'staff as staff_count',
             'clubs as clubs_count',
+            'clubApplications as club_applications_count',
             'videoLessons as video_lessons_count',
         ]);
         $organization->loadSum('donations', 'amount');

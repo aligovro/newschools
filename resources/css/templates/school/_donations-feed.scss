@@ -1,0 +1,164 @@
+// ─── Все поступления (таблица для school) ─────────────────────────────────────
+
+.site-preview.site-template--school {
+    .org-donations-feed-school {
+        &__container {
+            max-width: 1242px;
+            margin-inline: auto;
+            padding: 80px 66px 80px;
+            box-sizing: border-box;
+        }
+
+        &__title {
+            font-size: 40px;
+            font-weight: 700;
+            line-height: 48px;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            margin: 0 0 24px;
+        }
+
+        &__table {
+            display: flex;
+            flex-direction: column;
+            overflow-x: auto;
+        }
+
+        &__header {
+            display: grid;
+            grid-template-columns:
+                minmax(120px, 240px) minmax(140px, 1fr)
+                minmax(100px, 186px) minmax(80px, 116px) minmax(60px, 80px);
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--school-border, #e8ecf3);
+        }
+
+        &__header &__cell {
+            font-size: 9px;
+            font-weight: 500;
+            line-height: 11px;
+            color: var(--school-muted);
+        }
+
+        &__body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        &__row {
+            display: grid;
+            grid-template-columns:
+                minmax(120px, 240px) minmax(140px, 1fr)
+                minmax(100px, 186px) minmax(80px, 116px) minmax(60px, 80px);
+            gap: 10px;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--school-border, #e8ecf3);
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+
+        &__cell {
+            min-width: 0;
+
+            &--donor {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 12px;
+                font-weight: 600;
+                line-height: 14px;
+                color: var(--school-text);
+            }
+
+            &--purpose {
+                font-size: 12px;
+                font-weight: 500;
+                line-height: 14px;
+                color: var(--school-text);
+            }
+
+            &--datetime {
+                font-size: 10px;
+                font-weight: 600;
+                line-height: 12px;
+                color: var(--school-muted);
+            }
+
+            &--amount {
+                font-size: 14px;
+                font-weight: 700;
+                line-height: 18px;
+                letter-spacing: 0.01em;
+                color: var(--school-text);
+            }
+
+            &--method {
+                font-size: 10px;
+                font-weight: 600;
+                line-height: 12px;
+                color: var(--school-muted);
+            }
+        }
+
+        &__donor-icon {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            color: var(--school-accent);
+        }
+
+        &__load-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-top: 24px;
+            padding: 12px 16px;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 19px;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            background: var(--school-bg);
+            border: none;
+            border-radius: 32px;
+            cursor: pointer;
+            transition: background 0.2s;
+
+            &:hover:not(:disabled) {
+                background: var(--school-border);
+            }
+
+            &:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+        }
+
+        &__placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            border-radius: 21px;
+            background: var(--school-bg);
+            border: 2px dashed var(--school-border);
+            color: var(--school-muted);
+        }
+
+        &__error {
+            padding: 16px;
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.08);
+            border-radius: 11px;
+        }
+    }
+}

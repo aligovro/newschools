@@ -323,22 +323,6 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
 
-        // Маркеры для изменения размера
-        &.resizable {
-            resize: both;
-            overflow: hidden;
-            border: 2px dashed transparent;
-            transition: border-color 0.2s ease;
-
-            &:hover {
-                border-color: #1976d2;
-            }
-
-            &:active {
-                border-color: #1565c0;
-            }
-        }
-
         // Стили для выбранного изображения
         &.selected {
             border: 3px solid #1976d2 !important;
@@ -475,7 +459,7 @@
         opacity: 0.9;
     }
 
-    // Обертка изображения с маркерами
+    // Обёртка изображения
     :global(.rte-image) {
         position: relative;
         display: inline-block;
@@ -485,17 +469,24 @@
         -moz-user-select: none !important;
         -ms-user-select: none !important;
         -webkit-user-select: none !important;
-        -khtml-user-select: none !important;
-        -webkit-touch-callout: none !important;
-        -webkit-tap-highlight-color: transparent !important;
         pointer-events: auto !important;
-        -webkit-user-modify: none !important;
-        -moz-user-modify: none !important;
-        -webkit-user-focus: none !important;
-        -webkit-user-input: none !important;
     }
 
-    // (кнопку настроек перенесли во внешний overlay)
+    // Кнопка редактирования изображения — появляется при наведении на обёртку
+    :global(.rte-image:hover .image-settings-button),
+    :global(.rte-image:focus-within .image-settings-button) {
+        opacity: 1 !important;
+    }
+
+    :global(.image-settings-button) {
+        opacity: 0;
+        transition: opacity 0.15s ease;
+
+        &:hover {
+            background: rgba(21, 101, 192, 0.95) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+    }
 }
 
 // HTML режим

@@ -1,32 +1,16 @@
-import { fetchOrganizationClubs } from '@/lib/api/public';
-import React, { useEffect, useMemo, useState } from 'react';
+import { fetchOrganizationClubs, submitClubApplication } from '@/lib/api/public';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { ClubSignUpModal } from '../ClubSignUpModal';
+import {
+    CLUB_SCHEDULE_DAYS,
+    type ClubScheduleItem,
+    getClubScheduleCellValue,
+} from './clubScheduleShared';
 import { WidgetOutputProps } from './types';
 
-interface ClubSchedule {
-    mon?: string | null;
-    tue?: string | null;
-    wed?: string | null;
-    thu?: string | null;
-    fri?: string | null;
-    sat?: string | null;
-    sun?: string | null;
-}
-
-interface Club {
-    id: number;
-    name: string;
-    schedule?: ClubSchedule;
-}
-
-const DAYS: Array<{ key: keyof ClubSchedule; label: string }> = [
-    { key: 'mon', label: 'Пн' },
-    { key: 'tue', label: 'Вт' },
-    { key: 'wed', label: 'Ср' },
-    { key: 'thu', label: 'Чт' },
-    { key: 'fri', label: 'Пт' },
-    { key: 'sat', label: 'Сб' },
-    { key: 'sun', label: 'Вс' },
-];
+const INITIAL_VISIBLE = 5;
+const LOAD_MORE_STEP = 5;
 
 function parseOrgId(value: unknown): number | undefined {
     if (value == null || value === '') return undefined;
@@ -64,18 +48,36 @@ export const ClubScheduleOutput: React.FC<WidgetOutputProps> = ({
     const title =
         (cfg.title as string) || 'Расписание кружков и секций';
     const show_title = (cfg.show_title as boolean) ?? true;
-    const providedClubs = Array.isArray(cfg.clubs) ? (cfg.clubs as Club[]) : [];
+    const providedClubs = Array.isArray(cfg.clubs)
+        ? (cfg.clubs as ClubScheduleItem[])
+        : [];
 
-    const [clubs, setClubs] = useState<Club[]>([]);
+    const [clubs, setClubs] = useState<ClubScheduleItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+    const [signUpClub, setSignUpClub] = useState<ClubScheduleItem | null>(null);
 
     const displayClubs = useMemo(
         () => (providedClubs.length > 0 ? providedClubs : clubs),
         [providedClubs, clubs],
     );
 
+    const clubPageBaseUrl = (cfg.club_page_base_url as string) || '';
+    const getClubPageUrl = useCallback(
+        (club: ClubScheduleItem) =>
+            clubPageBaseUrl
+                ? `${clubPageBaseUrl.replace(/\/$/, '')}#club-${club.id}`
+                : `#club-${club.id}`,
+        [clubPageBaseUrl],
+    );
+
     const hasData = displayClubs.length > 0;
+    const visibleClubs = useMemo(
+        () => displayClubs.slice(0, visibleCount),
+        [displayClubs, visibleCount],
+    );
+    const hasMore = visibleCount < displayClubs.length;
 
     useEffect(() => {
         if (providedClubs.length > 0 || !organization_id) return;
@@ -90,11 +92,11 @@ export const ClubScheduleOutput: React.FC<WidgetOutputProps> = ({
                     { organization_id, limit: 50 },
                     { signal: controller.signal },
                 );
-                const list: Club[] = Array.isArray(payload?.data)
+                const list: ClubScheduleItem[] = Array.isArray(payload?.data)
                     ? payload.data.map((c: Record<string, unknown>) => ({
                           id: Number(c.id),
                           name: String(c.name ?? ''),
-                          schedule: (c.schedule as ClubSchedule) ?? {},
+                          schedule: (c.schedule as ClubScheduleItem['schedule']) ?? {},
                       }))
                     : [];
                 setClubs(list);
@@ -115,10 +117,20 @@ export const ClubScheduleOutput: React.FC<WidgetOutputProps> = ({
         return () => controller.abort();
     }, [organization_id, providedClubs.length]);
 
-    const getCellValue = (club: Club, dayKey: keyof ClubSchedule): string => {
-        const v = club.schedule?.[dayKey];
-        return v && String(v).trim() ? String(v) : '—';
-    };
+    const loadMore = useCallback(() => {
+        setVisibleCount((n) => Math.min(n + LOAD_MORE_STEP, displayClubs.length));
+    }, [displayClubs.length]);
+
+    const handleSignUpSubmit = useCallback(async (payload: import('../ClubSignUpModal').ClubSignUpPayload) => {
+        await submitClubApplication({
+            club_id:         payload.clubId,
+            organization_id: payload.organizationId,
+            club_name:       payload.clubName,
+            name:            payload.name,
+            phone:           payload.phone,
+            comment:         payload.comment,
+        });
+    }, []);
 
     return (
         <div
@@ -132,73 +144,95 @@ export const ClubScheduleOutput: React.FC<WidgetOutputProps> = ({
             )}
 
             {loading && (
-                <div className="flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
-                    <span className="text-gray-500">Загрузка…</span>
+                <div className="club-schedule-output__placeholder">
+                    <span className="club-schedule-output__placeholder-text">
+                        Загрузка…
+                    </span>
                 </div>
             )}
 
             {error && !loading && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-                    {error}
-                </div>
+                <div className="club-schedule-output__error">{error}</div>
             )}
 
             {!loading && !error && !hasData && (
-                <div className="flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
-                    <span className="text-gray-500">
+                <div className="club-schedule-output__placeholder">
+                    <span className="club-schedule-output__placeholder-text">
                         Расписание не настроено
                     </span>
                 </div>
             )}
 
             {!loading && !error && hasData && (
-                <div className="club-schedule-output__table overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                    <table className="w-full min-w-[600px] border-collapse">
-                        <thead>
-                            <tr>
-                                <th
-                                    scope="col"
-                                    className="border-b border-r border-gray-200 bg-gray-50 px-4 py-3 text-left text-sm font-semibold text-gray-900"
-                                >
-                                    Кружки и секции
-                                </th>
-                                {DAYS.map(({ key, label }) => (
-                                    <th
-                                        key={key}
-                                        scope="col"
-                                        className="border-b border-gray-200 bg-gray-50 px-3 py-3 text-center text-sm font-semibold text-gray-700"
-                                    >
-                                        {label}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {displayClubs.map((club, idx) => (
-                                <tr
-                                    key={club.id}
-                                    className={
-                                        idx % 2 === 0
-                                            ? 'bg-white'
-                                            : 'bg-gray-50/50'
-                                    }
-                                >
-                                    <td className="border-b border-r border-gray-200 px-4 py-3 font-medium text-gray-900">
-                                        {club.name}
-                                    </td>
-                                    {DAYS.map(({ key }) => (
-                                        <td
-                                            key={key}
-                                            className="border-b border-gray-200 px-3 py-3 text-center text-gray-600"
-                                        >
-                                            {getCellValue(club, key)}
-                                        </td>
-                                    ))}
-                                </tr>
+                <>
+                    <div className="club-schedule-output__grid-wrapper" role="table" aria-label="Расписание кружков и секций">
+                        <div className="club-schedule-output__row club-schedule-output__row--head" role="row">
+                            <div className="club-schedule-output__cell club-schedule-output__cell--head-name" role="columnheader">
+                                Кружки и секции
+                            </div>
+                            {CLUB_SCHEDULE_DAYS.map(({ label }) => (
+                                <div key={label} className="club-schedule-output__cell club-schedule-output__cell--head-day" role="columnheader">
+                                    {label}
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
+                        </div>
+                        {visibleClubs.map((club, rowIndex) => (
+                            <div
+                                key={club.id}
+                                className={`club-schedule-output__row ${rowIndex % 2 === 0 ? 'club-schedule-output__row--alt' : ''}`.trim()}
+                                role="row"
+                            >
+                                <div className="club-schedule-output__cell club-schedule-output__cell--name" role="cell">
+                                    <a
+                                        href={getClubPageUrl(club)}
+                                        className="club-schedule-output__icon"
+                                        aria-label={`Страница кружка: ${club.name}`}
+                                    >
+                                        <img src="/icons/school-template/arrow-up-right.svg" alt="" />
+                                    </a>
+                                    <span className="club-schedule-output__name">{club.name}</span>
+                                    <button
+                                        type="button"
+                                        className="club-schedule-output__btn-signup"
+                                        onClick={() => setSignUpClub(club)}
+                                    >
+                                        Записаться
+                                    </button>
+                                </div>
+                                {CLUB_SCHEDULE_DAYS.map(({ key }) => {
+                                    const value = getClubScheduleCellValue(club.schedule, key);
+                                    const isEmpty = value === '—';
+                                    return (
+                                        <div key={key} className="club-schedule-output__cell club-schedule-output__cell--day" role="cell">
+                                            <span className={isEmpty ? 'club-schedule-output__day-value club-schedule-output__day-value--empty' : 'club-schedule-output__day-value'}>
+                                                {value}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                    {hasMore && (
+                        <button
+                            type="button"
+                            className="club-schedule-output__load-more"
+                            onClick={loadMore}
+                        >
+                            Загрузить больше
+                        </button>
+                    )}
+                </>
+            )}
+
+            {signUpClub && (
+                <ClubSignUpModal
+                    open={!!signUpClub}
+                    onOpenChange={(open) => !open && setSignUpClub(null)}
+                    club={{ id: signUpClub.id, name: signUpClub.name }}
+                    organizationId={organization_id}
+                    onSubmit={handleSignUpSubmit}
+                />
             )}
         </div>
     );

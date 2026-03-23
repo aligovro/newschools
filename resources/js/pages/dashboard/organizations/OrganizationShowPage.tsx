@@ -203,6 +203,15 @@ export default function OrganizationShowPage({ organization, stats }: Props) {
             label: (n: number) => `${n} кружок${n === 1 ? '' : n >= 2 && n <= 4 ? 'а' : 'ов'}`,
         },
         {
+            title: 'Заявки на секции',
+            count: organization.club_applications_count ?? 0,
+            icon: FileText,
+            color: 'bg-amber-500',
+            href: `/dashboard/organizations/${organization.id}/club-applications`,
+            addHref: undefined,
+            label: (n: number) => `${n} заявк${n === 1 ? 'а' : n >= 2 && n <= 4 ? 'и' : 'ок'}`,
+        },
+        {
             title: 'Видео уроки',
             count: organization.video_lessons_count ?? 0,
             icon: Video,

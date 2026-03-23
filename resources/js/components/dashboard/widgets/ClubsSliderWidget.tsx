@@ -1,5 +1,7 @@
-import { fetchOrganizationClubs } from '@/lib/api/public';
-import { ArrowLeft, ArrowRight, Share2 } from 'lucide-react';
+import { ClubSignUpModal } from '@/components/dashboard/widgets/ClubSignUpModal';
+import type { ClubSignUpPayload } from '@/components/dashboard/widgets/ClubSignUpModal';
+import { fetchOrganizationClubs, submitClubApplication } from '@/lib/api/public';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Swiper as SwiperType } from 'swiper';
 import { Navigation } from 'swiper/modules';
@@ -88,6 +90,7 @@ export const ClubsSliderWidget: React.FC<Props> = ({ config = {} }) => {
     const [fetched, setFetched] = useState<Club[] | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [signUpClub, setSignUpClub] = useState<Club | null>(null);
 
     const swiperRef = useRef<SwiperType | null>(null);
     const navigationPrevRef = useRef<HTMLButtonElement>(null);
@@ -160,73 +163,97 @@ export const ClubsSliderWidget: React.FC<Props> = ({ config = {} }) => {
         swiper.navigation?.update?.();
     }, [shouldShowArrows, displayClubs.length]);
 
-    const renderCard = useCallback((club: Club) => {
-        const imgUrl =
-            club.image &&
-            !String(club.image).startsWith('blob:') &&
-            String(club.image).trim()
-                ? club.image
-                : null;
-        const { timeText, byAppointment } = formatSchedule(club.schedule);
+    const renderCard = useCallback(
+        (club: Club) => {
+            const imgUrl =
+                club.image &&
+                !String(club.image).startsWith('blob:') &&
+                String(club.image).trim()
+                    ? club.image
+                    : null;
+            const { timeText, byAppointment } = formatSchedule(club.schedule);
 
-        return (
-            <div className="clubs-slider-widget__card">
-                <div className="clubs-slider-widget__card-inner">
-                    <div className="clubs-slider-widget__card-content">
-                        <h3 className="clubs-slider-widget__card-title">
-                            {club.name}
-                        </h3>
-                        <div className="clubs-slider-widget__badges">
-                            {timeText && (
-                                <span className="clubs-slider-widget__badge clubs-slider-widget__badge--time">
-                                    {timeText}
-                                </span>
+            return (
+                <div className="clubs-slider-widget__card">
+                    <div className="clubs-slider-widget__card-inner">
+                        <div className="clubs-slider-widget__card-content">
+                            <h3 className="clubs-slider-widget__card-title">
+                                {club.name}
+                            </h3>
+                            <div className="clubs-slider-widget__badges">
+                                {timeText && (
+                                    <span className="clubs-slider-widget__badge clubs-slider-widget__badge--time">
+                                        {timeText}
+                                    </span>
+                                )}
+                                {byAppointment && (
+                                    <span className="clubs-slider-widget__badge clubs-slider-widget__badge--appointment">
+                                        По предварительной записи
+                                    </span>
+                                )}
+                            </div>
+                            {club.description && (
+                                <p className="clubs-slider-widget__card-desc">
+                                    {club.description}
+                                </p>
                             )}
-                            {byAppointment && (
-                                <span className="clubs-slider-widget__badge clubs-slider-widget__badge--appointment">
-                                    По предварительной записи
-                                </span>
+                            <div className="clubs-slider-widget__actions">
+                                <button
+                                    type="button"
+                                    className="clubs-slider-widget__btn clubs-slider-widget__btn--outline"
+                                    onClick={() => setSignUpClub(club)}
+                                >
+                                    Отправить заявку
+                                </button>
+                                <a
+                                    href={`/club/${club.id}`}
+                                    className="clubs-slider-widget__btn clubs-slider-widget__btn--icon"
+                                    aria-label={`Страница секции: ${club.name}`}
+                                >
+                                    <img
+                                        src="/icons/school-template/arrow-up-right.svg"
+                                        alt=""
+                                        width={24}
+                                        height={24}
+                                    />
+                                </a>
+                            </div>
+                        </div>
+                        <div className="clubs-slider-widget__card-image-wrap">
+                            {imgUrl ? (
+                                <img
+                                    src={imgUrl}
+                                    alt={club.name}
+                                    className="clubs-slider-widget__card-image"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div className="clubs-slider-widget__card-image-placeholder" />
                             )}
                         </div>
-                        {club.description && (
-                            <p className="clubs-slider-widget__card-desc">
-                                {club.description}
-                            </p>
-                        )}
-                        <div className="clubs-slider-widget__actions">
-                            <button
-                                type="button"
-                                className="clubs-slider-widget__btn clubs-slider-widget__btn--outline"
-                            >
-                                Отправить заявку
-                            </button>
-                            <button
-                                type="button"
-                                className="clubs-slider-widget__btn clubs-slider-widget__btn--icon"
-                                aria-label="Поделиться"
-                            >
-                                <Share2 size={24} strokeWidth={1.5} />
-                            </button>
-                        </div>
-                    </div>
-                    <div className="clubs-slider-widget__card-image-wrap">
-                        {imgUrl ? (
-                            <img
-                                src={imgUrl}
-                                alt={club.name}
-                                className="clubs-slider-widget__card-image"
-                                loading="lazy"
-                            />
-                        ) : (
-                            <div className="clubs-slider-widget__card-image-placeholder" />
-                        )}
                     </div>
                 </div>
-            </div>
-        );
-    }, []);
+            );
+        },
+        [setSignUpClub],
+    );
+
+    const handleSignUpSubmit = useCallback(
+        async (payload: ClubSignUpPayload) => {
+            await submitClubApplication({
+                club_id:         payload.clubId,
+                organization_id: payload.organizationId ?? organization_id,
+                club_name:       payload.clubName,
+                name:            payload.name,
+                phone:           payload.phone,
+                comment:         payload.comment,
+            });
+        },
+        [organization_id],
+    );
 
     return (
+        <>
         <section className="clubs-slider-widget wrapper__block">
             <div className="clubs-slider-widget__container">
                 {title && show_title && (
@@ -333,6 +360,17 @@ export const ClubsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                 )}
             </div>
         </section>
+
+        {signUpClub && (
+            <ClubSignUpModal
+                open={signUpClub !== null}
+                onOpenChange={(open) => !open && setSignUpClub(null)}
+                club={{ id: signUpClub.id, name: signUpClub.name }}
+                organizationId={organization_id}
+                onSubmit={handleSignUpSubmit}
+            />
+        )}
+    </>
     );
 };
 

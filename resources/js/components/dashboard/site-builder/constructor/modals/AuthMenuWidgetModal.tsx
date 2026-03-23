@@ -247,6 +247,46 @@ export const AuthMenuWidgetModal: React.FC<AuthMenuWidgetModalProps> = ({
                 Эти настройки управляют отображением кнопок и профиля
                 пользователя в меню авторизации.
             </div>
+
+            {/* Настройки для шаблона «Школа» */}
+            <div className="space-y-3 rounded border bg-blue-50 p-3">
+                <p className="text-xs font-semibold text-blue-700">Шаблон «Школа»</p>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="school_donate_text">Текст кнопки «Помочь»</Label>
+                        <Input
+                            id="school_donate_text"
+                            value={String(fromCfg.donate_text ?? 'Помочь школе')}
+                            onChange={(e) =>
+                                handleConfigUpdate({ donate_text: e.target.value })
+                            }
+                            placeholder="Помочь школе"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="school_donate_url">Ссылка кнопки «Помочь»</Label>
+                        <Input
+                            id="school_donate_url"
+                            value={String(fromCfg.donate_url ?? '#donation')}
+                            onChange={(e) =>
+                                handleConfigUpdate({ donate_url: e.target.value })
+                            }
+                            placeholder="#donation"
+                        />
+                    </div>
+                </div>
+                <div>
+                    <Label htmlFor="school_profile_text">Текст кнопки «Профиль»</Label>
+                    <Input
+                        id="school_profile_text"
+                        value={String(fromCfg.profile_text ?? 'Профиль')}
+                        onChange={(e) =>
+                            handleConfigUpdate({ profile_text: e.target.value })
+                        }
+                        placeholder="Профиль"
+                    />
+                </div>
+            </div>
         </div>
     );
 };
