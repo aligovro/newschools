@@ -1,0 +1,15 @@
+// ─── Ритм страницы: позиция hero и сетка main (не внутренние отступы hero-виджетов) ─
+// Токены: --school-section-y, --school-section-x, --school-content-stack-gap — в school.scss
+
+.site-preview.site-template--school {
+    // Секция hero: отступ снизу до main (--school-section-y). Глобальный overlap футера (−50px)
+    // для school снят в school/_footer.scss — здесь отдельная компенсация не нужна.
+    .site-hero {
+        padding-bottom: var(--school-section-y);
+    }
+
+    // Стек позиций в main: один токен вместо разрозненных gap-* у колонок
+    .site-main > .container > .grid {
+        row-gap: var(--school-content-stack-gap);
+    }
+}

@@ -281,24 +281,8 @@
         }
     }
 
-    // ─ Статистика выпускников (alumni-stats) ─
-    // Позиция-независимые стили (работает в hero и в других позициях)
+    // ─ Статистика выпускников: база + варианты позиции (без повторения свойств между контекстами)
     .alumni-stats-output {
-        // Переопределяем Tailwind-грид на flex-ряд
-        .grid {
-            display: flex;
-            gap: 60px;
-            flex-wrap: wrap;
-        }
-
-        // Снимаем white-card вид с каждого элемента (bg-white + rounded-lg)
-        .grid > * {
-            background: transparent;
-            border-radius: 0;
-            padding: 0;
-        }
-
-        // Иконки SVG и кастомные img — единый размер и цвет акцента
         .text-blue-600 {
             color: var(--school-accent);
         }
@@ -309,17 +293,102 @@
             height: 66px;
         }
 
-        &__subtitle {
-            max-width: none;
+        .grid > * {
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
         }
     }
 
-    // Позиционирование под hero + отступы
+    .site-position:not(.site-position--hero) .alumni-stats-output .grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 60px;
+    }
+
+    .site-position:not(.site-position--hero) .alumni-stats-output .alumni-stats-output__subtitle {
+        max-width: none;
+    }
+
     .site-position--hero .alumni-stats-output {
-        padding: 40px var(--hero-padding, 60px);
+        padding: 32px var(--hero-padding, 60px) 40px;
 
         .wrapper__block {
             padding: 0;
+        }
+
+        .container {
+            max-width: 100%;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:
+                minmax(0, var(--school-alumni-hero-col-left))
+                minmax(0, var(--school-alumni-hero-col-right));
+            max-width: 687px;
+            column-gap: clamp(2rem, 8vw, 5.625rem);
+            row-gap: 1.5rem;
+            align-items: start;
+        }
+
+        .grid:has(> :nth-child(3)) {
+            max-width: min(1362px, 100%);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        // Две ячейки: разный зазор текст↔иконка (макет); три — одинаковый
+        .grid:has(> :nth-child(2):last-child) > div:nth-child(1) {
+            gap: var(--school-alumni-hero-icon-gap-narrow);
+        }
+
+        .grid:has(> :nth-child(2):last-child) > div:nth-child(2) {
+            gap: var(--school-alumni-hero-icon-gap-wide);
+        }
+
+        .grid:has(> :nth-child(3)) > div {
+            gap: var(--school-alumni-hero-icon-gap-3col);
+        }
+
+        .grid > div {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            min-width: 0;
+        }
+
+        // Иконка: отступ сверху как в макете; ml-4 из разметки убираем — горизонталь даёт gap
+        .grid > div > div:not(:first-child) {
+            margin-top: var(--school-alumni-hero-icon-offset-top);
+            margin-left: 0;
+            flex-shrink: 0;
+        }
+
+        .grid > div > div:first-child {
+            display: flex;
+            flex-direction: column;
+            gap: 1.125rem;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .alumni-stats-output__value {
+            margin-bottom: 0;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+        }
+
+        .alumni-stats-output__subtitle {
+            display: block;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+            max-width: 15.5rem;
+        }
+
+        @media (max-width: 767px) {
+            .grid:not(:has(> :nth-child(3))) {
+                grid-template-columns: 1fr;
+            }
         }
     }
 
@@ -982,48 +1051,5 @@
                 }
             }
         }
-    }
-
-    // ─ Статистика под баннером ─
-    .hero-stats {
-        display: flex;
-        align-items: flex-start;
-        gap: 60px;
-        padding: 40px 60px;
-        max-width: 1362px;
-        margin-inline: auto;
-    }
-
-    .hero-stats__item {
-        display: flex;
-        align-items: flex-start;
-        gap: 16px;
-    }
-
-    .hero-stats__icon {
-        flex-shrink: 0;
-        width: 66px;
-        height: 66px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--school-accent);
-    }
-
-    .hero-stats__value {
-        font-size: 28px;
-        font-weight: 700;
-        line-height: 1.2;
-        letter-spacing: 0.01em;
-        color: var(--school-text);
-    }
-
-    .hero-stats__label {
-        font-size: 18px;
-        font-weight: 500;
-        line-height: 1.2;
-        letter-spacing: 0.01em;
-        color: var(--school-text);
-        margin-top: 4px;
     }
 }

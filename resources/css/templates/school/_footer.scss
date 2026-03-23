@@ -49,29 +49,45 @@
     }
 
     // ── Col-2 & Col-3: навигационные меню ────────────────────────────────────
-    // menu-widget рендерит nav.menu-output > h2 с Tailwind-классами;
-    // перебиваем градиентным заголовком из Figma.
+    // menu-widget: nav.menu-output > h2 (Tailwind) + ul.flex.flex-col.space-y-2
+    // Макет: заголовок 23px/700, акцент #96BDFF; первая ссылка на 54px от верха (32 + 22);
+    // пункты 12px/500, шаг по вертикали 30px → gap 14px между строками 16px.
     .footer-col-2-wrapper,
     .footer-col-3-wrapper {
         nav.menu-output {
             h2 {
+                margin: 0 0 var(--school-footer-nav-title-gap);
                 font-size: 23px;
                 font-weight: 700;
-                line-height: 1.2;
-                letter-spacing: -0.01em;
-                background: var(--school-gradient);
-                background-clip: text;
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                margin-bottom: 16px;
+                line-height: 32px;
+                color: var(--school-accent);
             }
 
-            .menu-link {
+            > ul {
+                gap: var(--school-footer-nav-item-gap);
+            }
+
+            > ul > li + li {
+                margin-top: 0;
+            }
+
+            // a.menu-link — выше специфичности, чем базовые правила для li a / слой ссылок
+            a.menu-link {
+                padding: 0;
                 font-size: 12px;
                 font-weight: 500;
                 line-height: 1.2;
                 color: var(--school-text);
-                padding: 5px 0;
+                text-decoration: none;
+                transition: opacity 0.2s ease;
+
+                &:visited {
+                    color: var(--school-text);
+                }
+
+                &:hover {
+                    opacity: 0.85;
+                }
             }
         }
     }
@@ -135,6 +151,14 @@
                     text-decoration: underline;
                 }
             }
+        }
+    }
+
+    // site-preview.scss (≥1024px): .site-position--footer { margin-top: -50px } — визуально «съедает»
+    // зазор перед футером; для шаблона school отключаем overlap, ритм секций остаётся предсказуемым.
+    @media (min-width: 1024px) {
+        .site-footer .site-position--footer {
+            margin-top: 0;
         }
     }
 }

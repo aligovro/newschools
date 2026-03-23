@@ -62,21 +62,19 @@
             }
         }
 
-        // Hero: статистика под баннером
-        .hero-stats {
-            padding: 32px 22px;
-            gap: 32px;
-            flex-wrap: wrap;
-        }
-
-        // Projects: внутренние отступы
-        .projects-output {
-            padding: 60px 22px;
-        }
-
-        // Donations feed: внутренние отступы
+        // Секции: горизонталь 22px (планшет), вертикаль — токен
+        .projects-output,
+        .projects-slider-school,
+        .clubs-slider-widget,
+        .video-lessons-slider-school,
+        .teachers-slider-school,
         .org-donations-feed-school__container {
-            padding: 60px 22px;
+            padding: 0 22px var(--school-section-y);
+        }
+
+        // Расписание: без горизонтального padding (широкая сетка + overflow-x)
+        .club-schedule-output {
+            padding: 0 0 var(--school-section-y);
         }
     }
 }
@@ -94,12 +92,12 @@
             font-size: 28px;
         }
 
-        // Горизонтальные отступы для виджетов
+        // Горизонтальные отступы для секций (вертикаль остаётся от базовых правил)
         .clubs-output,
+        .clubs-slider-widget,
         .video-lessons-output,
         .video-lessons-slider-school,
         .org-donations-feed-school,
-        .club-schedule-output,
         .projects-output,
         .projects-slider-school,
         .teachers-slider-school {
@@ -164,6 +162,26 @@
         .video-lessons-slider-school__title {
             font-size: 28px;
             line-height: 1.2;
+        }
+
+        // Текстовый виджет: строка контактов
+        .school-contacts-bar {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .school-contacts-bar__primary {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px 20px;
+        }
+
+        .school-contacts-bar__phone {
+            white-space: normal;
+        }
+
+        .school-contacts-card__btn {
+            flex: 1 1 100%;
         }
     }
 }

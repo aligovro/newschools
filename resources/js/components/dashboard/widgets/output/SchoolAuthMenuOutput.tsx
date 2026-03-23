@@ -18,21 +18,21 @@ interface SchoolAuthMenuOutputProps {
 }
 
 const getCsrfToken = (): string =>
-    document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+    document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+        ?.content ?? '';
 
-export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ config }) => {
-    const {
-        user,
-        isAuthenticated,
-        isLoading,
-        login,
-        logout,
-        clearAuthError,
-    } = useAuth();
+export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({
+    config,
+}) => {
+    const { user, isAuthenticated, isLoading, login, logout, clearAuthError } =
+        useAuth();
     const currentSite = useAppSelector((s) => s.sites.currentSite);
 
     const [isLoginOpen, setIsLoginOpen] = useState(false);
-    const [sessionUser, setSessionUser] = useState<Record<string, unknown> | null>(null);
+    const [sessionUser, setSessionUser] = useState<Record<
+        string,
+        unknown
+    > | null>(null);
     const [isCheckingSession, setIsCheckingSession] = useState(false);
     const [phoneAuthLoading, setPhoneAuthLoading] = useState(false);
     const [forgotLoading, setForgotLoading] = useState(false);
@@ -61,11 +61,14 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
     }, [cfg, currentSite]);
 
     useEffect(() => {
-        return () => { clearAuthError(); };
+        return () => {
+            clearAuthError();
+        };
     }, [clearAuthError]);
 
     useEffect(() => {
-        const needSessionFetch = !isAuthenticated && !localStorage.getItem('token');
+        const needSessionFetch =
+            !isAuthenticated && !localStorage.getItem('token');
         if (!needSessionFetch) {
             setIsCheckingSession(false);
             return;
@@ -74,9 +77,14 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
         setIsCheckingSession(true);
         (async () => {
             try {
-                const res = await fetch('/api/public/session-user', { credentials: 'include' });
+                const res = await fetch('/api/public/session-user', {
+                    credentials: 'include',
+                });
                 if (!res.ok) {
-                    if (!cancelled) { setIsCheckingSession(false); setSessionUser(null); }
+                    if (!cancelled) {
+                        setIsCheckingSession(false);
+                        setSessionUser(null);
+                    }
                     return;
                 }
                 const data = await res.json();
@@ -86,10 +94,15 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
                     setIsCheckingSession(false);
                 }
             } catch {
-                if (!cancelled) { setIsCheckingSession(false); setSessionUser(null); }
+                if (!cancelled) {
+                    setIsCheckingSession(false);
+                    setSessionUser(null);
+                }
             }
         })();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [isAuthenticated]);
 
     const handleLoginOpenChange = useCallback(
@@ -125,11 +138,19 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
         }
 
         const message =
-            typeof result.payload === 'string' ? result.payload : 'Не удалось выполнить вход';
+            typeof result.payload === 'string'
+                ? result.payload
+                : 'Не удалось выполнить вход';
         setLoginErrors({ general: message });
     }, [
-        clearAuthError, login, loginState.identifier, loginState.password,
-        loginState.remember, resetLoginState, setLoginErrors, validateLogin,
+        clearAuthError,
+        login,
+        loginState.identifier,
+        loginState.password,
+        loginState.remember,
+        resetLoginState,
+        setLoginErrors,
+        validateLogin,
     ]);
 
     const handleRequestPhoneCode = useCallback(async () => {
@@ -152,7 +173,10 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
             });
             const data = await res.json();
             if (!res.ok) {
-                const errMsg = data?.errors?.phone?.[0] ?? data?.message ?? 'Не удалось отправить код';
+                const errMsg =
+                    data?.errors?.phone?.[0] ??
+                    data?.message ??
+                    'Не удалось отправить код';
                 setLoginErrors({ identifier: errMsg });
                 return;
             }
@@ -168,7 +192,13 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
         } finally {
             setPhoneAuthLoading(false);
         }
-    }, [loginState.identifier, organizationId, setLoginErrors, setPhoneCodeState, validatePhoneForCode]);
+    }, [
+        loginState.identifier,
+        organizationId,
+        setLoginErrors,
+        setPhoneCodeState,
+        validatePhoneForCode,
+    ]);
 
     const handleVerifyPhoneCode = useCallback(async () => {
         const code = loginState.phoneCode.code.trim();
@@ -196,7 +226,8 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
             });
             const data = await res.json();
             if (!res.ok) {
-                const errMsg = data?.errors?.code?.[0] ?? data?.message ?? 'Неверный код';
+                const errMsg =
+                    data?.errors?.code?.[0] ?? data?.message ?? 'Неверный код';
                 setLoginErrors({ code: errMsg });
                 return;
             }
@@ -209,22 +240,32 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
             setPhoneAuthLoading(false);
         }
     }, [
-        loginState.phoneCode.code, loginState.phoneCode.token,
-        loginState.remember, organizationId, resetLoginState, setLoginErrors,
+        loginState.phoneCode.code,
+        loginState.phoneCode.token,
+        loginState.remember,
+        organizationId,
+        resetLoginState,
+        setLoginErrors,
     ]);
 
     const handleForgotPassword = useCallback(async () => {
         const { identifier } = loginState.forgotPassword;
         const isEmail = loginState.mode === 'email';
         if (!identifier.trim()) {
-            setLoginErrors({ identifier: isEmail ? 'Укажите email' : 'Укажите телефон' });
+            setLoginErrors({
+                identifier: isEmail ? 'Укажите email' : 'Укажите телефон',
+            });
             return;
         }
         setForgotLoading(true);
         setLoginErrors({});
         try {
             const body: Record<string, string> = {};
-            if (isEmail) { body.email = identifier.trim(); } else { body.phone = identifier.trim(); }
+            if (isEmail) {
+                body.email = identifier.trim();
+            } else {
+                body.phone = identifier.trim();
+            }
             const res = await fetch('/api/auth/forgot-password', {
                 method: 'POST',
                 headers: {
@@ -237,24 +278,36 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
             });
             const data = await res.json();
             if (!res.ok) {
-                setLoginErrors({ general: data?.message ?? 'Не удалось отправить ссылку' });
+                setLoginErrors({
+                    general: data?.message ?? 'Не удалось отправить ссылку',
+                });
                 return;
             }
             setForgotPasswordState({
                 sent: true,
-                message: data.message ?? 'Ссылка для сброса пароля отправлена на email.',
+                message:
+                    data.message ??
+                    'Ссылка для сброса пароля отправлена на email.',
             });
         } catch {
             setLoginErrors({ general: 'Ошибка сети. Попробуйте позже.' });
         } finally {
             setForgotLoading(false);
         }
-    }, [loginState.forgotPassword, loginState.mode, setForgotPasswordState, setLoginErrors]);
+    }, [
+        loginState.forgotPassword,
+        loginState.mode,
+        setForgotPasswordState,
+        setLoginErrors,
+    ]);
 
     const handleLogout = async () => {
         try {
             if (isAuthenticated) await logout();
-            await fetch('/api/public/session-logout', { method: 'GET', credentials: 'include' });
+            await fetch('/api/public/session-logout', {
+                method: 'GET',
+                credentials: 'include',
+            });
         } catch {
             // ignore
         } finally {
@@ -264,16 +317,20 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
     };
 
     const combinedLoading = isLoading || phoneAuthLoading || forgotLoading;
-    const effectiveUser = (user as unknown as Record<string, unknown>) || sessionUser;
+    const effectiveUser =
+        (user as unknown as Record<string, unknown>) || sessionUser;
     const effectiveIsAuthenticated = isAuthenticated || Boolean(sessionUser);
     const displayName =
         (effectiveUser?.name as string) ||
         (effectiveUser?.email as string) ||
         'Пользователь';
     const avatarUrl = (effectiveUser as any)?.avatar as string | undefined;
-    const rawRoles = (effectiveUser as Record<string, unknown>)?.roles as unknown;
+    const rawRoles = (effectiveUser as Record<string, unknown>)
+        ?.roles as unknown;
     const roles = Array.isArray(rawRoles)
-        ? (rawRoles as Array<{ name: string }>).map((r) => r?.name).filter(Boolean)
+        ? (rawRoles as Array<{ name: string }>)
+              .map((r) => r?.name)
+              .filter(Boolean)
         : [];
     const isSuperAdmin = roles.includes('super_admin');
     const isOrgAdmin = roles.includes('organization_admin');
@@ -289,14 +346,6 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
 
     return (
         <div className="school-auth-menu flex items-center gap-3">
-            {/* «Помочь школе» — gradient, always visible */}
-            <a
-                href={donateUrl}
-                className="school-auth-menu__donate-btn"
-            >
-                {donateText}
-            </a>
-
             {!effectiveIsAuthenticated ? (
                 <>
                     <button
@@ -325,10 +374,16 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
             ) : (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <button type="button" className="school-auth-menu__profile-btn school-auth-menu__profile-btn--active">
+                        <button
+                            type="button"
+                            className="school-auth-menu__profile-btn school-auth-menu__profile-btn--active"
+                        >
                             {Boolean(avatarUrl) && (
                                 <Avatar className="h-6 w-6">
-                                    <AvatarImage src={avatarUrl} alt={displayName} />
+                                    <AvatarImage
+                                        src={avatarUrl}
+                                        alt={displayName}
+                                    />
                                     <AvatarFallback className="hidden" />
                                 </Avatar>
                             )}
@@ -343,7 +398,9 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
                         )}
                         {isOrgAdmin && (
                             <DropdownMenuItem asChild>
-                                <a href="/organization/admin">Админка организации</a>
+                                <a href="/organization/admin">
+                                    Админка организации
+                                </a>
                             </DropdownMenuItem>
                         )}
                         <DropdownMenuItem asChild>
@@ -353,13 +410,20 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({ conf
                             <a href="/settings">Настройки</a>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                            <button onClick={handleLogout} className="w-full text-left">
+                            <button
+                                onClick={handleLogout}
+                                className="w-full text-left"
+                            >
                                 Выйти
                             </button>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             )}
+            {/* «Помочь школе» — gradient, always visible */}
+            <a href={donateUrl} className="school-auth-menu__donate-btn">
+                {donateText}
+            </a>
         </div>
     );
 };
