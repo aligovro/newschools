@@ -1,0 +1,234 @@
+// ─── Мелкие виджеты (общие стили без отдельного partial) ─────────────────────
+//
+// Добавляйте сюда блоки с небольшим числом правил. Когда виджет разрастётся —
+// вынесите в отдельный `_имя.scss` и подключите в `school.scss`.
+
+.site-preview.site-template--school {
+    // Текстовый виджет: строка контактов (адрес, почта, телефон, соцсети)
+    .school-contacts-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px 24px;
+        min-height: 20px;
+        font-family: inherit;
+    }
+
+    .school-contacts-bar__primary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 20px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .school-contacts-bar__pin {
+        display: block;
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        object-fit: contain;
+    }
+
+    .school-contacts-bar__address {
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 12px;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+    }
+
+    .school-contacts-bar__email {
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 12px;
+        letter-spacing: 0.01em;
+        color: var(--school-muted);
+        text-decoration: none;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: var(--school-text);
+        }
+    }
+
+    .school-contacts-bar__phone {
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+            opacity: 0.85;
+        }
+    }
+
+    .school-contacts-bar__email:focus-visible,
+    .school-contacts-bar__phone:focus-visible,
+    .school-contacts-bar__social-link:focus-visible {
+        outline: 2px solid var(--school-primary);
+        outline-offset: 2px;
+    }
+
+    .school-contacts-bar__social {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .school-contacts-bar__social-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 22px;
+        background: var(--school-bg);
+        text-decoration: none;
+        transition: background 0.2s ease;
+
+        &:hover {
+            background: var(--school-border);
+        }
+
+        img {
+            display: block;
+            width: 12px;
+            height: 12px;
+            object-fit: contain;
+        }
+    }
+
+    // Текстовый виджет: карточка контактов (телефон, почта, адрес, мессенджеры)
+    .school-contacts-card {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        max-width: 312px;
+        border-radius: 24px;
+        font-family: inherit;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    .school-contacts-card__top {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .school-contacts-card__phone {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 36px;
+        color: var(--school-text);
+
+        a {
+            color: inherit;
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+
+            &:hover {
+                opacity: 0.88;
+            }
+        }
+    }
+
+    .school-contacts-card__group {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .school-contacts-card__email {
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.2;
+        color: var(--school-text);
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+            opacity: 0.85;
+        }
+    }
+
+    .school-contacts-card__address {
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.2;
+        color: var(--school-text);
+    }
+
+    .school-contacts-card__note {
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 12px;
+        letter-spacing: 0.01em;
+        color: var(--school-muted);
+    }
+
+    .school-contacts-card__email + .school-contacts-card__note,
+    .school-contacts-card__address + .school-contacts-card__note {
+        margin-top: 0;
+    }
+
+    .school-contacts-card__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .school-contacts-card__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 12px 16px;
+        border-radius: 24px;
+        border: 1px solid var(--school-accent);
+        background: transparent;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+        text-decoration: none;
+        flex: 1 1 calc(50% - 8px);
+        min-width: 120px;
+        box-sizing: border-box;
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease;
+
+        &:hover {
+            background: color-mix(in srgb, var(--school-accent) 12%, transparent);
+        }
+    }
+
+    .school-contacts-card__btn-icon {
+        display: block;
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        object-fit: contain;
+    }
+
+    .school-contacts-card__email:focus-visible,
+    .school-contacts-card__phone a:focus-visible,
+    .school-contacts-card__btn:focus-visible {
+        outline: 2px solid var(--school-primary);
+        outline-offset: 2px;
+    }
+}

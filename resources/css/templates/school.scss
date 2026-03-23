@@ -17,6 +17,25 @@
     --school-bg: #f5f6f8;
     --school-gradient: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
 
+    // Ритм секций (макет 1920 / контент 1362: боковые поля 60px, блоки по вертикали 80px)
+    --school-section-y: 80px;
+    --school-section-x: 60px;
+    --school-gap-heading: 40px; // заголовок секции → фильтры / контент
+    --school-content-stack-gap: 2rem; // сетка main (≈32px, как gap-8)
+
+    // Alumni под hero: две колонки неравной ширины (макет ~265px | ~355px при полосе 687px → ≈5∶7)
+    --school-alumni-hero-col-left: 5fr;
+    --school-alumni-hero-col-right: 7fr;
+    // Иконки 66×66: верх ~32px; текст↔иконка плотнее у левой колонки, шире у правой (макет)
+    --school-alumni-hero-icon-offset-top: 2rem;
+    --school-alumni-hero-icon-gap-narrow: 0.5rem;
+    --school-alumni-hero-icon-gap-wide: 2rem;
+    --school-alumni-hero-icon-gap-3col: 1.25rem;
+
+    // Футер: только вертикаль рядов меню (сетку колонок не трогаем)
+    --school-footer-nav-title-gap: 22px; // заголовок h2 → первый пункт
+    --school-footer-nav-item-gap: 14px; // между пунктами списка
+
     font-family: var(--font-family, 'Montserrat', sans-serif);
     color: var(--school-text);
     background: #fff;
@@ -25,12 +44,10 @@
 // ─── Общий ритм блоков ────────────────────────────────────────────────────────
 
 .site-preview.site-template--school {
-    .wrapper__block {
-        // padding: 80px 0;
-    }
-
+    // site-preview.scss (≥1024px) задаёт .block__header { padding: 0 60px } — для шаблона school
+    // отступы уже в секциях (--school-section-x); иначе двойной inset и сдвиг у расписания и др.
     .block__header {
-        // margin-bottom: 40px;
+        padding-inline: 0;
     }
 
     .block__title {
@@ -52,6 +69,8 @@
     }
 }
 
+@import 'school/layout';
+
 // ─── Виджеты шаблона ──────────────────────────────────────────────────────────
 
 @import 'school/hero';
@@ -64,4 +83,5 @@
 @import 'school/footer';
 @import 'school/auth-menu';
 @import 'school/share';
+@import 'school/widgets';
 @import 'school/adaptive';

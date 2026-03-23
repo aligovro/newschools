@@ -3,7 +3,7 @@
 .site-preview.site-template--school {
     // ─ Вывод проектов (сетка) ─
     .projects-output {
-        padding: 80px 60px;
+        padding: 0 var(--school-section-x) var(--school-section-y);
         max-width: 1362px;
         margin-inline: auto;
         box-sizing: border-box;
@@ -14,7 +14,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin-bottom: 40px;
+        margin-bottom: var(--school-gap-heading);
     }
 
     .projects-output__filter {
@@ -199,6 +199,9 @@
 
     // ─ Слайдер проектов ─
     .projects-slider-school {
+        padding: 0 var(--school-section-x) var(--school-section-y);
+        box-sizing: border-box;
+
         &__container {
             max-width: 1242px;
             padding: 0;

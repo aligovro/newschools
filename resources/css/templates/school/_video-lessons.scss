@@ -2,6 +2,9 @@
 
 .site-preview.site-template--school {
     .video-lessons-slider-school {
+        padding: 0 var(--school-section-x) var(--school-section-y);
+        box-sizing: border-box;
+
         &__container {
             max-width: 1242px;
             padding: 0;

@@ -218,7 +218,7 @@ export const AlumniStatsOutput: React.FC<WidgetOutputProps> = ({
                   icon: <PeopleIcon />,
                   value: formatNumber(stats.supporters_count),
                   label: 'людей',
-                  subtitle: 'Поддерживают свои школы',
+                  subtitle: 'Поддерживают нашу школу',
               },
               {
                   icon: <CurrencyIcon />,

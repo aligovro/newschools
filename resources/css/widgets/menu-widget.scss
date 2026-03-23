@@ -85,9 +85,7 @@
         }
 
         // Варианты оформления (классы из конфига)
-        .menu-default .menu-link {
-            color: #374151;
-        }
+        // default: цвет задаётся базовым .menu-link выше — шаблоны/футер задают свой токен без борьбы
 
         .menu-minimal .menu-link {
             font-weight: 400;

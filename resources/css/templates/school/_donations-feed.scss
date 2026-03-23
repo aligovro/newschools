@@ -4,8 +4,7 @@
     .org-donations-feed-school {
         &__container {
             max-width: 1242px;
-            margin-inline: auto;
-            padding: 80px 66px 80px;
+            padding: 0 var(--school-section-x) var(--school-section-y);
             box-sizing: border-box;
         }
 
