@@ -1,6 +1,7 @@
 import { TitleField } from '@/components/dashboard/widgets/common/TitleField';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -35,6 +36,8 @@ export const ShareButtonsWidgetModal: React.FC<Props> = ({
     const networks = (config.networks as string[]) ?? [...DEFAULT_NETWORKS];
     const showCounts = (config.show_counts as boolean) ?? true;
     const counts = (config.counts as Record<string, number>) ?? {};
+    const slogan = (config.slogan as string) ?? '';
+    const showSlogan = (config.show_slogan as boolean) ?? false;
 
     const handleChange = useCallback(
         (updates: Record<string, unknown>) => {
@@ -186,6 +189,38 @@ export const ShareButtonsWidgetModal: React.FC<Props> = ({
                                     );
                                 })}
                             </div>
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="share-show-slogan"
+                            checked={showSlogan}
+                            onCheckedChange={(c) =>
+                                handleChange({ show_slogan: !!c })
+                            }
+                        />
+                        <Label
+                            htmlFor="share-show-slogan"
+                            className="cursor-pointer font-normal"
+                        >
+                            Показывать слоган справа от кнопок
+                        </Label>
+                    </div>
+                    {showSlogan && (
+                        <div className="space-y-2">
+                            <Label htmlFor="share-slogan">Текст слогана</Label>
+                            <Textarea
+                                id="share-slogan"
+                                placeholder={'Поддерживай свою школу\n— поддержи будущее поколение'}
+                                value={slogan}
+                                rows={3}
+                                onChange={(e) =>
+                                    handleChange({ slogan: e.target.value })
+                                }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Перенос строки сохраняется при отображении
+                            </p>
                         </div>
                     )}
                 </CardContent>

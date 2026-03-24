@@ -12,19 +12,18 @@ import { type NavItem } from '@/types';
 import { usePage } from '@inertiajs/react';
 import {
     BarChart3,
-    BookOpen,
     Building2,
     CalendarClock,
     CreditCard,
     FileText,
-    Folder,
     Globe,
     Home,
     LayoutGrid,
+    Lightbulb,
+    MapPin,
     Settings,
     Target,
     Users,
-    Lightbulb,
 } from 'lucide-react';
 
 export function AppSidebar() {
@@ -99,6 +98,11 @@ export function AppSidebar() {
                       href: '/dashboard/yookassa/merchants',
                       icon: CreditCard,
                   } satisfies NavItem,
+                  {
+                      title: 'ГЕО: Регионы',
+                      href: '/dashboard/admin/geo/regions',
+                      icon: MapPin,
+                  } satisfies NavItem,
               ]
             : []),
         {
@@ -128,18 +132,7 @@ export function AppSidebar() {
         },
     ];
 
-    const footerNavItems: NavItem[] = [
-        {
-            title: 'Repository',
-            href: 'https://github.com/laravel/react-starter-kit',
-            icon: Folder,
-        },
-        {
-            title: 'Documentation',
-            href: 'https://laravel.com/docs/starter-kits#react',
-            icon: BookOpen,
-        },
-    ];
+    const footerNavItems: NavItem[] = [];
 
     return (
         <Sidebar collapsible="icon" variant="inset">

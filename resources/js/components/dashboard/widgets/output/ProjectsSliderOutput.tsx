@@ -47,13 +47,26 @@ export const ProjectsSliderOutput: React.FC<WidgetOutputProps> = ({
     }, [widget]);
 
     const page = usePage();
-    const siteTemplate = ((page?.props as Record<string, unknown>)?.site as Record<string, unknown>)?.template as string | undefined;
+    const pageProps = page?.props as Record<string, unknown>;
+    const siteTemplate = (pageProps?.site as Record<string, unknown>)?.template as string | undefined;
     const isSchool = siteTemplate === 'school';
+
+    const currentProjectSlug = (pageProps?.project as Record<string, unknown> | undefined)?.slug as string | undefined;
+    const isProjectPage = Boolean(currentProjectSlug);
+
+    const schoolConfig = useMemo(() => {
+        const baseTitle = config.title === 'Проекты' ? 'Проекты школы' : config.title;
+        return {
+            ...config,
+            title: isProjectPage ? 'Другие проекты школы' : baseTitle,
+            exclude_slug: isProjectPage ? currentProjectSlug : undefined,
+        };
+    }, [config, isProjectPage, currentProjectSlug]);
 
     return (
         <div className={className} style={style}>
             {isSchool ? (
-                <ProjectsSliderSchoolWidget config={{ ...config, title: config.title === 'Проекты' ? 'Проекты школы' : config.title }} />
+                <ProjectsSliderSchoolWidget config={schoolConfig} />
             ) : (
                 <ProjectsSliderWidget config={config} />
             )}

@@ -16,6 +16,7 @@ interface ProjectsSliderSchoolConfig {
     show_title?: boolean;
     organization_id?: number;
     limit?: number;
+    exclude_slug?: string;
 }
 
 interface Props {
@@ -28,6 +29,7 @@ export const ProjectsSliderSchoolWidget: React.FC<Props> = ({ config = {} }) => 
         show_title = true,
         organization_id,
         limit = 12,
+        exclude_slug,
     } = config;
 
     const {
@@ -37,7 +39,7 @@ export const ProjectsSliderSchoolWidget: React.FC<Props> = ({ config = {} }) => 
         error,
         activeCategory,
         setActiveCategory,
-    } = useProjectsSliderSchool(organization_id, limit);
+    } = useProjectsSliderSchool(organization_id, limit, exclude_slug);
 
     const swiperRef = useRef<SwiperType | null>(null);
     const navPrevRef = useRef<HTMLButtonElement>(null);
@@ -84,12 +86,20 @@ export const ProjectsSliderSchoolWidget: React.FC<Props> = ({ config = {} }) => 
                         </div>
                     </div>
                     {meta && (
-                        <div className="projects-slider-school__header-stats">
-                            <div className="projects-slider-school__total-target">
-                                {meta.total_target_formatted}
-                            </div>
-                            <div className="projects-slider-school__total-label">
-                                общая необходимая сумма
+                        <div className="projects-slider-school__header-stats-wrap">
+                            <img
+                                src="/icons/school-template/flash-circle-outline.svg"
+                                alt=""
+                                aria-hidden="true"
+                                className="projects-slider-school__header-stats-icon"
+                            />
+                            <div className="projects-slider-school__header-stats">
+                                <div className="projects-slider-school__total-target">
+                                    {meta.total_target_formatted}
+                                </div>
+                                <div className="projects-slider-school__total-label">
+                                    общая необходимая сумма
+                                </div>
                             </div>
                         </div>
                     )}

@@ -359,7 +359,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             {(site as { styles_css_url?: string | null }).styles_css_url && (
                 <link
                     rel="stylesheet"
-                    href={(site as { styles_css_url: string }).styles_css_url}
+                    href={
+                        (site as unknown as { styles_css_url: string })
+                            .styles_css_url
+                    }
                 />
             )}
             <Head title={seoData.title}>
@@ -466,17 +469,24 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                     })()}
                 </header>
 
-                {positionsByArea.hero.map((position) => (
-                    <section key={position.id} className="site-hero">
-                        {renderPosition(position, site.widgets_config)}
-                    </section>
-                ))}
+                {positionsByArea.hero
+                    .filter((position) => {
+                        if (!shouldShowPosition(position)) return false;
+                        const posWidgets =
+                            widgetsByPosition[position.slug] ?? [];
+                        return posWidgets.some((w) => shouldShowWidget(w));
+                    })
+                    .map((position) => (
+                        <section key={position.id} className="site-hero">
+                            {renderPosition(position, site.widgets_config)}
+                        </section>
+                    ))}
 
                 {/* Main Content */}
                 <main className="site-main">
                     <div className="p-lr-60 container mx-auto">
                         {breadcrumbs.length > 0 && (
-                            <div className="breadcrumbs__wrapper">
+                            <div className="breadcrumbs__wrapper school-p-lr-60">
                                 <Breadcrumbs breadcrumbs={breadcrumbs} />
                             </div>
                         )}

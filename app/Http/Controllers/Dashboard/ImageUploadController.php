@@ -383,6 +383,39 @@ class ImageUploadController extends Controller
     }
 
     /**
+     * Загрузить флаг региона
+     */
+    public function uploadRegionFlag(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|file|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $path = $request->file('image')->store('geo/region-flags', 'public');
+
+            return response()->json([
+                'success' => true,
+                'path'    => $path,
+                'url'     => asset('storage/' . $path),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при загрузке: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Удалить изображение
      */
     public function deleteImage(Request $request): JsonResponse

@@ -19,3 +19,25 @@
         text-align: center;
     }
 }
+
+.share-buttons-school {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    &__list {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+
+    &__slogan {
+        color: white;
+        font-size: 14px;
+        font-family: Montserrat, sans-serif;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: pre-line;
+    }
+}

@@ -15,21 +15,28 @@ class OrganizationClubsController extends Controller
         $organizationId = $request->filled('organization_id')
             ? (int) $request->input('organization_id')
             : null;
-        $limit = max(1, min((int) $request->get('limit', 20), 50));
+        $limit  = max(1, min((int) $request->get('limit', 20), 50));
+        $offset = max(0, (int) $request->get('offset', 0));
 
         if (!$organizationId || $organizationId < 1) {
-            return response()->json(['data' => []]);
+            return response()->json(['data' => [], 'total' => 0, 'has_more' => false]);
         }
 
         $organization = Organization::find($organizationId);
         if (!$organization) {
-            return response()->json(['data' => []]);
+            return response()->json(['data' => [], 'total' => 0, 'has_more' => false]);
         }
 
+        $total = $organization->clubs()->count();
         $clubs = $organization->clubs()
-            ->limit($limit)
+            ->skip($offset)
+            ->take($limit)
             ->get();
 
-        return OrganizationClubResource::collection($clubs)->response();
+        return response()->json([
+            'data'     => OrganizationClubResource::collection($clubs)->resolve($request),
+            'total'    => $total,
+            'has_more' => ($offset + $limit) < $total,
+        ]);
     }
 }

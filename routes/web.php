@@ -27,6 +27,8 @@ use App\Http\Controllers\PublicProjectDonationsController;
 use App\Http\Controllers\PublicOrganizationDonationsController;
 use App\Http\Controllers\PublicAlumniController;
 use App\Http\Controllers\PublicClubController;
+use App\Http\Controllers\PublicClubsAllController;
+use App\Http\Controllers\PublicVideoLessonsAllController;
 use App\Http\Controllers\PublicOrganizationController;
 use App\Http\Controllers\SitePreviewController;
 use App\Http\Controllers\Settings\ProfileController;
@@ -59,7 +61,9 @@ Route::get('/organizations', [MainSiteController::class, 'organizations'])->name
 Route::get('/organization/{slug}', [MainSiteController::class, 'organization'])->name('main-site.organization');
 Route::get('/projects', [PublicProjectController::class, 'index'])->name('main-site.projects');
 Route::get('/project/{slug}', [PublicProjectController::class, 'show'])->name('main-site.project');
+Route::get('/clubs', [PublicClubsAllController::class, 'index'])->name('public.clubs-all');
 Route::get('/club/{club}', [PublicClubController::class, 'show'])->name('public.club.show')->whereNumber('club');
+Route::get('/video-lessons', [PublicVideoLessonsAllController::class, 'index'])->name('public.video-lessons-all');
 Route::get('/news', [MainSiteController::class, 'news'])->name('main-site.news');
 Route::get('/news/{slug}', [MainSiteController::class, 'showNews'])->name('main-site.news.show');
 Route::get('/project/{project:slug}/sponsors', [PublicSponsorController::class, 'projectSponsors'])->name('main-site.project.sponsors');
@@ -217,6 +221,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/organizations/{organization}/projects/{project}', [ProjectController::class, 'destroy'])->name('organizations.projects.destroy');
         Route::post('/organizations/{organization}/projects/check-slug', [ProjectController::class, 'checkSlug'])->name('organizations.projects.check-slug');
 
+        // Project expense reports (dashboard CRUD)
+        Route::prefix('organizations/{organization}/projects/{project}/expense-reports')
+            ->name('organizations.projects.expense_reports.')
+            ->group(function () {
+                Route::get('/', [\App\Http\Controllers\Dashboard\ProjectExpenseReportController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Dashboard\ProjectExpenseReportController::class, 'store'])->name('store');
+                Route::put('/{expenseReport}', [\App\Http\Controllers\Dashboard\ProjectExpenseReportController::class, 'update'])->name('update');
+                Route::delete('/{expenseReport}', [\App\Http\Controllers\Dashboard\ProjectExpenseReportController::class, 'destroy'])->name('destroy');
+            });
+
         // Image upload routes
         Route::post('/api/upload/organization-logo', [ImageUploadController::class, 'uploadOrganizationLogo'])->name('api.upload.organization-logo');
         Route::post('/api/upload/bank-requisites-logo', [ImageUploadController::class, 'uploadBankRequisitesLogo'])->name('api.upload.bank-requisites-logo');
@@ -225,6 +239,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/api/upload/news-cover-image', [ImageUploadController::class, 'uploadNewsCoverImage'])->name('api.upload.news-cover-image');
         Route::post('/api/upload/news-gallery-image', [ImageUploadController::class, 'uploadNewsGalleryImage'])->name('api.upload.news-gallery-image');
         Route::post('/api/upload/text-widget-image', [ImageUploadController::class, 'uploadTextWidgetImage'])->name('api.upload.text-widget-image');
+        Route::post('/api/upload/region-flag', [ImageUploadController::class, 'uploadRegionFlag'])->name('api.upload.region-flag');
         Route::delete('/api/upload/delete-image', [ImageUploadController::class, 'deleteImage'])->name('api.upload.delete-image');
         Route::get('/api/upload/image-info', [ImageUploadController::class, 'getImageInfo'])->name('api.upload.image-info');
 
@@ -233,6 +248,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Global settings management (super admin only)
         Route::prefix('admin')->name('admin.')->group(function () {
+            // GEO management
+            Route::prefix('geo')->name('geo.')->group(function () {
+                Route::get('/regions', [\App\Http\Controllers\Dashboard\GeoRegionsController::class, 'index'])->name('regions.index');
+                Route::post('/regions', [\App\Http\Controllers\Dashboard\GeoRegionsController::class, 'store'])->name('regions.store');
+                Route::put('/regions/{region}', [\App\Http\Controllers\Dashboard\GeoRegionsController::class, 'update'])->name('regions.update');
+                Route::delete('/regions/{region}', [\App\Http\Controllers\Dashboard\GeoRegionsController::class, 'destroy'])->name('regions.destroy');
+                Route::patch('/regions/{region}/toggle-active', [\App\Http\Controllers\Dashboard\GeoRegionsController::class, 'toggleActive'])->name('regions.toggle-active');
+            });
+
             Route::get('/global-settings', [GlobalSettingsController::class, 'index'])->name('global-settings.index');
             Route::post('/global-settings/terminology', [GlobalSettingsController::class, 'updateTerminology'])->name('global-settings.terminology');
             Route::post('/global-settings/system', [GlobalSettingsController::class, 'updateSystemSettings'])->name('global-settings.system');

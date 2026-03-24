@@ -6,3 +6,4 @@
 export { formatHtml, cleanContentForOutput, removeImageCompletely } from './htmlFormatter';
 export { countWords, countWordsFromElement } from './wordCounter';
 export type { WordCountResult } from './wordCounter';
+export { cleanPastedHtml, convertPlainTextToHtml } from './pasteCleanup';

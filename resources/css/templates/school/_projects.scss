@@ -268,9 +268,22 @@
             }
         }
 
+        &__header-stats-wrap {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        &__header-stats-icon {
+            width: 66px;
+            height: 66px;
+            flex-shrink: 0;
+            margin-right: 14px;
+        }
+
         &__header-stats {
             flex-shrink: 0;
-            text-align: right;
+            text-align: left;
         }
 
         &__total-target {

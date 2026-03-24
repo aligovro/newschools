@@ -19,8 +19,9 @@ class ReferralController extends Controller
     public function leaderboard(int $organization, Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'per_page' => 'nullable|integer|min:1|max:100',
-            'sort_by' => 'nullable|string|in:amount,invites',
+            'per_page'   => 'nullable|integer|min:1|max:100',
+            'page'       => 'nullable|integer|min:1',
+            'sort_by'    => 'nullable|string|in:amount,invites',
             'sort_order' => 'nullable|string|in:asc,desc',
         ]);
 

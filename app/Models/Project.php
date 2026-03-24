@@ -43,6 +43,7 @@ class Project extends Model
         'seo_settings',
         'payment_settings',
         'has_stages',
+        'monthly_goal_amount',
     ];
 
     protected $casts = [
@@ -58,6 +59,7 @@ class Project extends Model
         'featured' => 'boolean',
         'has_stages' => 'boolean',
         'payment_settings' => 'array',
+        'monthly_goal_amount' => 'integer',
     ];
 
     protected $appends = [
@@ -109,6 +111,16 @@ class Project extends Model
     {
         return $this->belongsToMany(ProjectCategory::class, 'project_project_category')
             ->withTimestamps();
+    }
+
+    public function budgetItems(): HasMany
+    {
+        return $this->hasMany(ProjectBudgetItem::class)->orderBy('sort_order');
+    }
+
+    public function expenseReports(): HasMany
+    {
+        return $this->hasMany(ProjectExpenseReport::class)->orderByDesc('report_date');
     }
 
     // Скоупы

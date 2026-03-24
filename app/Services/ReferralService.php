@@ -12,13 +12,15 @@ class ReferralService
 {
     public function getOrganizationLeaderboard(int $organizationId, array $params = []): array
     {
-        $perPage = max(1, (int)($params['per_page'] ?? 10));
+        $perPage = max(1, min(100, (int)($params['per_page'] ?? 10)));
+        $page    = max(1, (int)($params['page'] ?? 1));
+        $offset  = ($page - 1) * $perPage;
         $sortBy = in_array(($params['sort_by'] ?? 'amount'), ['amount', 'invites'], true) ? $params['sort_by'] : 'amount';
         $sortOrder = strtolower($params['sort_order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
-        $cacheKey = sprintf('org:%d:referrals:leaderboard:%s', $organizationId, md5(json_encode([$perPage, $sortBy, $sortOrder])));
+        $cacheKey = sprintf('org:%d:referrals:leaderboard:%s', $organizationId, md5(json_encode([$perPage, $page, $sortBy, $sortOrder])));
 
-        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($organizationId, $perPage, $sortBy, $sortOrder) {
+        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($organizationId, $perPage, $page, $offset, $sortBy, $sortOrder) {
             // Aggregates: invites_count per referrer, total_amount per referrer
             $invitesSub = DB::table('users')
                 ->select('referred_by_id as referrer_user_id', DB::raw('COUNT(*) as invites_count'), DB::raw('MIN(created_at) as first_invite_at'))
@@ -50,7 +52,10 @@ class ReferralService
                 $query->orderBy('total_amount', $sortOrder)->orderBy('invites_count', 'desc');
             }
 
-            $rows = $query->limit($perPage)->get();
+            // Считаем общее количество (без limit/offset) для has_more
+            $total = (clone $query)->count();
+
+            $rows = $query->offset($offset)->limit($perPage)->get();
 
             $data = [];
             foreach ($rows as $index => $row) {
@@ -62,12 +67,12 @@ class ReferralService
                 $displayName = $row->name ?: ('Аноним #' . $row->referrer_user_id);
 
                 $data[] = [
-                    'position' => $index + 1,
-                    'referrer_user_id' => (int)$row->referrer_user_id,
-                    'name' => $displayName,
-                    'days_in_system' => $daysInSystem,
-                    'invites_count' => (int)$row->invites_count,
-                    'total_amount' => (int)$row->total_amount,
+                    'position'              => $offset + $index + 1,
+                    'referrer_user_id'      => (int)$row->referrer_user_id,
+                    'name'                  => $displayName,
+                    'days_in_system'        => $daysInSystem,
+                    'invites_count'         => (int)$row->invites_count,
+                    'total_amount'          => (int)$row->total_amount,
                     'formatted_total_amount' => number_format((int)$row->total_amount, 0, ',', ' ') . ' ₽',
                 ];
             }
@@ -75,9 +80,10 @@ class ReferralService
             return [
                 'data' => $data,
                 'meta' => [
-                    'page' => 1,
+                    'page'     => $page,
                     'per_page' => $perPage,
-                    'has_more' => false,
+                    'total'    => $total,
+                    'has_more' => ($offset + $perPage) < $total,
                 ],
             ];
         });

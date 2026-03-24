@@ -19,6 +19,8 @@ interface ShareButtonsConfig {
     networks?: string[];
     show_counts?: boolean;
     counts?: Record<string, number>;
+    slogan?: string;
+    show_slogan?: boolean;
 }
 
 const WhatsAppIcon = () => (
@@ -89,6 +91,8 @@ export const ShareButtonsOutput: React.FC<WidgetOutputProps> = ({
         networks = ['whatsapp', 'telegram', 'vk', 'max'],
         show_counts = true,
         counts = {},
+        slogan = '',
+        show_slogan = false,
     } = config;
 
     const resolvedUrl =
@@ -109,6 +113,8 @@ export const ShareButtonsOutput: React.FC<WidgetOutputProps> = ({
                     shareText={share_text}
                     networks={networks}
                     counts={counts}
+                    slogan={slogan}
+                    showSlogan={show_slogan}
                 />
             </div>
         );
