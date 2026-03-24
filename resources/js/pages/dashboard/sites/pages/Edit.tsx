@@ -9,6 +9,7 @@ interface Site {
     id: number;
     name: string;
     slug: string;
+    template?: string;
 }
 
 interface Page {
@@ -29,6 +30,7 @@ interface Page {
     published_at?: string;
     created_at: string;
     updated_at: string;
+    layout_config?: Record<string, unknown>;
 }
 
 interface ParentPage {

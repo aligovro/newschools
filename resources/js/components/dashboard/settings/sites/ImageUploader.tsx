@@ -8,6 +8,10 @@ import ReactCrop, {
 } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { widgetImageService } from '../../../../services/WidgetImageService';
+import {
+    getCroppedBlobAndFileMeta,
+    pixelCropToNaturalRect,
+} from '@/utils/imageCropExport';
 // Debug flag for verbose logging
 const DEBUG_CROP = false;
 
@@ -337,19 +341,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         // Масштаб между натуральными и отображаемыми пикселями
         const displayWidth = (sourceEl as HTMLImageElement).width;
         const displayHeight = (sourceEl as HTMLImageElement).height;
-        const scaleX =
-            (sourceEl as HTMLImageElement).naturalWidth / displayWidth;
-        const scaleY =
-            (sourceEl as HTMLImageElement).naturalHeight / displayHeight;
-
-        // Переводим рамку в натуральные пиксели исходника
-        const cropXNat = crop.x * scaleX;
-        const cropYNat = crop.y * scaleY;
-        const cropWNat = crop.width * scaleX;
-        const cropHNat = crop.height * scaleY;
-
-        const outWidth = Math.max(1, Math.floor(cropWNat));
-        const outHeight = Math.max(1, Math.floor(cropHNat));
+        const { sx, sy, sw, sh } = pixelCropToNaturalRect(
+            sourceEl as HTMLImageElement,
+            crop,
+        );
+        const outWidth = sw;
+        const outHeight = sh;
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -361,20 +358,25 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         // Очищаем канвас для сохранения прозрачности (важно для PNG/WEBP)
         ctx.clearRect(0, 0, outWidth, outHeight);
 
-        const radians = (rotateDeg * Math.PI) / 180;
-        const effScale = scaleVal;
+        const identity =
+            Math.abs(rotateDeg) < 1e-6 && Math.abs(scaleVal - 1) < 1e-6;
+        if (identity) {
+            ctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
+        } else {
+            const radians = (rotateDeg * Math.PI) / 180;
+            const effScale = scaleVal;
 
-        // Рисуем так, чтобы центр рамки совпал с центром выходного канваса
-        const cropCenterX = cropXNat + cropWNat / 2;
-        const cropCenterY = cropYNat + cropHNat / 2;
+            const cropCenterX = sx + sw / 2;
+            const cropCenterY = sy + sh / 2;
 
-        ctx.save();
-        ctx.translate(outWidth / 2, outHeight / 2);
-        ctx.rotate(radians);
-        ctx.scale(effScale, effScale);
-        ctx.translate(-cropCenterX, -cropCenterY);
-        ctx.drawImage(image, 0, 0);
-        ctx.restore();
+            ctx.save();
+            ctx.translate(outWidth / 2, outHeight / 2);
+            ctx.rotate(radians);
+            ctx.scale(effScale, effScale);
+            ctx.translate(-cropCenterX, -cropCenterY);
+            ctx.drawImage(image, 0, 0);
+            ctx.restore();
+        }
 
         if (DEBUG_CROP) {
             console.groupCollapsed('[Uploader] getCroppedImg');
@@ -383,27 +385,24 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 h: (sourceEl as HTMLImageElement).naturalHeight,
             });
             console.log('displayed:', { w: displayWidth, h: displayHeight });
-            console.log('scaleX/scaleY:', { scaleX, scaleY });
-            console.log('incoming crop (px):', crop);
-            console.log('computed nat crop:', {
-                cropXNat,
-                cropYNat,
-                cropWNat,
-                cropHNat,
+            console.log('scaleX/scaleY:', {
+                scaleX:
+                    (sourceEl as HTMLImageElement).naturalWidth / displayWidth,
+                scaleY:
+                    (sourceEl as HTMLImageElement).naturalHeight / displayHeight,
             });
+            console.log('incoming crop (px):', crop);
+            console.log('computed nat crop:', { sx, sy, sw, sh });
             console.log('rotate/scale:', { rotateDeg, scaleVal });
             console.log('out:', { outWidth, outHeight });
             console.groupEnd();
         }
 
         return new Promise((resolve) => {
-            // Используем максимальное качество без потерь
-            const quality = 1.0;
-            
-            // Если исходник поддерживает прозрачность, сохраняем в PNG, иначе в JPEG
-            const exportType = (fileType === 'image/png' || fileType === 'image/webp' || fileType === 'image/gif') 
-                ? 'image/png' 
-                : 'image/jpeg';
+            const { blobMime, jpegQuality } = getCroppedBlobAndFileMeta(
+                fileType,
+                { jpegQuality: 1.0 },
+            );
 
             canvas.toBlob(
                 (blob) => {
@@ -414,8 +413,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                         );
                     resolve(blob);
                 },
-                exportType,
-                quality,
+                blobMime,
+                blobMime === 'image/jpeg' ? jpegQuality : undefined,
             );
         });
     };

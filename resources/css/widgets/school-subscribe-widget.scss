@@ -438,6 +438,7 @@
         color: #1A1A1A;
         outline: none;
         transition: border-color 0.2s;
+        box-sizing: border-box;
 
         &::placeholder {
             color: #B5B9C3;
@@ -450,6 +451,62 @@
         &:disabled {
             background: #F5F6F8;
             color: #B5B9C3;
+        }
+    }
+
+    // RussianPhoneInput: класс на обёртке; глобальный .phone-input перекрывает высоту/радиус (см. phone-input.scss)
+    &__input.phone-input {
+        display: flex;
+        align-items: center;
+        height: 44px;
+        padding: 0;
+        border: 1px solid #e8ecf3;
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: none;
+        transition: border-color 0.2s;
+
+        &:focus-within {
+            border-color: #3259ff;
+            box-shadow: none;
+        }
+
+        &:has(.phone-input__field:disabled) {
+            background: #f5f6f8;
+            color: #b5b9c3;
+
+            .phone-input__prefix,
+            .phone-input__field {
+                color: #b5b9c3;
+            }
+        }
+
+        .phone-input__prefix {
+            flex-shrink: 0;
+            padding-left: 20px;
+            padding-right: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.2;
+            color: #1a1a1a;
+        }
+
+        .phone-input__field {
+            flex: 1;
+            min-width: 0;
+            height: 100%;
+            padding: 0 20px 0 0;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.2;
+            color: #1a1a1a;
+
+            &::placeholder {
+                color: #b5b9c3;
+            }
         }
     }
 

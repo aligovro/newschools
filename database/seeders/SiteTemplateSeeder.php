@@ -115,6 +115,7 @@ class SiteTemplateSeeder extends Seeder
                     'contact',
                     'form',
                     'teachers_slider',
+                    'partners_slider',
                     'clubs',
                     'club_schedule',
                     'video_lessons',

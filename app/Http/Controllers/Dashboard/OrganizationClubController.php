@@ -60,6 +60,14 @@ class OrganizationClubController extends Controller
 
         $club = $organization->clubs()->create($data);
 
+        if ($request->hasFile('gallery')) {
+            $galleryPaths = [];
+            foreach ($request->file('gallery') as $image) {
+                $galleryPaths[] = $image->store('organization-clubs/gallery', 'public');
+            }
+            $club->update(['gallery' => $galleryPaths]);
+        }
+
         return response()->json([
             'message' => 'Кружок/секция успешно создан',
             'data' => new OrganizationClubResource($club),
@@ -98,6 +106,29 @@ class OrganizationClubController extends Controller
 
         $club->update($data);
 
+        $shouldSyncGallery = $request->has('gallery_sync')
+            || $request->has('existing_gallery')
+            || $request->hasFile('gallery');
+
+        if ($shouldSyncGallery) {
+            $finalGallery = [];
+            $existingFromRequest = $request->input('existing_gallery', []);
+
+            if (is_array($existingFromRequest)) {
+                $finalGallery = array_map(function ($path) {
+                    return ltrim(str_replace('/storage/', '', (string) $path), '/');
+                }, $existingFromRequest);
+            }
+
+            if ($request->hasFile('gallery')) {
+                foreach ($request->file('gallery') as $image) {
+                    $finalGallery[] = $image->store('organization-clubs/gallery', 'public');
+                }
+            }
+
+            $club->update(['gallery' => $finalGallery]);
+        }
+
         return response()->json([
             'message' => 'Кружок/секция успешно обновлён',
             'data' => new OrganizationClubResource($club->fresh()),
@@ -112,6 +143,14 @@ class OrganizationClubController extends Controller
 
         if ($club->image && Storage::disk('public')->exists($club->image)) {
             Storage::disk('public')->delete($club->image);
+        }
+
+        if ($club->gallery) {
+            foreach ($club->gallery as $imagePath) {
+                if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                    Storage::disk('public')->delete($imagePath);
+                }
+            }
         }
 
         $club->delete();

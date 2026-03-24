@@ -1,6 +1,7 @@
 import { GalleryModal } from '@/components/main-site/GalleryModal';
 import { GallerySlider } from '@/components/main-site/GallerySlider';
 import ShareButton from '@/components/ui/ShareButton';
+import { cn } from '@/lib/utils';
 import MainLayout from '@/layouts/MainLayout';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Calendar, Tag } from 'lucide-react';
@@ -62,6 +63,10 @@ export default function NewsShow({
     news,
     seo,
 }: NewsShowProps) {
+    const hideOrganizationLink = site?.site_type === 'organization';
+    const isSchoolNewsShowLayout =
+        site?.site_type === 'organization' && site?.template === 'school';
+
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
     const [initialSlide, setInitialSlide] = useState(0);
 
@@ -94,14 +99,21 @@ export default function NewsShow({
                 { title: news.title, href: '' },
             ]}
         >
-            <div className="space-y-8">
-                <Link
-                    href="/news"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Все новости
-                </Link>
+            <div
+                className={cn(
+                    'space-y-8',
+                    isSchoolNewsShowLayout && 'school-p-lr-60',
+                )}
+            >
+                {!isSchoolNewsShowLayout && (
+                    <Link
+                        href="/news"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Все новости
+                    </Link>
+                )}
 
                 {galleryImages.length > 1 ? (
                     <div>
@@ -133,7 +145,7 @@ export default function NewsShow({
                             {formattedDate}
                         </span>
                     )}
-                    {news.type && (
+                    {news.type && !isSchoolNewsShowLayout && (
                         <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
                             {news.type === 'event'
                                 ? 'Событие'
@@ -159,7 +171,7 @@ export default function NewsShow({
                             {news.subtitle}
                         </p>
                     )}
-                    {news.organization?.name && (
+                    {news.organization?.name && !hideOrganizationLink && (
                         <Link
                             href={
                                 news.organization.slug
@@ -189,7 +201,7 @@ export default function NewsShow({
 
                 {news.content && (
                     <div
-                        className="prose prose-lg max-w-none prose-headings:font-semibold prose-img:rounded-2xl"
+                        className="prose prose-lg prose-headings:font-semibold prose-img:rounded-2xl max-w-none"
                         dangerouslySetInnerHTML={{ __html: news.content }}
                     />
                 )}
@@ -210,4 +222,3 @@ export default function NewsShow({
         </MainLayout>
     );
 }
-

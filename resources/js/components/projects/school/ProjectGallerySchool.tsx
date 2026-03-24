@@ -7,9 +7,17 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 
 interface Props {
     images: string[];
+    /** По умолчанию: «Фотографии проекта» */
+    heading?: string;
+    /** Префикс для alt у слайдов */
+    imageAltPrefix?: string;
 }
 
-const ProjectGallerySchool: React.FC<Props> = ({ images }) => {
+const ProjectGallerySchool: React.FC<Props> = ({
+    images,
+    heading = 'Фотографии проекта',
+    imageAltPrefix = 'Фото проекта',
+}) => {
     const swiperRef = useRef<SwiperType | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
     const [isBeginning, setIsBeginning] = useState(true);
@@ -37,7 +45,7 @@ const ProjectGallerySchool: React.FC<Props> = ({ images }) => {
 
     return (
         <section className="project-gallery-school">
-            <h2 className="project-gallery-school__heading">Фотографии проекта</h2>
+            <h2 className="project-gallery-school__heading">{heading}</h2>
 
             <div className="project-gallery-school__slider-wrap">
                 <Swiper
@@ -54,7 +62,7 @@ const ProjectGallerySchool: React.FC<Props> = ({ images }) => {
                         <SwiperSlide key={idx}>
                             <img
                                 src={src}
-                                alt={`Фото проекта ${idx + 1}`}
+                                alt={`${imageAltPrefix} ${idx + 1}`}
                                 className="project-gallery-school__img"
                                 loading="lazy"
                                 onClick={() => handleImageClick(idx)}

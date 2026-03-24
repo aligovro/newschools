@@ -18,6 +18,7 @@ export interface Locality {
     region_id: number;
 }
 
+import type { UploadedImage } from '@/components/ui/image-uploader/MultiImageUploader';
 import type { MoneyAmount } from '@/types/money';
 
 export interface OrganizationLite {
@@ -81,6 +82,7 @@ export interface OrganizationClubMember {
     name: string;
     description?: string | null;
     image?: string | null;
+    gallery?: string[];
     sort_order?: number;
     schedule?: ClubSchedule;
 }
@@ -173,6 +175,8 @@ export interface ClubFormData {
     name: string;
     description: string;
     image: File | string | null;
+    /** Состояние галереи для MultiImageUploader */
+    galleryItems: UploadedImage[];
     sort_order: number;
     schedule?: ClubSchedule;
 }

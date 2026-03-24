@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import ReactCrop, {
     centerCrop,
+    convertToPixelCrop,
     Crop,
     makeAspectCrop,
     PixelCrop,
@@ -18,6 +19,11 @@ import {
     Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/helpers';
+import {
+    inferImageMimeFromSrc,
+    getCroppedBlobAndFileMeta,
+    pixelCropToNaturalRect,
+} from '@/utils/imageCropExport';
 
 export interface LogoUploaderProps {
     value?: string | File | null;
@@ -55,6 +61,8 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>('');
+    /** MIME файла/URL, с которого открыли кроп (для корректного PNG vs JPEG после обрезки). */
+    const [cropSourceMime, setCropSourceMime] = useState<string | null>(null);
 
     const imgRef = useRef<HTMLImageElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,6 +152,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
         }
 
         // Для обычных изображений показываем кроп
+        setCropSourceMime(file.type);
         const reader = new FileReader();
         reader.addEventListener('load', () => {
             const src = reader.result?.toString() || '';
@@ -202,9 +211,17 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
                 height,
             );
             setCrop(initial);
+            setCompletedCrop(initial);
         } else {
-            // Свободная рамка - занимает всю область изображения
-            setCrop({ unit: '%', x: 0, y: 0, width: 100, height: 100 });
+            // Свободная рамка на весь кадр — pixel crop из библиотеки, чтобы ширина/высота
+            // совпадали с layout img и не было «зазора» на узких strip-логотипах
+            const full = convertToPixelCrop(
+                { unit: '%', x: 0, y: 0, width: 100, height: 100 },
+                width,
+                height,
+            );
+            setCrop(full);
+            setCompletedCrop(full);
         }
     }, [aspectRatio]);
 
@@ -214,50 +231,53 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
         crop: PixelCrop,
         rotateDeg: number,
         scaleVal: number,
+        blobMime: string,
+        jpegQuality?: number,
     ): Promise<Blob | null> => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error('No 2d context');
 
-        // Используем натуральные размеры изображения для точных расчетов
-        const naturalWidth = image.naturalWidth;
-        const naturalHeight = image.naturalHeight;
-        
-        // Получаем отрендеренные размеры (с учетом CSS трансформаций)
-        const displayWidth = image.width;
-        const displayHeight = image.height;
-
-        // Вычисляем масштаб между отрендеренным и натуральным размером
-        const scaleX = naturalWidth / displayWidth;
-        const scaleY = naturalHeight / displayHeight;
-
-        // Применяем масштаб к координатам обрезки
-        const cropX = crop.x * scaleX;
-        const cropY = crop.y * scaleY;
-        const cropW = crop.width * scaleX;
-        const cropH = crop.height * scaleY;
-
-        const outputWidth = Math.max(1, Math.floor(cropW));
-        const outputHeight = Math.max(1, Math.floor(cropH));
+        const { sx, sy, sw, sh } = pixelCropToNaturalRect(image, crop);
+        const outputWidth = sw;
+        const outputHeight = sh;
 
         canvas.width = outputWidth;
         canvas.height = outputHeight;
         ctx.imageSmoothingQuality = 'high';
+        ctx.clearRect(0, 0, outputWidth, outputHeight);
 
-        const radians = (rotateDeg * Math.PI) / 180;
-        const centerX = outputWidth / 2;
-        const centerY = outputHeight / 2;
+        const identity =
+            Math.abs(rotateDeg) < 1e-6 && Math.abs(scaleVal - 1) < 1e-6;
+        if (identity) {
+            // Прямое копирование региона без матрицы — без дробной ошибки по краям.
+            ctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
+        } else {
+            const radians = (rotateDeg * Math.PI) / 180;
+            const centerX = outputWidth / 2;
+            const centerY = outputHeight / 2;
+            const cropCenterX = sx + sw / 2;
+            const cropCenterY = sy + sh / 2;
 
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(radians);
-        ctx.scale(scaleVal, scaleVal);
-        ctx.translate(-cropX - cropW / 2, -cropY - cropH / 2);
-        ctx.drawImage(image, 0, 0);
-        ctx.restore();
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(radians);
+            ctx.scale(scaleVal, scaleVal);
+            ctx.translate(-cropCenterX, -cropCenterY);
+            ctx.drawImage(image, 0, 0);
+            ctx.restore();
+        }
 
         return new Promise((resolve) => {
-            canvas.toBlob(resolve, 'image/jpeg', 0.92);
+            if (blobMime === 'image/png') {
+                canvas.toBlob((b) => resolve(b), 'image/png');
+            } else {
+                canvas.toBlob(
+                    (b) => resolve(b),
+                    'image/jpeg',
+                    jpegQuality ?? 0.92,
+                );
+            }
         });
     };
 
@@ -276,11 +296,22 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
                 throw new Error('Изображение еще не загружено');
             }
 
-            const blob = await getCroppedImg(image, completedCrop, rotate, scale);
+            const sourceMime = cropSourceMime || inferImageMimeFromSrc(imgSrc);
+            const { blobMime, fileExtension, jpegQuality } =
+                getCroppedBlobAndFileMeta(sourceMime);
+
+            const blob = await getCroppedImg(
+                image,
+                completedCrop,
+                rotate,
+                scale,
+                blobMime,
+                jpegQuality,
+            );
             if (!blob) return;
 
-            const file = new File([blob], 'logo-cropped.jpg', {
-                type: 'image/jpeg',
+            const file = new File([blob], `logo-cropped.${fileExtension}`, {
+                type: blobMime,
             });
 
             let finalUrl: string;
@@ -299,7 +330,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
         } finally {
             setIsUploading(false);
         }
-    }, [completedCrop, imgSrc, rotate, scale, onUpload, onChange]);
+    }, [completedCrop, imgSrc, cropSourceMime, rotate, scale, onUpload, onChange]);
 
     // Отмена кропа
     const handleCancelCrop = useCallback(() => {
@@ -308,6 +339,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
         setCompletedCrop(undefined);
         setScale(1);
         setRotate(0);
+        setCropSourceMime(null);
     }, []);
 
     // Сброс изображения
@@ -319,15 +351,22 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
         setScale(1);
         setRotate(0);
         setUploadError(null);
+        setCropSourceMime(null);
         onChange(null);
     }, [onChange]);
 
     // Редактирование существующего изображения
     const handleEdit = useCallback(() => {
-        if (imgSrc) {
-            setShowCropModal(true);
+        if (!imgSrc) return;
+        if (typeof value === 'string') {
+            setCropSourceMime(inferImageMimeFromSrc(value));
+        } else if (value instanceof File && value.type.startsWith('image/')) {
+            setCropSourceMime(value.type);
+        } else {
+            setCropSourceMime(inferImageMimeFromSrc(imgSrc));
         }
-    }, [imgSrc]);
+        setShowCropModal(true);
+    }, [imgSrc, value]);
 
     return (
         <div className={cn('logo-uploader', className)}>

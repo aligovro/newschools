@@ -1,37 +1,23 @@
+import type { ClubPublicView } from '@/components/clubs/clubPublicTypes';
+import ClubShowSchoolLayout from '@/components/clubs/school/ClubShowSchoolLayout';
 import { ClubSignUpModal } from '@/components/dashboard/widgets/ClubSignUpModal';
 import type { WidgetData, WidgetPosition } from '@/components/dashboard/site-builder/types';
+import type { ClubScheduleMap } from '@/components/clubs/school/ClubScheduleBoard';
+import type { ClubSignUpPayload } from '@/components/clubs/clubSignUpTypes';
 import { submitClubApplication } from '@/lib/api/public';
 import MainLayout from '@/layouts/MainLayout';
 import { Head } from '@inertiajs/react';
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
-interface ClubSchedule {
-    mon?: string | null;
-    tue?: string | null;
-    wed?: string | null;
-    thu?: string | null;
-    fri?: string | null;
-    sat?: string | null;
-    sun?: string | null;
-}
-
-const DAY_LABELS: Record<keyof ClubSchedule, string> = {
-    mon: 'Пн', tue: 'Вт', wed: 'Ср', thu: 'Чт',
-    fri: 'Пт', sat: 'Сб', sun: 'Вс',
+const DAY_LABELS: Record<keyof ClubScheduleMap, string> = {
+    mon: 'Пн',
+    tue: 'Вт',
+    wed: 'Ср',
+    thu: 'Чт',
+    fri: 'Пт',
+    sat: 'Сб',
+    sun: 'Вс',
 };
-
-interface ClubData {
-    id: number;
-    name: string;
-    description?: string | null;
-    image?: string | null;
-    schedule?: ClubSchedule | null;
-    organization?: {
-        id: number;
-        name: string;
-        phone?: string | null;
-    } | null;
-}
 
 interface Site {
     id: number;
@@ -49,7 +35,7 @@ interface Site {
 
 interface Props {
     site: Site;
-    club: ClubData;
+    club: ClubPublicView;
     positions?: WidgetPosition[];
     position_settings?: Array<{
         position_slug: string;
@@ -71,23 +57,21 @@ export default function ClubShow({
     seo,
 }: Props) {
     const [modalOpen, setModalOpen] = useState(false);
+    const isSchool = site.template === 'school';
 
-    const handleSignUpSubmit = useCallback(
-        async (payload: import('@/components/dashboard/widgets/ClubSignUpModal').ClubSignUpPayload) => {
-            await submitClubApplication({
-                club_id:         payload.clubId,
-                organization_id: payload.organizationId,
-                club_name:       payload.clubName,
-                name:            payload.name,
-                phone:           payload.phone,
-                comment:         payload.comment,
-            });
-        },
-        [],
-    );
+    const handleSignUpSubmit = useCallback(async (payload: ClubSignUpPayload) => {
+        await submitClubApplication({
+            club_id: payload.clubId,
+            organization_id: payload.organizationId,
+            club_name: payload.clubName,
+            name: payload.name,
+            phone: payload.phone,
+            comment: payload.comment,
+        });
+    }, []);
 
     const scheduleEntries = club.schedule
-        ? (Object.entries(DAY_LABELS) as [keyof ClubSchedule, string][]).filter(
+        ? (Object.entries(DAY_LABELS) as [keyof ClubScheduleMap, string][]).filter(
               ([day]) => club.schedule![day] && String(club.schedule![day]).trim(),
           )
         : [];
@@ -111,79 +95,96 @@ export default function ClubShow({
         >
             <Head title={pageTitle} />
 
-            <article className="club-show w-full">
-                {/* Обложка */}
-                {club.image && (
-                    <div className="club-show__image-wrap">
-                        <img
-                            src={club.image}
-                            alt={club.name}
-                            className="club-show__image"
-                            loading="eager"
-                        />
-                    </div>
-                )}
+            {isSchool ? (
+                <ClubShowSchoolLayout club={club} onSignUpSubmit={handleSignUpSubmit} />
+            ) : (
+                <article className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8">
+                    {club.image && (
+                        <div className="overflow-hidden rounded-2xl">
+                            <img
+                                src={club.image}
+                                alt={club.name}
+                                className="max-h-[420px] w-full object-cover"
+                                loading="eager"
+                            />
+                        </div>
+                    )}
 
-                <div className="club-show__body">
-                    <header className="club-show__header">
-                        <h1 className="club-show__title">{club.name}</h1>
+                    <header className="space-y-1">
+                        <h1 className="text-3xl font-bold text-neutral-900">{club.name}</h1>
                         {club.organization && (
-                            <p className="club-show__org">{club.organization.name}</p>
+                            <p className="text-sm text-neutral-600">{club.organization.name}</p>
                         )}
                     </header>
 
-                    {/* Расписание */}
                     {scheduleEntries.length > 0 && (
-                        <section className="club-show__schedule">
-                            <h2 className="club-show__section-title">Расписание</h2>
-                            <ul className="club-show__schedule-list">
+                        <section>
+                            <h2 className="mb-3 text-lg font-semibold">Расписание</h2>
+                            <ul className="space-y-2">
                                 {scheduleEntries.map(([day, label]) => (
-                                    <li key={day} className="club-show__schedule-item">
-                                        <span className="club-show__schedule-day">{label}</span>
-                                        <span className="club-show__schedule-time">
-                                            {club.schedule![day]}
-                                        </span>
+                                    <li key={day} className="flex gap-4 text-sm">
+                                        <span className="w-8 font-semibold">{label}</span>
+                                        <span className="text-neutral-600">{club.schedule![day]}</span>
                                     </li>
                                 ))}
                             </ul>
                         </section>
                     )}
 
-                    {/* Описание */}
                     {club.description && (
-                        <section className="club-show__description">
-                            <p>{club.description}</p>
+                        <section className="prose prose-neutral max-w-none text-neutral-800">
+                            <p className="whitespace-pre-wrap">{club.description}</p>
                         </section>
                     )}
 
-                    {/* Контакт */}
+                    {club.gallery && club.gallery.length > 0 && (
+                        <section>
+                            <h2 className="mb-3 text-lg font-semibold">Галерея</h2>
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                {club.gallery.map((src, i) => (
+                                    <img
+                                        key={i}
+                                        src={src}
+                                        alt=""
+                                        className="aspect-video w-full rounded-lg object-cover"
+                                        loading="lazy"
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
                     {club.organization?.phone && (
-                        <p className="club-show__phone">
+                        <p className="text-sm text-neutral-600">
                             Телефон:{' '}
-                            <a href={`tel:${club.organization.phone}`} className="club-show__phone-link">
+                            <a
+                                href={`tel:${club.organization.phone}`}
+                                className="font-semibold text-neutral-900 underline"
+                            >
                                 {club.organization.phone}
                             </a>
                         </p>
                     )}
 
-                    {/* Кнопка записи */}
                     <button
                         type="button"
-                        className="club-show__signup-btn"
+                        className="inline-flex rounded-full bg-blue-600 px-7 py-3.5 text-sm font-bold text-white hover:bg-blue-700"
                         onClick={() => setModalOpen(true)}
                     >
                         Записаться
                     </button>
-                </div>
-            </article>
+                </article>
+            )}
 
-            <ClubSignUpModal
-                open={modalOpen}
-                onOpenChange={setModalOpen}
-                club={{ id: club.id, name: club.name }}
-                organizationId={club.organization?.id}
-                onSubmit={handleSignUpSubmit}
-            />
+            {!isSchool && (
+                <ClubSignUpModal
+                    open={modalOpen}
+                    onOpenChange={setModalOpen}
+                    club={{ id: club.id, name: club.name }}
+                    organizationId={club.organization?.id}
+                    onSubmit={handleSignUpSubmit}
+                />
+            )}
         </MainLayout>
     );
 }

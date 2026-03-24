@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import LogoUploader from '@/components/ui/image-uploader/LogoUploader';
+import MultiImageUploader from '@/components/ui/image-uploader/MultiImageUploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -95,6 +96,24 @@ export default function OrganizationClubModal({
                                     file ?? null,
                                 )
                             }
+                        />
+                    </div>
+                    <div>
+                        <Label className="mb-2 block">Галерея</Label>
+                        <MultiImageUploader
+                            images={formData.galleryItems}
+                            onChange={(images) =>
+                                onFormDataChange('galleryItems', images)
+                            }
+                            maxFiles={10}
+                            maxSize={2 * 1024 * 1024}
+                            onUpload={async (file) => URL.createObjectURL(file)}
+                            enableSorting
+                            enableDeletion
+                            showPreview
+                            showFileInfo
+                            layout="grid"
+                            previewSize="md"
                         />
                     </div>
                     <div>

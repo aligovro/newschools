@@ -39,6 +39,7 @@ import { AuthMenuWidgetModal } from './modals/AuthMenuWidgetModal';
 import { CityOrganizationsWidgetModal } from './modals/CityOrganizationsWidgetModal';
 import { ProjectsSliderWidgetModal } from './modals/ProjectsSliderWidgetModal';
 import { TeachersSliderWidgetModal } from './modals/TeachersSliderWidgetModal';
+import { PartnersSliderWidgetModal } from './modals/PartnersSliderWidgetModal';
 import { ClubsWidgetModal } from './modals/ClubsWidgetModal';
 import { ClubScheduleWidgetModal } from './modals/ClubScheduleWidgetModal';
 import { VideoLessonsWidgetModal } from './modals/VideoLessonsWidgetModal';
@@ -467,6 +468,16 @@ export const WidgetEditModal: React.FC<WidgetEditModalProps> = ({
             case 'teachers_slider': {
                 return (
                     <TeachersSliderWidgetModal
+                        widget={widget}
+                        pendingConfig={_pendingConfig}
+                        onConfigUpdate={handleSetPendingConfig}
+                    />
+                );
+            }
+
+            case 'partners_slider': {
+                return (
+                    <PartnersSliderWidgetModal
                         widget={widget}
                         pendingConfig={_pendingConfig}
                         onConfigUpdate={handleSetPendingConfig}

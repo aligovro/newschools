@@ -5,6 +5,16 @@ import type {
     ClubFormData,
 } from '@/components/dashboard/pages/organizations/types';
 
+/** Путь в storage из URL с /storage/ или полного URL */
+function storagePathFromUrl(url: string): string {
+    const marker = '/storage/';
+    const i = url.indexOf(marker);
+    if (i !== -1) {
+        return url.slice(i + marker.length).replace(/^\/+/, '');
+    }
+    return url.replace(/^\/+/, '');
+}
+
 interface UseOrganizationClubsOptions {
     organizationId: number;
     initialClubs?: OrganizationClubMember[];
@@ -83,6 +93,24 @@ export function useOrganizationClubs({
             }
             if (formData.image && formData.image instanceof File) {
                 fd.append('image', formData.image);
+            }
+
+            const existingGallery = formData.galleryItems
+                .filter((img) => !img.file)
+                .map((img) => storagePathFromUrl(img.url));
+            existingGallery.forEach((path, i) => {
+                fd.append(`existing_gallery[${i}]`, path);
+            });
+
+            const newGalleryFiles = formData.galleryItems
+                .filter((img) => img.file)
+                .map((img) => img.file!);
+            newGalleryFiles.forEach((file) => {
+                fd.append('gallery[]', file);
+            });
+
+            if (editingId) {
+                fd.append('gallery_sync', '1');
             }
 
             const url = editingId

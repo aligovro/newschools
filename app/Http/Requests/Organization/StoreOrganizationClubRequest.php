@@ -26,6 +26,8 @@ class StoreOrganizationClubRequest extends FormRequest
             'schedule.fri' => ['nullable', 'string', 'max:20'],
             'schedule.sat' => ['nullable', 'string', 'max:20'],
             'schedule.sun' => ['nullable', 'string', 'max:20'],
+            'gallery' => ['nullable', 'array', 'max:10'],
+            'gallery.*' => ['file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
     }
 
@@ -33,6 +35,7 @@ class StoreOrganizationClubRequest extends FormRequest
     {
         return [
             'name.required' => 'Название кружка/секции обязательно.',
+            'gallery.max' => 'Можно загрузить максимум 10 изображений',
         ];
     }
 }

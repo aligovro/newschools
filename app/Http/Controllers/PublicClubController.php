@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\GetsSiteWidgetsData;
+use App\Http\Resources\OrganizationClubResource;
 use App\Models\OrganizationClub;
 use App\Models\Site;
 use App\Services\OrganizationSiteByDomainService;
-use App\Services\Seo\SeoPresenter;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,7 +17,6 @@ class PublicClubController extends Controller
 
     public function __construct(
         private readonly OrganizationSiteByDomainService $domainService,
-        private readonly SeoPresenter $seoPresenter,
     ) {}
 
     public function show(Request $request, int $club): Response
@@ -52,18 +51,12 @@ class PublicClubController extends Controller
             abort(404, 'Секция не найдена');
         }
 
-        $clubData = [
-            'id'          => $clubModel->id,
-            'name'        => $clubModel->name,
-            'description' => $clubModel->description,
-            'image'       => $clubModel->image_url,
-            'schedule'    => $clubModel->schedule,
-            'organization' => $clubModel->organization ? [
-                'id'    => $clubModel->organization->id,
-                'name'  => $clubModel->organization->name,
-                'phone' => $clubModel->organization->phone,
-            ] : null,
-        ];
+        $clubData = (new OrganizationClubResource($clubModel))->resolve($request);
+        $clubData['organization'] = $clubModel->organization ? [
+            'id'    => $clubModel->organization->id,
+            'name'  => $clubModel->organization->name,
+            'phone' => $clubModel->organization->phone,
+        ] : null;
 
         $siteData = $this->getSiteWidgetsAndPositionsFor($site);
 

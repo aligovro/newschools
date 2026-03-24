@@ -1,0 +1,339 @@
+// Страница «О школе» (шаблон страницы about + site template school)
+
+.site-preview.site-template--school {
+    .school-about-page {
+        max-width: 1362px;
+        margin-inline: auto;
+    }
+
+    // Герой: как в макете — текст слева (~530px), изображение справа (~696px); на узких экранах — колонка: заголовок и лид, затем картинка.
+    .school-about-hero {
+        display: grid;
+        gap: 2rem;
+        align-items: start;
+        margin-bottom: 2.5rem;
+        scroll-margin-top: calc(var(--site-anchor-offset, 0px) + 1rem);
+
+        @media (min-width: 1024px) {
+            grid-template-columns: minmax(0, 530px) minmax(0, 696px);
+            justify-content: space-between;
+            column-gap: clamp(2rem, 5vw, 4.75rem);
+        }
+    }
+
+    .school-about-hero__text {
+        min-width: 0;
+    }
+
+    .school-about-hero__title {
+        margin: 0 0 1rem;
+        font-size: clamp(2rem, 4vw, 2.5rem);
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .school-about-hero__lead {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.4;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .school-about-hero__media {
+        margin: 0;
+        min-width: 0;
+    }
+
+    .school-about-hero__image {
+        display: block;
+        width: 100%;
+        max-width: 696px;
+        height: auto;
+        max-height: 438px;
+        border-radius: 50px;
+        object-fit: cover;
+        margin-inline: auto;
+
+        @media (min-width: 1024px) {
+            margin-inline: 0 0 auto;
+        }
+    }
+
+    .school-about-anchor-nav {
+        margin-bottom: 2.5rem;
+    }
+
+    .school-about-anchor-nav__list {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .school-about-anchor-nav__chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        padding: 0.5rem 0.75rem;
+        border-radius: 24px;
+        border: 1px solid var(--school-border, #e8ecf3);
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+        text-decoration: none;
+        transition:
+            border-color 0.15s ease,
+            background 0.15s ease;
+
+        &:hover {
+            border-color: var(--school-accent, #96bdff);
+            background: rgba(150, 189, 255, 0.08);
+        }
+    }
+
+    .school-about-section {
+        scroll-margin-top: calc(var(--site-anchor-offset, 0px) + 1rem);
+        padding-top: var(--school-section-y, 80px);
+        padding-bottom: var(--school-section-y, 80px);
+
+        &:first-of-type {
+            padding-top: 0;
+        }
+    }
+
+    .school-about-section--mission {
+        padding-top: 0;
+    }
+
+    .school-about-mission {
+        display: grid;
+        gap: 2rem;
+        align-items: start;
+
+        @media (min-width: 1024px) {
+            grid-template-columns: minmax(0, 696px) minmax(0, 530px);
+            justify-content: space-between;
+            column-gap: clamp(2rem, 5vw, 4.75rem);
+        }
+    }
+
+    .school-about-mission--image-right {
+        @media (min-width: 1024px) {
+            grid-template-columns: minmax(0, 530px) minmax(0, 696px);
+
+            .school-about-mission__text {
+                order: 1;
+            }
+
+            .school-about-mission__figure {
+                order: 2;
+            }
+        }
+    }
+
+    .school-about-mission__title {
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        margin: 0 0 1.5rem;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .school-about-mission__body {
+        font-size: 16px;
+        line-height: 1.4;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+
+        p {
+            margin-bottom: 1rem;
+        }
+    }
+
+    .school-about-mission__figure {
+        margin: 0;
+        max-width: 696px;
+        width: 100%;
+    }
+
+    .school-about-mission__text {
+        max-width: 530px;
+        width: 100%;
+    }
+
+    .school-about-mission__image {
+        width: 100%;
+        height: auto;
+        max-height: 404px;
+        border-radius: 50px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .school-about-section--values {
+        scroll-margin-top: calc(var(--site-anchor-offset, 0px) + 1rem);
+    }
+
+    .school-about-values {
+        max-width: 100%;
+    }
+
+    .school-about-values__head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .school-about-values__title {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .school-about-values__nav {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .school-about-values__btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+            opacity 0.15s ease,
+            transform 0.15s ease;
+
+        &:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        &:not(:disabled):hover {
+            transform: translateY(-1px);
+        }
+    }
+
+    .school-about-values__btn--prev {
+        background: var(--school-bg, #f5f6f8);
+        color: var(--school-text, #1a1a1a);
+
+        &::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-left: 1.5px solid currentColor;
+            border-bottom: 1.5px solid currentColor;
+            transform: rotate(45deg);
+            margin-left: 2px;
+        }
+    }
+
+    .school-about-values__btn--next {
+        background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+        color: #fff;
+
+        &::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-right: 1.5px solid currentColor;
+            border-top: 1.5px solid currentColor;
+            transform: rotate(45deg);
+            margin-right: 2px;
+        }
+    }
+
+    .school-about-values__swiper-wrap {
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem;
+
+        @media (min-width: 1280px) {
+            margin: 0;
+            padding: 0;
+        }
+    }
+
+    .school-about-values__swiper {
+        overflow: visible;
+    }
+
+    .school-about-values__slide {
+        height: auto;
+        box-sizing: border-box;
+    }
+
+    .school-about-values__card {
+        position: relative;
+        box-sizing: border-box;
+        max-width: 530px;
+        min-height: 232px;
+        margin: 0 auto;
+        padding: 2.75rem 2rem 1.75rem;
+        background: var(--school-bg, #f5f6f8);
+        border-radius: 40px;
+    }
+
+    .school-about-values__decor {
+        position: absolute;
+        top: 1.25rem;
+        right: 1.25rem;
+        color: var(--school-accent, #96bdff);
+        pointer-events: none;
+    }
+
+    .school-about-values__decor-svg {
+        display: block;
+    }
+
+    .school-about-values__card-title {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        margin: 0 0 0.75rem;
+        padding-right: 3.5rem;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .school-about-values__card-body {
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 1.4;
+        letter-spacing: 0.01em;
+        margin: 0;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    // HTML-лид в герое (если взят из полного контента страницы).
+    .school-about-hero__lead.page-content-html {
+        font-size: 16px;
+        line-height: 1.4;
+    }
+}

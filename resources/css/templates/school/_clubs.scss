@@ -454,4 +454,340 @@
             }
         }
     }
+
+    // ─── Страница секции: двухколоночный layout (school) ───────────────────────
+    .club-show-school {
+        display: grid;
+        grid-template-columns: 1fr 460px;
+        align-items: start;
+        column-gap: 30px;
+        max-width: 1242px;
+        margin-inline: auto;
+        padding-left: var(--school-section-x);
+        padding-right: var(--school-section-x);
+        padding-bottom: var(--school-section-y, 40px);
+
+        @media (max-width: 1100px) {
+            grid-template-columns: 1fr;
+        }
+
+        &__left {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 0;
+        }
+
+        &__right {
+            position: sticky;
+            top: 100px;
+            min-width: 0;
+
+            @media (max-width: 1100px) {
+                position: static;
+            }
+        }
+
+        &__signup-card {
+            background: var(--school-bg, #fff);
+            border-radius: 20px;
+            border: 1px solid #96bdff;
+            padding: 28px 24px 32px;
+        }
+
+        &__phone {
+            font-size: 15px;
+            color: var(--school-muted);
+            margin: 0;
+        }
+
+        &__phone-link {
+            color: var(--school-text);
+            font-weight: 600;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    .club-hero-school {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        aspect-ratio: 742 / 320;
+        max-height: 420px;
+
+        &__image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        &__image--placeholder {
+            background: linear-gradient(135deg, #e8ecf3 0%, #f5f6f8 100%);
+        }
+
+        &__overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                6deg,
+                rgba(26, 26, 26, 0.8) 0%,
+                rgba(26, 26, 26, 0.1) 100%
+            );
+            pointer-events: none;
+        }
+
+        &__inner {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 24px 28px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        &__title {
+            margin: 0;
+            max-width: 22ch;
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: 0.01em;
+            color: #fff;
+        }
+
+        &__chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        &__chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 24px;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+            color: #fff;
+            border: 1px solid #fff;
+            background: transparent;
+        }
+
+        &__chip--emphasis {
+            color: var(--school-text);
+            background: #fff;
+            border-color: #fff;
+        }
+    }
+
+    .club-about-card {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 20px 34px rgba(26, 26, 26, 0.06);
+        padding: 28px 32px 32px;
+
+        &__title {
+            margin: 0 0 16px;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+        }
+
+        &__body {
+            font-size: 14px;
+            line-height: 1.3;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+
+            p:first-child {
+                margin-top: 0;
+            }
+
+            p:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+
+    .club-schedule-board {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid var(--school-border, #e8ecf3);
+        padding: 28px 32px 32px;
+
+        &__title {
+            margin: 0 0 20px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--school-text);
+        }
+
+        &__row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            gap: 0;
+        }
+
+        &__divider {
+            width: 1px;
+            align-self: stretch;
+            min-height: 48px;
+            background: var(--school-border, #e8ecf3);
+            flex-shrink: 0;
+        }
+
+        &__cell {
+            flex: 1 1 72px;
+            min-width: 64px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 0 12px;
+
+            &:first-child {
+                padding-left: 0;
+            }
+        }
+
+        &__day {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--school-muted);
+        }
+
+        &__time {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--school-text);
+        }
+
+        @media (max-width: 640px) {
+            &__row {
+                flex-direction: column;
+            }
+
+            &__divider {
+                width: 100%;
+                height: 1px;
+                min-height: 0;
+            }
+
+            &__cell {
+                padding: 12px 0;
+            }
+        }
+    }
+
+    .club-signup-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        &__title {
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--school-text);
+        }
+
+        &__field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        &__label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--school-text);
+        }
+
+        &__input,
+        &__textarea {
+            border-radius: 13px;
+            border: 1px solid var(--school-border, #e8ecf3);
+            font-size: 16px;
+            padding: 12px 14px;
+            background: #fff;
+            color: var(--school-text);
+
+            &::placeholder {
+                color: var(--school-muted);
+            }
+
+            &:focus {
+                outline: none;
+                border-color: #96bdff;
+            }
+        }
+
+        &__textarea {
+            min-height: 88px;
+            resize: vertical;
+        }
+
+        &__consent {
+            margin-top: 4px;
+        }
+
+        &__error {
+            font-size: 13px;
+            color: #dc2626;
+            margin: 0;
+        }
+
+        &__submit {
+            margin-top: 8px;
+            width: 100%;
+            min-height: 52px;
+            border-radius: 32px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            background: var(--school-gradient);
+            cursor: pointer;
+            transition: opacity 0.2s;
+
+            &:hover:not(:disabled) {
+                opacity: 0.92;
+            }
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: default;
+            }
+        }
+
+        &--success {
+            text-align: center;
+            padding: 24px 8px;
+        }
+
+        &__success-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--school-text);
+        }
+
+        &__success-text {
+            margin: 8px 0 0;
+            font-size: 14px;
+            color: var(--school-muted);
+        }
+    }
 }
