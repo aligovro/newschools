@@ -161,7 +161,7 @@ export const VideoLessonsSliderSchoolWidget: React.FC<Props> = ({ config = {} })
                             )}
                         </div>
                         <a
-                            href="#video-lessons-all"
+                            href="/video-lessons"
                             className="video-lessons-slider-school__all-link"
                         >
                             Все видео уроки

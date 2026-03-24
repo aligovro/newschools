@@ -438,19 +438,23 @@ export const DonationWidgetSchoolView: React.FC<DonationWidgetSchoolViewProps> =
                                 )}
                             </div>
 
-                            {isBankRequisitesSelected && bankRequisites && (
-                                <div className="mb-4">
-                                    <BankRequisitesTab
-                                        requisites={{
-                                            sber_card: bankRequisites.sber_card,
-                                            tinkoff_card:
-                                                bankRequisites.tinkoff_card,
-                                            card_recipient:
-                                                bankRequisites.card_recipient,
-                                        }}
-                                    />
-                                </div>
-                            )}
+                            {isBankRequisitesSelected &&
+                                bankRequisites &&
+                                (bankRequisites.sber_card ||
+                                    bankRequisites.tinkoff_card) && (
+                                    <div className="mb-4">
+                                        <BankRequisitesTab
+                                            requisites={{
+                                                sber_card:
+                                                    bankRequisites.sber_card,
+                                                tinkoff_card:
+                                                    bankRequisites.tinkoff_card,
+                                                card_recipient:
+                                                    bankRequisites.card_recipient,
+                                            }}
+                                        />
+                                    </div>
+                                )}
 
                             <div className="mb-4 space-y-2">
                                 {form.requireName && (

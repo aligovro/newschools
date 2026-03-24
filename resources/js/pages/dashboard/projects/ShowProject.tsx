@@ -152,6 +152,13 @@ export default function ShowProject({ organization, project }: Props) {
                     </div>
                     <div className="flex gap-2">
                         <Link
+                            href={`/dashboard/organizations/${organization.id}/projects/${project.id}/expense-reports`}
+                        >
+                            <Button variant="outline">
+                                Отчёты по расходам
+                            </Button>
+                        </Link>
+                        <Link
                             href={`/dashboard/organizations/${organization.id}/projects/${project.id}/edit`}
                         >
                             <Button variant="outline">

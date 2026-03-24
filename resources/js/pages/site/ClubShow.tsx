@@ -105,7 +105,7 @@ export default function ClubShow({
             pageDescription={pageDescription}
             breadcrumbs={[
                 { title: 'Главная', href: '/' },
-                { title: 'Кружки и секции', href: '/#clubs-all' },
+                { title: 'Кружки и секции', href: '/clubs' },
                 { title: club.name, href: '' },
             ]}
         >

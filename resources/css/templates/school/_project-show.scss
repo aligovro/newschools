@@ -1,0 +1,1314 @@
+// ─── Страница просмотра проекта: school-template ──────────────────────────────
+// Токены из school.scss: --school-primary, --school-accent, --school-gradient,
+//   --school-text, --school-muted, --school-border, --school-bg,
+//   --school-section-x, --school-section-y
+
+.site-preview.site-template--school {
+    // ─ Двухколоночный layout страницы проекта ─────────────────────────────────
+    .project-show-school {
+        display: grid;
+        grid-template-columns: 1fr 460px;
+        grid-template-rows: auto;
+        align-items: start;
+        column-gap: 30px;
+        max-width: 1242px;
+        margin-inline: auto;
+    }
+
+    .project-show-school__left {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0;
+    }
+
+    // ─ Stats bar (под hero) ───────────────────────────────────────────────────
+    .project-stats-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.6fr;
+        gap: 20px;
+    }
+
+    .project-stats-bar__card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 20px;
+        height: 80px;
+        background: var(--school-bg, #f5f6f8);
+        border-radius: 25px;
+    }
+
+    .project-stats-bar__text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .project-stats-bar__value {
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+        white-space: nowrap;
+    }
+
+    .project-stats-bar__label {
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: #96bdff;
+        white-space: nowrap;
+    }
+
+    .project-stats-bar__icon {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+    }
+
+    // ─ Hero ───────────────────────────────────────────────────────────────────
+    .project-hero-school {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        aspect-ratio: 742 / 410;
+        background: var(--school-bg);
+    }
+
+    .project-hero-school__image {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+
+        &--placeholder {
+            background: var(--school-border);
+        }
+    }
+
+    .project-hero-school__overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            51deg,
+            rgba(26, 26, 26, 0.8) 0%,
+            rgba(26, 26, 26, 0.1) 100%
+        );
+        border-radius: inherit;
+        pointer-events: none;
+    }
+
+    .project-hero-school__title {
+        position: absolute;
+        top: 32px;
+        left: 31px;
+        right: 31px;
+        margin: 0;
+        color: #fff;
+        font-size: 32px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        z-index: 1;
+    }
+
+    // Слот для pill «Цель на месяц» — позиционируется между заголовком и progress bar
+    // top: 142/410 ≈ 34.6%
+    .project-hero-school__pill {
+        position: absolute;
+        left: 31px;
+        right: 31px;
+        top: 34.6%;
+        z-index: 2;
+    }
+
+    // Прогресс-трек (без бейджа — он перенесён в блок amounts)
+    // bottom: (410 - 237) / 410 ≈ 42.2%  (track top: 223px, height: 14px → bottom: 173px)
+    .project-hero-school__progress-wrap {
+        position: absolute;
+        left: 31px;
+        right: 31px;
+        bottom: 42.2%;
+        z-index: 1;
+    }
+
+    .project-hero-school__progress-track {
+        height: 14px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .project-hero-school__progress-fill {
+        height: 100%;
+        background: var(--school-gradient);
+        border-radius: inherit;
+        transition: width 0.4s ease;
+    }
+
+    // Суммы: left=собрано, center=% бейдж + осталось, right=цель
+    // bottom: (410 - 305) / 410 ≈ 25.6%  (amounts span top: 248 → bottom: 305)
+    .project-hero-school__amounts {
+        position: absolute;
+        left: 31px;
+        right: 31px;
+        bottom: 25.6%;
+        display: flex;
+        align-items: flex-start;
+        z-index: 1;
+    }
+
+    .project-hero-school__amount {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        &--center {
+            flex: 1;
+            align-items: center;
+        }
+
+        &--target {
+            text-align: right;
+        }
+    }
+
+    .project-hero-school__amount-label {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+    }
+
+    .project-hero-school__amount-value {
+        color: #fff;
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+
+        &--accent {
+            color: var(--school-accent);
+        }
+    }
+
+    .project-hero-school__amount-remaining {
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+        text-align: center;
+    }
+
+    // % бейдж — теперь внутри amounts (center column), а не над progress track
+    .project-hero-school__progress-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 16px;
+        background: var(--school-gradient);
+        border-radius: 24px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        margin-bottom: 2px;
+    }
+
+    // Share-кнопки — внизу hero
+    // bottom: (410 - 380) / 410 ≈ 7.3%  (share top: 348px, height: 32px)
+    .project-hero-school__share {
+        position: absolute;
+        left: 31px;
+        right: 31px;
+        bottom: 7.3%;
+        z-index: 2;
+    }
+
+    // ─ Pill «Цель на месяц» ───────────────────────────────────────────────────
+    .project-monthly-goal-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        width: 500px;
+        max-width: 100%;
+        padding: 0 16px;
+        height: 48px;
+        background: rgba(26, 26, 26, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 24px;
+        backdrop-filter: blur(7px);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .project-monthly-goal-pill__label {
+        padding: 3px 16px;
+        background: var(--school-gradient);
+        border-radius: 24px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .project-monthly-goal-pill__goal {
+        font-size: 22px;
+        font-weight: 500;
+    }
+
+    .project-monthly-goal-pill__collected {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--school-accent);
+    }
+
+    .project-monthly-goal-pill__remaining-label {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .project-monthly-goal-pill__remaining-value {
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    // ─ "О проекте" + статьи расходов ─────────────────────────────────────────
+    .project-about-school {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 20px 34px rgba(26, 26, 26, 0.06);
+        padding: 30px 31px;
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+    }
+
+    .project-about-school__section {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .project-about-school__heading {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+    }
+
+    .project-about-school__description {
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.6;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+
+        &--clamped {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: var(--clamp-lines, 5);
+            overflow: hidden;
+        }
+
+        p {
+            margin: 0 0 0.5em;
+        }
+        p:last-child {
+            margin: 0;
+        }
+    }
+
+    .project-about-school__show-more {
+        align-self: flex-start;
+        background: none;
+        border: none;
+        padding: 0;
+        color: #3a4d91;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    // Бюджет
+    .project-about-school__budget-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        background: #fff; // просвечивает через 2px зазор между колонками
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .project-about-school__budget-item {
+        display: flex;
+        gap: 2px; // 2px зазор отделяет название от суммы
+
+        // Нечётные строки — серый фон
+        &:nth-child(odd) .project-about-school__budget-main,
+        &:nth-child(odd) .project-about-school__budget-price {
+            background: var(--school-bg);
+        }
+
+        // Чётные строки — белый фон
+        &:nth-child(even) .project-about-school__budget-main,
+        &:nth-child(even) .project-about-school__budget-price {
+            background: #fff;
+        }
+    }
+
+    .project-about-school__budget-main {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 14px;
+        min-width: 0;
+    }
+
+    .project-about-school__budget-num {
+        flex-shrink: 0;
+        width: 28px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--school-text);
+        text-align: right;
+    }
+
+    .project-about-school__budget-title {
+        flex: 1;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--school-text);
+    }
+
+    .project-about-school__budget-price {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        padding: 11px 14px;
+        min-width: 166px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--school-text);
+    }
+
+    // ─ Галерея фотографий ─────────────────────────────────────────────────────
+    .project-gallery-school {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .project-gallery-school__heading {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+    }
+
+    .project-gallery-school__slider-wrap {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .project-gallery-school__swiper {
+        display: block;
+    }
+
+    .project-gallery-school__img {
+        display: block;
+        width: 100%;
+        height: 260px;
+        object-fit: cover;
+        cursor: pointer;
+    }
+
+    .project-gallery-school__nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        border: none;
+        border-radius: 50%;
+        box-shadow: 0 4px 34px rgba(26, 26, 26, 0.08);
+        cursor: pointer;
+        color: var(--school-text);
+        transition: opacity 0.2s;
+
+        &--prev {
+            left: 8px;
+        }
+        &--next {
+            right: 8px;
+        }
+
+        &:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+        &:not(:disabled):hover {
+            opacity: 0.85;
+        }
+    }
+
+    .project-gallery-school__dots {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+    }
+
+    .project-gallery-school__dot {
+        width: 8px;
+        height: 8px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: var(--school-border);
+        cursor: pointer;
+        transition: background 0.2s;
+
+        &--active {
+            background: var(--school-text);
+            cursor: default;
+            pointer-events: none;
+        }
+    }
+
+    // ─ Этапы проекта ──────────────────────────────────────────────────────────
+    .project-stages-school {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .project-stages-school__heading {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+    }
+
+    .project-stage-school {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid var(--school-border);
+        overflow: hidden;
+        padding: 10px;
+    }
+
+    .project-stage-school__image-wrap {
+        flex-shrink: 0;
+        width: 322px;
+        height: 190px;
+        border-radius: 9px;
+        overflow: hidden;
+    }
+
+    .project-stage-school__image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .project-stage-school__content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 4px 0;
+        min-width: 0;
+    }
+
+    .project-stage-school__label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--school-accent);
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+    }
+
+    .project-stage-school__title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--school-text);
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+    }
+
+    .project-stage-school__description {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--school-muted);
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+    }
+
+    .project-stage-school__funding {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .project-stage-school__funding-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+    }
+
+    .project-stage-school__funding-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--school-muted);
+
+        &--right {
+            text-align: right;
+        }
+    }
+
+    .project-stage-school__funding-amount {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--school-text);
+
+        &--collected {
+            color: var(--school-accent);
+        }
+    }
+
+    .project-stage-school__progress-track {
+        height: 3px;
+        background: var(--school-border);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 4px;
+    }
+
+    .project-stage-school__progress-fill {
+        height: 100%;
+        background: var(--school-gradient);
+        border-radius: inherit;
+    }
+
+    // ─ Рейтинг по приглашениям ────────────────────────────────────────────────
+    .referral-leaderboard {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid var(--school-border);
+        padding: 32px 31px 24px;
+    }
+
+    .referral-leaderboard__heading {
+        margin: 0 0 20px;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+    }
+
+    // ── Список строк ──────────────────────────────────────────────────────────
+    .referral-leaderboard__list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .referral-leaderboard__row {
+        display: grid;
+        // персона ~40% | приглашения ~27% | сумма ~33%
+        grid-template-columns: 5fr 3fr 4fr;
+        column-gap: 16px;
+        align-items: stretch;
+        min-height: 49px;
+
+        // прерванный разделитель: border-bottom на каждой ячейке,
+        // а column-gap между ними создаёт визуальный разрыв
+        & > * {
+            border-bottom: 1px solid var(--school-border);
+        }
+
+        &:last-child > * {
+            border-bottom: none;
+        }
+    }
+
+    // ── Персона (аватар + имя) ────────────────────────────────────────────────
+    .referral-leaderboard__person {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+    }
+
+    .referral-leaderboard__avatar {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 20px;
+        background: var(--school-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--school-muted);
+    }
+
+    .referral-leaderboard__person-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+
+    .referral-leaderboard__days {
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--school-muted);
+    }
+
+    .referral-leaderboard__name {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    // ── Приглашения и сумма — общий паттерн ──────────────────────────────────
+    .referral-leaderboard__invites,
+    .referral-leaderboard__amount {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 0;
+    }
+
+    .referral-leaderboard__col-icon {
+        flex-shrink: 0;
+        color: var(--school-muted);
+
+        &--accent {
+            color: var(--school-accent);
+        }
+    }
+
+    // ── Общий label + value ───────────────────────────────────────────────────
+    .referral-leaderboard__label {
+        display: block;
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--school-muted);
+        margin-bottom: 3px;
+    }
+
+    .referral-leaderboard__invites-count {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+        background: linear-gradient(86deg, #96bdff -0.21%, #3259ff 117.05%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .referral-leaderboard__amount-value {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+    }
+
+    // ── Load more ─────────────────────────────────────────────────────────────
+    .referral-leaderboard__load-more {
+        display: inline-block;
+        margin-top: 16px;
+        background: none;
+        border: none;
+        padding: 0;
+        color: #3a4d91;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+        transition: opacity 0.18s;
+
+        &:hover:not(:disabled) {
+            opacity: 0.7;
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+    }
+
+    // ─ Топ регионов поддержки ─────────────────────────────────────────────────
+    .project-top-regions {
+        background: #fff;
+        border: 1px solid var(--school-border);
+        border-radius: 20px;
+        padding: 32px 31px 24px;
+    }
+
+    .project-top-regions__heading {
+        margin: 0 0 20px;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+    }
+
+    .project-top-regions__list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    // Каждая строка — 2 ячейки рядом, прерванный разделитель через column-gap
+    .project-top-regions__row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 16px;
+
+        & > * {
+            border-bottom: 1px solid var(--school-border);
+        }
+
+        &:last-child > * {
+            border-bottom: none;
+        }
+    }
+
+    .project-top-regions__cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        min-width: 0;
+
+        &--empty {
+            pointer-events: none;
+        }
+    }
+
+    .project-top-regions__avatar {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .project-top-regions__flag {
+        width: 36px;
+        height: 36px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .project-top-regions__info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .project-top-regions__count {
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--school-muted);
+        white-space: nowrap;
+    }
+
+    .project-top-regions__name {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .project-top-regions__amount-wrap {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 3px;
+    }
+
+    .project-top-regions__label {
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--school-muted);
+    }
+
+    .project-top-regions__amount {
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+        white-space: nowrap;
+    }
+
+    .project-top-regions__load-more {
+        display: inline-block;
+        margin-top: 16px;
+        background: none;
+        border: none;
+        padding: 0;
+        color: #3a4d91;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+        transition: opacity 0.18s;
+
+        &:hover:not(:disabled) {
+            opacity: 0.7;
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+    }
+
+    // ─ Правая колонка: форма пожертвования ────────────────────────────────────
+    .project-donation-column {
+        grid-column: 2;
+        grid-row: 1 / span 10; // растягиваем вдоль всего левого контента
+        align-self: start;
+    }
+
+    .project-donation-column__sticky {
+        position: sticky;
+        top: 24px;
+    }
+
+    // ─── Поддерживают проект (спонсоры) ──────────────────────────────────────
+    .project-supporters {
+        background: #fff;
+        border: 1px solid var(--school-border);
+        border-radius: 20px;
+        padding: 32px 31px 24px;
+    }
+
+    .project-supporters__heading {
+        margin: 0 0 16px;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+    }
+
+    // ── Tabs ──────────────────────────────────────────────────────────────────
+    .project-supporters__tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 20px;
+    }
+
+    .project-supporters__tab {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 32px;
+        padding: 0 16px;
+        border-radius: 24px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+        background: var(--school-bg);
+        transition: background 0.18s, color 0.18s;
+        white-space: nowrap;
+
+        &--active {
+            background: var(--school-text);
+            color: #fff;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        &:hover:not(&--active):not(:disabled) {
+            background: var(--school-border);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+    }
+
+    // ── List / grid ───────────────────────────────────────────────────────────
+    .project-supporters__list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .project-supporters__row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 16px;
+
+        & > * {
+            border-bottom: 1px solid var(--school-border);
+        }
+
+        &:last-child > * {
+            border-bottom: none;
+        }
+    }
+
+    .project-supporters__cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        min-width: 0;
+
+        &--empty {
+            pointer-events: none;
+        }
+    }
+
+    .project-supporters__avatar {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 20px;
+        background: var(--school-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+
+        img {
+            width: 36px;
+            height: 36px;
+            object-fit: cover;
+        }
+
+        // Когда нет аватара — иконка user.svg меньше контейнера
+        img[width="24"] {
+            width: 24px;
+            height: 24px;
+        }
+    }
+
+    .project-supporters__info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .project-supporters__count {
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--school-muted);
+        white-space: nowrap;
+    }
+
+    .project-supporters__name {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+        color: var(--school-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .project-supporters__pill {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 28px;
+        padding: 0 10px;
+        border-radius: 24px;
+        background: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+    }
+
+    .project-supporters__empty {
+        font-size: 13px;
+        color: var(--school-muted);
+        text-align: center;
+        padding: 12px 0;
+    }
+
+    .project-supporters__load-more {
+        display: inline-block;
+        margin-top: 16px;
+        background: none;
+        border: none;
+        padding: 0;
+        color: #3a4d91;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+        transition: opacity 0.18s;
+
+        &:hover:not(:disabled) {
+            opacity: 0.7;
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+    }
+
+    // ─── Отчёты по расходам ───────────────────────────────────────────────────
+    .project-expense-reports {
+        background: #fff;
+        border: 1px solid var(--school-border);
+        border-radius: 20px;
+        padding: 32px 31px 24px;
+
+        &__title {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            margin-bottom: 16px;
+        }
+
+        // ── Month tabs ────────────────────────────────────────────────────────
+        &__months {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        &__month-tab {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px;
+            padding: 0 16px;
+            border-radius: 24px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            background: var(--school-bg);
+            transition: background 0.18s, color 0.18s;
+            white-space: nowrap;
+
+            &--active {
+                background: var(--school-text);
+                color: #fff;
+            }
+
+            &:hover:not(&--active) {
+                background: var(--school-border);
+            }
+        }
+
+        // ── Report list ───────────────────────────────────────────────────────
+        &__list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        &__item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--school-border);
+            border-radius: 20px;
+            padding: 0 16px;
+            min-height: 60px;
+        }
+
+        &__item-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            background: var(--school-bg);
+            border-radius: 20px;
+            color: var(--school-text);
+        }
+
+        &__item-body {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        &__item-meta {
+            font-size: 9px;
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--school-muted);
+        }
+
+        &__item-meta-link {
+            color: var(--school-muted);
+            text-decoration: underline;
+
+            &:hover {
+                color: var(--school-primary);
+            }
+        }
+
+        &__item-title {
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.3;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        &__item-amount-wrap {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+        }
+
+        &__item-status {
+            font-size: 9px;
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--school-muted);
+        }
+
+        &__item-amount {
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.3;
+            letter-spacing: 0.01em;
+            color: var(--school-text);
+        }
+
+        // ── Load more ─────────────────────────────────────────────────────────
+        &__load-more {
+            display: inline-block;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+            color: var(--school-primary);
+            transition: opacity 0.18s;
+
+            &:hover {
+                opacity: 0.7;
+            }
+
+            &:disabled {
+                opacity: 0.4;
+                cursor: default;
+            }
+        }
+
+        &__empty {
+            font-size: 13px;
+            color: var(--school-muted);
+            text-align: center;
+            padding: 12px 0;
+        }
+    }
+}

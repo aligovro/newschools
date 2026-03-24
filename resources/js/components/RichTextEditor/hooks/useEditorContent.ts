@@ -1,5 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { sanitizeHtml } from '@/utils/htmlSanitizer';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { cleanContentForOutput } from '../utils/htmlFormatter';
 import { debounce } from '@/utils/debounce';
 
@@ -8,103 +7,89 @@ interface UseEditorContentProps {
   onChange: (data: string) => void;
   isAdmin: boolean;
   isHtmlMode: boolean;
-  imageEditDialogOpen: boolean;
   editorRef: React.RefObject<HTMLDivElement | null>;
-  onContentUpdate?: () => void; // Вызывается при каждом изменении (для счетчика слов)
+  onContentUpdate?: () => void;
 }
 
 export interface UseEditorContentReturn {
-  localContent: string;
-  lastContentRef: React.RefObject<string>;
   handleInput: () => void;
   handleInputDeferred: () => void;
   handleBlur: () => void;
-  setLocalContent: React.Dispatch<React.SetStateAction<string>>;
 }
 
 /**
- * Хук для управления контентом редактора
- * Обрабатывает ввод, санитизацию, debouncing и синхронизацию с формой
+ * Хук для управления контентом редактора.
+ *
+ * Ключевые принципы:
+ *  - handleInput НИКОГДА не перезаписывает editorRef.current.innerHTML —
+ *    это сбрасывало бы курсор и удаляло кнопки редактирования изображений.
+ *  - Для onChange отдаём cleanContentForOutput(innerHTML) — клон без служебных
+ *    элементов редактора, прошедший DOMPurify. Живой DOM не трогаем.
+ *  - Внешний value обновляет DOM только когда пользователь не редактирует.
  */
 export const useEditorContent = ({
   value,
   onChange,
   isAdmin,
   isHtmlMode,
-  imageEditDialogOpen,
   editorRef,
   onContentUpdate,
 }: UseEditorContentProps): UseEditorContentReturn => {
-  const initialValue = value || '';
-  const [localContent, setLocalContent] = useState(initialValue);
-  const lastContentRef = useRef<string>(initialValue);
+  // Последнее значение, переданное в onChange. Используем ref, чтобы
+  // избежать лишних вызовов onChange при одинаковом контенте.
+  const lastContentRef = useRef<string>(value || '');
   const inputRafRef = useRef<number | null>(null);
-  const isUserEditingRef = useRef(false); // Флаг: пользователь редактирует контент
+  // Флаг: пользователь активно вводит текст → не перезаписываем DOM из value prop.
+  const isUserEditingRef = useRef(false);
+  const isUserEditingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Стабильные refs для функций
+  // Стабильные refs, чтобы не пересоздавать callbacks при каждом render
   const onChangeRef = useRef(onChange);
   const isAdminRef = useRef(isAdmin);
+  const isHtmlModeRef = useRef(isHtmlMode);
 
-  // Обновляем refs при изменениях
-  useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  useEffect(() => { isAdminRef.current = isAdmin; }, [isAdmin]);
+  useEffect(() => { isHtmlModeRef.current = isHtmlMode; }, [isHtmlMode]);
 
-  useEffect(() => {
-    isAdminRef.current = isAdmin;
-  }, [isAdmin]);
-
-  // Debounced onChange для уменьшения количества вызовов
+  // Debounce 150 мс — компромисс между отзывчивостью и нагрузкой
   const debouncedOnChange = useMemo(
-    () =>
-      debounce((content: string) => {
-        onChangeRef.current(content);
-      }, 150), // Уменьшил с 300ms до 150ms для более быстрого сохранения
+    () => debounce((content: string) => { onChangeRef.current(content); }, 150),
     [],
   );
 
-  // Обработка изменений (стабильная версия)
+  // ── handleInput ────────────────────────────────────────────────────────────
   const handleInput = useCallback(() => {
     if (!editorRef.current) return;
 
-    // Помечаем, что пользователь редактирует
+    // Помечаем активное редактирование — сбрасываем через 300 мс после последнего ввода
     isUserEditingRef.current = true;
+    if (isUserEditingTimerRef.current) clearTimeout(isUserEditingTimerRef.current);
+    isUserEditingTimerRef.current = setTimeout(() => {
+      isUserEditingRef.current = false;
+      isUserEditingTimerRef.current = null;
+    }, 300);
 
-    let content = isHtmlMode ? editorRef.current.innerText : editorRef.current.innerHTML;
+    const raw = isHtmlModeRef.current
+      ? editorRef.current.innerText
+      : editorRef.current.innerHTML;
 
-    // Санитизируем HTML контент (только для визуального режима)
-    if (!isHtmlMode && content) {
-      const sanitizedContent = sanitizeHtml(content, isAdminRef.current);
-      if (content !== sanitizedContent) {
-        // Не перезаписываем DOM, если открыт диалог или есть кнопки редактирования изображений
-        const hasEditButtons =
-          (editorRef.current?.querySelectorAll('.image-settings-button').length || 0) > 0;
+    // cleanContentForOutput работает на клоне DOM — живой редактор не трогаем.
+    // Внутри вызывается DOMPurify, закрываются незакрытые теги, удаляются
+    // служебные элементы (.rte-image обёртки, кнопки редактирования и т.д.)
+    const clean = cleanContentForOutput(raw, isAdminRef.current);
 
-        if (!imageEditDialogOpen && !hasEditButtons) {
-          editorRef.current.innerHTML = sanitizedContent;
-          content = sanitizedContent;
-        } else {
-          content = sanitizedContent;
-        }
-      }
+    if (clean !== lastContentRef.current) {
+      lastContentRef.current = clean;
+      debouncedOnChange(clean);
     }
 
-    // Очищаем контент от элементов ресайза перед сохранением
-    // Также санитизируем HTML для закрытия незакрытых тегов и валидации структуры
-    const cleanContent = cleanContentForOutput(content, isAdminRef.current);
-
-    if (cleanContent !== lastContentRef.current) {
-      lastContentRef.current = cleanContent;
-      setLocalContent(cleanContent);
-      debouncedOnChange(cleanContent);
-    }
-
-    // Обновляем счетчик слов
     onContentUpdate?.();
-  }, [isHtmlMode, imageEditDialogOpen, debouncedOnChange, editorRef, onContentUpdate]);
+  }, [debouncedOnChange, editorRef, onContentUpdate]);
 
-  // Отложенная обработка ввода для снижения количества перерисовок
+  // ── handleInputDeferred (RAF) ──────────────────────────────────────────────
   const handleInputDeferred = useCallback(() => {
+    // Один RAF в очереди — не накапливаем лишние вызовы
     if (inputRafRef.current) return;
     inputRafRef.current = window.requestAnimationFrame(() => {
       inputRafRef.current = null;
@@ -112,110 +97,96 @@ export const useEditorContent = ({
     });
   }, [handleInput]);
 
-  // Cleanup RAF и debounce
+  // ── handleBlur ─────────────────────────────────────────────────────────────
+  const handleBlur = useCallback(() => {
+    if (!editorRef.current) return;
+
+    // Форсируем сохранение немедленно (без debounce)
+    debouncedOnChange.flush();
+
+    const raw = isHtmlModeRef.current
+      ? editorRef.current.innerText
+      : editorRef.current.innerHTML;
+
+    const clean = cleanContentForOutput(raw, isAdminRef.current);
+
+    if (clean !== lastContentRef.current) {
+      lastContentRef.current = clean;
+      onChangeRef.current(clean);
+    }
+  }, [editorRef, debouncedOnChange]);
+
+  // ── Cleanup RAF и debounce при unmount ─────────────────────────────────────
   useEffect(() => {
     return () => {
-      if (inputRafRef.current) {
-        cancelAnimationFrame(inputRafRef.current);
-      }
-      // Форсируем сохранение при unmount компонента
+      if (inputRafRef.current) cancelAnimationFrame(inputRafRef.current);
+      if (isUserEditingTimerRef.current) clearTimeout(isUserEditingTimerRef.current);
       debouncedOnChange.flush();
     };
   }, [debouncedOnChange]);
 
-  // Автосохранение при submit формы
+  // ── Автосохранение при submit формы ────────────────────────────────────────
   useEffect(() => {
     const handleFormSubmit = () => {
-      // Форсируем сохранение всех pending изменений перед submit
       debouncedOnChange.flush();
-
-      // Также сразу читаем текущее содержимое и сохраняем
-      if (editorRef.current) {
-        const content = isHtmlMode ? editorRef.current.innerText : editorRef.current.innerHTML;
-        const cleanContent = cleanContentForOutput(content, isAdminRef.current);
-        if (cleanContent !== lastContentRef.current) {
-          lastContentRef.current = cleanContent;
-          onChangeRef.current(cleanContent);
-        }
+      if (!editorRef.current) return;
+      const raw = isHtmlModeRef.current
+        ? editorRef.current.innerText
+        : editorRef.current.innerHTML;
+      const clean = cleanContentForOutput(raw, isAdminRef.current);
+      if (clean !== lastContentRef.current) {
+        lastContentRef.current = clean;
+        onChangeRef.current(clean);
       }
     };
 
-    // Находим родительскую форму
     const form = editorRef.current?.closest('form');
     if (form) {
       form.addEventListener('submit', handleFormSubmit, { capture: true });
       return () => form.removeEventListener('submit', handleFormSubmit, { capture: true });
     }
-  }, [debouncedOnChange, isHtmlMode, editorRef]);
+  }, [debouncedOnChange, editorRef]);
 
-  // Обработка blur
-  const handleBlur = useCallback(() => {
+  // ── Инициализация контента при первой загрузке ─────────────────────────────
+  useEffect(() => {
+    if (!editorRef.current) return;
+    const initial = value || '';
+    // Ставим начальный контент только если редактор пустой
+    if (!editorRef.current.innerHTML || editorRef.current.innerHTML === '<br>') {
+      if (isHtmlModeRef.current) {
+        editorRef.current.innerText = initial;
+      } else {
+        editorRef.current.innerHTML = initial;
+      }
+      lastContentRef.current = initial;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Только при монтировании
+
+  // ── Синхронизация DOM при изменении value извне (не из нашего handleInput) ─
+  useEffect(() => {
     if (!editorRef.current) return;
 
-    // Форсируем сохранение всех отложенных изменений
-    debouncedOnChange.flush();
+    const incoming = value || '';
 
-    const content = isHtmlMode ? editorRef.current.innerText : editorRef.current.innerHTML;
-    const cleanContent = cleanContentForOutput(content, isAdminRef.current);
+    // Если это наше же значение (результат handleInput) — не трогаем DOM
+    if (incoming === lastContentRef.current) return;
+    // Если пользователь активно редактирует — не перебиваем
+    if (isUserEditingRef.current) return;
 
-    if (cleanContent !== lastContentRef.current) {
-      lastContentRef.current = cleanContent;
-      setLocalContent(cleanContent);
-      onChangeRef.current(cleanContent); // Немедленный вызов при blur
+    lastContentRef.current = incoming;
+
+    // Не перезаписываем DOM если редактируется изображение (кнопки редактирования активны)
+    const hasEditButtons =
+      (editorRef.current.querySelectorAll('.image-settings-button').length || 0) > 0;
+    if (hasEditButtons) return;
+
+    if (isHtmlModeRef.current) {
+      editorRef.current.innerText = incoming;
+    } else {
+      editorRef.current.innerHTML = incoming;
     }
-  }, [isHtmlMode, editorRef, debouncedOnChange]);
+  }, [value, editorRef]);
 
-  // Инициализация контента при первой загрузке
-  useEffect(() => {
-    if (editorRef.current && !editorRef.current.innerHTML && initialValue) {
-      if (isHtmlMode) {
-        editorRef.current.innerText = initialValue;
-      } else {
-        editorRef.current.innerHTML = initialValue;
-      }
-      lastContentRef.current = initialValue;
-    }
-  }, [initialValue, isHtmlMode, editorRef]);
-
-  // Инициализация и обновление контента из value prop
-  useEffect(() => {
-    // НЕ обновляем если пользователь сейчас редактирует
-    if (isUserEditingRef.current) {
-      // Сбрасываем флаг после небольшой задержки
-      const timeout = setTimeout(() => {
-        isUserEditingRef.current = false;
-      }, 200);
-      return () => clearTimeout(timeout);
-    }
-
-    const currentValue = value || '';
-
-    // Обновляем контент если value изменился и отличается от текущего
-    if (currentValue !== lastContentRef.current) {
-      setLocalContent(currentValue);
-      lastContentRef.current = currentValue;
-
-      if (editorRef.current) {
-        const hasEditButtons =
-          (editorRef.current.querySelectorAll('.image-settings-button').length || 0) > 0;
-
-        if (!hasEditButtons) {
-          if (isHtmlMode) {
-            editorRef.current.innerText = currentValue;
-          } else {
-            editorRef.current.innerHTML = currentValue;
-          }
-        }
-      }
-    }
-  }, [value, isHtmlMode, editorRef]);
-
-  return {
-    localContent,
-    lastContentRef,
-    handleInput,
-    handleInputDeferred,
-    handleBlur,
-    setLocalContent,
-  };
+  return { handleInput, handleInputDeferred, handleBlur };
 };

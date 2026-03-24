@@ -87,7 +87,13 @@ export const SchoolSubscribeOutput: React.FC<WidgetOutputProps> = ({
         [config.organizationId, propsAny?.site?.organization_id],
     );
 
-    const organizationSlug = propsAny?.organization?.slug || propsAny?.site?.organization?.slug;
+    // На странице проекта — подписка привязывается к проекту, но статистика берётся по организации
+    const pageProjectId = useMemo(
+        () => parseNumericId(propsAny?.pageProject?.id),
+        [propsAny?.pageProject?.id],
+    );
+
+    const organizationSlug = propsAny?.site?.organization?.slug || propsAny?.organization?.slug;
 
     const [paymentMethods, setPaymentMethods] = useState<ApiPaymentMethod[]>([]);
     const [subscribersCount, setSubscribersCount] = useState<number>(0);
@@ -233,6 +239,7 @@ export const SchoolSubscribeOutput: React.FC<WidgetOutputProps> = ({
                 is_recurring: true, // Всегда подписка в этом виджете
                 recurring_period: recurringPeriod,
                 send_receipt: true,
+                project_id: pageProjectId ?? undefined,
                 success_url: window.location.href,
                 failure_url: window.location.href,
             });

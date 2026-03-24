@@ -15,19 +15,28 @@ class OrganizationVideoLessonsController extends Controller
         $organizationId = $request->filled('organization_id')
             ? (int) $request->input('organization_id')
             : null;
-        $limit = max(1, min((int) $request->get('limit', 20), 50));
+        $limit  = max(1, min((int) $request->get('limit', 20), 50));
+        $offset = max(0, (int) $request->get('offset', 0));
 
         if (!$organizationId || $organizationId < 1) {
-            return response()->json(['data' => []]);
+            return response()->json(['data' => [], 'total' => 0, 'has_more' => false]);
         }
 
         $organization = Organization::find($organizationId);
         if (!$organization) {
-            return response()->json(['data' => []]);
+            return response()->json(['data' => [], 'total' => 0, 'has_more' => false]);
         }
 
-        $lessons = $organization->videoLessons()->limit($limit)->get();
+        $total   = $organization->videoLessons()->count();
+        $lessons = $organization->videoLessons()
+            ->skip($offset)
+            ->take($limit)
+            ->get();
 
-        return OrganizationVideoLessonResource::collection($lessons)->response();
+        return response()->json([
+            'data'     => OrganizationVideoLessonResource::collection($lessons)->resolve($request),
+            'total'    => $total,
+            'has_more' => ($offset + $limit) < $total,
+        ]);
     }
 }

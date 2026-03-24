@@ -63,6 +63,10 @@
         margin-inline: auto;
         padding: 0;
     }
+    .school-p-lr-60 {
+        padding-left: 60px;
+        padding-right: 60px;
+    }
 
     .projects-slider-widget {
         padding: 0;
@@ -84,4 +88,5 @@
 @import 'school/auth-menu';
 @import 'school/share';
 @import 'school/widgets';
+@import 'school/project-show';
 @import 'school/adaptive';

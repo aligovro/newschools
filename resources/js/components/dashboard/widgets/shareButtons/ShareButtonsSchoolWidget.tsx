@@ -7,6 +7,8 @@ interface Props {
     shareText: string;
     networks?: string[];
     counts?: Record<string, number>;
+    slogan?: string;
+    showSlogan?: boolean;
 }
 
 export const ShareButtonsSchoolWidget: React.FC<Props> = ({
@@ -14,6 +16,8 @@ export const ShareButtonsSchoolWidget: React.FC<Props> = ({
     shareText,
     networks = DEFAULT_NETWORKS,
     counts = {},
+    slogan,
+    showSlogan = false,
 }) => {
     const handleShare = (url: string) => {
         window.open(url, '_blank', 'noopener,noreferrer,width=600,height=400');
@@ -38,6 +42,9 @@ export const ShareButtonsSchoolWidget: React.FC<Props> = ({
                     );
                 })}
             </div>
+            {showSlogan && slogan && (
+                <div className="share-buttons-school__slogan">{slogan}</div>
+            )}
         </div>
     );
 };

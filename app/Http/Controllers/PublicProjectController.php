@@ -3,14 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HasSiteWidgets;
+use App\Http\Resources\ProjectExpenseReportResource;
 use App\Http\Resources\Sponsors\SponsorResource;
 use App\Models\Project;
 use App\Models\ProjectCategory;
 use App\Services\ProjectDonations\ProjectDonationsService;
+use App\Services\ReferralService;
 use App\Services\Seo\SeoPresenter;
 use App\Services\Sponsors\ProjectSponsorService;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class PublicProjectController extends Controller
@@ -21,6 +25,7 @@ class PublicProjectController extends Controller
     private readonly ProjectSponsorService $projectSponsorService,
     private readonly ProjectDonationsService $donationsService,
     private readonly SeoPresenter $seoPresenter,
+    private readonly ReferralService $referralService,
   ) {}
 
   /**
@@ -129,6 +134,7 @@ class PublicProjectController extends Controller
         'organization.region',
         'organization.locality',
         'categories',
+        'budgetItems',
         'stages' => function ($query) {
           $query->orderBy('sort_order', 'asc');
         }
@@ -212,6 +218,15 @@ class PublicProjectController extends Controller
         ] : null,
       ] : null,
       'seo_settings' => $project->seo_settings ?? [],
+      'monthly_goal_amount' => $project->monthly_goal_amount,
+      'donors_count' => $project->donations()
+        ->where('status', 'completed')
+        ->distinct('donor_id')
+        ->whereNotNull('donor_id')
+        ->count('donor_id'),
+      'top_payment_amount' => (int) ($project->donations()
+        ->where('status', 'completed')
+        ->max('amount') ?? 0),
     ];
 
     $sponsorsPaginator = $this->projectSponsorService->paginate(
@@ -239,17 +254,132 @@ class PublicProjectController extends Controller
       6,
     );
 
+    // Статьи расходов
+    $budgetItems = $project->budgetItems->map(fn ($item) => [
+      'id'               => $item->id,
+      'title'            => $item->title,
+      'amount_kopecks'   => $item->amount_kopecks,
+      'amount_rubles'    => $item->amount_rubles,
+      'formatted_amount' => $item->formatted_amount,
+      'sort_order'       => $item->sort_order,
+    ])->values()->toArray();
+
+    // Сколько собрано в текущем месяце (для pill «Цель на месяц»)
+    $monthlyCollectedKopecks = $project->monthly_goal_amount
+      ? (int) $project->donations()
+          ->where('status', 'completed')
+          ->whereYear('created_at', now()->year)
+          ->whereMonth('created_at', now()->month)
+          ->sum('amount')
+      : null;
+
+    // Рейтинг по приглашениям (начальные данные — первая страница)
+    $referralLeaderboard = $project->organization_id
+      ? $this->referralService->getOrganizationLeaderboard($project->organization_id, [
+          'per_page' => 6,
+          'sort_by'  => 'invites',
+        ])
+      : ['data' => [], 'meta' => []];
+
+    // ─── Отчёты по расходам (начальные данные для публичной страницы) ────────────
+    $expenseReportMonths = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+    $monthTabs = $project->expenseReports()
+      ->selectRaw('YEAR(report_date) as year, MONTH(report_date) as month, COUNT(*) as cnt')
+      ->groupByRaw('YEAR(report_date), MONTH(report_date)')
+      ->reorder()
+      ->orderByRaw('YEAR(report_date) DESC, MONTH(report_date) DESC')
+      ->get()
+      ->map(fn ($row) => [
+        'value' => sprintf('%04d-%02d', $row->year, $row->month),
+        'label' => $expenseReportMonths[$row->month - 1] . ' ' . $row->year,
+        'count' => (int) $row->cnt,
+      ])
+      ->toArray();
+
+    $initialMonth    = $monthTabs[0]['value'] ?? null;
+    $initialReports  = [];
+    $expenseHasMore  = false;
+
+    if ($initialMonth) {
+      [$erYear, $erMonth] = explode('-', $initialMonth);
+      $erPaginator = $project->expenseReports()
+        ->whereYear('report_date', $erYear)
+        ->whereMonth('report_date', $erMonth)
+        ->paginate(3);
+      $initialReports = ProjectExpenseReportResource::collection($erPaginator->items())->resolve();
+      $expenseHasMore = $erPaginator->currentPage() < $erPaginator->lastPage();
+    }
+
+    // ─── Топ регионов поддержки (первые 6 записей) ───────────────────────────
+    $topRegionsPerPage = 6;
+    $topRegionsItems = DB::table('regions')
+      ->select([
+        'regions.id',
+        'regions.name',
+        'regions.code',
+        'regions.flag_image',
+        DB::raw('COALESCE(ds.total_amount, 0) as total_amount'),
+        DB::raw('COALESCE(ds.donation_count, 0) as donation_count'),
+      ])
+      ->joinSub(
+        DB::table('donations')
+          ->select([
+            'donations.region_id',
+            DB::raw('COALESCE(SUM(donations.amount), 0) as total_amount'),
+            DB::raw('COUNT(*) as donation_count'),
+          ])
+          ->where('donations.project_id', $project->id)
+          ->where('donations.status', 'completed')
+          ->whereNotNull('donations.region_id')
+          ->groupBy('donations.region_id'),
+        'ds',
+        'regions.id',
+        '=',
+        'ds.region_id'
+      )
+      ->where('regions.is_active', true)
+      ->orderByDesc('ds.total_amount')
+      ->orderBy('regions.name')
+      ->limit($topRegionsPerPage + 1)
+      ->get();
+
+    $topRegionsHasMore = $topRegionsItems->count() > $topRegionsPerPage;
+    $topRegionsData = $topRegionsItems->take($topRegionsPerPage)->map(fn ($row) => [
+      'id'               => $row->id,
+      'name'             => $row->name,
+      'code'             => $row->code,
+      'flag_image_url'   => $row->flag_image ? asset('storage/' . $row->flag_image) : null,
+      'donation_count'   => (int) $row->donation_count,
+      'total_amount'     => (int) $row->total_amount,
+      'formatted_amount' => Money::format((int) $row->total_amount),
+    ])->values()->toArray();
+
     $data = $this->getSiteWidgetsAndPositions();
 
     $site = app()->bound('current_organization_site') ? app('current_organization_site') : null;
     $seo = $this->seoPresenter->forProject($project, $site, request()->fullUrl());
 
     return Inertia::render('main-site/ProjectShow', array_merge($data, [
-      'project' => $projectData,
-      'sponsors' => $sponsorsPayload,
-      'topRecurring' => $topRecurring,
-      'organizationId' => $project->organization?->id,
-      'seo' => $seo,
+      'project'             => $projectData,
+      'sponsors'            => $sponsorsPayload,
+      'topRecurring'        => $topRecurring,
+      'organizationId'      => $project->organization?->id,
+      'seo'                 => $seo,
+      'budgetItems'         => $budgetItems,
+      'monthlyCollected'    => $monthlyCollectedKopecks,
+      'referralLeaderboard' => $referralLeaderboard,
+      'expenseReports'      => [
+        'month_tabs'    => $monthTabs,
+        'initial_month' => $initialMonth,
+        'initial_data'  => $initialReports,
+        'has_more'      => $expenseHasMore,
+      ],
+      'topRegions'          => [
+        'data'     => $topRegionsData,
+        'has_more' => $topRegionsHasMore,
+        'meta'     => ['page' => 1, 'per_page' => $topRegionsPerPage],
+      ],
     ]));
   }
 

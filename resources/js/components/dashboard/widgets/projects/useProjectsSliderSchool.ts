@@ -101,6 +101,7 @@ function mapProject(raw: Record<string, unknown>): ProjectForSchool {
 export function useProjectsSliderSchool(
     organizationId: number | undefined,
     limit: number,
+    excludeSlug?: string,
 ): UseProjectsSliderSchoolResult {
     const [projects, setProjects] = useState<ProjectForSchool[]>([]);
     const [meta, setMeta] = useState<ProjectsSliderSchoolMeta | null>(null);
@@ -131,6 +132,7 @@ export function useProjectsSliderSchool(
                         limit: Math.min(limit, 30),
                         category: activeCategory || undefined,
                         with_meta: 1,
+                        exclude_slug: excludeSlug || undefined,
                     },
                     { signal: controller.signal },
                 );
@@ -177,7 +179,7 @@ export function useProjectsSliderSchool(
 
         run();
         return () => controller.abort();
-    }, [organizationId, limit, activeCategory]);
+    }, [organizationId, limit, activeCategory, excludeSlug]);
 
     return {
         projects,

@@ -334,6 +334,12 @@ Route::prefix('public')->group(function () {
     // Видео уроки организации
     Route::get('/video-lessons', [OrganizationVideoLessonsController::class, 'index']);
 
+    // Отчёты по расходам проекта (публичный доступ, постраничная загрузка)
+    Route::get('/projects/{project}/expense-reports', [\App\Http\Controllers\Api\ProjectExpenseReportsController::class, 'index']);
+
+    // Топ регионов поддержки проекта (публичный доступ)
+    Route::get('/projects/{project}/top-regions', [\App\Http\Controllers\Api\ProjectTopRegionsController::class, 'index']);
+
     // Статистика выпускников (публичный доступ)
     Route::get('/alumni-stats', [AlumniStatsController::class, 'index']);
 

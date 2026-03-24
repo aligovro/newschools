@@ -351,7 +351,7 @@ export const ClubsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                         </div>
 
                         <a
-                            href="#clubs-all"
+                            href="/clubs"
                             className="clubs-slider-widget__all-link"
                         >
                             Все кружки и секции

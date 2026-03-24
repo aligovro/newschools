@@ -26,6 +26,7 @@ class Region extends Model
         'timezone',
         'type',
         'is_active',
+        'flag_image',
     ];
 
     protected $casts = [
@@ -117,6 +118,14 @@ class Region extends Model
         return $query->where('type', $type);
     }
 
+    public function getFlagImageUrlAttribute(): ?string
+    {
+        if (!$this->flag_image) {
+            return null;
+        }
+
+        return asset('storage/' . $this->flag_image);
+    }
 
     public function getOrganizationsCountAttribute(): int
     {

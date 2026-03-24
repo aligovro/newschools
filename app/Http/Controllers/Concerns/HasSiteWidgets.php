@@ -82,6 +82,7 @@ trait HasSiteWidgets
                 'favicon' => $site->getFaviconUrlAttribute(),
                 'template' => $site->template,
                 'site_type' => $site->site_type,
+                'organization_id' => $site->organization_id,
                 'organization' => $site->organization ? [
                     'id' => $site->organization->id,
                     'slug' => $site->organization->slug,
