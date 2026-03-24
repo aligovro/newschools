@@ -9,6 +9,7 @@ interface Site {
     id: number;
     name: string;
     slug: string;
+    template?: string;
 }
 
 interface ParentPage {

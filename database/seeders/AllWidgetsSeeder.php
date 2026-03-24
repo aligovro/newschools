@@ -130,6 +130,17 @@ class AllWidgetsSeeder extends Seeder
                 'sort_order' => 15,
             ],
             [
+                'name' => 'Партнёры (логотипы)',
+                'widget_slug' => 'partners_slider',
+                'description' => 'Слайдер логотипов партнёров с названием и ссылкой',
+                'icon' => '🤝',
+                'category' => 'content',
+                'component_name' => 'PartnersSliderWidget',
+                'is_active' => true,
+                'allowed_site_types' => ['organization', 'main'],
+                'sort_order' => 19,
+            ],
+            [
                 'name' => 'Кружки и секции',
                 'widget_slug' => 'clubs',
                 'description' => 'Сетка кружков и секций организации',

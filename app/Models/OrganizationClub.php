@@ -18,6 +18,7 @@ class OrganizationClub extends Model
         'name',
         'description',
         'image',
+        'gallery',
         'sort_order',
         'schedule',
     ];
@@ -25,6 +26,7 @@ class OrganizationClub extends Model
     protected $casts = [
         'sort_order' => 'integer',
         'schedule' => 'array',
+        'gallery' => 'array',
     ];
 
     /** Дни недели для расписания (mon=Пн .. sun=Вс) */

@@ -66,7 +66,10 @@ export const TeachersSliderSchoolWidget: React.FC<Props> = ({ config = {} }) => 
     );
 
     return (
-        <section className="teachers-slider-school wrapper__block">
+        <section
+            id="teachers"
+            className="teachers-slider-school wrapper__block"
+        >
             <div className="teachers-slider-school__container">
                 <div className="teachers-slider-school__header">
                     {show_title && (

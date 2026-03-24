@@ -1,0 +1,128 @@
+// Список и карточки новостей (шаблон school, сайт организации)
+
+.site-preview.site-template--school {
+    // Обёртка списка: тот же контентный ритм, что и space-y-6 (24px)
+    .school-news-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .school-news-card {
+        border-color: var(--school-border, #e8ecf3);
+        box-shadow: 0 1px 2px rgba(26, 26, 26, 0.05);
+
+        @media (min-width: 1024px) {
+            display: grid;
+            grid-template-columns: minmax(168px, 30%) minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr);
+            align-items: stretch;
+            // Фиксированная высота: контент справа не раздувает карточку;
+            // футер не режется — обрезается только средний блок (анонс) за счёт flex + min-height:0
+            height: 252px;
+            min-height: 252px;
+            max-height: 252px;
+            overflow: hidden;
+        }
+    }
+
+    .school-news-card__media {
+        position: relative;
+        width: 100%;
+        height: 11rem;
+        flex-shrink: 0;
+
+        @media (min-width: 1024px) {
+            height: 100%;
+            min-height: 0;
+            align-self: stretch;
+        }
+    }
+
+    .school-news-card__media img,
+    .school-news-card__media > div {
+        height: 100%;
+        width: 100%;
+    }
+
+    .school-news-card__media img {
+        object-fit: cover;
+    }
+
+    // Правая колонка: заполняет ячейку сетки и отдаёт высоту flex-цепочке
+    .school-news-card__body {
+        @media (min-width: 1024px) {
+            height: 100%;
+            max-height: 100%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            overflow: hidden;
+            padding-top: 0.875rem;
+            padding-bottom: 0.875rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }
+
+    .school-news-card__meta {
+        flex-shrink: 0;
+    }
+
+    .school-news-card__head {
+        flex-shrink: 0;
+        min-height: 0;
+    }
+
+    .school-news-card__heading {
+        font-size: 1.125rem;
+        line-height: 1.35;
+        font-weight: 600;
+
+        @media (min-width: 1024px) {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+        }
+    }
+
+    .school-news-card__subtitle {
+        @media (min-width: 1024px) {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 1;
+            overflow: hidden;
+        }
+    }
+
+    .school-news-card__main-text {
+        @media (min-width: 1024px) {
+            flex: 1 1 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+    }
+
+    .school-news-card__excerpt {
+        @media (min-width: 1024px) {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+        }
+    }
+
+    .school-news-card__footer {
+        flex-shrink: 0;
+        margin-top: 0;
+        padding-top: 0.25rem;
+    }
+}

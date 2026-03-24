@@ -62,6 +62,7 @@ class SitePageController extends Controller
                 'id' => $site->id,
                 'name' => $site->name,
                 'slug' => $site->slug,
+                'template' => $site->template,
             ],
             'pages' => SitePageResource::collection($pages),
             'filters' => [
@@ -87,6 +88,7 @@ class SitePageController extends Controller
                 'id' => $site->id,
                 'name' => $site->name,
                 'slug' => $site->slug,
+                'template' => $site->template,
             ],
             'parentPages' => $parentPages,
         ]);
@@ -159,6 +161,7 @@ class SitePageController extends Controller
                 'id' => $site->id,
                 'name' => $site->name,
                 'slug' => $site->slug,
+                'template' => $site->template,
             ],
             'page' => (new SitePageResource($page))->toArray(request()),
         ]);
@@ -191,6 +194,7 @@ class SitePageController extends Controller
                 'id' => $site->id,
                 'name' => $site->name,
                 'slug' => $site->slug,
+                'template' => $site->template,
             ],
             'page' => (new SitePageResource($page))->toArray(request()),
             'parentPages' => $parentPages,

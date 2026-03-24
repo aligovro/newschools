@@ -38,6 +38,7 @@ export default function OrganizationClubsPage({ organization, initialClubs }: Pr
         name: '',
         description: '',
         image: null,
+        galleryItems: [],
         sort_order: 0,
         schedule: {},
     });
@@ -49,7 +50,14 @@ export default function OrganizationClubsPage({ organization, initialClubs }: Pr
 
     const handleCreate = () => {
         setEditingId(null);
-        setForm({ name: '', description: '', image: null, sort_order: 0, schedule: {} });
+        setForm({
+            name: '',
+            description: '',
+            image: null,
+            galleryItems: [],
+            sort_order: 0,
+            schedule: {},
+        });
         setIsModalOpen(true);
     };
 
@@ -61,6 +69,14 @@ export default function OrganizationClubsPage({ organization, initialClubs }: Pr
                 name: club.name,
                 description: club.description ?? '',
                 image: club.image ?? null,
+                galleryItems: (club.gallery ?? []).map((url, index) => ({
+                    id: `g-${club.id}-${index}`,
+                    url,
+                    name: url.split('/').pop() || `photo-${index + 1}.jpg`,
+                    size: 0,
+                    type: 'image/*',
+                    status: 'success' as const,
+                })),
                 sort_order: club.sort_order ?? 0,
                 schedule: club.schedule ?? {},
             });

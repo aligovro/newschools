@@ -15,6 +15,9 @@ class OrganizationClubResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'image' => $this->image_url,
+            'gallery' => collect($this->gallery ?? [])->map(
+                fn ($item) => asset('storage/' . ltrim((string) $item, '/'))
+            )->values()->all(),
             'sort_order' => $this->sort_order,
             'schedule' => $this->schedule ?? [],
             'created_at' => optional($this->created_at)->toISOString(),

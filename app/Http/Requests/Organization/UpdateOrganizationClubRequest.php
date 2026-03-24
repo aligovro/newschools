@@ -26,6 +26,11 @@ class UpdateOrganizationClubRequest extends FormRequest
             'schedule.fri' => ['nullable', 'string', 'max:20'],
             'schedule.sat' => ['nullable', 'string', 'max:20'],
             'schedule.sun' => ['nullable', 'string', 'max:20'],
+            'gallery' => ['nullable', 'array', 'max:10'],
+            'gallery.*' => ['file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'existing_gallery' => ['nullable', 'array'],
+            'existing_gallery.*' => ['string'],
+            'gallery_sync' => ['nullable', 'string', 'in:1'],
         ];
     }
 
@@ -33,6 +38,7 @@ class UpdateOrganizationClubRequest extends FormRequest
     {
         return [
             'name.required' => 'Название кружка/секции обязательно.',
+            'gallery.max' => 'Можно загрузить максимум 10 изображений',
         ];
     }
 }

@@ -1,4 +1,5 @@
 import ShareButton from '@/components/ui/ShareButton';
+import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowRight, Calendar } from 'lucide-react';
 
@@ -20,6 +21,10 @@ export interface NewsSummary {
 
 interface NewsWideCardProps {
     news: NewsSummary;
+    /** Компактная карточка и токены шаблона school (только сайт организации) */
+    variant?: 'default' | 'school';
+    /** Не показывать ссылку на организацию (уже в контексте сайта организации) */
+    hideOrganizationLink?: boolean;
 }
 
 const formatDate = (value?: string | null): string | null => {
@@ -35,15 +40,32 @@ const formatDate = (value?: string | null): string | null => {
     }).format(date);
 };
 
-export default function NewsWideCard({ news }: NewsWideCardProps) {
+export default function NewsWideCard({
+    news,
+    variant = 'default',
+    hideOrganizationLink = false,
+}: NewsWideCardProps) {
     const formattedDate = formatDate(news.published_at);
     const newsUrl = `/news/${news.slug}`;
+    const isSchool = variant === 'school';
 
     return (
-        <article className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md lg:flex-row">
+        <article
+            className={cn(
+                'overflow-hidden border border-gray-200 bg-white shadow-sm transition hover:shadow-md',
+                isSchool
+                    ? 'school-news-card flex flex-col rounded-[22px]'
+                    : 'flex flex-col rounded-2xl lg:flex-row',
+            )}
+        >
             <Link
                 href={newsUrl}
-                className="relative block h-56 flex-shrink-0 overflow-hidden bg-gray-100 lg:h-auto lg:w-2/5"
+                className={cn(
+                    'relative block flex-shrink-0 overflow-hidden bg-gray-100',
+                    isSchool
+                        ? 'school-news-card__media'
+                        : 'h-56 lg:h-auto lg:w-2/5',
+                )}
             >
                 {news.image ? (
                     <img
@@ -59,15 +81,27 @@ export default function NewsWideCard({ news }: NewsWideCardProps) {
                 )}
             </Link>
 
-            <div className="flex flex-1 flex-col gap-4 p-6">
-                <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <div
+                className={cn(
+                    'flex flex-1 flex-col',
+                    isSchool
+                        ? 'school-news-card__body min-h-0 gap-3 p-4'
+                        : 'gap-4 p-6',
+                )}
+            >
+                <div
+                    className={cn(
+                        'flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wide text-gray-500',
+                        isSchool && 'school-news-card__meta',
+                    )}
+                >
                     {formattedDate && (
                         <span className="flex items-center gap-1 text-gray-600">
                             <Calendar className="h-4 w-4" />
                             {formattedDate}
                         </span>
                     )}
-                    {news.type && (
+                    {news.type && !isSchool && (
                         <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
                             {news.type === 'event'
                                 ? 'Событие'
@@ -78,40 +112,84 @@ export default function NewsWideCard({ news }: NewsWideCardProps) {
                     )}
                 </div>
 
-                <div>
+                <div
+                    className={cn(isSchool && 'school-news-card__head flex-shrink-0')}
+                >
                     <Link href={newsUrl}>
-                        <h3 className="text-2xl font-semibold text-gray-900">
+                        <h3
+                            className={cn(
+                                'font-semibold text-gray-900',
+                                isSchool
+                                    ? 'school-news-card__heading'
+                                    : 'text-2xl',
+                            )}
+                        >
                             {news.title}
                         </h3>
                     </Link>
                     {news.subtitle && (
-                        <p className="mt-2 text-sm font-medium uppercase tracking-wide text-gray-500">
+                        <p
+                            className={cn(
+                                'mt-2 text-sm font-medium uppercase tracking-wide text-gray-500',
+                                isSchool && 'school-news-card__subtitle',
+                            )}
+                        >
                             {news.subtitle}
                         </p>
                     )}
                 </div>
 
-                {news.excerpt && (
-                    <p className="text-base leading-relaxed text-gray-600">
-                        {news.excerpt}
-                    </p>
-                )}
-
-                {news.tags && news.tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {news.tags.map((tag) => (
-                            <span
-                                key={tag}
-                                className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600"
-                            >
-                                #{tag}
-                            </span>
-                        ))}
+                {isSchool &&
+                (news.excerpt ||
+                    (news.tags && news.tags.length > 0)) ? (
+                    <div className="school-news-card__main-text min-h-0 flex-1">
+                        {news.excerpt && (
+                            <p className="school-news-card__excerpt text-sm leading-relaxed text-gray-600">
+                                {news.excerpt}
+                            </p>
+                        )}
+                        {news.tags && news.tags.length > 0 && (
+                            <div className="mt-2 flex min-h-0 flex-wrap gap-1.5">
+                                {news.tags.map((tag) => (
+                                    <span
+                                        key={tag}
+                                        className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600"
+                                    >
+                                        #{tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
+                ) : !isSchool ? (
+                    <>
+                        {news.excerpt && (
+                            <p className="text-base leading-relaxed text-gray-600">
+                                {news.excerpt}
+                            </p>
+                        )}
+                        {news.tags && news.tags.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {news.tags.map((tag) => (
+                                    <span
+                                        key={tag}
+                                        className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600"
+                                    >
+                                        #{tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                ) : null}
 
-                <div className="mt-auto flex flex-wrap items-center gap-4">
-                    {news.organization?.name && (
+                <div
+                    className={cn(
+                        'mt-auto flex flex-wrap items-center gap-4',
+                        isSchool && 'school-news-card__footer',
+                    )}
+                >
+                    {news.organization?.name && !hideOrganizationLink && (
                         <Link
                             href={
                                 news.organization.slug
@@ -137,4 +215,3 @@ export default function NewsWideCard({ news }: NewsWideCardProps) {
         </article>
     );
 }
-

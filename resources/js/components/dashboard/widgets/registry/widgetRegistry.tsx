@@ -16,6 +16,7 @@ import { MenuWidget } from '../MenuWidget';
 import { ProjectsWidget } from '../ProjectsWidget';
 import { ProjectsSliderOutput } from '../output/ProjectsSliderOutput';
 import { TeachersOutput } from '../output/TeachersOutput';
+import { PartnersSliderOutput } from '../output/PartnersSliderOutput';
 import { ClubsOutput } from '../output/ClubsOutput';
 import { ClubScheduleOutput } from '../output/ClubScheduleOutput';
 import { VideoLessonsOutput } from '../output/VideoLessonsOutput';
@@ -601,6 +602,10 @@ export const widgetRegistry: Record<string, WidgetRenderer> = {
     // Слайдер преподавателей
     teachers_slider: ({ widget }) => (
         <TeachersOutput widget={widget} className="" style={{}} />
+    ),
+
+    partners_slider: ({ widget }) => (
+        <PartnersSliderOutput widget={widget} className="" style={{}} />
     ),
 
     // Кружки и секции

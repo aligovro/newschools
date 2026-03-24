@@ -1,7 +1,6 @@
 import LoadMoreButton from '@/components/main-site/LoadMoreButton';
-import NewsWideCard, {
-    type NewsSummary,
-} from '@/components/news/NewsWideCard';
+import NewsWideCard, { type NewsSummary } from '@/components/news/NewsWideCard';
+import { cn } from '@/lib/utils';
 import MainLayout from '@/layouts/MainLayout';
 import { router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
@@ -59,6 +58,10 @@ export default function NewsPage({
     filters,
     seo,
 }: NewsPageProps) {
+    const isOrganizationSite = site?.site_type === 'organization';
+    const isSchoolNewsLayout =
+        isOrganizationSite && site?.template === 'school';
+
     const meta = useMemo(() => resolveMeta(news), [news]);
 
     const [items, setItems] = useState<NewsSummary[]>(news.data ?? []);
@@ -140,22 +143,26 @@ export default function NewsPage({
         }
         params.set('page', String(nextPage));
 
-        router.get(`/news?${params.toString()}`, {}, {
-            preserveScroll: true,
-            preserveState: true,
-            only: ['news'],
-            onSuccess: (page) => {
-                const payload = page.props.news as NewsPaginator;
-                const incomingMeta = resolveMeta(payload);
-                setItems((prev) => [...prev, ...(payload.data ?? [])]);
-                setCurrentPage(incomingMeta.current_page);
-                setLastPage(incomingMeta.last_page);
-                setIsLoadingMore(false);
+        router.get(
+            `/news?${params.toString()}`,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['news'],
+                onSuccess: (page) => {
+                    const payload = page.props.news as NewsPaginator;
+                    const incomingMeta = resolveMeta(payload);
+                    setItems((prev) => [...prev, ...(payload.data ?? [])]);
+                    setCurrentPage(incomingMeta.current_page);
+                    setLastPage(incomingMeta.last_page);
+                    setIsLoadingMore(false);
+                },
+                onError: () => {
+                    setIsLoadingMore(false);
+                },
             },
-            onError: () => {
-                setIsLoadingMore(false);
-            },
-        });
+        );
     }, [currentPage, isLoadingMore, lastPage, searchValue]);
 
     const hasMore = currentPage < lastPage;
@@ -173,7 +180,12 @@ export default function NewsPage({
                 { title: 'Новости', href: '' },
             ]}
         >
-            <div className="space-y-8">
+            <div
+                className={cn(
+                    'space-y-8',
+                    isSchoolNewsLayout && 'school-p-lr-60',
+                )}
+            >
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <h1 className="page__title">Новости</h1>
@@ -198,9 +210,24 @@ export default function NewsPage({
 
                 {items.length > 0 ? (
                     <>
-                        <div className="space-y-6">
+                        <div
+                            className={cn(
+                                isSchoolNewsLayout
+                                    ? 'school-news-list'
+                                    : 'space-y-6',
+                            )}
+                        >
                             {items.map((newsItem) => (
-                                <NewsWideCard key={newsItem.id} news={newsItem} />
+                                <NewsWideCard
+                                    key={newsItem.id}
+                                    news={newsItem}
+                                    variant={
+                                        isSchoolNewsLayout
+                                            ? 'school'
+                                            : 'default'
+                                    }
+                                    hideOrganizationLink={isOrganizationSite}
+                                />
                             ))}
                         </div>
                         <div className="flex justify-center">
@@ -220,4 +247,3 @@ export default function NewsPage({
         </MainLayout>
     );
 }
-

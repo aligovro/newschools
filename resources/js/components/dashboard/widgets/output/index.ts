@@ -21,6 +21,7 @@ export { AddOrganizationBlockOutput } from './AddOrganizationBlockOutput';
 export { OrganizationSearchOutput } from './OrganizationSearchOutput';
 export { ProjectsSliderOutput } from './ProjectsSliderOutput';
 export { TextOutput } from './TextOutput';
+export { PartnersSliderOutput } from './PartnersSliderOutput';
 
 // Main output renderer
 export { WidgetOutputRenderer } from './WidgetOutputRenderer';

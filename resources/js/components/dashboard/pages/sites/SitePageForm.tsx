@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Eye, FileText, Image, Save, Settings } from 'lucide-react';
+import { Eye, FileText, Image, Plus, Save, Settings, Trash2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import LogoUploader from '@/components/ui/image-uploader/LogoUploader';
 import MultiImageUploader, {
@@ -25,6 +25,8 @@ interface Site {
     id: number;
     name: string;
     slug: string;
+    /** Шаблон сайта (school — расширенная форма «О школе») */
+    template?: string;
 }
 
 interface ParentPage {
@@ -51,6 +53,7 @@ interface Page {
     published_at?: string;
     created_at: string;
     updated_at: string;
+    layout_config?: Record<string, unknown>;
 }
 
 interface SitePageFormData {
@@ -68,6 +71,7 @@ interface SitePageFormData {
     image?: string;
     images?: string[];
     published_at?: string;
+    layout_config?: Record<string, unknown>;
 }
 
 interface SitePageFormProps {
@@ -104,6 +108,7 @@ export default function SitePageForm({
             image: page?.image || '',
             images: page?.images || [],
             published_at: page?.published_at || '',
+            layout_config: page?.layout_config || {},
         });
 
     // Конвертация images (string[]) в UploadedImage[] для MultiImageUploader
@@ -118,6 +123,63 @@ export default function SitePageForm({
             status: 'success' as const,
         }));
     }, [data.images]);
+
+    const schoolAbout = useMemo(() => {
+        const lc = data.layout_config || {};
+        const about = (
+            typeof lc.about === 'object' && lc.about !== null ? lc.about : {}
+        ) as {
+            mission?: Record<string, unknown>;
+            values?: Array<{ title?: string; body?: string }>;
+        };
+        return {
+            mission: {
+                title: String(about.mission?.title ?? ''),
+                body: String(about.mission?.body ?? ''),
+                image: String(about.mission?.image ?? ''),
+                imagePosition:
+                    (about.mission?.imagePosition as string) || 'left',
+            },
+            values: Array.isArray(about.values) ? about.values : [],
+        };
+    }, [data.layout_config]);
+
+    const setAboutMission = (patch: Record<string, unknown>) => {
+        const lc = { ...(data.layout_config || {}) };
+        const prevAbout = {
+            ...(typeof lc.about === 'object' && lc.about !== null
+                ? (lc.about as Record<string, unknown>)
+                : {}),
+        };
+        const prevMission = {
+            ...((prevAbout.mission as Record<string, unknown>) || {}),
+        };
+        setData('layout_config', {
+            ...lc,
+            about: {
+                ...prevAbout,
+                mission: { ...prevMission, ...patch },
+            },
+        });
+    };
+
+    const setAboutValues = (
+        values: Array<{ title?: string; body?: string }>,
+    ) => {
+        const lc = { ...(data.layout_config || {}) };
+        const prevAbout = {
+            ...(typeof lc.about === 'object' && lc.about !== null
+                ? (lc.about as Record<string, unknown>)
+                : {}),
+        };
+        setData('layout_config', {
+            ...lc,
+            about: {
+                ...prevAbout,
+                values,
+            },
+        });
+    };
 
     // Обработка изменения множественных изображений
     const handleImagesChange = (images: UploadedImage[]) => {
@@ -374,6 +436,249 @@ export default function SitePageForm({
                                         </div>
                                     </CardContent>
                                 </Card>
+
+                                {data.template === 'about' &&
+                                    site.template === 'school' && (
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>
+                                                    Блоки «О школе»
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-6">
+                                                <p className="text-sm text-muted-foreground">
+                                                    Секция «Деятельность» на
+                                                    сайте формируется из поля
+                                                    «Содержимое» в этой же
+                                                    вкладке.
+                                                </p>
+
+                                                <div>
+                                                    <Label>
+                                                        Заголовок миссии
+                                                    </Label>
+                                                    <Input
+                                                        value={
+                                                            schoolAbout.mission
+                                                                .title
+                                                        }
+                                                        onChange={(e) =>
+                                                            setAboutMission({
+                                                                title: e
+                                                                    .target
+                                                                    .value,
+                                                            })
+                                                        }
+                                                        placeholder="Наша миссия"
+                                                        className="mt-1"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <Label>
+                                                        Текст миссии
+                                                    </Label>
+                                                    <Textarea
+                                                        value={
+                                                            schoolAbout.mission
+                                                                .body
+                                                        }
+                                                        onChange={(e) =>
+                                                            setAboutMission({
+                                                                body: e.target
+                                                                    .value,
+                                                            })
+                                                        }
+                                                        placeholder="Текст…"
+                                                        rows={8}
+                                                        className="mt-1"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <Label>
+                                                        Изображение к миссии
+                                                    </Label>
+                                                    <LogoUploader
+                                                        value={
+                                                            schoolAbout.mission
+                                                                .image || null
+                                                        }
+                                                        onChange={(
+                                                            _file,
+                                                            previewUrl,
+                                                        ) =>
+                                                            setAboutMission({
+                                                                image:
+                                                                    previewUrl ||
+                                                                    '',
+                                                            })
+                                                        }
+                                                        onUpload={
+                                                            handleImageUpload
+                                                        }
+                                                        maxSize={10 * 1024 * 1024}
+                                                        aspectRatio={null}
+                                                        showCropControls={true}
+                                                        className="mt-2"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <Label>
+                                                        Позиция изображения
+                                                    </Label>
+                                                    <Select
+                                                        value={
+                                                            schoolAbout.mission
+                                                                .imagePosition
+                                                        }
+                                                        onValueChange={(v) =>
+                                                            setAboutMission({
+                                                                imagePosition:
+                                                                    v,
+                                                            })
+                                                        }
+                                                    >
+                                                        <SelectTrigger className="mt-1">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="left">
+                                                                Слева от текста
+                                                            </SelectItem>
+                                                            <SelectItem value="right">
+                                                                Справа от текста
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+
+                                                <div>
+                                                    <div className="mb-2 flex items-center justify-between">
+                                                        <Label>
+                                                            Ключевые ценности
+                                                        </Label>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                setAboutValues(
+                                                                    [
+                                                                        ...schoolAbout.values,
+                                                                        {
+                                                                            title:
+                                                                                '',
+                                                                            body: '',
+                                                                        },
+                                                                    ],
+                                                                )
+                                                            }
+                                                        >
+                                                            <Plus className="mr-1 h-4 w-4" />
+                                                            Карточка
+                                                        </Button>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        {schoolAbout.values.map(
+                                                            (row, idx) => (
+                                                                <div
+                                                                    key={`v-${idx}`}
+                                                                    className="space-y-2 rounded-md border p-3"
+                                                                >
+                                                                    <div className="flex justify-end">
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="text-destructive"
+                                                                            onClick={() =>
+                                                                                setAboutValues(
+                                                                                    schoolAbout.values.filter(
+                                                                                        (
+                                                                                            _,
+                                                                                            i,
+                                                                                        ) =>
+                                                                                            i !==
+                                                                                            idx,
+                                                                                    ),
+                                                                                )
+                                                                            }
+                                                                            aria-label="Удалить"
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                    <Input
+                                                                        placeholder="Заголовок"
+                                                                        value={
+                                                                            row.title ||
+                                                                            ''
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) => {
+                                                                            const next =
+                                                                                [
+                                                                                    ...schoolAbout.values,
+                                                                                ];
+                                                                            next[
+                                                                                idx
+                                                                            ] =
+                                                                                {
+                                                                                    ...next[
+                                                                                        idx
+                                                                                    ],
+                                                                                    title: e
+                                                                                        .target
+                                                                                        .value,
+                                                                                };
+                                                                            setAboutValues(
+                                                                                next,
+                                                                            );
+                                                                        }}
+                                                                    />
+                                                                    <Textarea
+                                                                        placeholder="Текст"
+                                                                        rows={
+                                                                            3
+                                                                        }
+                                                                        value={
+                                                                            row.body ||
+                                                                            ''
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) => {
+                                                                            const next =
+                                                                                [
+                                                                                    ...schoolAbout.values,
+                                                                                ];
+                                                                            next[
+                                                                                idx
+                                                                            ] =
+                                                                                {
+                                                                                    ...next[
+                                                                                        idx
+                                                                                    ],
+                                                                                    body: e
+                                                                                        .target
+                                                                                        .value,
+                                                                                };
+                                                                            setAboutValues(
+                                                                                next,
+                                                                            );
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )}
                             </div>
                         )}
 

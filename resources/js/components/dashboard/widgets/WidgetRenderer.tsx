@@ -202,6 +202,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
                 previewMode &&
                 (widget.widget_slug === 'projects_slider' ||
                     widget.widget_slug === 'teachers_slider' ||
+                    widget.widget_slug === 'partners_slider' ||
                     widget.widget_slug === 'clubs' ||
                     widget.widget_slug === 'club_schedule' ||
                     widget.widget_slug === 'video_lessons')
@@ -213,6 +214,8 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = memo(
                 const defaultTitle =
                     widget.widget_slug === 'teachers_slider'
                         ? 'Преподаватели'
+                        : widget.widget_slug === 'partners_slider'
+                          ? 'Партнёры фонда'
                         : widget.widget_slug === 'club_schedule'
                           ? 'Расписание кружков'
                           : widget.widget_slug === 'video_lessons'

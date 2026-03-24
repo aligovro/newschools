@@ -156,7 +156,7 @@ export const TeachersSliderWidget: React.FC<Props> = ({ config = {} }) => {
     };
 
     return (
-        <section className="teachers-slider-widget wrapper__block">
+        <section id="teachers" className="teachers-slider-widget wrapper__block">
             <div className="container mx-auto">
                 {title && show_title && (
                     <div className="block__header">

@@ -2,8 +2,16 @@ import type {
     WidgetData,
     WidgetPosition,
 } from '@/components/dashboard/site-builder/types';
+import { AboutAnchorNav } from '@/components/site/AboutAnchorNav';
+import { AboutValuesCards } from '@/components/site/AboutValuesCards';
 import MainLayout from '@/layouts/MainLayout';
+import {
+    getAboutLayout,
+    getAboutLayoutForPage,
+    resolveAboutAnchors,
+} from '@/lib/aboutPageLayout';
 import { type BreadcrumbItem } from '@/types';
+import { getImageUrl } from '@/utils/getImageUrl';
 import React, { useMemo } from 'react';
 
 interface Site {
@@ -50,6 +58,7 @@ interface Page {
         slug: string;
         sort_order: number;
     }>;
+    layout_config?: Record<string, unknown>;
 }
 
 interface PageSeo {
@@ -194,11 +203,95 @@ const SitePageShow: React.FC<PageShowProps> = ({
         return pageSeo.description || page?.excerpt || seoDesc || site.description || '';
     }, [seo?.description, pageSeo.description, page?.excerpt, site.seo_config, site.description]);
 
+    const isSchoolAbout =
+        site.template === 'school' && page?.template === 'about';
+
+    const storedAboutLayout = useMemo(
+        () => (isSchoolAbout ? getAboutLayout(page?.layout_config) : null),
+        [isSchoolAbout, page?.layout_config],
+    );
+
+    const aboutLayout = useMemo(
+        () =>
+            isSchoolAbout
+                ? getAboutLayoutForPage(page?.layout_config, {
+                      isSchoolAbout: true,
+                  })
+                : null,
+        [isSchoolAbout, page?.layout_config],
+    );
+
+    const missionTitle =
+        aboutLayout?.mission?.title?.trim() || 'Наша миссия';
+    const missionBody = aboutLayout?.mission?.body?.trim() || '';
+    const missionImage = aboutLayout?.mission?.image?.trim() || '';
+    const imagePosition = aboutLayout?.mission?.imagePosition || 'left';
+    const valueCards = aboutLayout?.values?.filter((v) => v.title?.trim()) ?? [];
+    const showMissionBlock = Boolean(
+        missionBody ||
+            missionImage ||
+            storedAboutLayout?.mission?.title?.trim(),
+    );
+    const showValuesSection = valueCards.length > 0;
+
+    const aboutAnchorItems = useMemo(() => {
+        const items = resolveAboutAnchors(aboutLayout);
+        if (!showValuesSection) {
+            return items.filter((i) => i.id !== 'values');
+        }
+        return items;
+    }, [aboutLayout, showValuesSection]);
+
+    const missionBodyNode = useMemo(() => {
+        if (!missionBody) return null;
+        if (missionBody.includes('<')) {
+            return (
+                <div
+                    className="school-about-mission__body page-content-html"
+                    dangerouslySetInnerHTML={{ __html: missionBody }}
+                />
+            );
+        }
+        return (
+            <div className="school-about-mission__body whitespace-pre-wrap">
+                {missionBody}
+            </div>
+        );
+    }, [missionBody]);
+
+    /** По макету вводный текст только в герое (слева от картинки): сначала excerpt, иначе основной контент страницы. */
+    const schoolAboutHeroIntro = useMemo(() => {
+        if (!page) return null;
+        const ex = page.excerpt?.trim();
+        const ct = page.content?.trim();
+        const raw = ex || ct;
+        if (!raw) return null;
+        const html = ex ? ex : ct!;
+        if (html.includes('<')) {
+            return (
+                <div
+                    className="school-about-hero__lead page-content-html"
+                    dangerouslySetInnerHTML={{
+                        __html: ex ? page.excerpt! : page.content!,
+                    }}
+                />
+            );
+        }
+        return (
+            <p className="school-about-hero__lead whitespace-pre-wrap">{raw}</p>
+        );
+    }, [page]);
+
+    const hasSchoolAboutIntro = Boolean(
+        page?.excerpt?.trim() || page?.content?.trim(),
+    );
+
     return (
         <MainLayout
             site={site}
             positions={positions}
             position_settings={position_settings}
+            pageContext={page}
             seo={seo}
             pageTitle={seoTitle}
             pageDescription={seoDescription}
@@ -207,41 +300,138 @@ const SitePageShow: React.FC<PageShowProps> = ({
             {/* Нет страницы или страница с is_homepage: только виджеты, без article/header */}
             {page && !page.is_homepage && (
                 <article className="w-full">
-                    {page.image && (
-                        <div className="mb-8">
-                            <img
-                                src={page.image}
-                                alt={page.title}
-                                className="h-64 w-full rounded-lg object-cover shadow-md md:h-96"
-                                loading="eager"
-                            />
-                        </div>
-                    )}
-
-                    <header className="mb-8">
-                        <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-                            {page.title}
-                        </h1>
-                        {page.excerpt && (
-                            <p className="text-xl leading-relaxed text-muted-foreground">
-                                {page.excerpt}
-                            </p>
-                        )}
-                    </header>
-
-                    <div className="mb-8">
-                        {renderedContent ?? (
-                            <div className="py-12 text-center">
-                                <div className="text-muted-foreground">
-                                    <p className="mb-2 text-lg">Содержимое страницы отсутствует</p>
-                                    <p className="text-sm">Эта страница еще не содержит контента.</p>
+                    {isSchoolAbout ? (
+                        <div className="school-about-page school-p-lr-60">
+                            <header
+                                className="school-about-hero"
+                                id="activity"
+                            >
+                                <div className="school-about-hero__text">
+                                    <h1 className="school-about-hero__title">
+                                        {page.title}
+                                    </h1>
+                                    {schoolAboutHeroIntro}
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                                {page.image ? (
+                                    <div className="school-about-hero__media">
+                                        <img
+                                            src={page.image}
+                                            alt=""
+                                            className="school-about-hero__image"
+                                            loading="eager"
+                                        />
+                                    </div>
+                                ) : null}
+                            </header>
 
-                    {renderedImages}
-                    {renderedChildren}
+                            <AboutAnchorNav items={aboutAnchorItems} />
+
+                            {showMissionBlock && (
+                                <section
+                                    id="mission"
+                                    className="school-about-section school-about-section--mission"
+                                >
+                                    <div
+                                        className={`school-about-mission ${
+                                            imagePosition === 'right'
+                                                ? 'school-about-mission--image-right'
+                                                : ''
+                                        }`}
+                                    >
+                                        {missionImage ? (
+                                            <figure className="school-about-mission__figure">
+                                                <img
+                                                    src={getImageUrl(missionImage)}
+                                                    alt=""
+                                                    className="school-about-mission__image"
+                                                    loading="lazy"
+                                                />
+                                            </figure>
+                                        ) : null}
+                                        <div className="school-about-mission__text">
+                                            <h2 className="school-about-mission__title">
+                                                {missionTitle}
+                                            </h2>
+                                            {missionBodyNode}
+                                        </div>
+                                    </div>
+                                </section>
+                            )}
+
+                            {showValuesSection && (
+                                <section
+                                    id="values"
+                                    className="school-about-section school-about-section--values"
+                                    aria-labelledby="values-heading"
+                                >
+                                    <AboutValuesCards cards={valueCards} />
+                                </section>
+                            )}
+
+                            {!showMissionBlock &&
+                                !showValuesSection &&
+                                !hasSchoolAboutIntro &&
+                                !page.image && (
+                                    <div className="py-12 text-center">
+                                        <div className="text-muted-foreground">
+                                            <p className="mb-2 text-lg">
+                                                Содержимое страницы отсутствует
+                                            </p>
+                                            <p className="text-sm">
+                                                Заполните блоки в настройках
+                                                страницы или текст контента.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                            {renderedImages}
+                            {renderedChildren}
+                        </div>
+                    ) : (
+                        <>
+                            {page.image && (
+                                <div className="mb-8">
+                                    <img
+                                        src={page.image}
+                                        alt={page.title}
+                                        className="h-64 w-full rounded-lg object-cover shadow-md md:h-96"
+                                        loading="eager"
+                                    />
+                                </div>
+                            )}
+
+                            <header className="mb-8">
+                                <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
+                                    {page.title}
+                                </h1>
+                                {page.excerpt && (
+                                    <p className="text-xl leading-relaxed text-muted-foreground">
+                                        {page.excerpt}
+                                    </p>
+                                )}
+                            </header>
+
+                            <div className="mb-8">
+                                {renderedContent ?? (
+                                    <div className="py-12 text-center">
+                                        <div className="text-muted-foreground">
+                                            <p className="mb-2 text-lg">
+                                                Содержимое страницы отсутствует
+                                            </p>
+                                            <p className="text-sm">
+                                                Эта страница еще не содержит
+                                                контента.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {renderedImages}
+                            {renderedChildren}
+                        </>
+                    )}
                 </article>
             )}
 

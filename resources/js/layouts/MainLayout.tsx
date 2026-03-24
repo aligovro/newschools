@@ -7,8 +7,12 @@ import type {
 import { useSmoothAnchorNavigation } from '@/hooks';
 import { buildSiteSeo } from '@/lib/seo';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import React, { ReactNode } from 'react';
+import {
+    type VisibilityRules,
+    shouldShowByVisibilityRules,
+} from '@/utils/widgetVisibility';
 interface MainLayoutProps {
     site: {
         id: number;
@@ -29,7 +33,7 @@ interface MainLayoutProps {
     positions: WidgetPosition[];
     position_settings?: Array<{
         position_slug: string;
-        visibility_rules?: PositionVisibilityRules;
+        visibility_rules?: VisibilityRules;
         layout_overrides?: Record<string, unknown>;
     }>;
     children?: ReactNode;
@@ -41,6 +45,8 @@ interface MainLayoutProps {
      * (например, данные проекта, новости, организации).
      */
     seoOverrides?: Record<string, unknown>;
+    /** Текущая CMS-страница (предпочтительно передавать с PageShow для правил видимости виджетов). */
+    pageContext?: { id?: number; slug?: string } | null;
     /**
      * Предвычисленные сервером SEO-данные.
      * Если переданы, фронт не пересчитывает SEO, а просто рендерит эти значения.
@@ -61,12 +67,6 @@ interface MainLayoutProps {
     };
 }
 
-type PositionVisibilityRules = {
-    mode?: 'all' | 'include' | 'exclude';
-    routes?: string[];
-    pages?: unknown[];
-};
-
 const MainLayout: React.FC<MainLayoutProps> = ({
     site,
     positions,
@@ -77,8 +77,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     breadcrumbs = [],
     seoOverrides,
     seo,
+    pageContext,
 }) => {
     useSmoothAnchorNavigation();
+
+    const inertiaProps = usePage().props as {
+        page?: { id?: number; slug?: string };
+    };
+    const currentPage = pageContext ?? inertiaProps.page;
 
     const MemoWidgetDisplay = React.useMemo(
         () => React.memo(WidgetDisplay),
@@ -88,7 +94,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         const map: Record<
             string,
             {
-                visibility_rules?: PositionVisibilityRules;
+                visibility_rules?: VisibilityRules;
                 layout_overrides?: Record<string, unknown>;
             }
         > = {};
@@ -100,17 +106,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         });
         return map;
     }, [position_settings]);
-
-    const getCurrentRouteKey = (): string | null => {
-        if (typeof window === 'undefined') return null;
-        const path = window.location.pathname || '/';
-        if (path === '/' || path === '') return 'home';
-        if (path.startsWith('/organizations')) return 'organizations';
-        if (path.startsWith('/organization/')) return 'organization_show';
-        if (path.startsWith('/projects')) return 'projects';
-        if (path.startsWith('/project/')) return 'project_show';
-        return null;
-    };
 
     const isHomePage = (): boolean => {
         if (typeof window === 'undefined') return false;
@@ -132,29 +127,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
     const shouldShowPosition = (position: WidgetPosition): boolean => {
         const rules = settingsBySlug[position.slug]?.visibility_rules || {};
-        const mode = (rules.mode as 'all' | 'include' | 'exclude') || 'all';
-        const routeKey = getCurrentRouteKey();
-        const routes: string[] = rules.routes || [];
-
-        if (mode === 'all') return true;
-        if (!routeKey) return mode === 'exclude';
-        if (mode === 'include') return routes.includes(routeKey);
-        if (mode === 'exclude') return !routes.includes(routeKey);
-        return true;
+        return shouldShowByVisibilityRules(
+            rules as VisibilityRules,
+            currentPage,
+        );
     };
 
     const shouldShowWidget = (widget: WidgetData): boolean => {
-        const rules =
-            (widget.visibility_rules as PositionVisibilityRules) || {};
-        const mode = (rules.mode as 'all' | 'include' | 'exclude') || 'all';
-        const routeKey = getCurrentRouteKey();
-        const routes: string[] = rules.routes || [];
-
-        if (mode === 'all') return true;
-        if (!routeKey) return mode === 'exclude';
-        if (mode === 'include') return routes.includes(routeKey);
-        if (mode === 'exclude') return !routes.includes(routeKey);
-        return true;
+        const rules = (widget.visibility_rules as VisibilityRules) || {};
+        return shouldShowByVisibilityRules(rules, currentPage);
     };
 
     const getLayoutFor = (
