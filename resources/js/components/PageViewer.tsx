@@ -58,18 +58,7 @@ const PageViewer: React.FC<PageViewerProps> = ({
 
     const renderContent = () => {
         if (!page.content) {
-            return (
-                <div className="py-12 text-center">
-                    <div className="text-muted-foreground">
-                        <p className="mb-2 text-lg">
-                            Содержимое страницы отсутствует
-                        </p>
-                        <p className="text-sm">
-                            Эта страница еще не содержит контента.
-                        </p>
-                    </div>
-                </div>
-            );
+            return null;
         }
 
         // Простой рендер контента (можно расширить для поддержки Markdown, HTML и т.д.)
@@ -213,11 +202,13 @@ const PageViewer: React.FC<PageViewerProps> = ({
                                 </div>
 
                                 {/* Page Content */}
-                                <Card>
-                                    <CardContent className="pt-6">
-                                        {renderContent()}
-                                    </CardContent>
-                                </Card>
+                                {page.content ? (
+                                    <Card>
+                                        <CardContent className="pt-6">
+                                            {renderContent()}
+                                        </CardContent>
+                                    </Card>
+                                ) : null}
 
                                 {/* Page Footer */}
                                 <div className="mt-8 border-t pt-8">

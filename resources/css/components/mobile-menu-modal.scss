@@ -93,10 +93,18 @@
 
     &__nav {
         flex: 1;
-        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
         padding: 0;
         margin: 0;
+    }
+
+    &__scroll {
+        flex: 1;
+        overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        min-height: 0;
     }
 
     &__list {
@@ -105,6 +113,69 @@
         padding: 8px 0;
         display: flex;
         flex-direction: column;
+    }
+
+    &__contacts {
+        flex-shrink: 0;
+        padding: 16px 20px 24px;
+        border-top: 1px solid #e8ecf3;
+        background: #f8f9fe;
+
+        &:empty {
+            display: none;
+            padding: 0;
+            border: none;
+        }
+
+        // Клон .school-contacts-bar в портале вне .site-preview — токены как у шаблона school
+        --school-text: #1a1a1a;
+        --school-muted: #b5b9c3;
+        --school-bg: #f5f6f8;
+        --school-border: #e8ecf3;
+
+        .school-contacts-bar {
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .school-contacts-bar__primary {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            column-gap: 8px;
+            row-gap: 6px;
+            text-align: left;
+        }
+
+        .school-contacts-bar__pin {
+            grid-column: 1;
+            grid-row: 1;
+            margin: 0;
+            align-self: center;
+        }
+
+        .school-contacts-bar__address {
+            grid-column: 2;
+            grid-row: 1;
+            min-width: 0;
+            text-align: left;
+            color: var(--school-text);
+        }
+
+        .school-contacts-bar__email {
+            grid-column: 1 / -1;
+            color: var(--school-muted);
+        }
+
+        .school-contacts-bar__phone {
+            grid-column: 1 / -1;
+            color: var(--school-text);
+        }
+
+        .school-contacts-bar__social {
+            justify-content: flex-start;
+            width: 100%;
+        }
     }
 
     &__item {

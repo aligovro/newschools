@@ -1,11 +1,7 @@
 import type { ClubSignUpPayload } from '@/components/clubs/clubSignUpTypes';
-import { Button } from '@/components/ui/button';
-import { DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import RussianPhoneInput from '@/components/ui/RussianPhoneInput';
 import { PersonalDataConsent } from '@/components/ui/personal-data-consent/PersonalDataConsent';
-import { Textarea } from '@/components/ui/textarea';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useId, useState } from 'react';
 
 export interface ClubSignUpFormProps {
     club: { id: number; name: string };
@@ -20,6 +16,11 @@ export interface ClubSignUpFormProps {
     onSubmitted?: () => void;
 }
 
+function isCompleteRussianMobile(phone: string): boolean {
+    const digits = phone.replace(/\D/g, '');
+    return digits.length >= 11 && digits.startsWith('7');
+}
+
 export function ClubSignUpForm({
     club,
     organizationId,
@@ -30,8 +31,20 @@ export function ClubSignUpForm({
     onCancel,
     onSubmitted,
 }: ClubSignUpFormProps) {
+    const uid = useId().replace(/:/g, '');
+    const fieldSuffix = variant === 'modal' ? 'm' : 's';
+    const nameId = `club-signup-name-${fieldSuffix}-${uid}`;
+    const phoneId = `club-signup-phone-${fieldSuffix}-${uid}`;
+    const emailId = `club-signup-email-${fieldSuffix}-${uid}`;
+    const commentId = `club-signup-comment-${fieldSuffix}-${uid}`;
+    const consentId =
+        variant === 'modal'
+            ? `club-signup-consent-modal-${uid}`
+            : `club-signup-consent-sidebar-${uid}`;
+
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
     const [comment, setComment] = useState('');
     const [consent, setConsent] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -56,6 +69,14 @@ export function ClubSignUpForm({
                 );
                 return;
             }
+            if (!name.trim()) {
+                setError('Укажите имя');
+                return;
+            }
+            if (!isCompleteRussianMobile(phone)) {
+                setError('Укажите полный номер телефона');
+                return;
+            }
             setError(null);
             setSubmitting(true);
             try {
@@ -65,11 +86,13 @@ export function ClubSignUpForm({
                     organizationId,
                     name: name.trim(),
                     phone: phone.trim(),
+                    email: email.trim(),
                     comment: comment.trim(),
                 });
                 setSuccess(true);
                 setName('');
                 setPhone('');
+                setEmail('');
                 setComment('');
                 setConsent(false);
                 if (variant === 'sidebar') {
@@ -91,6 +114,7 @@ export function ClubSignUpForm({
             organizationId,
             name,
             phone,
+            email,
             comment,
             consent,
             onSubmit,
@@ -112,159 +136,130 @@ export function ClubSignUpForm({
 
     if (success && variant === 'modal') {
         return (
-            <div className="py-6 text-center">
-                <p className="text-lg font-semibold text-green-700">
-                    Заявка отправлена!
-                </p>
-                <p className="mt-1 text-sm text-gray-500">
+            <div className={`club-signup-form club-signup-form--success ${className}`}>
+                <p className="club-signup-form__success-title">Заявка отправлена</p>
+                <p className="club-signup-form__success-text">
                     Администратор свяжется с вами.
                 </p>
             </div>
         );
     }
 
-    const fields =
-        variant === 'modal' ? (
-            <div className="flex flex-col gap-3">
-                <label className="flex flex-col">
-                    Имя
-                    <Input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Ваше имя"
-                        required
-                        className="mt-1"
-                    />
-                </label>
-                <label className="flex flex-col">
-                    Телефон
-                    <Input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+7 (999) 000-00-00"
-                        required
-                        className="mt-1"
-                    />
-                </label>
-                <label className="flex flex-col">
-                    Комментарий
-                    <Textarea
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        placeholder="Необязательно"
-                        rows={3}
-                        className="mt-1"
-                    />
-                </label>
-                <PersonalDataConsent
-                    id="club-signup-consent-modal"
-                    checked={consent}
-                    onChange={setConsent}
-                    policyHref="/policy/"
-                    className="text-muted-foreground text-xs"
-                />
-            </div>
-        ) : (
-            <>
+    const fields = (
+        <>
+            {variant === 'sidebar' && (
                 <h2 className="club-signup-form__title">
                     Запишите вашего ребенка на кружок
                 </h2>
-                <div className="club-signup-form__field">
-                    <Label
-                        htmlFor="club-signup-name"
-                        className="club-signup-form__label"
-                    >
-                        Ваше имя
-                    </Label>
-                    <Input
-                        id="club-signup-name"
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Ваше имя"
-                        required
-                        className="club-signup-form__input"
-                    />
-                </div>
-                <div className="club-signup-form__field">
-                    <Label
-                        htmlFor="club-signup-phone"
-                        className="club-signup-form__label"
-                    >
-                        Номер телефона
-                    </Label>
-                    <Input
-                        id="club-signup-phone"
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+7 (999) 000-00-00"
-                        required
-                        className="club-signup-form__input"
-                    />
-                </div>
-                <div className="club-signup-form__field">
-                    <Label
-                        htmlFor="club-signup-comment"
-                        className="club-signup-form__label"
+            )}
+            <div className="club-signup-form__control">
+                <label
+                    htmlFor={nameId}
+                    className="club-signup-form__control-label"
+                >
+                    Ваше имя
+                </label>
+                <input
+                    id={nameId}
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ваше имя"
+                    autoComplete="name"
+                    className="club-signup-form__control-input"
+                />
+            </div>
+            <div className="club-signup-form__control">
+                <label
+                    htmlFor={phoneId}
+                    className="club-signup-form__control-label"
+                >
+                    Номер телефона
+                </label>
+                <RussianPhoneInput
+                    id={phoneId}
+                    value={phone}
+                    onValueChange={setPhone}
+                    className="club-signup-form__phone"
+                    autoComplete="tel"
+                />
+            </div>
+            <div className="club-signup-form__control">
+                <label
+                    htmlFor={emailId}
+                    className="club-signup-form__control-label"
+                >
+                    Электронная почта
+                </label>
+                <input
+                    id={emailId}
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="myname@mail.com"
+                    autoComplete="email"
+                    className="club-signup-form__control-input"
+                />
+            </div>
+            {variant === 'modal' && (
+                <div className="club-signup-form__control club-signup-form__control--textarea">
+                    <label
+                        htmlFor={commentId}
+                        className="club-signup-form__control-label"
                     >
                         Комментарий
-                    </Label>
-                    <Textarea
-                        id="club-signup-comment"
+                    </label>
+                    <textarea
+                        id={commentId}
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="Необязательно"
                         rows={3}
-                        className="club-signup-form__textarea"
+                        className="club-signup-form__control-textarea"
                     />
                 </div>
-                <PersonalDataConsent
-                    id="club-signup-consent-sidebar"
-                    checked={consent}
-                    onChange={setConsent}
-                    policyHref="/policy/"
-                    className="club-signup-form__consent"
-                />
-            </>
-        );
+            )}
+            <PersonalDataConsent
+                id={consentId}
+                checked={consent}
+                onChange={setConsent}
+                policyHref="/policy/"
+                className="club-signup-form__consent"
+            />
+        </>
+    );
 
     return (
         <form
             onSubmit={handleSubmit}
             className={
                 variant === 'modal'
-                    ? `flex flex-col gap-4 ${className}`
-                    : `club-signup-form ${className}`
+                    ? `club-signup-form club-signup-form--modal ${className}`.trim()
+                    : `club-signup-form ${className}`.trim()
             }
+            noValidate
         >
             {fields}
             {error && (
-                <p
-                    className={
-                        variant === 'sidebar'
-                            ? 'club-signup-form__error'
-                            : 'rounded-md bg-red-50 px-3 py-2 text-sm text-red-600'
-                    }
-                >
-                    {error}
-                </p>
+                <p className="club-signup-form__error">{error}</p>
             )}
             {variant === 'modal' ? (
-                <DialogFooter>
-                    <Button
+                <div className="club-signup-form__actions">
+                    <button
                         type="button"
-                        variant="outline"
+                        className="club-signup-form__btn-cancel"
                         onClick={onCancel}
                     >
                         Отмена
-                    </Button>
-                    <Button type="submit" disabled={submitting}>
+                    </button>
+                    <button
+                        type="submit"
+                        className="club-signup-form__submit club-signup-form__submit--modal"
+                        disabled={submitting}
+                    >
                         {submitting ? 'Отправка…' : submitLabel ?? defaultSubmit}
-                    </Button>
-                </DialogFooter>
+                    </button>
+                </div>
             ) : (
                 <button
                     type="submit"

@@ -1,0 +1,142 @@
+// Личный кабинет (/my-account) в шаблоне school
+
+.site-preview.site-template--school {
+    .account-page {
+        max-width: 1362px;
+        margin-inline: auto;
+        padding-top: 2.5rem;
+        padding-bottom: 5rem;
+    }
+
+    .account-page__title {
+        margin: 0 0 2rem;
+        font-size: clamp(1.75rem, 3vw, 2.5rem);
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .account-page__layout {
+        display: grid;
+        gap: 2rem;
+        align-items: start;
+
+        @media (min-width: 768px) {
+            grid-template-columns: 220px 1fr;
+        }
+    }
+
+    // ── Боковая навигация ─────────────────────────────────────────────────────
+
+    .account-page__nav {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        // На мобильных — горизонтальная прокрутка
+        @media (max-width: 767px) {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+    }
+
+    .account-page__nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        min-height: 40px;
+        padding: 0.5rem 1rem;
+        border-radius: 24px;
+        border: 1px solid var(--school-border, #e8ecf3);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+        text-decoration: none;
+        transition:
+            border-color 0.15s ease,
+            background 0.15s ease,
+            color 0.15s ease;
+
+        // Переопределяем tailwind-цвета, которые приходят из className
+        background: transparent !important;
+        color: var(--school-text, #1a1a1a) !important;
+
+        svg {
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+
+        &:hover {
+            border-color: var(--school-accent, #96bdff);
+            background: rgba(150, 189, 255, 0.07) !important;
+        }
+
+        &--active {
+            border-color: var(--school-primary, #3259ff);
+            color: var(--school-primary, #3259ff) !important;
+            background: rgba(50, 89, 255, 0.05) !important;
+
+            svg {
+                opacity: 1;
+            }
+        }
+    }
+
+    // ── Основная область контента ─────────────────────────────────────────────
+
+    .account-page__content {
+        background: #fff;
+        border-radius: 40px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 32px rgba(26, 26, 26, 0.06);
+    }
+
+    .account-page__section-title {
+        margin: 0 0 1.5rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    // ── Кнопка «Сохранить» ────────────────────────────────────────────────────
+
+    .account-page__submit-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 54px;
+        padding: 0 2rem;
+        border-radius: 27px;
+        background: var(--school-gradient, linear-gradient(84deg, #96bdff 0%, #3259ff 100%)) !important;
+        border: none !important;
+        color: #fff !important;
+        font-size: 0.875rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        transition: opacity 0.15s ease;
+
+        &:hover:not(:disabled) {
+            opacity: 0.88;
+        }
+
+        &:disabled {
+            opacity: 0.55;
+        }
+    }
+
+    // ── Состояние «пусто» (пунктирный бордер) ────────────────────────────────
+
+    .account-page__content {
+        // Внутри контент-карточки пустые состояния получают border в цвет школы
+        .rounded-lg.border-dashed {
+            border-color: var(--school-border, #e8ecf3);
+            border-radius: 24px;
+            color: var(--school-muted, #b5b9c3);
+        }
+    }
+}

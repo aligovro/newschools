@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { isInternalLink } from '@/lib/linkUtils';
 import { Link, usePage } from '@inertiajs/react';
 import { X } from 'lucide-react';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { MenuItem } from './types';
 
 interface MobileMenuModalProps {
@@ -10,6 +10,8 @@ interface MobileMenuModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     title?: string;
+    /** Шаблон school: дублировать блок .school-contacts-bar из шапки вниз модалки */
+    cloneSchoolContacts?: boolean;
 }
 
 export const MobileMenuModal: React.FC<MobileMenuModalProps> = ({
@@ -17,8 +19,10 @@ export const MobileMenuModal: React.FC<MobileMenuModalProps> = ({
     isOpen,
     onOpenChange,
     title,
+    cloneSchoolContacts = false,
 }) => {
     const page = usePage();
+    const contactsMountRef = useRef<HTMLDivElement>(null);
 
     // Определение активного пункта меню
     const isActiveMenuItem = useCallback(
@@ -121,6 +125,62 @@ export const MobileMenuModal: React.FC<MobileMenuModalProps> = ({
         [isActiveMenuItem, handleItemClick],
     );
 
+    // Dialog ренерит контент в портал — ref и DOM источника могут быть готовы не в том же тике, что useLayoutEffect
+    useEffect(() => {
+        if (!cloneSchoolContacts) {
+            return;
+        }
+
+        const clear = () => {
+            contactsMountRef.current?.replaceChildren();
+        };
+
+        if (!isOpen) {
+            clear();
+            return;
+        }
+
+        let cancelled = false;
+        let frame = 0;
+        let attempts = 0;
+        const maxAttempts = 40;
+
+        const run = (): void => {
+            if (cancelled) {
+                return;
+            }
+            const el = contactsMountRef.current;
+            const sourceRoot = document.querySelector(
+                '.school-header-contacts-source',
+            );
+            const bar = sourceRoot?.querySelector('.school-contacts-bar');
+
+            if (!el) {
+                attempts += 1;
+                if (attempts < maxAttempts) {
+                    frame = requestAnimationFrame(run);
+                }
+                return;
+            }
+
+            el.replaceChildren();
+            if (bar) {
+                el.appendChild(bar.cloneNode(true));
+            }
+        };
+
+        // Двойной rAF: контент Dialog в портале часто появляется на следующем кадре
+        frame = requestAnimationFrame(() => {
+            frame = requestAnimationFrame(run);
+        });
+
+        return () => {
+            cancelled = true;
+            cancelAnimationFrame(frame);
+            clear();
+        };
+    }, [isOpen, cloneSchoolContacts]);
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange} modal={true}>
             <DialogContent className="mobile-menu-modal__content">
@@ -138,11 +198,21 @@ export const MobileMenuModal: React.FC<MobileMenuModalProps> = ({
                     </button>
                 </div>
 
-                {/* Список пунктов меню */}
-                <nav className="mobile-menu-modal__nav">
-                    <ul className="mobile-menu-modal__list">
-                        {items.map((item) => renderMenuItem(item))}
-                    </ul>
+                {/* Список пунктов меню + опционально контакты (шаблон school) */}
+                <nav className="mobile-menu-modal__nav" aria-label="Навигация">
+                    <div className="mobile-menu-modal__scroll">
+                        <ul className="mobile-menu-modal__list">
+                            {items.map((item) => renderMenuItem(item))}
+                        </ul>
+                    </div>
+                    {cloneSchoolContacts && (
+                        <div
+                            className="mobile-menu-modal__contacts"
+                            ref={contactsMountRef}
+                            role="region"
+                            aria-label="Контакты"
+                        />
+                    )}
                 </nav>
             </DialogContent>
         </Dialog>

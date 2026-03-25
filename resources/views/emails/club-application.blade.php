@@ -82,6 +82,12 @@
             <div class="field-label">Телефон</div>
             <div class="field-value">{{ $application->phone }}</div>
         </div>
+        @if($application->email)
+        <div class="field">
+            <div class="field-label">Электронная почта</div>
+            <div class="field-value">{{ $application->email }}</div>
+        </div>
+        @endif
         @if($application->comment)
         <div class="field">
             <div class="field-label">Комментарий</div>

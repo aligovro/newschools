@@ -3,6 +3,7 @@ import { apiClient } from '@/lib/api';
 import type { DonationPaymentData } from '@/lib/api/index';
 import { CheckCircle2, Loader2, X, XCircle } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface DonationPaymentModalProps {
     visible: boolean;
@@ -153,9 +154,22 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
             const showSuccess = status === 'completed';
             const showError = status === 'failed';
 
-            return (
-                <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/60 px-4">
-                    <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            // Портал в body: иначе `fixed` попадает под transform родительского Dialog и
+            // затемнение обрезается по границам модалки пожертвования.
+            const overlay = (
+                <div
+                    className="fixed inset-0 z-[1300] flex items-center justify-center overflow-y-auto bg-black/60 px-4 py-8"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={
+                        showSuccess
+                            ? 'Платёж выполнен'
+                            : showError
+                              ? 'Ошибка платежа'
+                              : 'Оплата по QR-коду'
+                    }
+                >
+                    <div className="relative my-auto w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
                         <button
                             type="button"
                             onClick={onClose}
@@ -279,6 +293,12 @@ export const DonationPaymentModal: React.FC<DonationPaymentModalProps> =
                     </div>
                 </div>
             );
+
+            if (typeof document === 'undefined') {
+                return null;
+            }
+
+            return createPortal(overlay, document.body);
         },
     );
 

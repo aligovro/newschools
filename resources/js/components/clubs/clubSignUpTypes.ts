@@ -4,5 +4,6 @@ export interface ClubSignUpPayload {
     organizationId?: number;
     name: string;
     phone: string;
-    comment: string;
+    email?: string;
+    comment?: string;
 }

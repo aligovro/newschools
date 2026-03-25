@@ -448,16 +448,16 @@ export default function AccountPage({
 
     const navContent = useMemo(
         () => (
-            <nav className="space-y-1">
+            <nav className="account-page__nav space-y-1">
                 {NAV_ITEMS.map(({ slug, label, icon: Icon }) => (
                     <Link
                         key={slug}
                         href={`/my-account/${slug}`}
-                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                        className={`account-page__nav-link ${
                             section === slug
-                                ? 'bg-primary/10 text-primary'
+                                ? 'account-page__nav-link--active bg-primary/10 text-primary'
                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        } flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors`}
                     >
                         <Icon className="h-4 w-4 shrink-0" />
                         {label}
@@ -582,7 +582,11 @@ export default function AccountPage({
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button type="submit" disabled={saving}>
+                    <Button
+                        type="submit"
+                        disabled={saving}
+                        className="account-page__submit-btn"
+                    >
                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Сохранить
                     </Button>
@@ -629,18 +633,33 @@ export default function AccountPage({
         organizationId,
     ]);
 
+    const activeLabel = NAV_ITEMS.find((i) => i.slug === section)?.label ?? '';
+
     return (
         <MainLayout
             site={site}
             positions={positions}
             position_settings={position_settings}
             pageTitle={`Личный кабинет — ${site.name}`}
+            breadcrumbs={[
+                { title: 'Главная', href: '/' },
+                { title: 'Личный кабинет', href: '' },
+            ]}
         >
-            <div className="mx-auto max-w-4xl">
-                <h1 className="mb-6 text-2xl font-semibold">Личный кабинет</h1>
-                <div className="grid gap-8 lg:grid-cols-[200px_1fr]">
+            <div className="account-page school-p-lr-60">
+                <h1 className="account-page__title mb-6 text-2xl font-semibold">
+                    Личный кабинет
+                </h1>
+                <div className="account-page__layout grid gap-8 lg:grid-cols-[220px_1fr]">
                     <aside className="shrink-0">{navContent}</aside>
-                    <main>{mainContent}</main>
+                    <div className="account-page__content">
+                        {activeLabel && (
+                            <h2 className="account-page__section-title mb-6 text-lg font-semibold">
+                                {activeLabel}
+                            </h2>
+                        )}
+                        {mainContent}
+                    </div>
                 </div>
             </div>
         </MainLayout>

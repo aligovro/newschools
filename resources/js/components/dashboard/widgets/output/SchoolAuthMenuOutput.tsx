@@ -8,8 +8,10 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSelector } from '@/store';
+import { usePage } from '@inertiajs/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { SchoolDonationModal } from '@/components/dashboard/widgets/donation/SchoolDonationModal';
 import { AuthLoginDialog } from '../auth/AuthLoginDialog';
 import { useAuthModals } from '../auth/useAuthModals';
 
@@ -21,12 +23,29 @@ const getCsrfToken = (): string =>
     document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
         ?.content ?? '';
 
+function parseOrganizationId(raw: unknown): number | undefined {
+    if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
+        return raw;
+    }
+    if (typeof raw === 'string' && raw.trim() !== '') {
+        const n = Number.parseInt(raw, 10);
+        return Number.isFinite(n) && n > 0 ? n : undefined;
+    }
+    return undefined;
+}
+
 export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({
     config,
 }) => {
     const { user, isAuthenticated, isLoading, login, logout, clearAuthError } =
         useAuth();
     const currentSite = useAppSelector((s) => s.sites.currentSite);
+    const { props: pageProps } = usePage<{
+        site?: {
+            organization_id?: unknown;
+            organization?: { id?: unknown };
+        };
+    }>();
 
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [sessionUser, setSessionUser] = useState<Record<
@@ -36,6 +55,7 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({
     const [isCheckingSession, setIsCheckingSession] = useState(false);
     const [phoneAuthLoading, setPhoneAuthLoading] = useState(false);
     const [forgotLoading, setForgotLoading] = useState(false);
+    const [donationModalOpen, setDonationModalOpen] = useState(false);
 
     const {
         loginState,
@@ -55,10 +75,79 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({
     const profileText = String(cfg.profile_text ?? 'Профиль');
 
     const organizationId = useMemo(() => {
-        const cfgOrg = (cfg.organization_id as number) || undefined;
-        if (cfgOrg) return cfgOrg;
-        return currentSite?.organizationId;
-    }, [cfg, currentSite]);
+        const fromWidget = parseOrganizationId(cfg.organization_id);
+        if (fromWidget) {
+            return fromWidget;
+        }
+        const fromRedux = parseOrganizationId(currentSite?.organizationId);
+        if (fromRedux) {
+            return fromRedux;
+        }
+        const site = pageProps.site;
+        if (!site) {
+            return undefined;
+        }
+        return (
+            parseOrganizationId(site.organization_id) ??
+            parseOrganizationId(site.organization?.id)
+        );
+    }, [cfg.organization_id, currentSite?.organizationId, pageProps.site]);
+
+    const opensDonationModal = useMemo(() => {
+        const u = donateUrl.trim();
+        if (/^https?:\/\//i.test(u)) {
+            return false;
+        }
+        return u === '#donation' || u === '#';
+    }, [donateUrl]);
+
+    const openDonationModal = useCallback(() => {
+        if (!organizationId) {
+            return;
+        }
+        setDonationModalOpen(true);
+        if (typeof window !== 'undefined' && window.location.hash !== '#donation') {
+            window.history.replaceState(
+                null,
+                '',
+                `${window.location.pathname}${window.location.search}#donation`,
+            );
+        }
+    }, [organizationId]);
+
+    const handleDonationModalOpenChange = useCallback((open: boolean) => {
+        setDonationModalOpen(open);
+        if (
+            !open &&
+            typeof window !== 'undefined' &&
+            window.location.hash === '#donation'
+        ) {
+            window.history.replaceState(
+                null,
+                '',
+                window.location.pathname + window.location.search,
+            );
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!organizationId || !opensDonationModal) {
+            return;
+        }
+        const syncFromHash = () => {
+            if (window.location.hash === '#donation') {
+                setDonationModalOpen(true);
+            }
+        };
+        syncFromHash();
+        window.addEventListener('hashchange', syncFromHash);
+        return () => window.removeEventListener('hashchange', syncFromHash);
+    }, [organizationId, opensDonationModal]);
+
+    // На сайте организации — личный кабинет /my-account, на главном — /profile
+    const profileUrl = String(
+        cfg.profile_url ?? (organizationId ? '/my-account' : '/profile'),
+    );
 
     useEffect(() => {
         return () => {
@@ -404,11 +493,17 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({
                             </DropdownMenuItem>
                         )}
                         <DropdownMenuItem asChild>
-                            <a href="/profile">Профиль</a>
+                            <a href={profileUrl}>
+                                {organizationId
+                                    ? 'Личный кабинет'
+                                    : 'Профиль'}
+                            </a>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <a href="/settings">Настройки</a>
-                        </DropdownMenuItem>
+                        {!organizationId && (
+                            <DropdownMenuItem asChild>
+                                <a href="/settings">Настройки</a>
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem asChild>
                             <button
                                 onClick={handleLogout}
@@ -421,9 +516,30 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({
                 </DropdownMenu>
             )}
             {/* «Помочь школе» — gradient, always visible */}
-            <a href={donateUrl} className="school-auth-menu__donate-btn">
+            <a
+                href={donateUrl}
+                className="school-auth-menu__donate-btn"
+                onClick={(e) => {
+                    if (!opensDonationModal) {
+                        return;
+                    }
+                    if (!organizationId) {
+                        // Нет id организации в контексте — не перехватываем клик (якорь / внешняя ссылка)
+                        return;
+                    }
+                    e.preventDefault();
+                    openDonationModal();
+                }}
+            >
                 {donateText}
             </a>
+            {organizationId != null && (
+                <SchoolDonationModal
+                    open={donationModalOpen}
+                    onOpenChange={handleDonationModalOpenChange}
+                    organizationId={organizationId}
+                />
+            )}
         </div>
     );
 };

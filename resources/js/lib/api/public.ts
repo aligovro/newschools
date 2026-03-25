@@ -139,6 +139,7 @@ export interface ClubApplicationPayload {
     club_name: string;
     name: string;
     phone: string;
+    email?: string | null;
     comment?: string;
 }
 

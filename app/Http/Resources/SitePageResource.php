@@ -19,6 +19,7 @@ class SitePageResource extends JsonResource
             'site_id' => $this->site_id,
             'parent_id' => $this->parent_id,
             'title' => $this->title ?? '',
+            'show_title' => (bool) ($this->show_title ?? true),
             'slug' => $this->slug ?? '',
             'excerpt' => $this->excerpt ?? '',
             'content' => $this->content ?? '',

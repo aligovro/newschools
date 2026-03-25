@@ -67,8 +67,8 @@ export const ClubScheduleOutput: React.FC<WidgetOutputProps> = ({
     const getClubPageUrl = useCallback(
         (club: ClubScheduleItem) =>
             clubPageBaseUrl
-                ? `${clubPageBaseUrl.replace(/\/$/, '')}#club-${club.id}`
-                : `#club-${club.id}`,
+                ? `${clubPageBaseUrl.replace(/\/$/, '')}/club/${club.id}`
+                : `/club/${club.id}`,
         [clubPageBaseUrl],
     );
 
@@ -128,6 +128,7 @@ export const ClubScheduleOutput: React.FC<WidgetOutputProps> = ({
             club_name:       payload.clubName,
             name:            payload.name,
             phone:           payload.phone,
+            email:           payload.email,
             comment:         payload.comment,
         });
     }, []);

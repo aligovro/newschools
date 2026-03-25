@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Check, Phone, X } from 'lucide-react';
+import { ArrowLeft, Check, Mail, Phone, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
 interface OrgMeta {
@@ -215,6 +215,14 @@ function ApplicationRow({ application, processing, onApprove, onReject }: Applic
                         {application.phone}
                     </a>
                 </div>
+                {application.email && (
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <Mail className="h-3.5 w-3.5 shrink-0" />
+                        <a href={`mailto:${application.email}`} className="hover:underline">
+                            {application.email}
+                        </a>
+                    </div>
+                )}
                 {application.comment && (
                     <p className="text-sm text-gray-500 italic">«{application.comment}»</p>
                 )}

@@ -199,16 +199,6 @@ export default function ProfilePage({
         (e: React.FormEvent) => {
             e.preventDefault();
 
-            // Логируем данные перед отправкой
-            console.log('Submitting profile data:', {
-                name: data.name,
-                email: data.email,
-                phone: data.phone,
-                hasPhoto: !!data.photo,
-                hasPassword: !!data.password,
-                hasPasswordConfirmation: !!data.password_confirmation,
-            });
-
             // Используем router.post с _method: 'PUT' для правильной отправки FormData
             router.post(
                 '/profile',

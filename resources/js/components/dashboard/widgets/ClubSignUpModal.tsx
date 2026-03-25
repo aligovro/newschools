@@ -36,7 +36,7 @@ export const ClubSignUpModal: React.FC<ClubSignUpModalProps> = ({
                 if (o) setFormKey((k) => k + 1);
             }}
         >
-            <DialogContent>
+            <DialogContent className="club-signup-dialog sm:max-w-[480px]">
                 <DialogHeader>
                     <DialogTitle>Записаться в секцию</DialogTitle>
                     <DialogDescription>{club.name}</DialogDescription>

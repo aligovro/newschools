@@ -18,6 +18,7 @@ class StoreSitePageRequest extends FormRequest
 
         return [
             'title' => ['required', 'string', 'max:255'],
+            'show_title' => ['nullable', 'boolean'],
             'slug' => [
                 'nullable',
                 'string',
@@ -25,7 +26,7 @@ class StoreSitePageRequest extends FormRequest
                 'regex:/^[a-z0-9\-]+$/',
                 Rule::unique('site_pages')->where(function ($query) use ($siteId) {
                     return $query->where('site_id', $siteId);
-                })
+                })->withoutTrashed()
             ],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'content' => ['nullable', 'string'],
@@ -41,6 +42,8 @@ class StoreSitePageRequest extends FormRequest
             'images' => ['nullable', 'array'],
             'images.*' => ['string', 'max:500'],
             'layout_config' => ['nullable', 'array'],
+
+            // About template
             'layout_config.about' => ['nullable', 'array'],
             'layout_config.about.mission' => ['nullable', 'array'],
             'layout_config.about.mission.title' => ['nullable', 'string', 'max:500'],
@@ -53,6 +56,34 @@ class StoreSitePageRequest extends FormRequest
             'layout_config.about.anchorNav' => ['nullable', 'array', 'max:16'],
             'layout_config.about.anchorNav.*.id' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9\-]+$/'],
             'layout_config.about.anchorNav.*.label' => ['nullable', 'string', 'max:255'],
+
+            // Thanks template
+            'layout_config.thanks' => ['nullable', 'array'],
+            'layout_config.thanks.collected_amount' => ['nullable', 'string', 'max:255'],
+            'layout_config.thanks.profile_link_text' => ['nullable', 'string', 'max:500'],
+            'layout_config.thanks.profile_url' => ['nullable', 'string', 'max:500'],
+            'layout_config.thanks.cta_text' => ['nullable', 'string', 'max:255'],
+            'layout_config.thanks.cta_url' => ['nullable', 'string', 'max:500'],
+            'layout_config.thanks.requisites_url' => ['nullable', 'string', 'max:500'],
+
+            // Contacts template
+            'layout_config.contacts' => ['nullable', 'array'],
+            'layout_config.contacts.docs_title' => ['nullable', 'string', 'max:255'],
+            'layout_config.contacts.cards' => ['nullable', 'array', 'max:4'],
+            'layout_config.contacts.cards.*.label' => ['nullable', 'string', 'max:255'],
+            'layout_config.contacts.cards.*.value' => ['nullable', 'string', 'max:500'],
+            'layout_config.contacts.cards.*.hours' => ['nullable', 'string', 'max:255'],
+            'layout_config.contacts.cards.*.email' => ['nullable', 'string', 'max:255'],
+            'layout_config.contacts.cards.*.action_text' => ['nullable', 'string', 'max:255'],
+            'layout_config.contacts.cards.*.action_url' => ['nullable', 'string', 'max:500'],
+            'layout_config.contacts.cards.*.action_variant' => ['nullable', 'in:primary,outline'],
+            'layout_config.contacts.cards.*.map_enabled' => ['nullable', 'boolean'],
+            'layout_config.contacts.cards.*.socials' => ['nullable', 'array'],
+            'layout_config.contacts.documents' => ['nullable', 'array'],
+            'layout_config.contacts.documents.*.name' => ['nullable', 'string', 'max:255'],
+            'layout_config.contacts.documents.*.url' => ['nullable', 'string', 'max:500'],
+            'layout_config.contacts.documents.*.meta' => ['nullable', 'string', 'max:255'],
+
             'content_blocks' => ['nullable', 'array'],
             'seo_config' => ['nullable', 'array'],
         ];

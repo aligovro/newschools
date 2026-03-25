@@ -1,0 +1,229 @@
+// Страница «Спасибо» (шаблон страницы thanks + site template school)
+
+.site-preview.site-template--school {
+    .school-thanks-page {
+        max-width: 1362px;
+        margin-inline: auto;
+    }
+
+    // Двухколоночный герой: текст слева (~530px), галерея справа
+    .school-thanks-hero {
+        display: grid;
+        gap: 2rem;
+        align-items: start;
+        padding-top: 2.5rem;
+        padding-bottom: 5rem;
+
+        @media (min-width: 1024px) {
+            grid-template-columns: minmax(0, 530px) 1fr;
+            column-gap: clamp(2rem, 5vw, 4.75rem);
+        }
+    }
+
+    .school-thanks-hero__text {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .school-thanks-hero__title {
+        margin: 0 0 1.25rem;
+        font-size: clamp(2rem, 4vw, 2.5rem);
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .school-thanks-hero__lead {
+        margin: 0 0 1.5rem;
+        font-size: 1.25rem;
+        font-weight: 400;
+        line-height: 1.4;
+        letter-spacing: 0.01em;
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .school-thanks-hero__divider {
+        width: 100%;
+        height: 1px;
+        background: var(--school-border, #e8ecf3);
+        border: none;
+        margin: 0 0 1.5rem;
+    }
+
+    .school-thanks-hero__profile {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        text-decoration: none;
+        margin-bottom: 1.75rem;
+        color: var(--school-text, #1a1a1a);
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        line-height: 1.4;
+
+        &:hover {
+            opacity: 0.8;
+        }
+    }
+
+    .school-thanks-hero__profile-icon {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+    }
+
+    .school-thanks-hero__cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 250px;
+        padding: 0 2rem;
+        height: 64px;
+        background: var(--school-gradient, linear-gradient(84deg, #96bdff 0%, #3259ff 100%));
+        border-radius: 32px;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        letter-spacing: 0.01em;
+        margin-bottom: 1.25rem;
+        transition: opacity 0.15s ease;
+
+        &:hover {
+            opacity: 0.9;
+        }
+    }
+
+    .school-thanks-hero__requisites {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--school-muted, #b5b9c3);
+        text-decoration: none;
+        letter-spacing: 0.01em;
+        transition: color 0.15s ease;
+
+        &:hover {
+            color: var(--school-text, #1a1a1a);
+        }
+    }
+
+    // ── Правая колонка: мозаика (карточка-счётчик + фотографии) ─────────────
+
+    .school-thanks-hero__media {
+        min-width: 0;
+    }
+
+    .school-thanks-gallery {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    // Левая часть галереи: счётчик сверху + фото снизу
+    .school-thanks-gallery__a {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    // Правая часть галереи: две фотографии стопкой
+    .school-thanks-gallery__b {
+        flex: 0 0 197px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    // Карточка «Сумма оказанной помощи»
+    .school-thanks-stat {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 2rem 2.5rem;
+        background: var(--school-bg, #f5f6f8);
+        border-radius: 60px;
+    }
+
+    .school-thanks-stat__icon {
+        flex-shrink: 0;
+        width: 84px;
+        height: 84px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--school-accent, #96bdff);
+    }
+
+    .school-thanks-stat__text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+    }
+
+    .school-thanks-stat__amount {
+        display: block;
+        font-size: clamp(1.75rem, 3vw, 2.5rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        color: var(--school-text, #1a1a1a);
+    }
+
+
+    .school-thanks-stat__label {
+        display: block;
+        font-size: 1.25rem;
+        font-weight: 500;
+        line-height: 1.2;
+        color: var(--school-accent, #96bdff);
+    }
+
+    // Нижняя строка в col-A: img2 + серый квадрат, прижаты к правому краю
+    .school-thanks-gallery__bottom {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    // Общий стиль изображений мозаики
+    .school-thanks-gallery__img {
+        display: block;
+        object-fit: cover;
+        border-radius: 60px;
+    }
+
+    // Фото 1 (верхняя правая часть)
+    .school-thanks-gallery__img--1 {
+        width: 100%;
+        height: 142px;
+    }
+
+    // Фото 2 (нижняя, слева в col-A)
+    .school-thanks-gallery__img--2 {
+        width: 195px;
+        height: 142px;
+        flex-shrink: 0;
+    }
+
+    // Фото 3 (нижняя правая, высокая)
+    .school-thanks-gallery__img--3 {
+        width: 100%;
+        height: 195px;
+    }
+
+    // Декоративный серый прямоугольник
+    .school-thanks-gallery__gray {
+        width: 140px;
+        height: 142px;
+        flex-shrink: 0;
+        background: var(--school-bg, #f5f6f8);
+        border-radius: 60px;
+    }
+}

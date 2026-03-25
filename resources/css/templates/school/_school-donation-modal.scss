@@ -1,0 +1,18 @@
+// Модальное пожертвование из шапки: портал в body — обёртка с классами шаблона для стилей .donation-form-card
+
+.site-preview.site-template--school.school-donation-modal__root {
+    font-family: var(--font-family, 'Montserrat', sans-serif);
+    color: var(--school-text);
+    background: transparent;
+
+    .donation-form-card {
+        border-radius: 4.375rem 1.875rem 4.375rem 4.375rem;
+        box-shadow: 0 4px 34px rgba(26, 26, 26, 0.08);
+        margin: 0;
+    }
+
+    .donation-form-card__title {
+        padding-right: 2.25rem;
+        text-transform: capitalize;
+    }
+}

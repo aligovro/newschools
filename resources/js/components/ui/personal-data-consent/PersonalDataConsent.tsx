@@ -31,7 +31,7 @@ export function PersonalDataConsent({
         <label
             htmlFor={id}
             className={cn(
-                'inline-flex items-start gap-2 text-[9px] font-medium leading-[120%] text-[#a1a6b2]',
+                'inline-flex items-center gap-2 text-[9px] font-medium leading-[120%] text-[#a1a6b2]',
                 className,
             )}
         >
@@ -40,9 +40,9 @@ export function PersonalDataConsent({
                 data-testid={PERSONAL_DATA_CONSENT_TEST_ID}
                 checked={checked}
                 onCheckedChange={(value) => onChange(Boolean(value))}
-                className="mt-0.5 h-[14px] w-[14px] border border-[#a1a6b2] data-[state=checked]:bg-transparent data-[state=checked]:text-[#a1a6b2]"
+                className="h-[14px] w-[14px] border border-[#a1a6b2] data-[state=checked]:bg-transparent data-[state=checked]:text-[#a1a6b2]"
             />
-            <span>
+            <span className="min-w-0 leading-[120%]">
                 {policyHref ? (
                     <a
                         href={policyHref}

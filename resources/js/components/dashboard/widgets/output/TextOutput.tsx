@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import React from 'react';
 import { TextOutputConfig, WidgetOutputProps } from './types';
 
@@ -6,6 +7,13 @@ export const TextOutput: React.FC<WidgetOutputProps> = ({
     className,
     style,
 }) => {
+    const page = usePage<{ site?: { template?: string } }>();
+    const siteTemplate = page.props?.site?.template;
+    const positionSlug =
+        typeof (widget as { position_slug?: string }).position_slug === 'string'
+            ? (widget as { position_slug: string }).position_slug
+            : '';
+
     const config = widget.config as TextOutputConfig;
 
     const {
@@ -81,10 +89,19 @@ export const TextOutput: React.FC<WidgetOutputProps> = ({
     // Render content: prefer HTML from editor; fallback to plain text with line breaks
     const renderContent = (text: string): React.ReactNode => {
         const containsHtml = /<[^>]+>/.test(text || '');
+        const isSchoolContactsSource =
+            siteTemplate === 'school' &&
+            positionSlug.startsWith('header-col') &&
+            text.includes('school-contacts-bar');
+
         if (containsHtml) {
             return (
                 <div
-                    className="text-content"
+                    className={
+                        isSchoolContactsSource
+                            ? 'text-content school-header-contacts-source'
+                            : 'text-content'
+                    }
                     dangerouslySetInnerHTML={{ __html: text }}
                 />
             );

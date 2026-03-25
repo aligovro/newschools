@@ -23,6 +23,7 @@ class ClubApplicationController extends Controller
             'club_name'       => $request->club_name,
             'applicant_name'  => $request->name,
             'phone'           => $request->phone,
+            'email'           => $request->email,
             'comment'         => $request->comment,
             'status'          => ClubApplicationStatus::Pending,
             'ip_address'      => $request->ip(),

@@ -416,6 +416,42 @@ class ImageUploadController extends Controller
     }
 
     /**
+     * Загрузить документ (PDF, Word, Excel) для страниц шаблона school
+     */
+    public function uploadDocument(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:20480',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $file = $request->file('document');
+            $path = $file->store('documents', 'public');
+
+            return response()->json([
+                'success'  => true,
+                'path'     => '/storage/' . $path,
+                'name'     => $file->getClientOriginalName(),
+                'ext'      => strtoupper($file->getClientOriginalExtension()),
+                'size'     => $file->getSize(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при загрузке: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Удалить изображение
      */
     public function deleteImage(Request $request): JsonResponse

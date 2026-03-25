@@ -50,3 +50,27 @@ export function scheduleTimeGroups(
         days: days.map((d) => DAY_SHORT[d]),
     }));
 }
+
+/** Разделители «от–до» в строке расписания (тире, en/em dash, минус). */
+const SCHEDULE_TIME_RANGE_SEP = /\s*[–—−\-]\s*/;
+
+/**
+ * Разбивает значение дня на время «с» и опционально «до» для отображения в две строки.
+ */
+export function parseScheduleDayTime(raw: string): {
+    primary: string;
+    secondary?: string;
+} {
+    const s = raw.trim();
+    if (!s) {
+        return { primary: '' };
+    }
+    const parts = s
+        .split(SCHEDULE_TIME_RANGE_SEP)
+        .map((p) => p.trim())
+        .filter(Boolean);
+    if (parts.length >= 2) {
+        return { primary: parts[0], secondary: parts[1] };
+    }
+    return { primary: parts[0] ?? s };
+}

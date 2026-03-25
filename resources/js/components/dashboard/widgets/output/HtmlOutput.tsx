@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import React from 'react';
 import { WidgetOutputProps } from './types';
 
@@ -22,6 +23,13 @@ export const HtmlOutput: React.FC<WidgetOutputProps> = ({
     className,
     style,
 }) => {
+    const page = usePage<{ site?: { template?: string } }>();
+    const siteTemplate = page.props?.site?.template;
+    const positionSlug =
+        typeof (widget as { position_slug?: string }).position_slug === 'string'
+            ? (widget as { position_slug: string }).position_slug
+            : '';
+
     const config = (widget.config || {}) as HtmlOutputConfig;
     const {
         title,
@@ -42,6 +50,12 @@ export const HtmlOutput: React.FC<WidgetOutputProps> = ({
     if (!htmlContent) {
         return null;
     }
+
+    /** Разметка клонируется в моб. меню (MenuOutput); только шаблон school + зона header-col-* */
+    const isSchoolContactsSource =
+        siteTemplate === 'school' &&
+        positionSlug.startsWith('header-col') &&
+        htmlContent.includes('school-contacts-bar');
 
     const processHtml = (html: string): string => {
         let processed = html;
@@ -84,7 +98,11 @@ export const HtmlOutput: React.FC<WidgetOutputProps> = ({
                 <h2 className="mb-3 text-2xl font-bold">{title}</h2>
             )}
             <div
-                className="html-output-content"
+                className={
+                    isSchoolContactsSource
+                        ? 'html-output-content school-header-contacts-source'
+                        : 'html-output-content'
+                }
                 style={containerStyle}
                 dangerouslySetInnerHTML={{ __html: processHtml(htmlContent) }}
             />

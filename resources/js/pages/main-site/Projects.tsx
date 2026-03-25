@@ -2,13 +2,16 @@ import CategoryFilter from '@/components/main-site/CategoryFilter';
 import CitySelector, {
     type Locality as SelectorCity,
 } from '@/components/main-site/CitySelector';
+import { ProjectsSliderSchoolFilters } from '@/components/dashboard/widgets/projects/ProjectsSliderSchoolFilters';
+import { ProjectsSliderSchoolCard } from '@/components/dashboard/widgets/projects/ProjectsSliderSchoolCard';
+import { mapProjectForSchool } from '@/components/dashboard/widgets/projects/useProjectsSliderSchool';
 import LoadMoreButton from '@/components/main-site/LoadMoreButton';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { useDefaultCity } from '@/hooks/useDefaultCity';
 import MainLayout from '@/layouts/MainLayout';
 import { fetchCityById } from '@/lib/api/public';
 import { router } from '@inertiajs/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface Organization {
     name: string;
@@ -278,6 +281,21 @@ export default function Projects({
 
     const hasMore = currentPage < lastPage;
 
+    const isSchoolProjectsLayout =
+        site?.site_type === 'organization' && site?.template === 'school';
+
+    const schoolCategoryFilters = useMemo(
+        () =>
+            categories
+                .filter((c) => c.value !== '')
+                .map((c) => ({
+                    slug: c.value,
+                    name: c.label,
+                    count: 0,
+                })),
+        [categories],
+    );
+
     return (
         <MainLayout
             site={site}
@@ -290,50 +308,109 @@ export default function Projects({
                 { title: 'Проекты', href: '' },
             ]}
         >
-            <div className="space-y-8">
-                {/* Заголовок */}
-                <h1 className="page__title">Проекты</h1>
+            {isSchoolProjectsLayout ? (
+                <section className="projects-slider-school projects-page-school">
+                    <div className="projects-slider-school__container">
+                        <h1 className="projects-slider-school__title">
+                            Проекты
+                        </h1>
 
-                {/* Фильтры */}
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <CategoryFilter
-                        value={selectedCategory}
-                        onChange={handleCategoryChange}
-                        categories={categories}
-                    />
-                    <div className="w-full md:w-auto">
-                        <CitySelector
-                            value={selectedCity}
-                            onChange={handleCityChange}
-                            variant="dark"
-                            disableAutoSet={!isCityManuallySelected}
-                        />
-                    </div>
-                </div>
-
-                {/* Список проектов */}
-                {projects.length > 0 ? (
-                    <>
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {projects.map((project) => (
-                                <ProjectCard
-                                    key={project.id}
-                                    project={project}
+                        <div className="projects-page-school__filters-row">
+                            <div className="projects-page-school__filters">
+                                <ProjectsSliderSchoolFilters
+                                    categories={schoolCategoryFilters}
+                                    activeSlug={selectedCategory}
+                                    onSelect={handleCategoryChange}
+                                    showCounts={false}
+                                    allLabel="Новые"
                                 />
-                            ))}
+                            </div>
+                            <div className="projects-page-school__city">
+                                <CitySelector
+                                    value={selectedCity}
+                                    onChange={handleCityChange}
+                                    variant="dark"
+                                    disableAutoSet={!isCityManuallySelected}
+                                />
+                            </div>
                         </div>
-                        <LoadMoreButton
-                            onClick={handleLoadMore}
-                            isLoading={isLoadingMore}
-                            hasMore={hasMore}
-                        />
-                    </>
-                ) : (
-                    <div className="py-12 text-center">
-                        <p className="text-gray-500">Проекты не найдены</p>
+
+                        {projects.length > 0 ? (
+                            <>
+                                <div className="projects-page-school__grid">
+                                    {projects.map((project) => (
+                                        <ProjectsSliderSchoolCard
+                                            key={project.id}
+                                            project={mapProjectForSchool(
+                                                project as unknown as Record<
+                                                    string,
+                                                    unknown
+                                                >,
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="projects-page-school__load-more">
+                                    <LoadMoreButton
+                                        onClick={handleLoadMore}
+                                        isLoading={isLoadingMore}
+                                        hasMore={hasMore}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <p className="projects-page-school__empty">
+                                Проекты не найдены
+                            </p>
+                        )}
                     </div>
-                )}
-            </div>
+                </section>
+            ) : (
+                <div className="space-y-8">
+                    {/* Заголовок */}
+                    <h1 className="page__title">Проекты</h1>
+
+                    {/* Фильтры */}
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <CategoryFilter
+                            value={selectedCategory}
+                            onChange={handleCategoryChange}
+                            categories={categories}
+                        />
+                        <div className="w-full md:w-auto">
+                            <CitySelector
+                                value={selectedCity}
+                                onChange={handleCityChange}
+                                variant="dark"
+                                disableAutoSet={!isCityManuallySelected}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Список проектов */}
+                    {projects.length > 0 ? (
+                        <>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {projects.map((project) => (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
+                                    />
+                                ))}
+                            </div>
+                            <LoadMoreButton
+                                onClick={handleLoadMore}
+                                isLoading={isLoadingMore}
+                                hasMore={hasMore}
+                            />
+                        </>
+                    ) : (
+                        <div className="py-12 text-center">
+                            <p className="text-gray-500">Проекты не найдены</p>
+                        </div>
+                    )}
+                </div>
+            )}
         </MainLayout>
     );
 }

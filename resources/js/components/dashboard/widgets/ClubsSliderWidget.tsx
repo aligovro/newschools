@@ -246,6 +246,7 @@ export const ClubsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                 club_name:       payload.clubName,
                 name:            payload.name,
                 phone:           payload.phone,
+                email:           payload.email,
                 comment:         payload.comment,
             });
         },

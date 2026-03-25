@@ -20,6 +20,7 @@ class SitePage extends Model
         'site_id',
         'parent_id',
         'title',
+        'show_title',
         'slug',
         'excerpt',
         'content',
@@ -47,6 +48,7 @@ class SitePage extends Model
         'is_homepage' => 'boolean',
         'is_public' => 'boolean',
         'show_in_navigation' => 'boolean',
+        'show_title' => 'boolean',
         'published_at' => 'datetime',
         'last_updated_at' => 'datetime',
     ];
