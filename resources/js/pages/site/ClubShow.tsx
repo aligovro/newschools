@@ -36,6 +36,7 @@ interface Site {
 interface Props {
     site: Site;
     club: ClubPublicView;
+    related_clubs?: ClubPublicView[];
     positions?: WidgetPosition[];
     position_settings?: Array<{
         position_slug: string;
@@ -52,6 +53,7 @@ interface Props {
 export default function ClubShow({
     site,
     club,
+    related_clubs = [],
     positions = [],
     position_settings = [],
     seo,
@@ -66,6 +68,7 @@ export default function ClubShow({
             club_name: payload.clubName,
             name: payload.name,
             phone: payload.phone,
+            email: payload.email,
             comment: payload.comment,
         });
     }, []);
@@ -87,6 +90,7 @@ export default function ClubShow({
             seo={seo}
             pageTitle={pageTitle}
             pageDescription={pageDescription}
+            fullWidthMainContent={isSchool}
             breadcrumbs={[
                 { title: 'Главная', href: '/' },
                 { title: 'Кружки и секции', href: '/clubs' },
@@ -96,7 +100,11 @@ export default function ClubShow({
             <Head title={pageTitle} />
 
             {isSchool ? (
-                <ClubShowSchoolLayout club={club} onSignUpSubmit={handleSignUpSubmit} />
+                <ClubShowSchoolLayout
+                    club={club}
+                    onSignUpSubmit={handleSignUpSubmit}
+                    relatedClubs={related_clubs}
+                />
             ) : (
                 <article className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8">
                     {club.image && (

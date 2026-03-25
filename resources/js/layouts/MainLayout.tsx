@@ -48,6 +48,11 @@ interface MainLayoutProps {
     /** Текущая CMS-страница (предпочтительно передавать с PageShow для правил видимости виджетов). */
     pageContext?: { id?: number; slug?: string } | null;
     /**
+     * Основной контент на всю ширину контейнера (без сжатия из‑за колонки сайдбара).
+     * Виджеты сайдбара при этом выводятся под контентом страницы.
+     */
+    fullWidthMainContent?: boolean;
+    /**
      * Предвычисленные сервером SEO-данные.
      * Если переданы, фронт не пересчитывает SEO, а просто рендерит эти значения.
      */
@@ -78,6 +83,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     seoOverrides,
     seo,
     pageContext,
+    fullWidthMainContent = false,
 }) => {
     useSmoothAnchorNavigation();
 
@@ -386,7 +392,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 )}
             </Head>
 
-            <div className={getSitePreviewClasses()}>
+            <div
+                className={getSitePreviewClasses()}
+                data-site-template={site.template}
+            >
                 {/* Header: четыре колонки (header-col-1..4) */}
                 <header className="site-header">
                     {(() => {
@@ -487,15 +496,33 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                     return positionWidgets.length > 0;
                                 });
 
+                            const useFullWidthMainStack =
+                                !hasSidebarWidgets || fullWidthMainContent;
+
                             // Получаем позицию сайдбара из layout_config
                             const sidebarPosition =
                                 site.layout_config?.sidebar_position || 'right';
                             const sidebarLeft = sidebarPosition === 'left';
 
-                            if (!hasSidebarWidgets) {
+                            if (useFullWidthMainStack) {
                                 return (
                                     <div className="grid grid-cols-1 gap-8">
                                         {children}
+                                        {fullWidthMainContent &&
+                                            hasSidebarWidgets &&
+                                            visibleSidebarPositions.map(
+                                                (position) => (
+                                                    <div
+                                                        key={position.id}
+                                                        className="site-content"
+                                                    >
+                                                        {renderPosition(
+                                                            position,
+                                                            site.widgets_config,
+                                                        )}
+                                                    </div>
+                                                ),
+                                            )}
                                         {positionsByArea.content.map(
                                             (position) => (
                                                 <div

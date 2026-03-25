@@ -1,6 +1,6 @@
 import { isInternalLink } from '@/lib/linkUtils';
-import { Link } from '@inertiajs/react';
-import React, { useMemo, useState } from 'react';
+import { Link, usePage } from '@inertiajs/react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MobileBottomMenu } from './MobileBottomMenu';
 import { MobileMenuModal } from './MobileMenuModal';
 import { MenuItem, MenuOutputConfig, WidgetOutputProps } from './types';
@@ -29,6 +29,22 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
     }, [items]);
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const page = usePage<{ site?: { template?: string } }>();
+    const [cloneSchoolContacts, setCloneSchoolContacts] = useState(
+        () => page.props?.site?.template === 'school',
+    );
+
+    useEffect(() => {
+        if (page.props?.site?.template === 'school') {
+            setCloneSchoolContacts(true);
+            return;
+        }
+        const root = document.querySelector(
+            '.site-preview[data-site-template="school"]',
+        );
+        setCloneSchoolContacts(root !== null);
+    }, [page.props?.site?.template]);
+
     const isVertical = orientation === 'column';
 
     // Проверяем, является ли это мобильным нижним меню
@@ -186,6 +202,7 @@ export const MenuOutput: React.FC<WidgetOutputProps> = ({
                         isOpen={isMobileMenuOpen}
                         onOpenChange={setIsMobileMenuOpen}
                         title={title && show_title ? title : undefined}
+                        cloneSchoolContacts={cloneSchoolContacts}
                     />
                 </>
             )}

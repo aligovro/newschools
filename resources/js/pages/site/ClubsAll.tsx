@@ -117,6 +117,7 @@ export default function ClubsAll({
             club_name:       payload.clubName,
             name:            payload.name,
             phone:           payload.phone,
+            email:           payload.email,
             comment:         payload.comment,
         });
     }, [site.organization_id]);

@@ -40,7 +40,8 @@ interface UseProjectsSliderSchoolResult {
     setActiveCategory: (slug: string) => void;
 }
 
-function mapProject(raw: Record<string, unknown>): ProjectForSchool {
+/** Сводка проекта для карточки school (слайдер, список /projects). */
+export function mapProjectForSchool(raw: Record<string, unknown>): ProjectForSchool {
     const target =
         typeof raw.target_amount_rubles === 'number'
             ? raw.target_amount_rubles
@@ -138,7 +139,9 @@ export function useProjectsSliderSchool(
                 );
 
                 const list: ProjectForSchool[] = Array.isArray(payload?.data)
-                    ? payload.data.map((p: Record<string, unknown>) => mapProject(p))
+                    ? payload.data.map((p: Record<string, unknown>) =>
+                          mapProjectForSchool(p),
+                      )
                     : [];
                 setProjects(list);
 

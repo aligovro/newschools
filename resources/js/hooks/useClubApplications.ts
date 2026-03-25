@@ -8,6 +8,7 @@ export interface ClubApplicationItem {
     club_name: string;
     applicant_name: string;
     phone: string;
+    email: string | null;
     comment: string | null;
     status: ApplicationStatus;
     status_label: string;

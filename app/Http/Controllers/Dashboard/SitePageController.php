@@ -57,6 +57,12 @@ class SitePageController extends Controller
         $perPage = min(request()->get('per_page', 15), 100);
         $pages = $query->paginate($perPage);
 
+        // Глобальная статистика по сайту (без учёта фильтров)
+        $statusCounts = $site->pages()
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
         return Inertia::render('dashboard/sites/pages/Index', [
             'site' => [
                 'id' => $site->id,
@@ -69,6 +75,11 @@ class SitePageController extends Controller
                 'search' => request()->search,
                 'status' => request()->status,
                 'template' => request()->template,
+            ],
+            'stats' => [
+                'total'     => (int) $statusCounts->sum(),
+                'published' => (int) ($statusCounts->get('published') ?? 0),
+                'draft'     => (int) ($statusCounts->get('draft') ?? 0),
             ],
         ]);
     }
@@ -129,6 +140,9 @@ class SitePageController extends Controller
         }
         if (!isset($validated['show_in_navigation'])) {
             $validated['show_in_navigation'] = true;
+        }
+        if (!array_key_exists('show_title', $validated)) {
+            $validated['show_title'] = true;
         }
         if (!isset($validated['sort_order'])) {
             $validated['sort_order'] = 0;

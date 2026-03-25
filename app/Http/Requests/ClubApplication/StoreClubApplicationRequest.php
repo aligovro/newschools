@@ -11,6 +11,14 @@ class StoreClubApplicationRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $email = $this->input('email');
+        if ($email === '' || $email === null) {
+            $this->merge(['email' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -19,6 +27,7 @@ class StoreClubApplicationRequest extends FormRequest
             'club_name'       => ['required', 'string', 'max:255'],
             'name'            => ['required', 'string', 'max:255'],
             'phone'           => ['required', 'string', 'max:30'],
+            'email'           => ['nullable', 'string', 'email', 'max:255'],
             'comment'         => ['nullable', 'string', 'max:2000'],
         ];
     }

@@ -15,6 +15,7 @@ class ClubApplicationResource extends JsonResource
             'club_name'      => $this->club_name,
             'applicant_name' => $this->applicant_name,
             'phone'          => $this->phone,
+            'email'          => $this->email,
             'comment'        => $this->comment,
             'status'         => $this->status->value,
             'status_label'   => $this->status->label(),

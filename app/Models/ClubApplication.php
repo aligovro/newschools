@@ -16,6 +16,7 @@ class ClubApplication extends Model
         'club_name',
         'applicant_name',
         'phone',
+        'email',
         'comment',
         'status',
         'reviewed_at',

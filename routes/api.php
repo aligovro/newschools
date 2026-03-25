@@ -21,6 +21,7 @@ use App\Http\Controllers\RegionRatingController;
 use App\Http\Controllers\CitySupportersController;
 use App\Http\Controllers\DonationsListController;
 use App\Http\Controllers\Api\ReferralController;
+use App\Http\Controllers\Dashboard\ImageUploadController;
 use App\Http\Controllers\Dashboard\OrganizationCreationController;
 use App\Http\Controllers\PublicOrganizationController;
 use App\Http\Controllers\Api\Public\PublicApiController;
@@ -433,6 +434,7 @@ Route::prefix('dashboard')->middleware(['web', 'auth', 'verified'])->group(funct
     Route::get('/api/users', [OrganizationCreationController::class, 'getUsers']);
     Route::post('/api/upload-logo', [OrganizationCreationController::class, 'uploadLogo']);
     Route::post('/api/upload-images', [OrganizationCreationController::class, 'uploadImages']);
+    Route::post('/api/upload/document', [ImageUploadController::class, 'uploadDocument']);
 
     // Роуты для изображений виджетов
     Route::post('/widgets/images/upload', [WidgetController::class, 'uploadImage']);

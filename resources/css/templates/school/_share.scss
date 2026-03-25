@@ -46,5 +46,14 @@
             min-width: 1.5em;
             text-align: center;
         }
+
+        &__slogan {
+            margin-top: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.8);
+            white-space: pre-line;
+        }
     }
 }

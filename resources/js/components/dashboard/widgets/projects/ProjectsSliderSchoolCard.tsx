@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import React from 'react';
+import React, { useState } from 'react';
 import type { ProjectForSchool } from './useProjectsSliderSchool';
 
 function stripHtml(html: string): string {
@@ -20,6 +20,8 @@ interface Props {
 }
 
 export const ProjectsSliderSchoolCard: React.FC<Props> = ({ project }) => {
+    const [copied, setCopied] = useState(false);
+
     const projectUrl = project.slug
         ? `/project/${project.slug}`
         : `/project/${project.id}`;
@@ -41,14 +43,20 @@ export const ProjectsSliderSchoolCard: React.FC<Props> = ({ project }) => {
 
     const handleShare = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (navigator.share) {
-            navigator.share({ title: project.title, url: window.location.origin + projectUrl }).catch(() => {});
-        } else {
-            navigator.clipboard?.writeText(window.location.origin + projectUrl).catch(() => {});
-        }
+        const url = window.location.origin + projectUrl;
+        navigator.clipboard?.writeText(url).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }).catch(() => {});
     };
 
     return (
+        <>
+        {copied && (
+            <div className="projects-slider-school__share-toast" role="status" aria-live="polite">
+                Ссылка скопирована в буфер обмена
+            </div>
+        )}
         <article
             className="projects-slider-school__card"
             role="button"
@@ -181,5 +189,6 @@ export const ProjectsSliderSchoolCard: React.FC<Props> = ({ project }) => {
                 </div>
             </div>
         </article>
+        </>
     );
 };

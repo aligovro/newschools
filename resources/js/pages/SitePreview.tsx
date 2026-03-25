@@ -252,6 +252,7 @@ const SitePreview: React.FC<SitePreviewProps> = ({
                 ]
                     .filter(Boolean)
                     .join(' ')}
+                data-site-template={site.template}
             >
                 {/* Header: четыре колонки (header-col-1..4) сверху и полная ширина 'header' снизу */}
                 <header className="site-header">

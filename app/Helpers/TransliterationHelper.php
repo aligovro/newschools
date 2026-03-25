@@ -143,33 +143,41 @@ class TransliterationHelper
   }
 
   /**
-   * Создать уникальный slug с проверкой в базе данных
+   * Создать уникальный slug с проверкой в базе данных.
+   *
+   * @param array<string, mixed> $scope           Дополнительные WHERE-условия (например, ['site_id' => 3])
+   * @param bool                 $withoutTrashed  Исключать soft-deleted записи (WHERE deleted_at IS NULL)
    */
   public static function createUniqueSlug(
     string $text,
     string $table,
     string $column = 'slug',
-    int $excludeId = null,
-    string $separator = '-'
+    ?int $excludeId = null,
+    string $separator = '-',
+    array $scope = [],
+    bool $withoutTrashed = false
   ): string {
     $baseSlug = self::createSlug($text, $separator);
     $slug = $baseSlug;
     $counter = 1;
 
-    $query = \DB::table($table)->where($column, $slug);
-
-    if ($excludeId) {
-      $query->where('id', '!=', $excludeId);
-    }
-
-    while ($query->exists()) {
-      $slug = $baseSlug . $separator . $counter;
-      $counter++;
-
-      $query = \DB::table($table)->where($column, $slug);
+    $buildQuery = function (string $currentSlug) use ($table, $column, $excludeId, $scope, $withoutTrashed) {
+      $query = \DB::table($table)->where($column, $currentSlug);
+      foreach ($scope as $key => $value) {
+        $query->where($key, $value);
+      }
+      if ($withoutTrashed) {
+        $query->whereNull('deleted_at');
+      }
       if ($excludeId) {
         $query->where('id', '!=', $excludeId);
       }
+      return $query;
+    };
+
+    while ($buildQuery($slug)->exists()) {
+      $slug = $baseSlug . $separator . $counter;
+      $counter++;
     }
 
     return $slug;

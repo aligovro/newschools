@@ -27,6 +27,9 @@
 
 @media (max-width: 1023px) {
     .site-preview.site-template--school {
+        // Токены: уменьшаем вертикальный ритм секций
+        --school-section-y: 60px;
+
         // Общее: контейнер с отступами
         .container {
             padding-inline: 22px;
@@ -60,11 +63,25 @@
             .school-hero-content {
                 max-width: 100%;
             }
+
+            .school-hero-title {
+                font-size: clamp(32px, 4vw, 50px);
+            }
+
+            .school-hero-subtitle {
+                font-size: 16px;
+            }
+        }
+
+        // Hero: прогресс — плавное уменьшение на планшете
+        .school-hero-progress__stat-value {
+            font-size: 24px;
         }
 
         // Секции: горизонталь 22px (планшет), вертикаль — токен
         .projects-output,
         .projects-slider-school,
+        .projects-page-school,
         .clubs-slider-widget,
         .video-lessons-slider-school,
         .teachers-slider-school,
@@ -76,6 +93,46 @@
         .club-schedule-output {
             padding: 0 0 var(--school-section-y);
         }
+
+        // Share buttons: уменьшаем внутренний отступ контейнера
+        .site-position--hero .hero-wrapper > *:has(.share-buttons-output),
+        .site-position--hero .hero-wrapper > *:has(.share-buttons-widget) {
+            padding: 0 22px 22px;
+        }
+
+        // Слайдеры: стрелки ближе к контенту (не выходят за экран)
+        .clubs-slider-widget__nav,
+        .projects-slider-school__nav,
+        .teachers-slider-school__nav,
+        .video-lessons-slider-school__nav {
+            &--prev { left: -18px; }
+            &--next { right: -18px; }
+        }
+
+        // Слайдеры: убираем дублирующий padding у вложенных обёрток
+        .projects-slider-school,
+        .clubs-slider-widget,
+        .projects-slider-school,
+        .projects-output,
+        .projects-page-school,
+        .teachers-slider-school,
+        .video-lessons-slider-school,
+        .org-donations-feed-school {
+            .wrapper__block {
+                padding: 0;
+            }
+
+            .container {
+                padding-inline: 0;
+            }
+        }
+
+        .clubs-slider-widget__container,
+        .projects-slider-school__container,
+        .teachers-slider-school__container,
+        .video-lessons-slider-school__container {
+            padding: 0;
+        }
     }
 }
 
@@ -83,9 +140,37 @@
 
 @media (max-width: 767px) {
     .site-preview.site-template--school {
+        // Токены: компактный вертикальный ритм
+        --school-section-y: 40px;
+        --school-gap-heading: 24px;
+        --school-content-stack-gap: 1rem;
+
         // Общие блоки
         .wrapper__block {
-            padding: 48px 0;
+            padding: 24px 0;
+        }
+
+        .site-header {
+            margin-bottom: 16px;
+            border-bottom: none !important;
+        }
+        .org-donations-feed-school__container{
+          padding: 0;
+          .wrapper__block{
+            padding: 0;
+          }
+        }
+
+        .site-position--hero .alumni-stats-output {
+            padding: 0;
+
+            .grid.gap-8 {
+                gap: 16px;
+                
+                .mb-2 {
+                    margin-bottom: 4px;
+                }
+            }
         }
 
         .block__title {
@@ -93,20 +178,116 @@
         }
 
         // Горизонтальные отступы для секций (вертикаль остаётся от базовых правил)
-        .clubs-output,
-        .clubs-slider-widget,
-        .video-lessons-output,
-        .video-lessons-slider-school,
-        .org-donations-feed-school,
         .projects-output,
-        .projects-slider-school,
-        .teachers-slider-school {
+        .projects-page-school,
+        .container,
+        .site-position--hero .donation-widget .donation-form-card, 
+        .site-position--hero .donation-output .donation-form-card
+        {
             padding-inline: 16px;
+            padding-left: 16px;
+            padding-right: 16px;
         }
 
-        // Hero: размер заголовка
-        .site-position--hero .school-hero-widget .school-hero-title {
-            font-size: 32px;
+        // Слайдеры/секции: убираем лишний padding с вложенных обёрток
+        .clubs-slider-widget,
+        .projects-slider-school,
+        .projects-output,
+        .projects-page-school,
+        .teachers-slider-school,
+        .video-lessons-slider-school,
+        .org-donations-feed-school {
+            .wrapper__block {
+                padding: 0;
+            }
+
+            .container {
+                padding-inline: 0;
+            }
+        }
+
+        // Hero: виджет — компактнее
+        .site-position--hero .school-hero-widget {
+            padding: 24px 16px;
+
+            .school-hero-bg-image,
+            .school-hero-bg-overlay {
+                border-radius: 20px;
+            }
+
+            .school-hero-title {
+                font-size: clamp(24px, 5vw, 32px);
+            }
+
+            .school-hero-subtitle {
+                font-size: 15px;
+                margin-bottom: 8px;
+            }
+
+            .school-hero-content {
+                gap: 16px;
+            }
+        }
+
+        // Hero: прогресс-бар — вертикальная раскладка
+        .site-position--hero .school-hero-widget{
+          .school-hero-progress {
+            &__stats {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            &__stat-col {
+                flex-direction: row;
+                align-items: baseline;
+                gap: 8px;
+
+                &--center {
+                    order: -1;
+                    justify-content: flex-start;
+                }
+
+                &--right {
+                    align-items: baseline;
+                }
+            }
+
+            &__stat-value {
+                font-size: 20px;
+            }
+
+            &__stat-label,
+            &__stat-remaining {
+                font-size: 12px;
+            }
+
+            &__percent {
+                font-size: 12px;
+                padding: 2px 14px;
+            }
+        }
+          
+        }
+        
+
+        // Hero: месячная цель (pill) — компактнее
+        .school-hero-monthly {
+            flex-wrap: wrap;
+            height: auto;
+            padding: 6px 14px 6px 6px;
+            gap: 8px;
+
+            &__goal,
+            &__collected {
+                font-size: 18px;
+            }
+
+            &__goal-block {
+                margin: -6px 12px -6px -6px;
+                padding: 0 12px 0 6px;
+                height: 42px;
+            }
         }
 
         // Hero: баннер
@@ -119,21 +300,74 @@
             font-size: 32px;
         }
 
+        // Модалка пожертвования: компактные края
+        &.school-donation-modal__root .donation-form-card {
+            border-radius: 32px 20px 32px 32px;
+            padding: 24px 16px;
+        }
+
         // Hero: форма пожертвования
         .donation-form-card {
             padding: 24px;
+            
+            // Уменьшаем отступ под заголовком "Поддержать" (вместо mb-6)
+            .mb-6 {
+                margin-bottom: 12px;
+            }
+
+            &__title {
+                font-size: 20px;
+                padding-right: 12px; // Даём больше ширины тексту, уменьшая внутренний пустой отступ
+            }
+
+            &__hint {
+                font-size: 11px;
+                line-height: 1.2;
+                text-align: right;
+                
+                strong {
+                    font-size: 13px;
+                }
+            }
+
+            &__type-tab {
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+
+            &__amount-input {
+                font-size: 18px;
+                padding-left: 16px;
+            }
+
+            &__preset {
+                padding: 0 10px;
+                font-size: 12px;
+            }
+
+            &__payment-methods {
+                grid-template-columns: 1fr;
+            }
         }
 
-        // Projects slider
-        .projects-slider-school__title {
+        // Слайдеры: заголовки секций
+        .projects-slider-school__title,
+        .clubs-slider-widget__title,
+        .teachers-slider-school__title,
+        .org-donations-feed-school__title,
+        .video-lessons-slider-school__title {
             font-size: 28px;
             line-height: 1.2;
+            margin-bottom: 0;
         }
 
-        // Clubs
-        .clubs-slider-widget__title {
-            font-size: 28px;
-            line-height: 1.2;
+        // Обёртка заголовка в слайдерах
+        .block__header:has(.clubs-slider-widget__title),
+        .block__header:has(.video-lessons-slider-school__title),
+        .block__header:has(.teachers-slider-school__title),
+        .block__header:has(.projects-slider-school__title),
+        .block__header:has(.org-donations-feed-school__title) {
+            margin-bottom: 16px;
         }
 
         .clubs-slider-widget__card-title {
@@ -141,47 +375,164 @@
             line-height: 1.25;
         }
 
-        // Teachers
-        .teachers-slider-school__title {
-            font-size: 28px;
+        // Слайдеры: фильтр-табы — компактнее
+        .projects-slider-school__filter-tab,
+        .clubs-slider-widget__filter-tab,
+        .teachers-slider-school__filter-tab,
+        .video-lessons-slider-school__filter-tab,
+        .projects-output__filter {
+            font-size: 12px;
+            padding: 8px 12px;
+        }
+
+        // Слайдеры: хедер проектов — вертикальная раскладка
+        .projects-slider-school__header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .projects-slider-school__header-stats-wrap {
+            width: 100%;
+            gap: 10px;
+        }
+
+        .projects-slider-school__header-stats-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .projects-slider-school__total-target {
+            font-size: 18px;
             line-height: 1.2;
+        }
+
+        .projects-slider-school__total-label {
+            font-size: 12px;
         }
 
         // Donations feed
-        .org-donations-feed-school__title {
-            font-size: 28px;
-            line-height: 1.2;
-        }
-
         .org-donations-feed-school__table {
             margin-inline: -16px;
             padding-inline: 16px;
         }
 
-        // Video lessons
-        .video-lessons-slider-school__title {
-            font-size: 28px;
-            line-height: 1.2;
+        // Слайдеры: убираем пустоты между слайдером и кнопкой «Все ...»
+        .clubs-slider-widget__slider,
+        .projects-slider-school__slider,
+        .teachers-slider-school__slider,
+        .video-lessons-slider-school__slider {
+            margin-bottom: 8px;
         }
 
-        // Текстовый виджет: строка контактов
+        .clubs-slider-widget__all-link,
+        .projects-slider-school__all-link,
+        .teachers-slider-school__all-link,
+        .video-lessons-slider-school__all-link {
+            margin-top: 0;
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+
+        // Уменьшение отступа ПОД кнопкой (дно секции слайдера)
+        .clubs-slider-widget,
+        .video-lessons-slider-school,
+        .teachers-slider-school,
+        .projects-slider-school {
+            padding-bottom: 24px;
+        }
+
+        // Футер: сверху меньше пустоты
+        .site-footer {
+            padding-top: 24px;
+            
+            .footer-container {
+                margin-top: 0;
+            }
+        }
+
+        // Контакты в шапке скрыты, если есть бургер (клон в mobile-menu-modal)
+        .site-header:has(.menu-mobile-toggle-button)
+            .school-header-contacts-source
+            .school-contacts-bar {
+            display: none !important;
+        }
+
+        // Строка контактов: пин строго слева от адреса (grid — flex-wrap оставлял пин на отдельной строке)
         .school-contacts-bar {
-            flex-direction: column;
             align-items: flex-start;
+            text-align: left;
         }
 
         .school-contacts-bar__primary {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px 20px;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            column-gap: 8px;
+            row-gap: 6px;
+            text-align: left;
+        }
+
+        .school-contacts-bar__pin {
+            grid-column: 1;
+            grid-row: 1;
+            margin: 0;
+            align-self: center;
+        }
+
+        .school-contacts-bar__address {
+            grid-column: 2;
+            grid-row: 1;
+            min-width: 0;
+            text-align: left;
+        }
+
+        .school-contacts-bar__email {
+            grid-column: 1 / -1;
         }
 
         .school-contacts-bar__phone {
+            grid-column: 1 / -1;
             white-space: normal;
         }
 
         .school-contacts-card__btn {
             flex: 1 1 100%;
+        }
+
+        // Share buttons: компактнее
+        .site-position--hero .hero-wrapper > *:has(.share-buttons-output),
+        .site-position--hero .hero-wrapper > *:has(.share-buttons-widget) {
+            padding: 0 16px 16px;
+        }
+
+        .share-buttons-school__slogan {
+            display: none;
+        }
+
+        .share-buttons-school__list {
+            gap: 4px;
+        }
+
+        // Слайдеры: фильтр-табы — компактнее
+        .clubs-slider-widget__nav,
+        .projects-slider-school__nav,
+        .teachers-slider-school__nav,
+        .video-lessons-slider-school__nav {
+            &--prev { left: 4px; }
+            &--next { right: 4px; }
+        }
+
+        // Ограничиваем максимальную высоту всех обложек, чтобы они не растягивались
+        // на всю ширину экрана с сохранением пропорций и не становились огромными
+        .clubs-slider-widget__card-image-wrap,
+        .projects-slider-school__card-image-wrap,
+        .projects-output__card-image-wrap,
+        .video-lessons-slider-school__card-image-wrap,
+        .video-lessons-all__card-image-wrap,
+        .teachers-slider-school__card-image-wrap {
+            max-height: 220px;
+            width: 100%;
         }
     }
 }
@@ -198,18 +549,74 @@
 
         .clubs-slider-widget__card-image-wrap {
             width: 100%;
+            height: 220px;
             min-height: 200px;
+            max-height: 220px;
             order: -1;
         }
 
         .clubs-slider-widget__card-image {
+            height: 100%;
             min-height: 200px;
+            object-fit: cover;
             border-radius: 30px 30px 0 0;
         }
 
         .clubs-slider-widget__card-image-placeholder {
+            height: 100%;
             min-height: 200px;
             border-radius: 30px 30px 0 0;
+        }
+    }
+}
+
+// ─── 479px (компактный мобильный) ─────────────────────────────────────────────
+
+@media (max-width: 479px) {
+    .site-preview.site-template--school {
+        --school-section-y: 24px;
+
+        // Hero: прогресс-бар — ещё компактнее
+        .school-hero-progress {
+            &__stat-value {
+                font-size: 16px;
+            }
+        }
+
+        // Hero: месячная цель — полностью вертикальный
+        .school-hero-monthly {
+            &__goal-block {
+                width: 100%;
+                margin: 0;
+                height: auto;
+                padding: 8px 12px;
+                border-radius: 18px;
+            }
+        }
+
+        // Hero: баннер — компактный
+        .hero-banner__content {
+            padding: 24px;
+            min-height: 280px;
+        }
+
+        .hero-banner__title {
+            font-size: 24px;
+        }
+
+        // Share buttons: ещё компактнее
+        .share-buttons-school__btn {
+            height: 28px;
+            padding: 0 10px;
+            gap: 6px;
+        }
+
+        // Слайдеры: скрываем стрелки (только свайп)
+        .clubs-slider-widget__nav,
+        .projects-slider-school__nav,
+        .teachers-slider-school__nav,
+        .video-lessons-slider-school__nav {
+            display: none;
         }
     }
 }

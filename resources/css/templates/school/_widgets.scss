@@ -19,7 +19,7 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 6px 20px;
+        gap: var(--school-contacts-bar-gap);
         min-width: 0;
         flex: 1 1 auto;
     }
@@ -106,8 +106,8 @@
         }
     }
 
-    // Текстовый виджет: карточка контактов (телефон, почта, адрес, мессенджеры)
-    .school-contacts-card {
+    // Текстовый виджет: карточка контактов (разметка с __top / __phone — не страница «Контакты»)
+    .school-contacts-card:has(.school-contacts-card__top) {
         display: flex;
         flex-direction: column;
         gap: 24px;
@@ -189,7 +189,8 @@
         gap: 16px;
     }
 
-    .school-contacts-card__btn {
+    // Только виджет с блоком __actions — не страница «Контакты» (кнопки в __footer)
+    .school-contacts-card__actions .school-contacts-card__btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -217,7 +218,7 @@
         }
     }
 
-    .school-contacts-card__btn-icon {
+    .school-contacts-card__actions .school-contacts-card__btn-icon {
         display: block;
         flex-shrink: 0;
         width: 16px;
@@ -227,7 +228,7 @@
 
     .school-contacts-card__email:focus-visible,
     .school-contacts-card__phone a:focus-visible,
-    .school-contacts-card__btn:focus-visible {
+    .school-contacts-card__actions .school-contacts-card__btn:focus-visible {
         outline: 2px solid var(--school-primary);
         outline-offset: 2px;
     }

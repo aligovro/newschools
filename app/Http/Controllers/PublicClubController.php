@@ -68,9 +68,21 @@ class PublicClubController extends Controller
             'og_image'    => $clubModel->image_url,
         ];
 
+        $relatedClubs = $clubModel->organization_id
+            ? OrganizationClub::where('organization_id', $clubModel->organization_id)
+                ->where('id', '!=', $clubModel->id)
+                ->orderBy('sort_order')
+                ->limit(6)
+                ->get()
+                ->map(fn ($c) => (new OrganizationClubResource($c))->resolve($request))
+                ->values()
+                ->all()
+            : [];
+
         return Inertia::render('site/ClubShow', array_merge($siteData, [
-            'club' => $clubData,
-            'seo'  => $seo,
+            'club'          => $clubData,
+            'seo'           => $seo,
+            'related_clubs' => $relatedClubs,
         ]));
     }
 }

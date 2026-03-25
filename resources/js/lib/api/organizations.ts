@@ -106,4 +106,26 @@ export const organizationsApi = {
                 'images[]',
             )
             .then((response) => response.data),
+
+    // Загрузка документа (PDF, Word, Excel) для страниц
+    uploadDocument: (file: File): Promise<{
+        success: boolean;
+        path: string;
+        name: string;
+        ext: string;
+        size: number;
+    }> =>
+        apiClient
+            .uploadFile<{
+                success: boolean;
+                path: string;
+                name: string;
+                ext: string;
+                size: number;
+            }>(
+                '/dashboard/api/upload/document',
+                file,
+                'document',
+            )
+            .then((response) => response.data),
 };

@@ -1,0 +1,125 @@
+// Страницы авторизации и профиля в шаблоне school
+// login, register, forgot-password, ProfilePage
+
+.site-preview.site-template--school {
+    // ── Внешний контейнер ─────────────────────────────────────────────────────
+
+    .profile-page {
+        max-width: 1362px;
+        margin-inline: auto;
+        padding-top: 2.5rem;
+        padding-bottom: 5rem;
+    }
+
+    // Карточка — центрированная, оптимальная ширина для форм
+    .profile-section {
+        max-width: 600px;
+        margin-inline: auto;
+        border-radius: 40px !important;
+        box-shadow: 0 4px 32px rgba(26, 26, 26, 0.06) !important;
+    }
+
+    // ── Типографика ───────────────────────────────────────────────────────────
+
+    .profile-section__title {
+        // Убираем градиентный текст главного сайта
+        background: none !important;
+        -webkit-background-clip: unset !important;
+        -webkit-text-fill-color: var(--school-text, #1a1a1a) !important;
+        background-clip: unset !important;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .profile-section__subtitle {
+        font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+        margin-bottom: 1.5rem;
+        -webkit-text-fill-color: var(--school-text, #1a1a1a);
+        color: var(--school-text, #1a1a1a);
+    }
+
+    .profile-section__description {
+        font-size: 1rem;
+        color: var(--school-muted, #b5b9c3);
+    }
+
+    .profile-section__label {
+        color: var(--school-muted, #b5b9c3);
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    // ── Поля формы ────────────────────────────────────────────────────────────
+
+    .profile-section__input {
+        height: 64px;
+        border-radius: 22px !important;
+        border-color: var(--school-border, #e8ecf3) !important;
+        color: var(--school-text, #1a1a1a);
+
+        &:focus {
+            border-color: var(--school-accent, #96bdff) !important;
+            box-shadow: 0 0 0 3px rgba(150, 189, 255, 0.18) !important;
+            outline: none !important;
+        }
+    }
+
+    // Phone input — контейнер компонента (.phone-input + .phone-input--with-label)
+    .phone-input--with-label {
+        height: 64px;
+        border-radius: 22px !important;
+        border-color: var(--school-border, #e8ecf3) !important;
+
+        &:focus-within {
+            border-color: var(--school-accent, #96bdff) !important;
+            box-shadow: 0 0 0 3px rgba(150, 189, 255, 0.18) !important;
+        }
+    }
+
+    // ── Разделитель блока пароля ──────────────────────────────────────────────
+
+    .profile-section__password-group {
+        border-top-color: var(--school-border, #e8ecf3);
+    }
+
+    .profile-section__password-title {
+        color: var(--school-text, #1a1a1a);
+    }
+
+    // ── Кнопка отправки ───────────────────────────────────────────────────────
+
+    .profile-section__submit-button {
+        background: var(--school-gradient, linear-gradient(84deg, #96bdff 0%, #3259ff 100%)) !important;
+        border-radius: 32px !important;
+        height: 64px;
+        transition: opacity 0.15s ease;
+
+        &:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+    }
+
+    // ── Переключатель режима (email / телефон) ────────────────────────────────
+
+    .profile-page button[type='button'].rounded-full {
+        &.bg-blue-50 {
+            background: rgba(50, 89, 255, 0.08) !important;
+            color: var(--school-primary, #3259ff) !important;
+        }
+
+        &.bg-slate-50 {
+            background: var(--school-bg, #f5f6f8) !important;
+            color: var(--school-muted, #b5b9c3) !important;
+        }
+    }
+
+    // ── Ссылки ────────────────────────────────────────────────────────────────
+
+    .profile-section__photo-label {
+        color: var(--school-primary, #3259ff);
+
+        &:hover {
+            color: var(--school-accent, #96bdff);
+        }
+    }
+}
