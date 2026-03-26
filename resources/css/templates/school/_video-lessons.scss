@@ -2,7 +2,7 @@
 
 .site-preview.site-template--school {
     .video-lessons-slider-school {
-        padding: 0 var(--school-section-x) var(--school-section-y);
+        padding: var(--school-section-y) 0;
         box-sizing: border-box;
 
         &__container {
@@ -234,9 +234,6 @@
 
 .site-preview.site-template--school {
     .video-lessons-all {
-        padding-left: var(--school-section-x);
-        padding-right: var(--school-section-x);
-
         &__title {
             font-size: 40px;
             font-weight: 700;
@@ -265,7 +262,9 @@
             border: none;
             border-radius: 24px;
             cursor: pointer;
-            transition: background 0.2s, color 0.2s;
+            transition:
+                background 0.2s,
+                color 0.2s;
 
             &--active {
                 background: var(--school-text);

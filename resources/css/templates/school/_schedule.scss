@@ -4,7 +4,7 @@
     .club-schedule-output {
         // Только вертикаль: горизонталь не задаём — таблица min-width ~1189px и уже с overflow-x;
         // боковой padding секции сжимал бы контент и усиливал бы горизонтальный скролл.
-        padding: 0 0 var(--school-section-y);
+        padding: 0;
         max-width: 1242px;
         box-sizing: border-box;
         margin: 0 auto;

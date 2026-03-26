@@ -6,7 +6,7 @@
     }
 
     .clubs-slider-widget {
-        padding: 0 var(--school-section-x) var(--school-section-y);
+        padding-bottom: var(--school-section-y);
         box-sizing: border-box;
 
         &__container {
@@ -261,9 +261,6 @@
 
 .site-preview.site-template--school {
     .clubs-all {
-        padding-left: var(--school-section-x);
-        padding-right: var(--school-section-x);
-
         &__title {
             font-size: 40px;
             font-weight: 700;
@@ -646,7 +643,8 @@
         padding: var(--club-schedule-pad);
 
         &__title {
-            margin: 0 var(--club-schedule-title-mx) var(--club-schedule-title-mb);
+            margin: 0 var(--club-schedule-title-mx)
+                var(--club-schedule-title-mb);
             font-size: var(--club-schedule-title-fs);
             font-weight: 700;
             line-height: 1.2;
@@ -709,7 +707,8 @@
             width: 100%;
             min-height: var(--club-schedule-block-min-h);
             box-sizing: border-box;
-            padding: var(--club-schedule-block-py) var(--club-schedule-cell-pad-x);
+            padding: var(--club-schedule-block-py)
+                var(--club-schedule-cell-pad-x);
             background: var(--school-bg, #f5f6f8);
             display: flex;
             align-items: center;
@@ -772,12 +771,8 @@
 .site-preview.site-template--school {
     .clubs-related-school {
         width: 100%;
-        max-width: var(--school-content-column-width, 1242px);
         min-width: 0;
         margin-inline: auto;
-        padding-inline: var(--school-section-x);
-        padding-top: var(--school-section-y);
-        padding-bottom: var(--school-section-y);
         box-sizing: border-box;
 
         &__title {
