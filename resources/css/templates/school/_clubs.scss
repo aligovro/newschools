@@ -622,18 +622,32 @@
     }
 
     .club-schedule-board {
+        // Токены: переопределяются в school/_adaptive.scss на узких экранах
+        --club-schedule-pad: 39px 22px 32px;
+        --club-schedule-title-mx: 9px;
+        --club-schedule-title-mb: 20px;
+        --club-schedule-title-fs: 18px;
+        --club-schedule-grid-px: 9px;
+        --club-schedule-col-gap: 7px;
+        --club-schedule-line: 1px;
         --club-schedule-cell-pad-x: 14px;
+        --club-schedule-cell-stack-gap: 7px;
+        --club-schedule-day-fs: 14px;
+        --club-schedule-time-fs: 16px;
+        --club-schedule-time2-fs: 10px;
+        --club-schedule-block-min-h: 52px;
+        --club-schedule-block-py: 6px;
+        --club-schedule-time-stack-gap: 2px;
 
         box-sizing: border-box;
         background: #fff;
         border-radius: 20px;
         border: 1px solid var(--school-border, #e8ecf3);
-        /** Базовый отступ карточки; +9px у заголовка и у сетки = 31px как в Figma */
-        padding: 39px 22px 32px;
+        padding: var(--club-schedule-pad);
 
         &__title {
-            margin: 0 9px 20px;
-            font-size: 18px;
+            margin: 0 var(--club-schedule-title-mx) var(--club-schedule-title-mb);
+            font-size: var(--club-schedule-title-fs);
             font-weight: 700;
             line-height: 1.2;
             letter-spacing: 0.01em;
@@ -641,27 +655,27 @@
         }
 
         /**
-         * Внешние 9px — «белые» поля до первой/после последней колонки.
-         * Между колонками — как в .club-schedule-output: зазор 7px = 3px + линия 1px + 3px.
+         * Внешние поля до первой/последней колонки.
+         * Между колонками: зазор = половины + линия 1px + половины (как в .club-schedule-output).
          */
         &__grid {
-            padding-inline: 9px;
+            padding-inline: var(--club-schedule-grid-px);
         }
 
         &__row {
-            --schedule-gap: 7px;
-            --schedule-line: 1px;
+            --schedule-gap: var(--club-schedule-col-gap);
+            --schedule-line: var(--club-schedule-line);
 
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
-            column-gap: var(--schedule-gap);
+            column-gap: var(--club-schedule-col-gap);
         }
 
         &__cell {
             display: flex;
             flex-direction: column;
             align-items: stretch;
-            gap: 7px;
+            gap: var(--club-schedule-cell-stack-gap);
             min-width: 0;
             position: relative;
 
@@ -683,7 +697,7 @@
             box-sizing: border-box;
             width: 100%;
             padding-inline: var(--club-schedule-cell-pad-x);
-            font-size: 14px;
+            font-size: var(--club-schedule-day-fs);
             font-weight: 700;
             line-height: 1.2;
             letter-spacing: 0.01em;
@@ -693,9 +707,9 @@
 
         &__time-block {
             width: 100%;
-            min-height: 52px;
+            min-height: var(--club-schedule-block-min-h);
             box-sizing: border-box;
-            padding: 6px var(--club-schedule-cell-pad-x);
+            padding: var(--club-schedule-block-py) var(--club-schedule-cell-pad-x);
             background: var(--school-bg, #f5f6f8);
             display: flex;
             align-items: center;
@@ -715,13 +729,13 @@
             flex-direction: column;
             align-items: flex-start;
             justify-content: center;
-            gap: 2px;
+            gap: var(--club-schedule-time-stack-gap);
             width: 100%;
             text-align: left;
         }
 
         &__time-primary {
-            font-size: 16px;
+            font-size: var(--club-schedule-time-fs);
             font-weight: 500;
             line-height: 1.3;
             letter-spacing: 0.01em;
@@ -730,7 +744,7 @@
         }
 
         &__time-secondary {
-            font-size: 10px;
+            font-size: var(--club-schedule-time2-fs);
             font-weight: 500;
             line-height: 1.3;
             letter-spacing: 0.01em;
@@ -739,7 +753,7 @@
         }
 
         &__time {
-            font-size: 16px;
+            font-size: var(--club-schedule-time-fs);
             font-weight: 500;
             line-height: 1.3;
             letter-spacing: 0.01em;
@@ -750,38 +764,6 @@
                 color: var(--school-muted, #b5b9c3);
             }
         }
-
-        @media (max-width: 480px) {
-            padding: 24px 12px 28px;
-
-            &__title {
-                margin-inline: 6px;
-                margin-bottom: 16px;
-            }
-
-            &__grid {
-                padding-inline: 6px;
-            }
-
-            &__day {
-                font-size: 11px;
-            }
-
-            &__time-primary,
-            &__time {
-                font-size: 12px;
-            }
-
-            &__time-secondary {
-                font-size: 9px;
-            }
-
-            &__time-block {
-                min-height: 44px;
-                padding-top: 4px;
-                padding-bottom: 4px;
-            }
-        }
     }
 }
 
@@ -789,8 +771,11 @@
 
 .site-preview.site-template--school {
     .clubs-related-school {
+        width: 100%;
         max-width: var(--school-content-column-width, 1242px);
+        min-width: 0;
         margin-inline: auto;
+        padding-inline: var(--school-section-x);
         padding-top: var(--school-section-y);
         padding-bottom: var(--school-section-y);
         box-sizing: border-box;
@@ -807,10 +792,30 @@
         &__slider-wrap {
             position: relative;
             margin-bottom: 24px;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        // Корень Swiper — явная ширина, иначе расчёт ширины слайда уезжает за viewport
+        &__slider-wrap .swiper {
+            width: 100%;
+            max-width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+            box-sizing: border-box;
+        }
+
+        &__slider-wrap .swiper-slide {
+            box-sizing: border-box;
+            height: auto;
         }
 
         &__card-link {
             display: block;
+            max-width: 100%;
+            min-width: 0;
             height: 100%;
             text-decoration: none;
             color: inherit;

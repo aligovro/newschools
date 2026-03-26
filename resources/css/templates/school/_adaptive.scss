@@ -29,10 +29,27 @@
     .site-preview.site-template--school {
         // Токены: уменьшаем вертикальный ритм секций
         --school-section-y: 60px;
+        // Горизонтальный ритм: clubs-all, video-lessons-all, school-project-container
+        --school-section-x: 22px;
 
         // Общее: контейнер с отступами
         .container {
             padding-inline: 22px;
+        }
+
+        // Страница проекта: одна колонка (460px сайдбар слишком узкий на планшете)
+        .project-show-school {
+            grid-template-columns: 1fr;
+            width: 100%;
+            max-width: min(1242px, 100%);
+            min-width: 0;
+            column-gap: 24px;
+        }
+
+        // Иначе при 1 колонке grid-column: 2 создаёт вторую неявную колонку и ломает вёрстку
+        .project-donation-column {
+            grid-column: 1;
+            grid-row: auto;
         }
 
         // Hero: одна колонка
@@ -105,8 +122,12 @@
         .projects-slider-school__nav,
         .teachers-slider-school__nav,
         .video-lessons-slider-school__nav {
-            &--prev { left: -18px; }
-            &--next { right: -18px; }
+            &--prev {
+                left: -18px;
+            }
+            &--next {
+                right: -18px;
+            }
         }
 
         // Слайдеры: убираем дублирующий padding у вложенных обёрток
@@ -142,6 +163,7 @@
     .site-preview.site-template--school {
         // Токены: компактный вертикальный ритм
         --school-section-y: 40px;
+        --school-section-x: 16px;
         --school-gap-heading: 24px;
         --school-content-stack-gap: 1rem;
 
@@ -149,16 +171,26 @@
         .wrapper__block {
             padding: 24px 0;
         }
+        .projects-page-school,
+        .site-main,
+        .clubs-all,
+        .video-lessons-all,
+        .school-contacts-page,
+        .org-donations-feed-school,
+        .partners-slider-output__inner {
+            padding: 0;
+        }
 
         .site-header {
             margin-bottom: 16px;
             border-bottom: none !important;
+            padding-top: 16px;
         }
-        .org-donations-feed-school__container{
-          padding: 0;
-          .wrapper__block{
+        .org-donations-feed-school__container {
             padding: 0;
-          }
+            .wrapper__block {
+                padding: 0;
+            }
         }
 
         .site-position--hero .alumni-stats-output {
@@ -166,7 +198,7 @@
 
             .grid.gap-8 {
                 gap: 16px;
-                
+
                 .mb-2 {
                     margin-bottom: 4px;
                 }
@@ -179,11 +211,9 @@
 
         // Горизонтальные отступы для секций (вертикаль остаётся от базовых правил)
         .projects-output,
-        .projects-page-school,
         .container,
-        .site-position--hero .donation-widget .donation-form-card, 
-        .site-position--hero .donation-output .donation-form-card
-        {
+        .site-position--hero .donation-widget .donation-form-card,
+        .site-position--hero .donation-output .donation-form-card {
             padding-inline: 16px;
             padding-left: 16px;
             padding-right: 16px;
@@ -230,46 +260,44 @@
         }
 
         // Hero: прогресс-бар — вертикальная раскладка
-        .site-position--hero .school-hero-widget{
-          .school-hero-progress {
-            &__stats {
-                flex-direction: column;
-                gap: 12px;
-                align-items: flex-start;
-            }
-
-            &__stat-col {
-                flex-direction: row;
-                align-items: baseline;
-                gap: 8px;
-
-                &--center {
-                    order: -1;
-                    justify-content: flex-start;
+        .site-position--hero .school-hero-widget {
+            .school-hero-progress {
+                &__stats {
+                    flex-direction: column;
+                    gap: 12px;
+                    align-items: flex-start;
                 }
 
-                &--right {
+                &__stat-col {
+                    flex-direction: row;
                     align-items: baseline;
+                    gap: 8px;
+
+                    &--center {
+                        order: -1;
+                        justify-content: flex-start;
+                    }
+
+                    &--right {
+                        align-items: baseline;
+                    }
+                }
+
+                &__stat-value {
+                    font-size: 20px;
+                }
+
+                &__stat-label,
+                &__stat-remaining {
+                    font-size: 12px;
+                }
+
+                &__percent {
+                    font-size: 12px;
+                    padding: 2px 14px;
                 }
             }
-
-            &__stat-value {
-                font-size: 20px;
-            }
-
-            &__stat-label,
-            &__stat-remaining {
-                font-size: 12px;
-            }
-
-            &__percent {
-                font-size: 12px;
-                padding: 2px 14px;
-            }
         }
-          
-        }
-        
 
         // Hero: месячная цель (pill) — компактнее
         .school-hero-monthly {
@@ -309,7 +337,7 @@
         // Hero: форма пожертвования
         .donation-form-card {
             padding: 24px;
-            
+
             // Уменьшаем отступ под заголовком "Поддержать" (вместо mb-6)
             .mb-6 {
                 margin-bottom: 12px;
@@ -324,7 +352,7 @@
                 font-size: 11px;
                 line-height: 1.2;
                 text-align: right;
-                
+
                 strong {
                     font-size: 13px;
                 }
@@ -359,6 +387,10 @@
             font-size: 28px;
             line-height: 1.2;
             margin-bottom: 0;
+        }
+
+        .org-donations-feed-school__title {
+            margin-bottom: 16px;
         }
 
         // Обёртка заголовка в слайдерах
@@ -442,13 +474,20 @@
             padding-bottom: 24px;
         }
 
-        // Футер: сверху меньше пустоты
+        // Футер: сверху меньше пустоты; на ширину контента — компенсация padding контейнера
         .site-footer {
             padding-top: 24px;
-            
+
             .footer-container {
                 margin-top: 0;
+                margin-inline: calc(-1 * var(--school-section-x));
+                border-radius: 0;
             }
+        }
+
+        .school-subscribe-widget__container {
+            margin-inline: calc(-1 * var(--school-section-x));
+            border-radius: 0;
         }
 
         // Контакты в шапке скрыты, если есть бургер (клон в mobile-menu-modal)
@@ -519,8 +558,12 @@
         .projects-slider-school__nav,
         .teachers-slider-school__nav,
         .video-lessons-slider-school__nav {
-            &--prev { left: 4px; }
-            &--next { right: 4px; }
+            &--prev {
+                left: 4px;
+            }
+            &--next {
+                right: 4px;
+            }
         }
 
         // Ограничиваем максимальную высоту всех обложек, чтобы они не растягивались
@@ -533,6 +576,212 @@
         .teachers-slider-school__card-image-wrap {
             max-height: 220px;
             width: 100%;
+        }
+
+        // Страница проекта: стат-бар → 2 колонки
+        .project-stats-bar {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        // Страница проекта: hero — как на главной: поток + слева, больше высоты под контент
+        .project-hero-school {
+            --project-hero-mobile-gap: 14px;
+            --project-hero-mobile-pad-x: 18px;
+            --project-hero-mobile-pad-y: 22px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: var(--project-hero-mobile-gap);
+            aspect-ratio: unset;
+            min-height: clamp(456px, 118vw, 620px);
+            padding: var(--project-hero-mobile-pad-y) var(--project-hero-mobile-pad-x) 16px;
+            box-sizing: border-box;
+        }
+
+        // Ближе к градиенту главного school-hero для читаемости слева
+        .project-hero-school__overlay {
+            background: linear-gradient(
+                91deg,
+                rgba(26, 26, 26, 0.82) 28.96%,
+                rgba(26, 26, 26, 0.12) 63.49%
+            );
+        }
+
+        .project-hero-school__title {
+            position: relative;
+            inset: auto;
+            z-index: 1;
+            max-width: 100%;
+            font-size: clamp(24px, 5.5vw, 32px);
+            text-align: left;
+        }
+
+        .project-hero-school__pill {
+            position: relative;
+            inset: auto;
+            top: auto;
+            z-index: 1;
+        }
+
+        .project-hero-school__progress-wrap {
+            position: relative;
+            inset: auto;
+            bottom: auto;
+            z-index: 1;
+        }
+
+        .project-hero-school__amounts {
+            position: relative;
+            inset: auto;
+            bottom: auto;
+            z-index: 1;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .project-hero-school__amount {
+            align-items: flex-start;
+            text-align: left;
+
+            &--center {
+                flex: none;
+                order: -1;
+                align-self: stretch;
+                align-items: flex-start;
+            }
+
+            &--target {
+                text-align: left;
+            }
+
+            &--collected,
+            &--target {
+                flex-direction: column;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+            }
+        }
+
+        .project-hero-school__amount-remaining {
+            text-align: left;
+        }
+
+        .project-hero-school__share {
+            position: relative;
+            inset: auto;
+            bottom: auto;
+            z-index: 2;
+            margin-top: auto;
+            padding: 0;
+        }
+
+        .project-hero-school__amount-value {
+            font-size: clamp(17px, 4.4vw, 28px);
+        }
+
+        .project-hero-school__amount-label,
+        .project-hero-school__amount-remaining {
+            font-size: 12px;
+        }
+
+        .project-hero-school__progress-badge {
+            align-self: flex-start;
+        }
+
+        .project-monthly-goal-pill {
+            width: 100%;
+            max-width: 100%;
+            flex-wrap: wrap;
+            height: auto;
+            min-height: 48px;
+            padding-block: 8px;
+            row-gap: 6px;
+        }
+
+        .project-monthly-goal-pill__goal,
+        .project-monthly-goal-pill__collected,
+        .project-monthly-goal-pill__remaining-value {
+            font-size: clamp(16px, 4vw, 22px);
+        }
+
+        .project-stats-bar__card {
+            height: auto;
+            min-height: 72px;
+            padding: 12px 14px;
+        }
+
+        .project-stats-bar__value {
+            font-size: clamp(18px, 4.5vw, 26px);
+        }
+
+        .project-stats-bar__label {
+            font-size: 12px;
+            line-height: 1.25;
+            white-space: normal;
+        }
+
+        .project-about-school {
+            padding: 24px 18px;
+        }
+
+        .project-gallery-school__img {
+            height: clamp(180px, 48vw, 260px);
+        }
+
+        .referral-leaderboard,
+        .project-top-regions,
+        .project-supporters,
+        .project-expense-reports {
+            padding: 24px 18px 20px;
+        }
+
+        .project-supporters__row {
+            grid-template-columns: 1fr;
+            column-gap: 0;
+        }
+
+        .referral-leaderboard__row {
+            column-gap: 10px;
+        }
+
+        .referral-leaderboard__row > * {
+            min-width: 0;
+        }
+
+        // Кружки: список → одна колонка
+        .clubs-all__grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        // Видео уроки: список → 2 колонки (3 → 2)
+        .video-lessons-all__grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        // Заголовки страниц (не .block__title — он уже обработан)
+        .school-about-mission__title,
+        .school-about-values__title,
+        .clubs-all__title,
+        .clubs-related-school__title,
+        .video-lessons-all__title {
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        // Страницы: убираем большой нижний отступ (5rem → токен)
+        .school-contacts-page,
+        .account-page {
+            padding-bottom: var(--school-section-y);
+        }
+
+        // Карточка записи на секцию: меньше горизонтальный padding
+        .club-show-school__signup-card {
+            padding: 24px 20px;
         }
     }
 }
@@ -567,6 +816,42 @@
             min-height: 200px;
             border-radius: 30px 30px 0 0;
         }
+
+        // Расписание на странице секции: 7 колонок — уменьшаем ритм через токены
+        .club-schedule-board {
+            --club-schedule-pad: 22px 10px 20px;
+            --club-schedule-title-mx: 5px;
+            --club-schedule-title-mb: 14px;
+            --club-schedule-title-fs: 16px;
+            --club-schedule-grid-px: 4px;
+            --club-schedule-col-gap: 5px;
+            --club-schedule-cell-pad-x: 5px;
+            --club-schedule-cell-stack-gap: 5px;
+            --club-schedule-day-fs: 10px;
+            --club-schedule-time-fs: 11px;
+            --club-schedule-time2-fs: 8px;
+            --club-schedule-block-min-h: 38px;
+            --club-schedule-block-py: 4px;
+            --club-schedule-time-stack-gap: 1px;
+        }
+
+        // Этапы проекта: обложка на всю ширину, текст ниже
+        .project-stage-school {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .project-stage-school__image-wrap {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            aspect-ratio: 322 / 190;
+        }
+
+        .project-stage-school__image {
+            display: block;
+            height: 100%;
+        }
     }
 }
 
@@ -575,6 +860,23 @@
 @media (max-width: 479px) {
     .site-preview.site-template--school {
         --school-section-y: 24px;
+
+        // Расписание: ещё плотнее на узких экранах
+        .club-schedule-board {
+            --club-schedule-pad: 18px 6px 16px;
+            --club-schedule-title-mx: 2px;
+            --club-schedule-title-mb: 12px;
+            --club-schedule-title-fs: 15px;
+            --club-schedule-grid-px: 2px;
+            --club-schedule-col-gap: 4px;
+            --club-schedule-cell-pad-x: 3px;
+            --club-schedule-cell-stack-gap: 4px;
+            --club-schedule-day-fs: 9px;
+            --club-schedule-time-fs: 10px;
+            --club-schedule-time2-fs: 7px;
+            --club-schedule-block-min-h: 34px;
+            --club-schedule-block-py: 3px;
+        }
 
         // Hero: прогресс-бар — ещё компактнее
         .school-hero-progress {
@@ -617,6 +919,87 @@
         .teachers-slider-school__nav,
         .video-lessons-slider-school__nav {
             display: none;
+        }
+
+        // Стат-бар проекта: одна колонка
+        .project-stats-bar {
+            grid-template-columns: 1fr;
+        }
+
+        // Hero проекта: ещё компактнее поля и высота на очень узких экранах
+        .project-hero-school {
+            min-height: clamp(420px, 128vw, 560px);
+            --project-hero-mobile-gap: 12px;
+            --project-hero-mobile-pad-x: 14px;
+            --project-hero-mobile-pad-y: 18px;
+        }
+
+        .project-hero-school__amounts {
+            gap: 10px;
+        }
+
+        .project-hero-school__amount-value {
+            font-size: clamp(15px, 4vw, 24px);
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        // Бюджет: сумма под строкой названия
+        .project-about-school__budget-item {
+            flex-wrap: wrap;
+        }
+
+        .project-about-school__budget-main {
+            flex: 1 1 100%;
+        }
+
+        .project-about-school__budget-price {
+            flex: 1 1 100%;
+            min-width: 0;
+            justify-content: flex-start;
+            box-sizing: border-box;
+        }
+
+        // Рейтинг приглашений: три ячейки сетки — колонкой
+        .referral-leaderboard__row {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            min-height: 0;
+            padding: 12px 0;
+
+            &:not(:last-child) {
+                border-bottom: 1px solid var(--school-border);
+            }
+
+            & > * {
+                border-bottom: none;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+        }
+
+        // Отчёты по расходам: сумма на всю ширину под текстом
+        .project-expense-reports__item {
+            flex-wrap: wrap;
+            align-items: flex-start;
+            row-gap: 10px;
+            padding-top: 12px;
+            padding-bottom: 12px;
+            min-height: 0;
+        }
+
+        .project-expense-reports__item-amount-wrap {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        // Видео уроки: одна колонка
+        .video-lessons-all__grid {
+            grid-template-columns: 1fr;
         }
     }
 }

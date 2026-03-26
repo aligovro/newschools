@@ -50,9 +50,11 @@
 // Специфичные стили для разных классов image виджетов
 // Например, для logo-widget
 .logo-widget {
+    margin: 0 auto;
     .image-output__wrapper {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 16px;
     }
 
