@@ -400,8 +400,10 @@ export const DonationWidget: React.FC<DonationWidgetProps> = ({
                             ? recurringPeriod
                             : undefined,
                         send_receipt: localConfig.send_receipt !== false,
-                        success_url: window.location.href,
-                        failure_url: window.location.href,
+                        // Намеренно убираем hash из URL: если модалка открыта через #donation,
+                        // после редиректа платёжной системы хэш не должен повторно открывать её.
+                        success_url: window.location.origin + window.location.pathname + window.location.search,
+                        failure_url: window.location.origin + window.location.pathname + window.location.search,
                     },
                 );
 

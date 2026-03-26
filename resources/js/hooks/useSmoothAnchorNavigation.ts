@@ -249,6 +249,12 @@ export const useSmoothAnchorNavigation = (
                 return;
             }
 
+            // Позволяем React-обработчику перехватить клик самостоятельно
+            // (например, кнопка открытия модального окна пожертвования)
+            if (target.hasAttribute('data-no-smooth-scroll')) {
+                return;
+            }
+
             event.preventDefault();
 
             if (tryScrollToAnchor(anchorTarget)) {
