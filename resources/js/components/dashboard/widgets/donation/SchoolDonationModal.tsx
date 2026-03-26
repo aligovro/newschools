@@ -50,7 +50,7 @@ export const SchoolDonationModal: React.FC<SchoolDonationModalProps> = ({
                     {MODAL_DONATION_CONFIG.title}
                 </DialogTitle>
                 {shouldMountWidget ? (
-                    <div className="site-preview site-template--school school-donation-modal__root max-h-[min(90vh,806px)]">
+                    <div className="site-preview site-template--school school-donation-modal__root max-h-[min(90vh,806px)] overflow-y-auto overflow-x-hidden">
                         <DonationWidget
                             organizationId={organizationId}
                             publicContext={{
