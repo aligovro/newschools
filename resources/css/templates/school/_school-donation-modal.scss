@@ -1,41 +1,23 @@
-// Модальное пожертвование из шапки: портал в body — обёртка с классами шаблона для стилей .donation-form-card
+// Модальное пожертвование из шапки: обёртка с классами шаблона для стилей .donation-form-card
 
 .site-preview.site-template--school.school-donation-modal__root {
     font-family: var(--font-family, 'Montserrat', sans-serif);
     color: var(--school-text);
     background: transparent;
 
-    // Clip-контейнер: скрываем переполнение по форме карточки,
-    // чтобы скроллбар не вылезал за скруглённые углы
-    border-radius: 4.375rem 1.875rem 4.375rem 4.375rem;
-    overflow: hidden;
+    // OS-скроллбар скрываем визуально: внутри скруглённой карточки он выглядит некрасиво.
+    // Прокрутка колёсиком мыши, тачем и клавиатурой сохраняется в полном объёме.
+    scrollbar-width: none; // Firefox
+    -ms-overflow-style: none; // IE / legacy Edge
+
+    &::-webkit-scrollbar {
+        display: none; // Chrome / Safari / Opera
+    }
 
     .donation-form-card {
         border-radius: 4.375rem 1.875rem 4.375rem 4.375rem;
         box-shadow: 0 4px 34px rgba(26, 26, 26, 0.08);
         margin: 0;
-
-        // Скролл на самой карточке — скроллбар внутри формы, обрезается border-radius родителя
-        max-height: inherit;
-        overflow-y: auto;
-        overflow-x: hidden;
-
-        // Тонкий ненавязчивый скроллбар
-        scrollbar-width: thin;
-        scrollbar-color: rgba(181, 185, 195, 0.5) transparent;
-
-        &::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        &::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        &::-webkit-scrollbar-thumb {
-            background-color: rgba(181, 185, 195, 0.6);
-            border-radius: 100px;
-        }
     }
 
     .donation-form-card__title {
