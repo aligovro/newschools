@@ -4,6 +4,7 @@
     font-family: var(--font-family, 'Montserrat', sans-serif);
     color: var(--school-text);
     background: transparent;
+    min-height: 0; // override site-preview.scss min-height: 100vh
 
     // OS-скроллбар скрываем визуально: внутри скруглённой карточки он выглядит некрасиво.
     // Прокрутка колёсиком мыши, тачем и клавиатурой сохраняется в полном объёме.
