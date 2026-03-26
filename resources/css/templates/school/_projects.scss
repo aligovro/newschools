@@ -199,7 +199,7 @@
 
     // ─ Слайдер проектов ─
     .projects-slider-school {
-        padding: 0 var(--school-section-x) var(--school-section-y);
+        padding: var(--school-section-y) 0;
         box-sizing: border-box;
 
         &__container {
@@ -272,6 +272,7 @@
             display: flex;
             align-items: center;
             flex-shrink: 0;
+            margin-top: auto;
         }
 
         &__header-stats-icon {
