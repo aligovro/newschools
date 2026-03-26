@@ -239,6 +239,7 @@ export const useDonationFormState = ({
             Boolean(
                 pendingPayment &&
                     (pendingPayment.qr_code ||
+                        pendingPayment.qr_code_svg ||
                         pendingPayment.confirmation_url ||
                         pendingPayment.deep_link),
             ),

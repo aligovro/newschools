@@ -519,6 +519,9 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({
             <a
                 href={donateUrl}
                 className="school-auth-menu__donate-btn"
+                {...(opensDonationModal && organizationId != null
+                    ? { 'data-no-smooth-scroll': 'true' }
+                    : {})}
                 onClick={(e) => {
                     if (!opensDonationModal) {
                         return;
