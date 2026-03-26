@@ -1,7 +1,7 @@
 import type { ClubPublicView } from '@/components/clubs/clubPublicTypes';
 import { scheduleTimeGroups } from '@/lib/clubSchedule';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -12,28 +12,43 @@ interface Props {
 
 const ClubsRelatedSchool: React.FC<Props> = ({ clubs }) => {
     const swiperRef = useRef<SwiperType | null>(null);
+    const sliderWrapRef = useRef<HTMLDivElement | null>(null);
     const [isBeginning, setIsBeginning] = useState(true);
     const [isEnd, setIsEnd] = useState(false);
 
     const handlePrev = useCallback(() => swiperRef.current?.slidePrev(), []);
     const handleNext = useCallback(() => swiperRef.current?.slideNext(), []);
 
+    useEffect(() => {
+        const el = sliderWrapRef.current;
+        if (!el || typeof ResizeObserver === 'undefined') return;
+        const ro = new ResizeObserver(() => {
+            swiperRef.current?.update();
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
     if (clubs.length === 0) return null;
 
-    const showNav = clubs.length > 2;
+    const showNav = clubs.length > 1;
 
     return (
         <section className="clubs-related-school">
             <h2 className="clubs-related-school__title">Другие кружки и секции</h2>
 
-            <div className="clubs-related-school__slider-wrap">
+            <div
+                ref={sliderWrapRef}
+                className="clubs-related-school__slider-wrap"
+            >
                 <Swiper
                     slidesPerView={1}
                     spaceBetween={24}
-                    breakpoints={{ 768: { slidesPerView: 2 } }}
+                    breakpoints={{ 1024: { slidesPerView: 2 } }}
                     onSwiper={(s) => {
                         swiperRef.current = s;
                         setIsEnd(s.isEnd);
+                        requestAnimationFrame(() => s.update());
                     }}
                     onSlideChange={(s) => {
                         setIsBeginning(s.isBeginning);

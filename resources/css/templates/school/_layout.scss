@@ -26,5 +26,11 @@
     // Стек позиций в main: один токен вместо разрозненных gap-* у колонок
     .site-main > .container > .grid {
         row-gap: var(--school-content-stack-gap);
+        min-width: 0;
+
+        // Иначе широкий контент (Swiper, карточки) раздувает колонку и ломает viewport
+        > * {
+            min-width: 0;
+        }
     }
 }

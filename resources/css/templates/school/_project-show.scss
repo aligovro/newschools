@@ -74,6 +74,10 @@
 
     // ─ Hero ───────────────────────────────────────────────────────────────────
     .project-hero-school {
+        // Десктоп: абсолютное позиционирование слоёв; на мобильном переопределяется в _adaptive.scss
+        --project-hero-inset-x: 31px;
+        --project-hero-title-top: 32px;
+
         position: relative;
         border-radius: 20px;
         overflow: hidden;
@@ -107,9 +111,9 @@
 
     .project-hero-school__title {
         position: absolute;
-        top: 32px;
-        left: 31px;
-        right: 31px;
+        top: var(--project-hero-title-top);
+        left: var(--project-hero-inset-x);
+        right: var(--project-hero-inset-x);
         margin: 0;
         color: #fff;
         font-size: 32px;
@@ -123,8 +127,8 @@
     // top: 142/410 ≈ 34.6%
     .project-hero-school__pill {
         position: absolute;
-        left: 31px;
-        right: 31px;
+        left: var(--project-hero-inset-x);
+        right: var(--project-hero-inset-x);
         top: 34.6%;
         z-index: 2;
     }
@@ -133,8 +137,8 @@
     // bottom: (410 - 237) / 410 ≈ 42.2%  (track top: 223px, height: 14px → bottom: 173px)
     .project-hero-school__progress-wrap {
         position: absolute;
-        left: 31px;
-        right: 31px;
+        left: var(--project-hero-inset-x);
+        right: var(--project-hero-inset-x);
         bottom: 42.2%;
         z-index: 1;
     }
@@ -157,8 +161,8 @@
     // bottom: (410 - 305) / 410 ≈ 25.6%  (amounts span top: 248 → bottom: 305)
     .project-hero-school__amounts {
         position: absolute;
-        left: 31px;
-        right: 31px;
+        left: var(--project-hero-inset-x);
+        right: var(--project-hero-inset-x);
         bottom: 25.6%;
         display: flex;
         align-items: flex-start;
@@ -229,8 +233,8 @@
     // bottom: (410 - 380) / 410 ≈ 7.3%  (share top: 348px, height: 32px)
     .project-hero-school__share {
         position: absolute;
-        left: 31px;
-        right: 31px;
+        left: var(--project-hero-inset-x);
+        right: var(--project-hero-inset-x);
         bottom: 7.3%;
         z-index: 2;
     }

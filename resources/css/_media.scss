@@ -495,7 +495,7 @@
         display: flex;
         align-items: center;
         margin-top: 0;
-        padding-top: 0 !important;
+        padding-top: 0;
 
         // Контейнер шапки
         .site-header__container {
@@ -508,7 +508,7 @@
             overflow-x: hidden;
         }
         .widget-container {
-            margin-bottom: 0 !important;
+            margin-bottom: 0;
         }
 
         // Набор колонок в шапке: используем flex вместо grid
@@ -1383,8 +1383,8 @@
             height: auto;
             align-items: stretch;
             margin-bottom: 16px;
-            padding-top: 10px !important;
-            padding-bottom: 14px !important;
+            padding-top: 14px;
+            padding-bottom: 14px;
 
             .site-header__container {
                 height: auto;
@@ -1512,8 +1512,7 @@
 @media (max-width: 767px) {
     .site-preview.site-template--school {
         .site-header {
-            padding-top: 8px !important;
-            padding-bottom: 10px !important;
+            padding-bottom: 10px;
             margin-bottom: 12px;
 
             .site-header__container {

@@ -80,6 +80,7 @@ export const PartnersSliderOutput: React.FC<WidgetOutputProps> = ({
     const loop = (cfg.loop as boolean) ?? true;
 
     const partners = useMemo(() => parsePartnersFromWidget(widget), [widget]);
+    const count = partners.length;
 
     const swiperRef = useRef<SwiperType | null>(null);
     const prevRef = useRef<HTMLButtonElement>(null);
@@ -178,15 +179,19 @@ export const PartnersSliderOutput: React.FC<WidgetOutputProps> = ({
                             }
                             breakpoints={{
                                 0: {
-                                    slidesPerView: 2,
+                                    slidesPerView: 1,
+                                    spaceBetween: 12,
+                                },
+                                480: {
+                                    slidesPerView: Math.min(2, count),
                                     spaceBetween: 12,
                                 },
                                 640: {
-                                    slidesPerView: 3,
+                                    slidesPerView: Math.min(3, count),
                                     spaceBetween: 14,
                                 },
                                 1024: {
-                                    slidesPerView: slidesPerView,
+                                    slidesPerView: Math.min(slidesPerView, count),
                                     spaceBetween: 0,
                                 },
                             }}

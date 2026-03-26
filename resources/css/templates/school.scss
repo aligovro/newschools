@@ -78,9 +78,17 @@
         box-sizing: border-box;
     }
 
-    .school-p-lr-60 {
-        padding-left: 60px;
-        padding-right: 60px;
+    // Горизонтальный ритм внутренних страниц (about, contacts, account…)
+    // .p-lr-60 — внешний wrapper (MainLayout); school-p-lr-60 — контентный блок внутри.
+    // Оба используют токен → адаптируются через _adaptive.scss без @media здесь.
+    // Вложенный school-p-lr-60 обнуляется: внешний .p-lr-60 уже несёт нужный отступ.
+    .school-p-lr-60,
+    .p-lr-60 {
+        padding-inline: var(--school-section-x);
+    }
+
+    .p-lr-60 .school-p-lr-60 {
+        padding-inline: 0;
     }
 
     .projects-slider-widget {

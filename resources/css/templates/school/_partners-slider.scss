@@ -14,11 +14,11 @@
     .partners-slider-output__inner {
         max-width: 1362px;
         margin-inline: auto;
+        padding-inline: var(--school-section-x);
     }
 
     .partners-slider-output__header.block__header {
         margin-bottom: 0;
-        padding: 0 var(--school-section-x) 0 var(--school-section-x);
     }
 
     .partners-slider-output__header .block__title {
@@ -39,6 +39,11 @@
     .partners-slider-output__swiper-wrap {
         flex: 1 1 auto;
         min-width: 0;
+    }
+
+    // Swiper добавляет .swiper-button-lock когда все слайды помещаются во view (watchOverflow)
+    .partners-slider-output__nav.swiper-button-lock {
+        display: none;
     }
 
     .partners-slider-output__nav {
