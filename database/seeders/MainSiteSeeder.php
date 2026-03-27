@@ -108,7 +108,7 @@ class MainSiteSeeder extends Seeder
                 'accent_color' => '#F59E0B',
                 'background_color' => '#FFFFFF',
                 'text_color' => '#1F2937',
-                'font_family' => 'Inter',
+                'font_family' => 'Montserrat',
                 'font_size' => '16px',
                 'line_height' => '1.6',
                 'border_radius' => '8px',

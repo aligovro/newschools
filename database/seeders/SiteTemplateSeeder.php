@@ -43,7 +43,7 @@ class SiteTemplateSeeder extends Seeder
                 'theme_config' => [
                     'font_size' => '16px',
                     'text_color' => '#1F2937',
-                    'font_family' => 'Inter',
+                    'font_family' => 'Montserrat',
                     'accent_color' => '#F59E0B',
                     'primary_color' => '#3B82F6',
                     'secondary_color' => '#6B7280',

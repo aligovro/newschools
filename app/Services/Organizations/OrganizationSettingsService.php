@@ -175,7 +175,7 @@ class OrganizationSettingsService
             'primary_color' => '#3B82F6',
             'secondary_color' => '#6B7280',
             'accent_color' => '#10B981',
-            'font_family' => 'Inter',
+            'font_family' => 'Montserrat',
             'dark_mode' => false,
             'maintenance_mode' => false,
             'maintenance_message' => 'Сайт временно недоступен. Мы работаем над улучшениями.',

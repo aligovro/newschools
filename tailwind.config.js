@@ -11,6 +11,15 @@ export default {
     darkMode: false, // Отключен темный режим
     theme: {
         extend: {
+            // Совпадает с --font-family из resources/css/_variables.scss (Tailwind Preflight задаёт font на html)
+            fontFamily: {
+                sans: [
+                    'var(--font-family)',
+                    'ui-sans-serif',
+                    'system-ui',
+                    'sans-serif',
+                ],
+            },
             colors: {
                 // Семантические цвета для темной/светлой темы
                 background: 'var(--color-background)',

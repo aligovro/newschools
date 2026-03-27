@@ -1,9 +1,10 @@
+// Перед @tailwind base: токены :root (--font-family) должны идти раньше Preflight,
+// иначе у html остаётся системный стек (ui-sans-serif) и визуально «не тот» шрифт.
+@import 'variables';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-// Import variables
-@import 'variables';
 
 // Import widget styles
 @import './form-widget.scss';
@@ -50,7 +51,7 @@
     body {
         @apply bg-white;
         color: $dark-color;
-        font-family: var(--font-family, Montserrat, sans-serif);
+        font-family: var(--font-family);
     }
 
     /* Sidebar CSS variables */
@@ -59,8 +60,6 @@
         --sidebar-width-icon: 3rem;
         /* Accent gradient for main site buttons */
         --accent-gradient: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
-        /* Font family */
-        --font-family: Montserrat, sans-serif;
     }
 
     /* Убираем стрелки у number полей во всех браузерах */

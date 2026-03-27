@@ -85,7 +85,7 @@ const CreateSite: React.FC<CreateSiteProps> = ({
                     secondaryColor: themeData?.secondaryColor || '#10b981',
                     backgroundColor: themeData?.backgroundColor || '#ffffff',
                     textColor: themeData?.textColor || '#111827',
-                    fontFamily: themeData?.fontFamily || 'Inter',
+                    fontFamily: themeData?.fontFamily || 'Montserrat',
                     customCss: themeData?.customCss,
                 },
                 seo: {
