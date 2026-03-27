@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Sponsors;
 
+use App\Support\PhoneNumber;
 use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
@@ -40,7 +41,7 @@ class SponsorResource extends JsonResource
 
         foreach ($candidates as $candidate) {
             if ($candidate && trim((string) $candidate) !== '') {
-                return trim((string) $candidate);
+                return PhoneNumber::maskRussianPhonesInText(trim((string) $candidate));
             }
         }
 

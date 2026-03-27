@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\SiteWidget;
+use App\Support\PublicDonationPrivacy;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
@@ -193,7 +194,11 @@ class SiteWidgetResource extends JsonResource
                 $normalizedConfig['donations'] = $donations->map(function ($d) {
                     return [
                         'id' => $d->id,
-                        'donorName' => $d->donor_name,
+                        'donorName' => PublicDonationPrivacy::donationFeedDonorName(
+                            $d->donor_name,
+                            (bool) $d->is_anonymous,
+                            false,
+                        ),
                         'amount' => $d->amount_rubles,
                         'currency' => $d->currency ?? 'RUB',
                         'message' => $d->donor_message,

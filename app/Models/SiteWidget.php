@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use App\Support\PublicDonationPrivacy;
 
 class SiteWidget extends Model
 {
@@ -645,7 +646,11 @@ class SiteWidget extends Model
           $baseData['config']['donations'] = $donations->map(function (Donation $d) {
             return [
               'id' => $d->id,
-              'donorName' => $d->donor_name,
+              'donorName' => PublicDonationPrivacy::donationFeedDonorName(
+                $d->donor_name,
+                (bool) $d->is_anonymous,
+                false,
+              ),
               'amount' => $d->amount_rubles,
               'currency' => $d->currency ?? 'RUB',
               'message' => $d->donor_message,

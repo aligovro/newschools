@@ -60,4 +60,34 @@ class PhoneNumber
             substr($digits, -2)
         );
     }
+
+    /**
+     * Ищет в произвольной строке фрагменты, похожие на российский номер, и подменяет последние 4 цифры
+     * на «****» (национальная часть 10 цифр: +7 + 6 цифр + ****).
+     */
+    public static function maskRussianPhonesInText(string $text): string
+    {
+        if ($text === '') {
+            return $text;
+        }
+
+        return (string) preg_replace_callback(
+            '/(?:\+7|8)(?:[\d\s\-()]){10,25}|(?<!\d)9\d{9}(?!\d)|(?<!\d)7\d{10}(?!\d)/u',
+            static function (array $m): string {
+                $fragment = $m[0];
+                $norm = self::normalize($fragment);
+                if ($norm === null) {
+                    return $fragment;
+                }
+                $digitsOnly = preg_replace('/\D+/', '', $norm);
+                if (strlen($digitsOnly) !== 11) {
+                    return $fragment;
+                }
+                $national = substr($digitsOnly, 1);
+
+                return '+7' . substr($national, 0, 6) . '****';
+            },
+            $text
+        );
+    }
 }
