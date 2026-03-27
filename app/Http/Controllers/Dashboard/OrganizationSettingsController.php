@@ -50,7 +50,7 @@ class OrganizationSettingsController extends Controller
             'primary_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'secondary_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'accent_color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'font_family' => 'required|string|in:Inter,Roboto,Open Sans,Lato,Source Sans Pro',
+            'font_family' => 'required|string|in:Montserrat,Inter,Roboto,Open Sans,Lato,Source Sans Pro,Poppins,Nunito',
             'dark_mode' => 'boolean',
         ]);
 

@@ -65,7 +65,7 @@ class UpdateGlobalSettingsSeeder extends Seeder
         'primary_color' => '#3B82F6',
         'secondary_color' => '#6B7280',
         'accent_color' => '#10B981',
-        'font_family' => 'Inter',
+        'font_family' => 'Montserrat',
         'dark_mode' => false,
       ],
       'default_notification_settings' => [

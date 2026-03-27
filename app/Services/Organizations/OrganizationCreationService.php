@@ -93,7 +93,7 @@ class OrganizationCreationService
       'primary_color' => $defaultSettings['organization']['primary_color'] ?? '#3B82F6',
       'secondary_color' => $defaultSettings['organization']['secondary_color'] ?? '#6B7280',
       'accent_color' => $defaultSettings['organization']['accent_color'] ?? '#10B981',
-      'font_family' => $defaultSettings['organization']['font_family'] ?? 'Inter',
+      'font_family' => $defaultSettings['organization']['font_family'] ?? 'Montserrat',
       'dark_mode' => $defaultSettings['organization']['dark_mode'] ?? false,
       'maintenance_mode' => false,
       'payment_settings' => $defaultSettings['payment'] ?? [
@@ -584,7 +584,7 @@ class OrganizationCreationService
       'accent_color' => '#10B981',
       'background_color' => '#FFFFFF',
       'text_color' => '#1F2937',
-      'font_family' => 'Inter',
+      'font_family' => 'Montserrat',
       'font_size' => '16px',
       'line_height' => '1.6',
     ];

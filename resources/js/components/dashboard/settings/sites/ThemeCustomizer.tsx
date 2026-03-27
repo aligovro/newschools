@@ -17,11 +17,11 @@ interface ThemeCustomizerProps {
 }
 
 const fontFamilies = [
+    { value: 'Montserrat', label: 'Montserrat (как в макете)' },
     { value: 'Inter', label: 'Inter (современный)' },
     { value: 'Roboto', label: 'Roboto (классический)' },
     { value: 'Open Sans', label: 'Open Sans (читаемый)' },
     { value: 'Lato', label: 'Lato (элегантный)' },
-    { value: 'Montserrat', label: 'Montserrat (стильный)' },
     { value: 'Source Sans Pro', label: 'Source Sans Pro (профессиональный)' },
     { value: 'Poppins', label: 'Poppins (дружелюбный)' },
     { value: 'Nunito', label: 'Nunito (округленный)' },
@@ -52,7 +52,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             secondaryColor: initialData?.secondaryColor || '#10b981',
             backgroundColor: initialData?.backgroundColor || '#ffffff',
             textColor: initialData?.textColor || '#111827',
-            fontFamily: initialData?.fontFamily || 'Inter',
+            fontFamily: initialData?.fontFamily || 'Montserrat',
             customCss: initialData?.customCss || '',
         },
         mode: 'onChange',

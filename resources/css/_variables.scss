@@ -12,10 +12,14 @@ $error-color: #ef4444;
 $dark-color: #1a1a1a; // Используется в SCSS, синхронизирован с --color-dark
 $white-color: #ffffff; // Используется в SCSS
 
+// Единый шрифт главного сайта и шаблонов школ (как в макете Figma)
+$font-family-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+
 // CSS переменные для использования в inline стилях и JavaScript
 :root {
     --color-dark: #{$dark-color};
     --color-white: #{$white-color};
+    --font-family: #{$font-family-sans};
 }
 
 // Accent gradient used across the main site buttons
