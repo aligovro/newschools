@@ -187,27 +187,7 @@
         }
 
         &__load-more {
-            width: 100%;
-            max-width: 1242px;
             margin-top: 16px;
-            padding: 12px 16px;
-            font-size: 16px;
-            font-weight: 600;
-            line-height: 1.2;
-            letter-spacing: 0.16px;
-            color: var(--school-text);
-            background: var(--school-bg);
-            border: none;
-            border-radius: 32px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.2s;
-
-            &:hover {
-                opacity: 0.9;
-            }
         }
     }
 }

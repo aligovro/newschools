@@ -1,4 +1,5 @@
 import type { ClubPublicView } from '@/components/clubs/clubPublicTypes';
+import { SchoolCtaPill } from '@/components/site/school/SchoolCtaPill';
 import { scheduleTimeGroups } from '@/lib/clubSchedule';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -140,9 +141,7 @@ const ClubsRelatedSchool: React.FC<Props> = ({ clubs }) => {
                 )}
             </div>
 
-            <a href="/clubs" className="clubs-slider-widget__all-link">
-                Все кружки и секции
-            </a>
+            <SchoolCtaPill href="/clubs">Все кружки и секции</SchoolCtaPill>
         </section>
     );
 };

@@ -9,7 +9,7 @@ use App\Models\ProjectStage;
 use App\Models\PaymentMethod;
 use App\Models\Payments\YooKassaPartnerMerchant;
 use App\Services\BankRequisites\BankRequisitesResolver;
-use App\Services\MonthlyGoal\MonthlyGoalResolver;
+use App\Services\Goal\GoalPeriodResolver;
 use App\Services\Autopayments\RecurringSubscriptionQuery;
 use App\Helpers\TerminologyHelper;
 use App\Support\PhoneNumber;
@@ -25,7 +25,7 @@ class DonationWidgetDataService
 {
     public function __construct(
         protected BankRequisitesResolver $bankRequisitesResolver,
-        protected MonthlyGoalResolver $monthlyGoalResolver
+        protected GoalPeriodResolver $goalPeriodResolver,
     ) {
     }
 
@@ -85,20 +85,22 @@ class DonationWidgetDataService
 
         $data['bank_requisites'] = $this->bankRequisitesResolver->resolve($organization, $projectId, $siteId);
 
-        // Получаем цель на месяц с учетом иерархии
-        $monthlyGoal = $this->monthlyGoalResolver->resolve($organization, $projectId, $siteId);
-        if ($monthlyGoal !== null && $monthlyGoal > 0) {
-            $collectedOverride = $this->monthlyGoalResolver->resolveCollectedOverride($organization, $projectId, $siteId);
-            $monthlyCollected = $collectedOverride !== null
-                ? $collectedOverride
-                : $this->getMonthlyCollectedAmount($organization, $projectId);
+        // Периодические цели: все периоды — единая логика через GoalPeriodResolver
+        foreach (['daily', 'weekly', 'monthly', 'semi_annual', 'annual'] as $period) {
+            $goal = $this->goalPeriodResolver->resolve($organization, $period, $projectId, $siteId);
+            if ($goal === null || $goal <= 0) {
+                continue;
+            }
 
-            $data['monthly_goal'] = [
-                'target' => \App\Support\Money::toArray($monthlyGoal),
-                'collected' => \App\Support\Money::toArray($monthlyCollected),
-                'progress_percentage' => $monthlyGoal > 0
-                    ? min(100, round(($monthlyCollected / $monthlyGoal) * 100, 2))
-                    : 0,
+            $override  = $this->goalPeriodResolver->resolveCollectedOverride($organization, $period, $projectId, $siteId);
+            $collected = $override !== null
+                ? $override
+                : $this->getPeriodCollectedAmount($organization, $period, $projectId);
+
+            $data["{$period}_goal"] = [
+                'target'              => \App\Support\Money::toArray($goal),
+                'collected'           => \App\Support\Money::toArray($collected),
+                'progress_percentage' => min(100, round(($collected / $goal) * 100, 2)),
             ];
         }
 
@@ -106,26 +108,33 @@ class DonationWidgetDataService
     }
 
     /**
-     * Получить собранную сумму за текущий месяц (календарный месяц в таймзоне приложения).
+     * Сумма донатов за текущий период в копейках.
+     * Поддерживаемые периоды: daily, weekly, monthly, semi_annual, annual.
      *
-     * «Собрано» = сумма донатов, которые относятся к текущему месяцу по дате поступления:
-     * - по paid_at (дата фактической оплаты), если задана;
-     * - иначе по created_at (для миграции created_at = post_date donator в WP).
-     *
-     * @param Organization $organization
-     * @param int|null $projectId Если указан, считаем только для проекта
-     * @return int Сумма в копейках
+     * Дата определяется по paid_at (фактическая оплата), иначе по created_at.
      */
-    protected function getMonthlyCollectedAmount(Organization $organization, ?int $projectId = null): int
-    {
-        $tz = config('app.timezone', 'Europe/Moscow');
-        $startOfMonth = now($tz)->startOfMonth();
-        $endOfMonth = now($tz)->endOfMonth();
+    protected function getPeriodCollectedAmount(
+        Organization $organization,
+        string $period,
+        ?int $projectId = null,
+    ): int {
+        $tz  = config('app.timezone', 'Europe/Moscow');
+        $now = now($tz);
+
+        [$start, $end] = match ($period) {
+            'daily'       => [$now->copy()->startOfDay(),   $now->copy()->endOfDay()],
+            'weekly'      => [$now->copy()->startOfWeek(),  $now->copy()->endOfWeek()],
+            'semi_annual' => $now->month <= 6
+                ? [$now->copy()->startOfYear(),         $now->copy()->month(6)->endOfMonth()]
+                : [$now->copy()->month(7)->startOfMonth(), $now->copy()->endOfYear()],
+            'annual'      => [$now->copy()->startOfYear(),  $now->copy()->endOfYear()],
+            default       => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()], // monthly
+        };
 
         $query = DB::table('donations')
             ->where('organization_id', $organization->id)
             ->where('status', 'completed')
-            ->whereBetween(DB::raw('COALESCE(paid_at, created_at)'), [$startOfMonth, $endOfMonth]);
+            ->whereBetween(DB::raw('COALESCE(paid_at, created_at)'), [$start, $end]);
 
         if ($projectId) {
             $query->where('project_id', $projectId);

@@ -24,10 +24,21 @@
     --school-section-x: 60px;
     // Контентная колонка: шапка (.site-header__container), слайдеры (projects-slider-school__container и др.)
     --school-content-column-width: 1242px;
+    /** Широкая CTA-пилюля («Все …», «Загрузить ещё») — высота/отступы; на мобиле переопределяется в _adaptive.scss */
+    --school-cta-pill-height: 64px;
+    --school-cta-pill-pad-y: 12px;
+    --school-cta-pill-pad-x: 16px;
+    --school-cta-pill-font-size: 1rem;
+    /** text-base + leading-5 (20px при 16px) — как CTA в макетах Figma */
+    --school-cta-pill-line-height: 1.25;
+    --school-cta-pill-radius: 32px;
+    --school-cta-pill-tracking: 0.01em;
     --school-gap-heading: 40px; // заголовок секции → фильтры / контент
     --school-content-stack-gap: 2rem; // сетка main (≈32px, как gap-8)
     // Строка контактов в шапке: иконка ↔ текст (пин, адрес, почта в одном ряду)
     --school-contacts-bar-gap: 0.375rem;
+    /** Tailwind tracking-tight — заголовки и акцентные числа */
+    --school-tracking-tight: -0.025em;
 
     // Alumni под hero: две колонки неравной ширины (макет ~265px | ~355px при полосе 687px → ≈5∶7)
     --school-alumni-hero-col-left: 5fr;

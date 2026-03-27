@@ -10,8 +10,15 @@ export const OrgDonationsFeedSchoolRow: React.FC<Props> = ({ item }) => {
     return (
         <div className="org-donations-feed-school__row">
             <div className="org-donations-feed-school__cell org-donations-feed-school__cell--donor">
-                <span className="org-donations-feed-school__donor-icon" aria-hidden>
-                    <Heart size={14} fill="currentColor" stroke="currentColor" />
+                <span
+                    className="org-donations-feed-school__donor-icon"
+                    aria-hidden
+                >
+                    <Heart
+                        size={12}
+                        fill="currentColor"
+                        stroke="currentColor"
+                    />
                 </span>
                 <span className="org-donations-feed-school__donor-name">
                     {item.donor_name}
@@ -21,7 +28,9 @@ export const OrgDonationsFeedSchoolRow: React.FC<Props> = ({ item }) => {
                 {item.project_title || '—'}
             </div>
             <div className="org-donations-feed-school__cell org-donations-feed-school__cell--datetime">
-                {item.datetime_formatted || `${item.date_label || ''} ${item.paid_at || ''}`.trim() || '—'}
+                {item.datetime_formatted ||
+                    `${item.date_label || ''} ${item.paid_at || ''}`.trim() ||
+                    '—'}
             </div>
             <div className="org-donations-feed-school__cell org-donations-feed-school__cell--amount">
                 {item.amount_formatted}

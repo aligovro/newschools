@@ -1,6 +1,11 @@
 // ─── Поделиться (share buttons для school) ────────────────────────────────────
 
 .site-preview.site-template--school {
+    // В hero-позиции: отступ от текста выше
+    .site-position--hero .share-buttons-school {
+        margin-top: 40px;
+    }
+
     .share-buttons-school {
         &__list {
             display: flex;

@@ -1,4 +1,5 @@
 import { ClubSignUpModal } from '@/components/dashboard/widgets/ClubSignUpModal';
+import { SchoolCtaPill } from '@/components/site/school/SchoolCtaPill';
 import type { ClubSignUpPayload } from '@/components/dashboard/widgets/ClubSignUpModal';
 import { fetchOrganizationClubs, submitClubApplication } from '@/lib/api/public';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -351,12 +352,9 @@ export const ClubsSliderWidget: React.FC<Props> = ({ config = {} }) => {
                             )}
                         </div>
 
-                        <a
-                            href="/clubs"
-                            className="clubs-slider-widget__all-link"
-                        >
+                        <SchoolCtaPill href="/clubs">
                             Все кружки и секции
-                        </a>
+                        </SchoolCtaPill>
                     </>
                 )}
             </div>

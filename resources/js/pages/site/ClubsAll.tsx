@@ -2,6 +2,7 @@ import { ClubSignUpModal } from '@/components/dashboard/widgets/ClubSignUpModal'
 import type { ClubSignUpPayload } from '@/components/dashboard/widgets/ClubSignUpModal';
 import type { WidgetData, WidgetPosition } from '@/components/dashboard/site-builder/types';
 import { fetchOrganizationClubs, submitClubApplication } from '@/lib/api/public';
+import { SchoolCtaPill } from '@/components/site/school/SchoolCtaPill';
 import MainLayout from '@/layouts/MainLayout';
 import React, { useCallback, useState } from 'react';
 
@@ -222,14 +223,13 @@ export default function ClubsAll({
 
                     {hasMore && (
                         <div className="clubs-all__load-more">
-                            <button
+                            <SchoolCtaPill
                                 type="button"
-                                className="clubs-all__load-more-btn"
                                 onClick={loadMore}
                                 disabled={loading}
                             >
                                 {loading ? 'Загрузка…' : 'Загрузить ещё'}
-                            </button>
+                            </SchoolCtaPill>
                         </div>
                     )}
                 </section>

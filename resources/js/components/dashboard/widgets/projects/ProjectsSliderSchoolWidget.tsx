@@ -7,6 +7,8 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
+import { SchoolCtaPill } from '@/components/site/school/SchoolCtaPill';
+
 import { ProjectsSliderSchoolCard } from './ProjectsSliderSchoolCard';
 import { ProjectsSliderSchoolFilters } from './ProjectsSliderSchoolFilters';
 import { useProjectsSliderSchool } from './useProjectsSliderSchool';
@@ -187,12 +189,9 @@ export const ProjectsSliderSchoolWidget: React.FC<Props> = ({ config = {} }) => 
                             )}
                         </div>
 
-                        <a
-                            href="/projects"
-                            className="projects-slider-school__all-link"
-                        >
+                        <SchoolCtaPill href="/projects">
                             Все проекты школы
-                        </a>
+                        </SchoolCtaPill>
                     </>
                 )}
             </div>

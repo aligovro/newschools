@@ -5,7 +5,7 @@ import { PaymentSettingsSection } from '../ProjectForm/PaymentSettingsSection';
 import { ProjectDatesSection } from '../ProjectForm/ProjectDatesSection';
 import { SettingsSection } from '../ProjectForm/SettingsSection';
 import { BankRequisitesSettings } from '@/components/dashboard/bank-requisites/BankRequisitesSettings';
-import { MonthlyGoalSettings } from '@/components/dashboard/monthly-goal/MonthlyGoalSettings';
+import { GoalPeriodsManager } from '@/components/dashboard/goal-settings/GoalPeriodsManager';
 import type {
     PaymentSettings,
     ProjectFormData,
@@ -145,13 +145,11 @@ export default function GeneralTab({
                             organizationRequisites={organizationRequisites}
                             showInheritanceInfo={true}
                         />
-                        <MonthlyGoalSettings
+                        <GoalPeriodsManager
                             entityId={projectId}
                             entityType="project"
-                            initialGoal={(paymentSettings as any)?.monthly_goal ?? null}
-                            initialCollected={(paymentSettings as any)?.monthly_collected ?? null}
-                            organizationGoal={organization.settings?.payment_settings?.monthly_goal ?? null}
-                            showInheritanceInfo={true}
+                            settings={paymentSettings}
+                            parentSettings={organization.settings?.payment_settings}
                         />
                     </>
                 )}

@@ -7,6 +7,8 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
+import { SchoolCtaPill } from '@/components/site/school/SchoolCtaPill';
+
 import { VideoLessonsSliderSchoolCard } from './VideoLessonsSliderSchoolCard';
 import { VideoLessonsSliderSchoolFilters } from './VideoLessonsSliderSchoolFilters';
 import { useVideoLessonsSliderSchool } from './useVideoLessonsSliderSchool';
@@ -160,12 +162,9 @@ export const VideoLessonsSliderSchoolWidget: React.FC<Props> = ({ config = {} })
                                 </>
                             )}
                         </div>
-                        <a
-                            href="/video-lessons"
-                            className="video-lessons-slider-school__all-link"
-                        >
+                        <SchoolCtaPill href="/video-lessons">
                             Все видео уроки
-                        </a>
+                        </SchoolCtaPill>
                     </>
                 )}
             </div>

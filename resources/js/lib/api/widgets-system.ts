@@ -159,11 +159,17 @@ export interface DonationWidgetData {
         tinkoff_card?: string;
         card_recipient?: string;
     } | null;
-    monthly_goal?: {
-        target: MoneyAmount;
-        collected: MoneyAmount;
-        progress_percentage: number;
-    } | null;
+    daily_goal?: PeriodGoalData | null;
+    weekly_goal?: PeriodGoalData | null;
+    monthly_goal?: PeriodGoalData | null;
+    semi_annual_goal?: PeriodGoalData | null;
+    annual_goal?: PeriodGoalData | null;
+}
+
+export interface PeriodGoalData {
+    target: MoneyAmount;
+    collected: MoneyAmount;
+    progress_percentage: number;
 }
 
 export interface DonationRequest {
@@ -257,6 +263,21 @@ export const widgetsSystemApi = {
                 },
             )
             .then((response) => response.data),
+
+    // Сохранение периодической цели для любой сущности
+    savePeriodGoal: (
+        entityType: 'organization' | 'site' | 'project',
+        entityId: number,
+        payload: { period: 'daily' | 'weekly' | 'monthly' | 'semi_annual' | 'annual'; goal: number | null; collected: number | null },
+    ): Promise<{ success: boolean; message?: string }> => {
+        const path =
+            entityType === 'organization'
+                ? `/organizations/${entityId}/period-goal`
+                : `/${entityType}s/${entityId}/period-goal`;
+        return apiClient
+            .post<{ success: boolean; message?: string }>(path, payload)
+            .then((r) => r.data);
+    },
 
     // Получение методов оплаты для виджета пожертвований
     getDonationWidgetPaymentMethods: (
