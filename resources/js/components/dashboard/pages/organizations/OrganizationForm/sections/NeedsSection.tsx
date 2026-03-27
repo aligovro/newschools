@@ -1,23 +1,25 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import type { MoneyAmount } from '@/types/money';
 import { useMemo } from 'react';
 
 interface NeedsSectionProps {
     targetAmount: string;
-    /**
-     * Текущее значение собранной суммы (для отображения), редактировать его нельзя.
-     */
-    collectedAmount?: string;
+    manualCollectedAmount: string;
+    autoCollected?: MoneyAmount | null;
     onTargetChange: (value: string) => void;
+    onManualCollectedChange: (value: string) => void;
 }
 
 export function NeedsSection({
     targetAmount,
-    collectedAmount,
+    manualCollectedAmount,
+    autoCollected,
     onTargetChange,
+    onManualCollectedChange,
 }: NeedsSectionProps) {
-    const { target, collected, progress, formattedTarget, formattedCollected } =
+    const { progress, formattedTarget, formattedEffective } =
         useMemo(() => {
             const normalize = (value?: string): number => {
                 if (!value) return 0;
@@ -26,8 +28,20 @@ export function NeedsSection({
                 return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
             };
 
+            const parseNonEmpty = (value: string): number | null => {
+                const t = value.trim();
+                if (t === '') return null;
+                const cleaned = t.replace(/\s+/g, '').replace(',', '.');
+                const parsed = Number.parseFloat(cleaned);
+                if (!Number.isFinite(parsed) || parsed < 0) return null;
+                return parsed;
+            };
+
             const nextTarget = normalize(targetAmount);
-            const nextCollected = normalize(collectedAmount);
+            const manualParsed = parseNonEmpty(manualCollectedAmount);
+            const autoRubles = autoCollected?.value ?? 0;
+            const nextCollected =
+                manualParsed !== null ? manualParsed : autoRubles;
             const nextProgress =
                 nextTarget > 0
                     ? Math.min(
@@ -45,14 +59,19 @@ export function NeedsSection({
 
             return {
                 target: nextTarget,
-                collected: nextCollected,
+                effectiveCollected: nextCollected,
                 progress: nextProgress,
                 formattedTarget:
                     nextTarget > 0 ? formatter.format(nextTarget) : '—',
-                formattedCollected:
+                formattedEffective:
                     nextCollected > 0 ? formatter.format(nextCollected) : '—',
             };
-        }, [targetAmount, collectedAmount]);
+        }, [targetAmount, manualCollectedAmount, autoCollected?.value]);
+
+    const formattedAuto =
+        autoCollected && autoCollected.value > 0
+            ? autoCollected.formatted
+            : '—';
 
     return (
         <div className="rounded-lg border bg-white p-4">
@@ -61,8 +80,9 @@ export function NeedsSection({
                     Нужды школы
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                    Укажите целевую сумму и сколько уже собрано, чтобы отображать
-                    прогресс на карточках школы.
+                    Укажите целевую сумму. Собрано по умолчанию считается по
+                    завершённым пожертвованиям организации; при необходимости
+                    задайте сумму вручную — она будет иметь приоритет.
                 </p>
             </div>
 
@@ -86,12 +106,23 @@ export function NeedsSection({
                 </div>
 
                 <div>
-                    <Label htmlFor="needs-collected">Собрано средств</Label>
-                    <div className="mt-2 rounded-md bg-gray-50 p-2 text-sm text-gray-700">
-                        {formattedCollected}
-                    </div>
+                    <Label htmlFor="needs-collected-manual">
+                        Собрано средств (необязательно)
+                    </Label>
+                    <Input
+                        id="needs-collected-manual"
+                        type="number"
+                        min={0}
+                        step="1"
+                        value={manualCollectedAmount}
+                        onChange={(event) =>
+                            onManualCollectedChange(event.target.value.trim())
+                        }
+                        placeholder="Оставьте пустым для авто"
+                    />
                     <p className="mt-1 text-xs text-gray-500">
-                        Считается автоматически по данным проектов и пожертвований.
+                        По пожертвованиям: {formattedAuto}. Пустое поле — берётся
+                        эта сумма.
                     </p>
                 </div>
             </div>
@@ -104,10 +135,9 @@ export function NeedsSection({
                 <Progress value={progress} />
                 <div className="flex justify-between text-xs text-gray-500">
                     <span>Цель: {formattedTarget}</span>
-                    <span>Собрано: {formattedCollected}</span>
+                    <span>Собрано: {formattedEffective}</span>
                 </div>
             </div>
         </div>
     );
 }
-

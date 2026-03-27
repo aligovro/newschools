@@ -44,6 +44,10 @@ export interface OrganizationLite {
         collected: MoneyAmount;
         progress_percentage: number;
     } | null;
+    /** Копейки; не null — задано ручное «собрано» для нужд */
+    needs_collected_manual_amount?: number | null;
+    /** Сумма завершённых пожертвований (без ручного override), для подсказки в форме */
+    needs_auto_collected?: MoneyAmount;
 }
 
 export interface OrganizationDirector {

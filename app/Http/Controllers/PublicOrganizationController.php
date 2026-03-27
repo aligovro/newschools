@@ -168,7 +168,7 @@ class PublicOrganizationController extends Controller
             'locality_id',
             'created_at',
             'needs_target_amount',
-            'needs_collected_amount',
+            'needs_collected_manual_amount',
         ]);
 
         // Приводим к плоскому JSON для фронта
