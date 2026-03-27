@@ -16,6 +16,7 @@
     }
 
     .school-contacts-bar__primary {
+        margin-left: 4px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -214,7 +215,11 @@
             border-color 0.2s ease;
 
         &:hover {
-            background: color-mix(in srgb, var(--school-accent) 12%, transparent);
+            background: color-mix(
+                in srgb,
+                var(--school-accent) 12%,
+                transparent
+            );
         }
     }
 

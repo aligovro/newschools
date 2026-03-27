@@ -426,15 +426,15 @@ export const SchoolAuthMenuOutput: React.FC<SchoolAuthMenuOutputProps> = ({
 
     if (isCheckingSession) {
         return (
-            <div className="school-auth-menu flex items-center gap-3">
-                <Skeleton className="h-[54px] w-[170px] rounded-[27px]" />
-                <Skeleton className="h-[54px] w-[120px] rounded-[27px]" />
+            <div className="school-auth-menu">
+                <Skeleton className="w-[170px] rounded-[var(--school-header-auth-btn-radius)] [height:var(--school-header-auth-btn-height)]" />
+                <Skeleton className="w-[120px] rounded-[var(--school-header-auth-btn-radius)] [height:var(--school-header-auth-btn-height)]" />
             </div>
         );
     }
 
     return (
-        <div className="school-auth-menu flex items-center gap-3">
+        <div className="school-auth-menu">
             {!effectiveIsAuthenticated ? (
                 <>
                     <button
