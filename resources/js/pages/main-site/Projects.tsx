@@ -352,6 +352,7 @@ export default function Projects({
                                 </div>
                                 <div className="projects-page-school__load-more">
                                     <LoadMoreButton
+                                        className="school-cta-pill"
                                         onClick={handleLoadMore}
                                         isLoading={isLoadingMore}
                                         hasMore={hasMore}

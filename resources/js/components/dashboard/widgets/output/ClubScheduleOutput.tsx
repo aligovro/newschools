@@ -1,3 +1,4 @@
+import { SchoolCtaPill } from '@/components/site/school/SchoolCtaPill';
 import { fetchOrganizationClubs, submitClubApplication } from '@/lib/api/public';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -215,13 +216,13 @@ export const ClubScheduleOutput: React.FC<WidgetOutputProps> = ({
                         ))}
                     </div>
                     {hasMore && (
-                        <button
+                        <SchoolCtaPill
                             type="button"
                             className="club-schedule-output__load-more"
                             onClick={loadMore}
                         >
                             Загрузить больше
-                        </button>
+                        </SchoolCtaPill>
                     )}
                 </>
             )}

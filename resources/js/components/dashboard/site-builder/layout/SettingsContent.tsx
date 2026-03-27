@@ -7,7 +7,7 @@ import PaymentSettings from '../settings/payments/PaymentSettings';
 import { SeoSettings } from '../settings/SeoSettings';
 import TelegramSettings from '../settings/telegram/TelegramSettings';
 import { BankRequisitesSettings } from '@/components/dashboard/bank-requisites/BankRequisitesSettings';
-import { MonthlyGoalSettings } from '@/components/dashboard/monthly-goal/MonthlyGoalSettings';
+import { GoalPeriodsManager } from '@/components/dashboard/goal-settings/GoalPeriodsManager';
 
 interface TemplateOption {
     slug: string;
@@ -224,13 +224,11 @@ export const SettingsContent: React.FC<SettingsContentProps> = React.memo(
                             } : null}
                             showInheritanceInfo={true}
                         />
-                        <MonthlyGoalSettings
+                        <GoalPeriodsManager
                             entityId={site.id}
                             entityType="site"
-                            initialGoal={(site.custom_settings as any)?.monthly_goal ?? null}
-                            initialCollected={(site.custom_settings as any)?.monthly_collected ?? null}
-                            organizationGoal={organization.settings?.payment_settings?.monthly_goal ?? null}
-                            showInheritanceInfo={true}
+                            settings={site.custom_settings}
+                            parentSettings={organization.settings?.payment_settings}
                         />
                     </>
                     )}

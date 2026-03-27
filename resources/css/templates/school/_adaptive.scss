@@ -166,6 +166,8 @@
         --school-section-x: 16px;
         --school-gap-heading: 24px;
         --school-content-stack-gap: 1rem;
+        --school-cta-pill-height: 52px;
+        --school-cta-pill-pad-y: 9px;
 
         // Общие блоки
         .wrapper__block {
@@ -457,13 +459,11 @@
             margin-bottom: 8px;
         }
 
-        .clubs-slider-widget__all-link,
-        .projects-slider-school__all-link,
-        .teachers-slider-school__all-link,
-        .video-lessons-slider-school__all-link {
+        .clubs-slider-widget .school-cta-pill,
+        .projects-slider-school .school-cta-pill,
+        .teachers-slider-school .school-cta-pill,
+        .video-lessons-slider-school .school-cta-pill {
             margin-top: 0;
-            padding: 10px 16px;
-            font-size: 14px;
         }
 
         // Уменьшение отступа ПОД кнопкой (дно секции слайдера)

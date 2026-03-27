@@ -12,7 +12,7 @@
             font-size: 40px;
             font-weight: 700;
             line-height: 48px;
-            letter-spacing: 0.01em;
+            letter-spacing: var(--school-tracking-tight);
             color: var(--school-text);
             margin: 0 0 24px;
         }
@@ -23,6 +23,8 @@
             overflow-x: auto;
         }
 
+        // Не использовать &__header &__cell — Sass дублирует внешние родители в селекторе,
+        // и правило перестаёт матчиться (ищется .site-preview внутри __header).
         &__header {
             display: grid;
             grid-template-columns:
@@ -31,13 +33,15 @@
             gap: 10px;
             padding-bottom: 10px;
             border-bottom: 1px solid var(--school-border, #e8ecf3);
-        }
 
-        &__header &__cell {
-            font-size: 9px;
-            font-weight: 500;
-            line-height: 11px;
-            color: var(--school-muted);
+            .org-donations-feed-school__cell {
+                font-size: 9px;
+                font-style: normal;
+                font-weight: 500;
+                line-height: 12px;
+                letter-spacing: -0.18px;
+                color: var(--school-muted);
+            }
         }
 
         &__body {
@@ -63,20 +67,21 @@
         &__cell {
             min-width: 0;
 
+            // Тело таблицы: как в Figma — text-xs semibold + leading-4, text-[10px] + leading-3, text-sm bold + leading-5
             &--donor {
                 display: flex;
                 align-items: center;
                 gap: 10px;
                 font-size: 12px;
                 font-weight: 600;
-                line-height: 14px;
+                line-height: 16px;
                 color: var(--school-text);
             }
 
             &--purpose {
                 font-size: 12px;
                 font-weight: 500;
-                line-height: 14px;
+                line-height: 16px;
                 color: var(--school-text);
             }
 
@@ -90,8 +95,8 @@
             &--amount {
                 font-size: 14px;
                 font-weight: 700;
-                line-height: 18px;
-                letter-spacing: 0.01em;
+                line-height: 20px;
+                letter-spacing: var(--school-tracking-tight);
                 color: var(--school-text);
             }
 
@@ -108,38 +113,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             color: var(--school-accent);
         }
 
         &__load-more {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
             margin-top: 24px;
-            padding: 12px 16px;
-            font-family: inherit;
-            font-size: 16px;
-            font-weight: 600;
-            line-height: 19px;
-            letter-spacing: 0.01em;
-            color: var(--school-text);
-            background: var(--school-bg);
-            border: none;
-            border-radius: 32px;
-            cursor: pointer;
-            transition: background 0.2s;
-
-            &:hover:not(:disabled) {
-                background: var(--school-border);
-            }
-
-            &:disabled {
-                opacity: 0.7;
-                cursor: not-allowed;
-            }
+            width: 100%;
         }
 
         &__placeholder {

@@ -1,3 +1,4 @@
+import { SchoolCtaPill } from '@/components/site/school/SchoolCtaPill';
 import React from 'react';
 import type { DonationFeedItem } from './useOrgDonationsFeed';
 import { OrgDonationsFeedSchoolRow } from './OrgDonationsFeedSchoolRow';
@@ -71,14 +72,14 @@ export const OrgDonationsFeedSchoolWidget: React.FC<Props> = ({
                         </div>
 
                         {hasMore && (
-                            <button
-                                type="button"
+                            <SchoolCtaPill
                                 className="org-donations-feed-school__load-more"
+                                type="button"
                                 onClick={onLoadMore}
                                 disabled={loadingMore}
                             >
                                 {loadingMore ? 'Загрузка…' : 'Загрузить больше'}
-                            </button>
+                            </SchoolCtaPill>
                         )}
                     </>
                 )}

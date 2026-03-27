@@ -8,6 +8,7 @@ import {
     getCategoryLabel,
     getCategorySlugForVideoLesson,
 } from '@/components/dashboard/widgets/videoLessons/videoLessonCategoryConfig';
+import { SchoolCtaPill } from '@/components/site/school/SchoolCtaPill';
 import MainLayout from '@/layouts/MainLayout';
 import React, { useCallback, useMemo, useState } from 'react';
 
@@ -158,14 +159,13 @@ export default function VideoLessonsAll({
 
                 {hasMore && (
                     <div className="video-lessons-all__load-more">
-                        <button
+                        <SchoolCtaPill
                             type="button"
-                            className="video-lessons-all__load-more-btn"
                             onClick={loadMore}
                             disabled={loading}
                         >
                             {loading ? 'Загрузка…' : 'Загрузить ещё'}
-                        </button>
+                        </SchoolCtaPill>
                     </div>
                 )}
             </section>

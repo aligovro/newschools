@@ -1,47 +1,54 @@
-// Кнопка «Загрузить ещё» (LoadMoreButton) — как secondary pill в шаблоне school (см. clubs-all__load-more-btn)
+// Универсальная CTA-пилюля шаблона school + переопределение LoadMoreButton на странице проектов школы
+
+@mixin school-cta-pill-appearance {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: var(--school-content-column-width);
+    min-height: var(--school-cta-pill-height);
+    padding: var(--school-cta-pill-pad-y) var(--school-cta-pill-pad-x);
+    border: none;
+    border-radius: var(--school-cta-pill-radius);
+    font-family: inherit;
+    font-size: var(--school-cta-pill-font-size);
+    font-weight: 600;
+    line-height: var(--school-cta-pill-line-height);
+    letter-spacing: var(--school-cta-pill-tracking);
+    color: var(--school-text);
+    background: var(--school-bg);
+    background-image: none;
+    text-decoration: none;
+    text-align: center;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        opacity 0.2s ease;
+
+    &:hover:not(:disabled) {
+        color: var(--school-text);
+        background: var(--school-border);
+        background-image: none;
+        transform: none;
+        opacity: 1;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(50, 89, 255, 0.25);
+    }
+}
 
 .site-preview.site-template--school {
-    .load-more-button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        max-width: 100%;
-        height: auto;
-        min-height: 0;
-        padding: 14px 40px;
-        font-family: inherit;
-        font-size: 16px;
-        font-weight: 600;
-        line-height: 1.2;
-        letter-spacing: 0.01em;
-        color: var(--school-text);
-        background: var(--school-bg);
-        border: none;
-        border-radius: 32px;
-        cursor: pointer;
-        transition:
-            background 0.2s ease,
-            opacity 0.2s ease;
-
-        // сброс градиентной «обводки» из components/main-site/LoadMoreButton.scss
-        background-image: none;
-
-        &:not(:disabled):hover {
-            color: var(--school-text);
-            background: var(--school-border);
-            background-image: none;
-            transform: none;
-        }
-
-        &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        &:focus-visible {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(50, 89, 255, 0.25);
-        }
+    .school-cta-pill,
+    .load-more-button.school-cta-pill {
+        @include school-cta-pill-appearance;
     }
 }

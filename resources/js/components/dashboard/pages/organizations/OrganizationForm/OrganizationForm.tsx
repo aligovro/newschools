@@ -16,7 +16,7 @@ import { NeedsSection } from './sections/NeedsSection';
 import { PaymentSettingsSection } from './sections/PaymentSettingsSection';
 import { SettingsSection } from './sections/SettingsSection';
 import { BankRequisitesSettings } from '@/components/dashboard/bank-requisites/BankRequisitesSettings';
-import { MonthlyGoalSettings } from '@/components/dashboard/monthly-goal/MonthlyGoalSettings';
+import { GoalPeriodsManager } from '@/components/dashboard/goal-settings/GoalPeriodsManager';
 
 export default function OrganizationForm({
     mode,
@@ -457,12 +457,10 @@ export default function OrganizationForm({
                                 } : null}
                                 showInheritanceInfo={false}
                             />
-                            <MonthlyGoalSettings
+                            <GoalPeriodsManager
                                 entityId={organization.id}
                                 entityType="organization"
-                                initialGoal={organizationSettings?.payment_settings?.monthly_goal ?? null}
-                                initialCollected={organizationSettings?.payment_settings?.monthly_collected ?? null}
-                                showInheritanceInfo={false}
+                                settings={organizationSettings?.payment_settings}
                             />
                         </>
                     )}

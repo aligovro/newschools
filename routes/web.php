@@ -447,6 +447,8 @@ Route::prefix('api/sites/{id}')->middleware('auth')->group(function () {
         ->name('sites.save-bank-requisites');
     Route::post('/monthly-goal', [ApiSiteController::class, 'saveMonthlyGoal'])
         ->name('sites.save-monthly-goal');
+    Route::post('/period-goal', [ApiSiteController::class, 'savePeriodGoal'])
+        ->name('sites.save-period-goal');
 
     // Макет сайта
     Route::post('/settings/layout', [ApiSiteController::class, 'saveLayoutSettings'])
@@ -486,6 +488,8 @@ Route::prefix('api/projects/{id}')->middleware('auth')->group(function () {
         ->name('projects.save-bank-requisites');
     Route::post('/monthly-goal', [ApiProjectController::class, 'saveMonthlyGoal'])
         ->name('projects.save-monthly-goal');
+    Route::post('/period-goal', [ApiProjectController::class, 'savePeriodGoal'])
+        ->name('projects.save-period-goal');
 });
 
 // Organization configuration routes
@@ -495,6 +499,8 @@ Route::prefix('api/organizations/{organization}')->middleware('auth')->group(fun
         ->name('organizations.save-bank-requisites');
     Route::post('/monthly-goal', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'updateMonthlyGoalApi'])
         ->name('organizations.save-monthly-goal');
+    Route::post('/period-goal', [App\Http\Controllers\Dashboard\OrganizationSettingsController::class, 'savePeriodGoalApi'])
+        ->name('organizations.save-period-goal');
 });
 
 Route::get('/dashboard/api/regions/{id}', [RegionController::class, 'show']);

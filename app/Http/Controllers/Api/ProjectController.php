@@ -116,6 +116,31 @@ class ProjectController extends Controller
     }
   }
 
+  // Цель на период (monthly / weekly) для проекта
+  public function savePeriodGoal(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'period'    => 'required|in:daily,weekly,monthly,semi_annual,annual',
+      'goal'      => 'nullable|integer|min:0',
+      'collected' => 'nullable|integer|min:0',
+    ]);
+
+    try {
+      $project = $this->getProject($id);
+      app(\App\Services\Goal\GoalPeriodService::class)->saveForProject(
+        $project,
+        $request->input('period'),
+        $request->input('goal'),
+        $request->input('collected'),
+      );
+      $project->refresh();
+
+      return response()->json(['success' => true, 'payment_settings' => $project->payment_settings]);
+    } catch (\Exception $e) {
+      return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+  }
+
   private function getProject($id): Project
   {
     $user = Auth::user();

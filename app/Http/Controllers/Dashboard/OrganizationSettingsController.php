@@ -402,4 +402,31 @@ class OrganizationSettingsController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Сохранить цель на произвольный период (monthly / weekly) для организации.
+     */
+    public function savePeriodGoalApi(Request $request, Organization $organization)
+    {
+        $this->authorize('manage', $organization);
+
+        $request->validate([
+            'period'    => 'required|in:daily,weekly,monthly,semi_annual,annual',
+            'goal'      => 'nullable|integer|min:0',
+            'collected' => 'nullable|integer|min:0',
+        ]);
+
+        try {
+            app(\App\Services\Goal\GoalPeriodService::class)->saveForOrganization(
+                $organization,
+                $request->input('period'),
+                $request->input('goal'),
+                $request->input('collected'),
+            );
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }

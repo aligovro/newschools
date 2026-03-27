@@ -1310,4 +1310,28 @@ class SiteController extends Controller
       ], 500);
     }
   }
+
+  // Цель на период (monthly / weekly) для сайта
+  public function savePeriodGoal(Request $request, $id): JsonResponse
+  {
+    $request->validate([
+      'period'    => 'required|in:daily,weekly,monthly,semi_annual,annual',
+      'goal'      => 'nullable|integer|min:0',
+      'collected' => 'nullable|integer|min:0',
+    ]);
+
+    try {
+      $site = $this->getSite($id);
+      app(\App\Services\Goal\GoalPeriodService::class)->saveForSite(
+        $site,
+        $request->input('period'),
+        $request->input('goal'),
+        $request->input('collected'),
+      );
+
+      return response()->json(['success' => true]);
+    } catch (\Exception $e) {
+      return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+  }
 }

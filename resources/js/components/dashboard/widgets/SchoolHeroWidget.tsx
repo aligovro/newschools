@@ -2,6 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import ImageUploader from '@/components/dashboard/settings/sites/ImageUploader';
+import { GOAL_PERIODS, type GoalPeriod } from '@/lib/goal-periods';
 import React, { useEffect, useState } from 'react';
 
 export interface SchoolHeroConfig {
@@ -9,7 +10,11 @@ export interface SchoolHeroConfig {
     subtitle?: string;
     backgroundImage?: string;
     overlayOpacity?: number;
+    /** Показывать ли блок периодической цели */
     showMonthlyGoal?: boolean;
+    /** Период цели (по умолчанию 'monthly') */
+    goalPeriod?: GoalPeriod;
+    /** Переопределение цели (в рублях) — приоритет над API */
     monthlyGoalTarget?: number;
     showTotalProgress?: boolean;
     organizationId?: number;
@@ -34,6 +39,7 @@ export const SchoolHeroWidget: React.FC<SchoolHeroWidgetProps> = ({
         backgroundImage: config.backgroundImage || '',
         overlayOpacity: config.overlayOpacity ?? 80,
         showMonthlyGoal: config.showMonthlyGoal ?? true,
+        goalPeriod: config.goalPeriod ?? 'monthly',
         monthlyGoalTarget: config.monthlyGoalTarget,
         showTotalProgress: config.showTotalProgress ?? true,
         organizationId: config.organizationId,
@@ -123,9 +129,9 @@ export const SchoolHeroWidget: React.FC<SchoolHeroWidgetProps> = ({
 
                 <div className="flex items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                        <Label className="text-base">Цель на месяц</Label>
+                        <Label className="text-base">Периодическая цель</Label>
                         <p className="text-sm text-gray-500">
-                            Отображать блок с целью на текущий месяц
+                            Отображать блок с целью на период (месяц / неделю)
                         </p>
                     </div>
                     <Switch
@@ -137,21 +143,38 @@ export const SchoolHeroWidget: React.FC<SchoolHeroWidgetProps> = ({
                 </div>
 
                 {localConfig.showMonthlyGoal && (
-                    <div className="space-y-2">
-                        <Label>Цель на месяц (₽) — переопределяет значение из API</Label>
-                        <Input
-                            type="number"
-                            min={0}
-                            value={localConfig.monthlyGoalTarget ?? ''}
-                            onChange={(e) =>
-                                handleChange(
-                                    'monthlyGoalTarget',
-                                    e.target.value ? Number(e.target.value) : undefined,
-                                )
-                            }
-                            placeholder="Оставьте пустым — значение из системы"
-                        />
-                    </div>
+                    <>
+                        <div className="space-y-2">
+                            <Label>Период цели</Label>
+                            <select
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={localConfig.goalPeriod ?? 'monthly'}
+                                onChange={(e) =>
+                                    handleChange('goalPeriod', e.target.value as GoalPeriod)
+                                }
+                            >
+                                {GOAL_PERIODS.map((p) => (
+                                    <option key={p.value} value={p.value}>{p.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Цель (₽) — переопределяет значение из API</Label>
+                            <Input
+                                type="number"
+                                min={0}
+                                value={localConfig.monthlyGoalTarget ?? ''}
+                                onChange={(e) =>
+                                    handleChange(
+                                        'monthlyGoalTarget',
+                                        e.target.value ? Number(e.target.value) : undefined,
+                                    )
+                                }
+                                placeholder="Оставьте пустым — значение из системы"
+                            />
+                        </div>
+                    </>
                 )}
 
                 <div className="flex items-center justify-between rounded-lg border p-4">
