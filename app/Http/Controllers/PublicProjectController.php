@@ -12,6 +12,7 @@ use App\Services\ReferralService;
 use App\Services\Seo\SeoPresenter;
 use App\Services\Sponsors\ProjectSponsorService;
 use App\Support\Money;
+use App\Support\PublicDonationPrivacy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -253,6 +254,9 @@ class PublicProjectController extends Controller
       1,
       6,
     );
+    if (! empty($topRecurring['data'])) {
+      $topRecurring['data'] = PublicDonationPrivacy::mapTopDonorRows($topRecurring['data']);
+    }
 
     // Статьи расходов
     $budgetItems = $project->budgetItems->map(fn ($item) => [

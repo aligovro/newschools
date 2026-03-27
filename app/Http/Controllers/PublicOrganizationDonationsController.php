@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\Organization;
 use App\Services\ProjectDonations\ProjectDonationsService;
+use App\Support\PublicDonationPrivacy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -29,7 +30,7 @@ class PublicOrganizationDonationsController extends Controller
         return response()->json([
             'success' => true,
             'period' => $period,
-            'data' => $data,
+            'data' => PublicDonationPrivacy::mapTopDonorRows($data),
         ]);
     }
 
@@ -45,6 +46,7 @@ class PublicOrganizationDonationsController extends Controller
         $graduateOnly = $request->boolean('graduate_only');
 
         $result = $this->donationsService->topRecurringByDonorNameForOrganization($organization, $period, $page, $perPage, $graduateOnly);
+        $result['data'] = PublicDonationPrivacy::mapTopDonorRows($result['data']);
 
         return response()->json([
             'success' => true,
@@ -73,9 +75,11 @@ class PublicOrganizationDonationsController extends Controller
             $timeLabel = $dt ? $dt->format('H:i') : '';
             $datetimeFormatted = $dt ? $this->formatDateTimeForFeed($dt) : '';
 
-            $donorName = $maskDonors
-                ? 'Анонимное пожертвование'
-                : ($donation->is_anonymous ? 'Анонимное пожертвование' : ($donation->donor_name ?? 'Анонимное пожертвование'));
+            $donorName = PublicDonationPrivacy::donationFeedDonorName(
+                $donation->donor_name,
+                (bool) $donation->is_anonymous,
+                $maskDonors,
+            );
 
             $projectTitle = $donation->project?->title
                 ?? 'Сбор на регулярные расходы по содержанию школы';
