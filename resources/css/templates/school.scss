@@ -19,6 +19,11 @@
     --school-surface: #fff;
     --school-gradient: linear-gradient(84deg, #96bdff 0%, #3259ff 100%);
 
+    // Шкала отступов макета (Figma: Space-12, Space-16, Space-24)
+    --school-space-12: 12px;
+    --school-space-16: 16px;
+    --school-space-24: 24px;
+
     // Ритм секций (макет 1920 / контент 1362: боковые поля 60px, блоки по вертикали 80px)
     --school-section-y: 80px;
     --school-section-x: 60px;
@@ -26,8 +31,8 @@
     --school-content-column-width: 1242px;
     /** Широкая CTA-пилюля («Все …», «Загрузить ещё») — высота/отступы; на мобиле переопределяется в _adaptive.scss */
     --school-cta-pill-height: 64px;
-    --school-cta-pill-pad-y: 12px;
-    --school-cta-pill-pad-x: 16px;
+    --school-cta-pill-pad-y: var(--school-space-12);
+    --school-cta-pill-pad-x: var(--school-space-16);
     --school-cta-pill-font-size: 1rem;
     /** text-base + leading-5 (20px при 16px) — как CTA в макетах Figma */
     --school-cta-pill-line-height: 1.25;
@@ -52,6 +57,27 @@
     // Футер: только вертикаль рядов меню (сетку колонок не трогаем)
     --school-footer-nav-title-gap: 22px; // заголовок h2 → первый пункт
     --school-footer-nav-item-gap: 14px; // между пунктами списка
+
+    // Шапка: полоса по высоте CTA (макет: кнопки 54px)
+    --school-header-auth-btn-height: 3.375rem;
+    --school-header-band-height: var(--school-header-auth-btn-height);
+    --school-header-columns-gap: 1rem;
+    --school-header-col2-inner-gap: 0.25rem;
+    /** В шапке: зазор между блоком контактов и иконками соцсетей (в ряд слева, без разъезда вправо) */
+    --school-header-contacts-social-gap: 0.75rem;
+    --school-header-nav-link-gap: 0.5rem;
+    --school-header-nav-link-pad-x: 0.25rem;
+    --school-header-nav-link-pad-y: 0.125rem;
+    --school-header-nav-font-size: 0.875rem;
+
+    // CTA шапки: по вертикали Space-12, по бокам Space-24
+    --school-header-auth-btn-pad-y: var(--school-space-12);
+    --school-header-auth-btn-pad-x: var(--school-space-24);
+    --school-header-auth-btn-radius: calc(var(--school-header-auth-btn-height) / 2);
+    --school-header-auth-font-size: 0.875rem;
+    --school-header-auth-line-height: 1.2;
+    --school-header-auth-label-tracking: 0.01em;
+    --school-header-auth-gap: 0.75rem;
 
     font-family: var(--font-family);
     color: var(--school-text);

@@ -11,6 +11,74 @@
         max-width: 1242px;
     }
 
+    // Десктоп: одна строка (лого | контакты+меню | CTA). Базовый flex-wrap:wrap переносит col-4 вниз,
+    // когда средняя колонка широкая — здесь nowrap + «сжимаемая» col-2 (min-width:0).
+    @media (min-width: 1024px) {
+        .site-header__columns {
+            flex-wrap: nowrap;
+            align-items: flex-start;
+            gap: var(--school-header-columns-gap);
+        }
+
+        .site-header__column:has(.site-position--header-col-1) {
+            flex-shrink: 0;
+            align-self: center;
+        }
+
+        .site-header__column:has(.site-position--header-col-2) {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .site-header__column:has(.site-position--header-col-3) {
+            flex-shrink: 0;
+        }
+
+        .site-header__column:has(.site-position--header-col-4) {
+            flex-shrink: 0;
+            align-self: flex-start;
+        }
+
+        // Два ряда внутри col-2: контакты сверху, меню снизу полосы (как в макете)
+        .header-col-2-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: var(--school-header-col2-inner-gap);
+            min-height: var(--school-header-band-height);
+            width: 100%;
+        }
+
+        .site-header .school-contacts-bar {
+            flex-wrap: nowrap;
+            min-width: 0;
+            justify-content: flex-start;
+            align-items: center;
+            gap: var(--school-header-contacts-social-gap);
+        }
+
+        // Иначе flex:1 у primary раздвигает ряд и уносит .school-contacts-bar__social к правому краю
+        .site-header .school-contacts-bar__primary {
+            flex: 0 1 auto;
+        }
+
+        .site-header .menu-output ul.flex-row {
+            flex-wrap: nowrap;
+            gap: var(--school-header-nav-link-gap);
+            min-width: 0;
+            max-width: 100%;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .site-header .menu-output .menu-link {
+            padding: var(--school-header-nav-link-pad-y) var(--school-header-nav-link-pad-x);
+            font-size: var(--school-header-nav-font-size);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+    }
+
     // Страница просмотра проекта: восстанавливаем боковые отступы,
     // которые перебиваются общим .container { padding: 0 } для school-шаблона
     .school-project-container {
