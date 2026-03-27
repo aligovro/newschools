@@ -28,7 +28,7 @@ class StoreOrganizationRequest extends FormRequest
             'type' => ['required', 'string', Rule::in(['school', 'university', 'kindergarten', 'other'])],
             'status' => ['required', 'string', Rule::in(array_column(OrganizationStatus::cases(), 'value'))],
             'needs_target_amount' => ['nullable', 'numeric', 'min:0'],
-            'needs_collected_amount' => ['nullable', 'numeric', 'min:0'],
+            'needs_collected_manual_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -36,7 +36,7 @@ class StoreOrganizationRequest extends FormRequest
     {
         $this->merge([
             'needs_target_amount' => $this->normalizeNumericInput($this->input('needs_target_amount')),
-            'needs_collected_amount' => $this->normalizeNumericInput($this->input('needs_collected_amount')),
+            'needs_collected_manual_amount' => $this->normalizeNumericInput($this->input('needs_collected_manual_amount')),
         ]);
     }
 

@@ -697,24 +697,9 @@ class PaymentService
                 ]);
             }
 
-            // Обновляем агрегаты организации (needs_collected_amount)
-            // Это сумма всех завершенных донатов организации
             if ($transaction->organization) {
-                $organizationDonations = $transaction->organization->donations()
-                    ->where('status', 'completed')
-                    ->sum('amount');
-
-                $transaction->organization->update([
-                    'needs_collected_amount' => $organizationDonations,
-                ]);
-
                 // Очищаем кэш виджета для этой организации
                 Cache::forget("donation_widget_subscribers_count_{$transaction->organization->id}");
-
-                Log::info('Organization aggregates updated', [
-                    'organization_id' => $transaction->organization->id,
-                    'needs_collected_amount' => $organizationDonations,
-                ]);
             }
         } catch (\Throwable $e) {
             Log::error('Failed to update donation aggregates', [

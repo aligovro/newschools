@@ -58,12 +58,12 @@ export function useOrganizationFormState({
             ? String(organization.needs.target.value)
             : '',
     );
-    const [needsCollectedAmount, setNeedsCollectedAmount] = useState<string>(
-        organization?.needs?.collected?.value !== undefined &&
-            organization?.needs?.collected?.value !== null
-            ? String(organization.needs.collected.value)
-            : '',
-    );
+    const [needsManualCollectedAmount, setNeedsManualCollectedAmount] =
+        useState<string>(() => {
+            const minor = organization?.needs_collected_manual_amount;
+            if (minor == null) return '';
+            return String(Math.trunc(minor / 100));
+        });
 
     const [dirty, setDirty] = useState<Record<string, boolean>>({});
     const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
@@ -138,7 +138,7 @@ export function useOrganizationFormState({
         website,
         isPublic,
         needsTargetAmount,
-        needsCollectedAmount,
+        needsManualCollectedAmount,
         logoValue,
         galleryImages,
         paymentSettings,
@@ -155,7 +155,7 @@ export function useOrganizationFormState({
         setWebsite,
         setIsPublic,
         setNeedsTargetAmount,
-        setNeedsCollectedAmount,
+        setNeedsManualCollectedAmount,
         setLogoValue,
         setGalleryImages,
         setPaymentSettings: (updater: SetStateAction<PaymentGatewaysSettingsValue>) => {

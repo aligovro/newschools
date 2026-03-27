@@ -289,6 +289,10 @@ export default function OrganizationForm({
                 'needs_target_amount',
                 formState.needsTargetAmount ?? '',
             );
+            formData.append(
+                'needs_collected_manual_amount',
+                formState.needsManualCollectedAmount.trim(),
+            );
 
             if (formState.logoValue instanceof File)
                 formData.append('logo', formState.logoValue);
@@ -387,8 +391,12 @@ export default function OrganizationForm({
 
                     <NeedsSection
                         targetAmount={formState.needsTargetAmount}
-                        collectedAmount={formState.needsCollectedAmount}
+                        manualCollectedAmount={formState.needsManualCollectedAmount}
+                        autoCollected={organization?.needs_auto_collected}
                         onTargetChange={formState.setNeedsTargetAmount}
+                        onManualCollectedChange={
+                            formState.setNeedsManualCollectedAmount
+                        }
                     />
 
                     <LocationSection

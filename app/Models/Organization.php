@@ -49,7 +49,7 @@ class Organization extends Model
     'is_public',
     'features',
     'needs_target_amount',
-    'needs_collected_amount',
+    'needs_collected_manual_amount',
     'founded_at',
   ];
 
@@ -64,7 +64,7 @@ class Organization extends Model
     'is_public' => 'boolean',
     'status' => OrganizationStatus::class,
     'needs_target_amount' => 'integer',
-    'needs_collected_amount' => 'integer',
+    'needs_collected_manual_amount' => 'integer',
   ];
 
   protected $appends = [
@@ -293,34 +293,26 @@ class Organization extends Model
     return max(0, $sum);
   }
 
-  protected function resolveCollectedMinor(): int
+  /**
+   * Сумма завершённых пожертвований организации (копейки), без учёта ручного override.
+   * Совпадает с агрегатами в кабинете (status = completed).
+   */
+  public function getDonationsCollectedMinorForNeeds(): int
   {
-    $directValue = (int) ($this->needs_collected_amount ?? 0);
-
-    if ($directValue > 0) {
-      return $directValue;
-    }
-
-    $sum = $this->memoizeComputed('__needs_collected_minor', function () {
-      $projects = $this->sumActiveProjects('collected_amount');
-
-      if ($projects > 0) {
-        return $projects;
-      }
-
-      $fundraisers = $this->sumActiveFundraisers('collected_amount');
-
-      if ($fundraisers > 0) {
-        return $fundraisers;
-      }
-
+    return $this->memoizeComputed('__donations_collected_minor_for_needs', function () {
       return (int) $this->donations()
         ->where('status', DonationStatus::Completed)
-        ->whereNotNull('paid_at')
         ->sum('amount');
     });
+  }
 
-    return max(0, $sum);
+  protected function resolveCollectedMinor(): int
+  {
+    if ($this->needs_collected_manual_amount !== null) {
+      return max(0, (int) $this->needs_collected_manual_amount);
+    }
+
+    return max(0, $this->getDonationsCollectedMinorForNeeds());
   }
 
   protected function sumActiveProjects(string $column): int

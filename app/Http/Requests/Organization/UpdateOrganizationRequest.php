@@ -50,7 +50,7 @@ class UpdateOrganizationRequest extends FormRequest
             // Администратор организации (для новой логики с organization_users)
             'admin_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'needs_target_amount' => ['nullable', 'numeric', 'min:0'],
-            'needs_collected_amount' => ['nullable', 'numeric', 'min:0'],
+            'needs_collected_manual_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -88,7 +88,7 @@ class UpdateOrganizationRequest extends FormRequest
 
         $this->merge([
             'needs_target_amount' => $this->normalizeNumericInput($this->input('needs_target_amount')),
-            'needs_collected_amount' => $this->normalizeNumericInput($this->input('needs_collected_amount')),
+            'needs_collected_manual_amount' => $this->normalizeNumericInput($this->input('needs_collected_manual_amount')),
         ]);
     }
 
@@ -115,7 +115,7 @@ class UpdateOrganizationRequest extends FormRequest
             'longitude',
             'city_name',
             'needs_target_amount',
-            'needs_collected_amount',
+            'needs_collected_manual_amount',
         ]);
     }
 

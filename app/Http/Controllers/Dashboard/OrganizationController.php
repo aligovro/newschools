@@ -217,6 +217,9 @@ class OrganizationController extends Controller
 
         // Получаем данные организации через Resource
         $organizationData = (new OrganizationResource($organization))->toArray(request());
+        $organizationData['needs_auto_collected'] = Money::toArray(
+            $organization->getDonationsCollectedMinorForNeeds()
+        );
 
         // Получаем админа напрямую через метод модели
         $adminUser = $organization->adminUser();
@@ -252,10 +255,10 @@ class OrganizationController extends Controller
         ]);
 
         $needsTarget = $this->normalizeMonetaryInput($request->input('needs_target_amount'));
-        $needsCollected = $this->normalizeMonetaryInput($request->input('needs_collected_amount'));
+        $needsCollectedManual = $this->normalizeMonetaryInput($request->input('needs_collected_manual_amount'));
 
         $data['needs_target_amount'] = $needsTarget;
-        $data['needs_collected_amount'] = $needsCollected;
+        $data['needs_collected_manual_amount'] = $needsCollectedManual;
 
         // Если слаг не передан или пустой, генерируем его на основе типа и ID
         // Но ID еще нет, поэтому сначала создаем организацию, затем обновляем слаг
@@ -345,8 +348,8 @@ class OrganizationController extends Controller
         $updateData['needs_target_amount'] = $this->normalizeMonetaryInput(
             $request->input('needs_target_amount')
         );
-        $updateData['needs_collected_amount'] = $this->normalizeMonetaryInput(
-            $request->input('needs_collected_amount')
+        $updateData['needs_collected_manual_amount'] = $this->normalizeMonetaryInput(
+            $request->input('needs_collected_manual_amount')
         );
 
         // Обрабатываем логотип (может быть файлом или путем)
