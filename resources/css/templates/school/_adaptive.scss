@@ -31,6 +31,29 @@
         --school-section-y: 60px;
         // Горизонтальный ритм: clubs-all, video-lessons-all, school-project-container
         --school-section-x: 22px;
+        // Шапка: CTA в колонке на всю ширину (высота/отступы — токены, без фикс. height в _media)
+        --school-header-auth-btn-height: 2.875rem;
+        --school-header-auth-btn-pad-y: 10px;
+        --school-header-auth-btn-pad-x: 12px;
+
+        .school-auth-menu {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .school-auth-menu__profile-btn,
+        .school-auth-menu__donate-btn {
+            flex: 1 1 0;
+            min-width: 0;
+            justify-content: center;
+        }
+
+        .menu-output.menu-default {
+            width: 100%;
+        }
 
         // Общее: контейнер с отступами
         .container {
@@ -168,6 +191,10 @@
         --school-content-stack-gap: 1rem;
         --school-cta-pill-height: 52px;
         --school-cta-pill-pad-y: 9px;
+        // Шапка: компактнее кнопки «Профиль» / «Помочь школе»
+        --school-header-auth-btn-height: 2.375rem;
+        --school-header-auth-btn-pad-y: 8px;
+        --school-header-auth-btn-pad-x: 10px;
 
         // Общие блоки
         .wrapper__block {
@@ -187,6 +214,11 @@
             margin-bottom: 16px;
             border-bottom: none !important;
             padding-top: 16px;
+
+            .auth-menu-widget.auth-menu-output.auth-menu-output--school {
+                width: 100%;
+                max-width: 100%;
+            }
         }
         .org-donations-feed-school__container {
             padding: 0;
@@ -301,22 +333,56 @@
             }
         }
 
-        // Hero: месячная цель (pill) — компактнее
-        .school-hero-monthly {
+        // Hero: блок цели — на всю ширину контента, перенос строк без переполнения
+        .site-position--hero .school-hero-widget .school-hero-monthly {
+            align-self: stretch;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
             flex-wrap: wrap;
             height: auto;
-            padding: 6px 14px 6px 6px;
-            gap: 8px;
-
-            &__goal,
-            &__collected {
-                font-size: 18px;
-            }
+            min-height: 0;
+            padding: 12px;
+            gap: 10px 14px;
+            justify-content: space-between;
+            border: none;
+            border-radius: 18px;
 
             &__goal-block {
-                margin: -6px 12px -6px -6px;
-                padding: 0 12px 0 6px;
-                height: 42px;
+                flex: 1 1 100%;
+                min-width: 0;
+                height: auto;
+                margin: 0;
+                padding: 6px;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px 12px;
+                margin: -12px -12px 0 -12px;
+                padding: 4px 12px 4px 4px;
+            }
+
+            &__label {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+
+            &__goal {
+                flex: 1 1 auto;
+                min-width: 0;
+                font-size: clamp(15px, 4.2vw, 18px);
+                text-align: right;
+            }
+
+            &__collected {
+                flex: 1 1 auto;
+                min-width: 0;
+                margin-right: 0;
+                font-size: clamp(15px, 4.2vw, 18px);
+            }
+
+            &__text {
+                flex: 0 0 auto;
+                text-align: right;
             }
         }
 
@@ -596,7 +662,8 @@
             gap: var(--project-hero-mobile-gap);
             aspect-ratio: unset;
             min-height: clamp(456px, 118vw, 620px);
-            padding: var(--project-hero-mobile-pad-y) var(--project-hero-mobile-pad-x) 16px;
+            padding: var(--project-hero-mobile-pad-y)
+                var(--project-hero-mobile-pad-x) 16px;
             box-sizing: border-box;
         }
 
@@ -860,6 +927,8 @@
 @media (max-width: 479px) {
     .site-preview.site-template--school {
         --school-section-y: 24px;
+        --school-header-auth-btn-height: 2.25rem;
+        --school-header-auth-font-size: 0.8125rem;
 
         // Расписание: ещё плотнее на узких экранах
         .club-schedule-board {
@@ -885,14 +954,17 @@
             }
         }
 
-        // Hero: месячная цель — полностью вертикальный
-        .school-hero-monthly {
+        // Hero: блок цели — плотнее на очень узких экранах
+        .site-position--hero .school-hero-widget .school-hero-monthly {
+            gap: 8px 10px;
+
             &__goal-block {
-                width: 100%;
-                margin: 0;
-                height: auto;
-                padding: 8px 12px;
                 border-radius: 18px;
+            }
+
+            &__label {
+                padding: 6px 10px;
+                font-size: 10px;
             }
         }
 
