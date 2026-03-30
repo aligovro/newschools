@@ -50,14 +50,18 @@ class PhoneVerificationService
 
         $now = now();
 
-        if ($existing && $existing->last_sent_at && $now->diffInSeconds($existing->last_sent_at) < self::RESEND_COOLDOWN_SECONDS) {
-            $secondsLeft = self::RESEND_COOLDOWN_SECONDS - $now->diffInSeconds($existing->last_sent_at);
+        if ($existing && $existing->last_sent_at) {
+            $diffSeconds = (int) $now->diffInSeconds($existing->last_sent_at);
 
-            throw ValidationException::withMessages([
-                'phone' => __('Код уже отправлен. Запросите новый через :seconds секунд.', [
-                    'seconds' => max($secondsLeft, 1),
-                ]),
-            ]);
+            if ($diffSeconds < self::RESEND_COOLDOWN_SECONDS) {
+                $secondsLeft = self::RESEND_COOLDOWN_SECONDS - $diffSeconds;
+
+                throw ValidationException::withMessages([
+                    'phone' => __('Код уже отправлен. Запросите новый через :seconds секунд.', [
+                        'seconds' => max($secondsLeft, 1),
+                    ]),
+                ]);
+            }
         }
 
         if ($existing && $existing->resend_count >= self::MAX_RESENDS) {

@@ -151,11 +151,11 @@ const ResendTimer = memo(({
     onResend: () => void;
     isLoading: boolean;
 }) => {
-    const [countdown, setCountdown] = useState(seconds);
+    const [countdown, setCountdown] = useState(Math.ceil(seconds));
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
-        setCountdown(seconds);
+        setCountdown(Math.ceil(seconds));
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (seconds <= 0) return;
 
@@ -295,15 +295,13 @@ const CredentialsView = memo(({
                     <span>Запомнить</span>
                 </label>
                 <div className="flex gap-3">
-                    {state.mode === 'phone' && (
-                        <button
-                            type="button"
-                            onClick={() => onFieldChange('view', 'phone_code')}
-                            className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
-                        >
-                            Войти по коду
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        onClick={() => onFieldChange('view', 'phone_code')}
+                        className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                        Войти по коду
+                    </button>
                     <button
                         type="button"
                         onClick={() => onFieldChange('view', 'forgot_password')}

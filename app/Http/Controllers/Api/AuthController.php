@@ -231,11 +231,17 @@ class AuthController extends Controller
       return response()->json(['message' => 'Для указанного номера не найден аккаунт с email'], 422);
     }
 
-    Password::sendResetLink(['email' => $email]);
+    $status = Password::sendResetLink(['email' => $email]);
+
+    if ($status !== Password::RESET_LINK_SENT) {
+      return response()->json([
+        'message' => __('Не удалось отправить письмо. Проверьте email или попробуйте позже.'),
+      ], 422);
+    }
 
     return response()->json([
       'success' => true,
-      'message' => 'Если аккаунт существует, ссылка для сброса пароля будет отправлена на email.',
+      'message' => 'Ссылка для сброса пароля отправлена на email.',
     ]);
   }
 
