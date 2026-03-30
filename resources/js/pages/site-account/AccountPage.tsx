@@ -647,7 +647,7 @@ export default function AccountPage({
             ]}
             fullWidthMainContent={true}
         >
-            <div className="account-page school-p-lr-60">
+            <div className="account-page">
                 <h1 className="account-page__title mb-6 text-2xl font-semibold">
                     Личный кабинет
                 </h1>
