@@ -314,7 +314,7 @@ export const DonationWidgetSchoolView: React.FC<DonationWidgetSchoolViewProps> =
                                                 )}
                                             </div>
 
-                                            <div className="mt-3 flex items-start gap-2 px-1">
+                                            <div className="mt-4 flex items-center gap-2 px-0">
                                                 <div
                                                     className={`flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded border ${
                                                         form.agreedToRecurring
@@ -347,7 +347,9 @@ export const DonationWidgetSchoolView: React.FC<DonationWidgetSchoolViewProps> =
                                                 </div>
                                                 <input
                                                     type="checkbox"
-                                                    checked={form.agreedToRecurring}
+                                                    checked={
+                                                        form.agreedToRecurring
+                                                    }
                                                     onChange={(e) =>
                                                         form.onAgreedToRecurringChange(
                                                             e.target.checked,
@@ -357,10 +359,19 @@ export const DonationWidgetSchoolView: React.FC<DonationWidgetSchoolViewProps> =
                                                     required
                                                 />
                                                 <div className="donation-form-card__legal m-0 text-left">
-                                                    Согласен на регулярные списания{' '}
-                                                    {RECURRING_PERIOD_LABELS[form.recurringPeriod]}{' '}
+                                                    Согласен на регулярные
+                                                    списания{' '}
+                                                    {
+                                                        RECURRING_PERIOD_LABELS[
+                                                            form.recurringPeriod
+                                                        ]
+                                                    }{' '}
                                                     по {form.amount}{' '}
-                                                    {CURRENCY_SYMBOLS[form.currency]}
+                                                    {
+                                                        CURRENCY_SYMBOLS[
+                                                            form.currency
+                                                        ]
+                                                    }
                                                 </div>
                                             </div>
                                         </>
