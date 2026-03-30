@@ -11,6 +11,7 @@ import { DonationPaymentModal } from '../donation/DonationPaymentModal';
 import { useDonationFormState } from '../donation/useDonationFormState';
 import {
     CURRENCY_SYMBOLS,
+    RECURRING_PERIOD_LABELS,
     normalizePaymentSlug,
     parseNumericId,
 } from '../donation/utils';
@@ -141,6 +142,7 @@ export const SchoolSubscribeOutput: React.FC<WidgetOutputProps> = ({
             donorPhone,
             isAnonymous,
             agreedToPolicy,
+            agreedToRecurring,
             isProcessing,
             error,
             success,
@@ -154,6 +156,7 @@ export const SchoolSubscribeOutput: React.FC<WidgetOutputProps> = ({
             handleDonorPhoneChange,
             handleAnonymousChange,
             handleAgreedToPolicyChange,
+            handleAgreedToRecurringChange,
             handlePaymentMethodSelect,
         },
         setError: setFormError,
@@ -197,6 +200,11 @@ export const SchoolSubscribeOutput: React.FC<WidgetOutputProps> = ({
 
         if (!agreedToPolicy) {
             setFormError('Необходимо принять условия обработки персональных данных');
+            return;
+        }
+
+        if (!agreedToRecurring) {
+            setFormError('Необходимо согласиться на подписку на платежи');
             return;
         }
 
@@ -547,6 +555,31 @@ export const SchoolSubscribeOutput: React.FC<WidgetOutputProps> = ({
                             />
                             <div className="school-subscribe-widget__policy-text">
                                 Принимаю <a href="/policy/" target="_blank">условия обработки</a> персональных данных
+                            </div>
+                        </div>
+
+                        <div className="school-subscribe-widget__policy">
+                            <div
+                                className={`school-subscribe-widget__checkbox ${agreedToRecurring ? 'active' : ''}`}
+                                onClick={() => handleAgreedToRecurringChange(!agreedToRecurring)}
+                            >
+                                {agreedToRecurring && (
+                                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                )}
+                            </div>
+                            <input
+                                type="checkbox"
+                                checked={agreedToRecurring}
+                                onChange={(e) => handleAgreedToRecurringChange(e.target.checked)}
+                                className="sr-only"
+                                required
+                            />
+                            <div className="school-subscribe-widget__policy-text">
+                                Согласен на регулярные списания{' '}
+                                {RECURRING_PERIOD_LABELS[recurringPeriod]}{' '}
+                                по {amount} {CURRENCY_SYMBOLS[currency]}
                             </div>
                         </div>
 

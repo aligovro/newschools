@@ -42,12 +42,9 @@ class PhoneAuthController extends Controller
         return response()->json([
             'token' => $verification->token,
             'expires_at' => $verification->expires_at?->toIso8601String(),
-            'resend_available_in' => max(
-                0,
-                $verification->last_sent_at
-                    ? PhoneVerificationService::RESEND_COOLDOWN_SECONDS - now()->diffInSeconds($verification->last_sent_at)
-                    : 0
-            ),
+            'resend_available_in' => $verification->last_sent_at
+                ? max(0, PhoneVerificationService::RESEND_COOLDOWN_SECONDS - (int) now()->diffInSeconds($verification->last_sent_at))
+                : 0,
             'masked_phone' => PhoneNumber::masked($verification->phone),
         ], 201);
     }

@@ -254,64 +254,116 @@ export const DonationWidgetSchoolView: React.FC<DonationWidgetSchoolViewProps> =
                                     </div>
 
                                     {form.isRecurring && (
-                                        <div className="donation-form-card__frequency">
-                                            {form.recurringPeriods.map(
-                                                (period) => (
-                                                    <label
-                                                        key={period}
-                                                        className="donation-form-card__frequency-item"
-                                                    >
-                                                        <input
-                                                            type="radio"
-                                                            name="recurring_period"
-                                                            value={period}
-                                                            checked={
-                                                                form.recurringPeriod ===
-                                                                period
-                                                            }
-                                                            onChange={() =>
-                                                                form.onRecurringPeriodChange(
-                                                                    period as any,
-                                                                )
-                                                            }
-                                                            className="sr-only"
-                                                        />
-                                                        <div
-                                                            className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border transition-colors ${
-                                                                form.recurringPeriod ===
-                                                                period
-                                                                    ? 'border-[#1A1A1A] bg-[#1A1A1A]'
-                                                                    : 'border-[#B5B9C3] bg-transparent'
-                                                            }`}
+                                        <>
+                                            <div className="donation-form-card__frequency">
+                                                {form.recurringPeriods.map(
+                                                    (period) => (
+                                                        <label
+                                                            key={period}
+                                                            className="donation-form-card__frequency-item"
                                                         >
-                                                            {form.recurringPeriod ===
-                                                                period && (
-                                                                <svg
-                                                                    width="10"
-                                                                    height="8"
-                                                                    viewBox="0 0 10 8"
-                                                                    fill="none"
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                >
-                                                                    <path
-                                                                        d="M1 4L3.5 6.5L9 1"
-                                                                        stroke="white"
-                                                                        strokeWidth="2"
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                    />
-                                                                </svg>
-                                                            )}
-                                                        </div>
-                                                        {
-                                                            RECURRING_PERIOD_LABELS[
-                                                                period as keyof typeof RECURRING_PERIOD_LABELS
-                                                            ]
-                                                        }
-                                                    </label>
-                                                ),
-                                            )}
-                                        </div>
+                                                            <input
+                                                                type="radio"
+                                                                name="recurring_period"
+                                                                value={period}
+                                                                checked={
+                                                                    form.recurringPeriod ===
+                                                                    period
+                                                                }
+                                                                onChange={() =>
+                                                                    form.onRecurringPeriodChange(
+                                                                        period as any,
+                                                                    )
+                                                                }
+                                                                className="sr-only"
+                                                            />
+                                                            <div
+                                                                className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border transition-colors ${
+                                                                    form.recurringPeriod ===
+                                                                    period
+                                                                        ? 'border-[#1A1A1A] bg-[#1A1A1A]'
+                                                                        : 'border-[#B5B9C3] bg-transparent'
+                                                                }`}
+                                                            >
+                                                                {form.recurringPeriod ===
+                                                                    period && (
+                                                                    <svg
+                                                                        width="10"
+                                                                        height="8"
+                                                                        viewBox="0 0 10 8"
+                                                                        fill="none"
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                    >
+                                                                        <path
+                                                                            d="M1 4L3.5 6.5L9 1"
+                                                                            stroke="white"
+                                                                            strokeWidth="2"
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                        />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+                                                            {
+                                                                RECURRING_PERIOD_LABELS[
+                                                                    period as keyof typeof RECURRING_PERIOD_LABELS
+                                                                ]
+                                                            }
+                                                        </label>
+                                                    ),
+                                                )}
+                                            </div>
+
+                                            <div className="mt-3 flex items-start gap-2 px-1">
+                                                <div
+                                                    className={`flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded border ${
+                                                        form.agreedToRecurring
+                                                            ? 'border-black bg-black'
+                                                            : 'border-gray-300'
+                                                    }`}
+                                                    onClick={() =>
+                                                        form.onAgreedToRecurringChange(
+                                                            !form.agreedToRecurring,
+                                                        )
+                                                    }
+                                                >
+                                                    {form.agreedToRecurring && (
+                                                        <svg
+                                                            width="10"
+                                                            height="8"
+                                                            viewBox="0 0 10 8"
+                                                            fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                        >
+                                                            <path
+                                                                d="M1 4L3.5 6.5L9 1"
+                                                                stroke="white"
+                                                                strokeWidth="2"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                            />
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={form.agreedToRecurring}
+                                                    onChange={(e) =>
+                                                        form.onAgreedToRecurringChange(
+                                                            e.target.checked,
+                                                        )
+                                                    }
+                                                    className="sr-only"
+                                                    required
+                                                />
+                                                <div className="donation-form-card__legal m-0 text-left">
+                                                    Согласен на регулярные списания{' '}
+                                                    {RECURRING_PERIOD_LABELS[form.recurringPeriod]}{' '}
+                                                    по {form.amount}{' '}
+                                                    {CURRENCY_SYMBOLS[form.currency]}
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
                             )}
