@@ -359,6 +359,10 @@ Route::prefix('public')->group(function () {
 
     // Предложение новой школы (публичный доступ)
     Route::post('/suggest-school', [SuggestedOrganizationController::class, 'suggest']);
+
+    // Трекинг кликов по кнопкам «Поделиться» (виджет share-buttons)
+    Route::post('/share-click', [\App\Http\Controllers\PublicShareClickController::class, 'track'])
+        ->middleware('throttle:60,1');
 });
 
 /*

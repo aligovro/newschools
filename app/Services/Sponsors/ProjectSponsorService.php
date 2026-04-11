@@ -14,6 +14,15 @@ class ProjectSponsorService
     public const DEFAULT_PER_PAGE = 6;
     public const MAX_PER_PAGE = 24;
 
+    /**
+     * Общее число уникальных доноров/спонсоров проекта — та же логика, что у paginate().
+     * Используется для предзаполнения счётчика вкладки «Все поступления» без lazy-load.
+     */
+    public function countAll(Project $project): int
+    {
+        return $this->buildAggregatedQuery($project)->count();
+    }
+
     public function paginate(Project $project, string $sort, int $perPage, int $page): LengthAwarePaginator
     {
         $sort = $this->normalizeSort($sort);

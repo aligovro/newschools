@@ -9,6 +9,7 @@ interface Props {
     counts?: Record<string, number>;
     slogan?: string;
     showSlogan?: boolean;
+    widgetId?: string | number;
 }
 
 export const ShareButtonsSchoolWidget: React.FC<Props> = ({
@@ -18,6 +19,7 @@ export const ShareButtonsSchoolWidget: React.FC<Props> = ({
     counts = {},
     slogan,
     showSlogan = false,
+    widgetId,
 }) => {
     const handleShare = (url: string) => {
         window.open(url, '_blank', 'noopener,noreferrer,width=600,height=400');
@@ -38,6 +40,7 @@ export const ShareButtonsSchoolWidget: React.FC<Props> = ({
                             shareUrl={shareUrl}
                             shareText={shareText}
                             onShare={handleShare}
+                            widgetId={widgetId}
                         />
                     );
                 })}

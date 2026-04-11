@@ -812,7 +812,7 @@ class ProjectDonationsService
             'sbp' => 'СПБ по QR',
             'bankcard', 'bank_card', 'card' => 'Картой',
             'sberbank', 'sberpay' => 'Сбер Pay',
-            'tinkoff_bank', 'tpay' => 'T-Pay',
+            'tinkoff', 'tinkoff_bank', 'tpay' => 'T-Pay',
             default => $slug ? ucfirst($slug) : '—',
         };
     }

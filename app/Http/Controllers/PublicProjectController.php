@@ -248,6 +248,9 @@ class PublicProjectController extends Controller
       ],
     ];
 
+    // Общее число уникальных доноров (та же логика, что у вкладки «Все поступления»)
+    $totalDonationsCount = $this->projectSponsorService->countAll($project);
+
     $topRecurring = $this->donationsService->topRecurringByDonorName(
       $project,
       ProjectDonationsService::PERIOD_ALL,
@@ -367,6 +370,7 @@ class PublicProjectController extends Controller
     return Inertia::render('main-site/ProjectShow', array_merge($data, [
       'project'             => $projectData,
       'sponsors'            => $sponsorsPayload,
+      'totalDonationsCount' => $totalDonationsCount,
       'topRecurring'        => $topRecurring,
       'organizationId'      => $project->organization?->id,
       'seo'                 => $seo,

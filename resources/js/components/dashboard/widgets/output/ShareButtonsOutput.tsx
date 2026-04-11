@@ -115,6 +115,7 @@ export const ShareButtonsOutput: React.FC<WidgetOutputProps> = ({
                     counts={counts}
                     slogan={slogan}
                     showSlogan={show_slogan}
+                    widgetId={widget.id}
                 />
             </div>
         );

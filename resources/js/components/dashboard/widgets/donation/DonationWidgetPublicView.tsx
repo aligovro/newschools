@@ -413,6 +413,26 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                                     }
                                                 }, 0);
                                             }}
+                                            onClick={(e) => {
+                                                // Не даём курсору оказаться в зоне " ₽"
+                                                const input = e.currentTarget;
+                                                if (input.value.length > 0 && (input.selectionStart ?? 0) >= input.value.length - 1) {
+                                                    requestAnimationFrame(() => {
+                                                        const pos = Math.max(0, input.value.length - 2);
+                                                        input.setSelectionRange(pos, pos);
+                                                    });
+                                                }
+                                            }}
+                                            onFocus={(e) => {
+                                                // При фокусе ставим курсор перед " ₽"
+                                                const input = e.currentTarget;
+                                                if (input.value.length > 0) {
+                                                    requestAnimationFrame(() => {
+                                                        const pos = Math.max(0, input.value.length - 2);
+                                                        input.setSelectionRange(pos, pos);
+                                                    });
+                                                }
+                                            }}
                                             onKeyDown={(e) => {
                                                 const input = e.currentTarget;
                                                 const cursorPos =
@@ -423,11 +443,11 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                                         '',
                                                     );
 
-                                                // Если пытаемся удалить символ ₽, удаляем последнюю цифру
+                                                // Если курсор в зоне " ₽" или после неё — удаляем последнюю цифру
                                                 if (
                                                     e.key === 'Backspace' &&
-                                                    cursorPos ===
-                                                        input.value.length - 1
+                                                    cursorPos >= input.value.length - 1 &&
+                                                    value.length > 0
                                                 ) {
                                                     e.preventDefault();
                                                     const newValue =
@@ -444,17 +464,15 @@ export const DonationWidgetPublicView: React.FC<DonationWidgetPublicViewProps> =
                                                         const newText = newValue
                                                             ? `${newValue} ₽`
                                                             : '';
-                                                        input.setSelectionRange(
-                                                            newText.length - 2,
-                                                            newText.length - 2,
-                                                        );
+                                                        const pos = newText.length > 0 ? Math.max(0, newText.length - 2) : 0;
+                                                        input.setSelectionRange(pos, pos);
                                                     }, 0);
                                                 }
 
                                                 // Запрещаем удаление символа ₽ через Delete
                                                 if (
                                                     e.key === 'Delete' &&
-                                                    cursorPos ===
+                                                    cursorPos >=
                                                         input.value.length - 2
                                                 ) {
                                                     e.preventDefault();
