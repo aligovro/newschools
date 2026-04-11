@@ -205,8 +205,11 @@ export default function CitySelector({
         setCities([]);
     };
 
-    // Формируем дефолтный город для отображения в списке
+    // Формируем дефолтный город для отображения в списке.
+    // При активном поиске не добавляем его — иначе дефолтный город
+    // всегда оказывается в начале результатов, не совпадая с запросом.
     const getDefaultCityForList = (): Locality | null => {
+        if (searchQuery.length > 0) return null;
         if (!defaultId || !defaultName) return null;
 
         // Проверяем, есть ли дефолтный город в загруженном списке с регионом

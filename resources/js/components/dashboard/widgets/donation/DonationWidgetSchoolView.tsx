@@ -400,6 +400,49 @@ export const DonationWidgetSchoolView: React.FC<DonationWidgetSchoolViewProps> =
                                                 ? Number.parseInt(value, 10)
                                                 : 0;
                                             form.onAmountInputChange(numValue);
+                                            // Восстанавливаем позицию курсора перед " ₽"
+                                            setTimeout(() => {
+                                                const input = e.target;
+                                                const newText = numValue ? `${numValue} ₽` : '';
+                                                const pos = newText.length > 0 ? Math.max(0, newText.length - 2) : 0;
+                                                input.setSelectionRange(pos, pos);
+                                            }, 0);
+                                        }}
+                                        onClick={(e) => {
+                                            const input = e.currentTarget;
+                                            if (input.value.length > 0 && (input.selectionStart ?? 0) >= input.value.length - 1) {
+                                                requestAnimationFrame(() => {
+                                                    const pos = Math.max(0, input.value.length - 2);
+                                                    input.setSelectionRange(pos, pos);
+                                                });
+                                            }
+                                        }}
+                                        onFocus={(e) => {
+                                            const input = e.currentTarget;
+                                            if (input.value.length > 0) {
+                                                requestAnimationFrame(() => {
+                                                    const pos = Math.max(0, input.value.length - 2);
+                                                    input.setSelectionRange(pos, pos);
+                                                });
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            const input = e.currentTarget;
+                                            const cursorPos = input.selectionStart || 0;
+                                            const digits = input.value.replace(/[^\d]/g, '');
+                                            if (e.key === 'Backspace' && cursorPos >= input.value.length - 1 && digits.length > 0) {
+                                                e.preventDefault();
+                                                const newDigits = digits.slice(0, -1);
+                                                form.onAmountInputChange(newDigits ? Number.parseInt(newDigits, 10) : 0);
+                                                setTimeout(() => {
+                                                    const newText = newDigits ? `${newDigits} ₽` : '';
+                                                    const pos = newText.length > 0 ? Math.max(0, newText.length - 2) : 0;
+                                                    input.setSelectionRange(pos, pos);
+                                                }, 0);
+                                            }
+                                            if (e.key === 'Delete' && cursorPos >= input.value.length - 2) {
+                                                e.preventDefault();
+                                            }
                                         }}
                                         required
                                         className="donation-form-card__amount-input"

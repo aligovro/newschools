@@ -45,6 +45,9 @@
     // Карточка проекта
     .projects-output__card,
     .project-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
         background: #fff;
         border-radius: 42px;
         box-shadow: 0 4px 34px rgba(26, 26, 26, 0.08);
@@ -84,6 +87,7 @@
     .projects-output__card-body,
     .project-card__body {
         padding: 22px 24px;
+        flex: 1;
     }
 
     .projects-output__card-tag,
@@ -336,6 +340,20 @@
             .swiper {
                 overflow: visible;
             }
+
+            // Делаем слайд flex-контейнером с height: auto —
+            // тогда .swiper-wrapper { align-items: stretch } выравнивает
+            // все слайды по высоте самого высокого, а вложенный контент
+            // через flex: 1 растягивается до полной высоты слайда.
+            .swiper-slide {
+                display: flex;
+                height: auto;
+
+                > * {
+                    flex: 1;
+                    min-width: 0;
+                }
+            }
         }
 
         &__card {
@@ -346,6 +364,7 @@
         &__card-inner {
             display: flex;
             flex-direction: column;
+            height: 100%;
             background: #fff;
             border-radius: 42px;
             box-shadow: 0 8px 16px rgba(26, 26, 26, 0.05);
@@ -480,6 +499,7 @@
             padding: 20px 22px 22px;
             display: flex;
             flex-direction: column;
+            flex: 1;
             gap: 10px;
         }
 

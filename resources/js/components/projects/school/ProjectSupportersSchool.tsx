@@ -13,6 +13,7 @@ interface Props {
     projectSlug: string;
     initialData: Sponsor[];
     initialPagination: Pagination;
+    initialRecentTotal?: number;
 }
 
 const emptyPagination = (perPage = DEFAULT_PER_PAGE): Pagination => ({
@@ -60,13 +61,18 @@ const ProjectSupportersSchool: React.FC<Props> = ({
     projectSlug,
     initialData,
     initialPagination,
+    initialRecentTotal = 0,
 }) => {
     const perPage = initialPagination?.per_page ?? DEFAULT_PER_PAGE;
 
     const [activeSort, setActiveSort] = useState<SortOption>('top');
     const [stateBySort, setStateBySort] = useState<Record<SortOption, SponsorsState>>({
         top: { data: initialData, pagination: initialPagination, isLoaded: true },
-        recent: { data: [], pagination: emptyPagination(perPage), isLoaded: false },
+        recent: {
+            data: [],
+            pagination: { ...emptyPagination(perPage), total: initialRecentTotal },
+            isLoaded: false,
+        },
     });
     const [isLoading, setIsLoading] = useState(false);
     const abortRef = useRef<AbortController | null>(null);

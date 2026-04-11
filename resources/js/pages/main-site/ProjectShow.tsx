@@ -159,6 +159,7 @@ interface ProjectShowProps {
     referralLeaderboard?: ReferralLeaderboard;
     expenseReports?: ExpenseReportsPayload;
     topRegions?: TopRegionsPayload;
+    totalDonationsCount?: number;
 }
 
 // ─── School-layout ────────────────────────────────────────────────────────────
@@ -173,6 +174,7 @@ interface SchoolLayoutProps {
     topRecurring?: TopRecurringPayload;
     expenseReports?: ExpenseReportsPayload;
     topRegions?: TopRegionsPayload;
+    totalDonationsCount?: number;
     onBecomeSponsor: () => void;
     isSponsorActionLoading: boolean;
 }
@@ -187,6 +189,7 @@ function ProjectShowSchoolLayout({
     topRecurring,
     expenseReports,
     topRegions,
+    totalDonationsCount,
     onBecomeSponsor,
     isSponsorActionLoading,
 }: SchoolLayoutProps) {
@@ -266,6 +269,7 @@ function ProjectShowSchoolLayout({
                             total: 0,
                         }
                     }
+                    initialRecentTotal={totalDonationsCount ?? 0}
                 />
 
                 {/* Рейтинг по приглашениям */}
@@ -320,6 +324,7 @@ export default function ProjectShow({
     referralLeaderboard = { data: [], meta: { page: 1, per_page: 6, total: 0, has_more: false } },
     expenseReports,
     topRegions,
+    totalDonationsCount,
 }: ProjectShowProps) {
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
     const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
@@ -412,6 +417,7 @@ export default function ProjectShow({
                     topRecurring={topRecurring}
                     expenseReports={expenseReports}
                     topRegions={topRegions}
+                    totalDonationsCount={totalDonationsCount}
                     onBecomeSponsor={handleBecomeSponsor}
                     isSponsorActionLoading={isSponsorActionLoading}
                 />
